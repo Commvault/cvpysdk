@@ -185,6 +185,7 @@ class Instances(object):
 
         from .instances.vsinstance import VirtualServerInstance
         from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
         from .instances.sqlinstance import SQLServerInstance
         from .instances.hanainstance import SAPHANAInstance
         from .instances.oracleinstance import OracleInstance
@@ -198,12 +199,14 @@ class Instances(object):
         from .instances.informixinstance import InformixInstance
         from .instances.vminstance import VMInstance
         from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance																		  																			  
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         self._instances_dict = {
             'virtual server': [VirtualServerInstance, VMInstance],
+            'big data apps': BigDataAppsInstance,
             'cloud apps': CloudAppsInstance,
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
@@ -217,7 +220,8 @@ class Instances(object):
             'postgresql': PostgreSQLInstance,
             'informix': InformixInstance,
             'db2': DB2Instance,
-            'azure ad' : AzureAdInstance												 
+            'azure ad': AzureAdInstance,
+            'sharepoint server': SharepointInstance
         }
 
     def __str__(self):
@@ -1260,7 +1264,7 @@ class Instances(object):
                                 "dbType": db_options.get('db_type', 'SQLSERVER'),
                                 "dbHost": db_options.get('db_host_name', ''),
                                 "dbUserPassword": {
-                                    "userName": db_options.get('db_user_name',''),
+                                    "userName": db_options.get('db_user_name', ''),
                                     "password": db_user_password,
 
                                 },
@@ -1276,7 +1280,7 @@ class Instances(object):
                         ],
                         "storageDevice": {
                             "dataBackupStoragePolicy": {
-                                "storagePolicyName": kwargs.get('storage_policy','')
+                                "storagePolicyName": kwargs.get('storage_policy', '')
                             },
                         },
                     },
@@ -1316,7 +1320,7 @@ class Instances(object):
                 'Instance', '102', 'Instance "{0}" already exists.'.format(
                     instance_name)
             )
-        password = b64encode(kwargs.get("postgres_password","").encode()).decode()
+        password = b64encode(kwargs.get("postgres_password", "").encode()).decode()
         request_json = {
             "instanceProperties": {
                 "instance": {
@@ -1324,19 +1328,19 @@ class Instances(object):
                     "instanceName": instance_name,
                     "appName": "PostgreSQL",
                 },
-                "version": kwargs.get("version","10.0"),
+                "version": kwargs.get("version", "10.0"),
                 "postGreSQLInstance": {
-                    "LibDirectory": kwargs.get("lib_directory",""),
-                    "MaintainenceDB": kwargs.get("maintenance_db","postgres"),
-                    "port": kwargs.get("port","5432"),
-                    "ArchiveLogDirectory": kwargs.get("archive_log_directory",""),
-                    "BinaryDirectory": kwargs.get("binary_directory",""),
+                    "LibDirectory": kwargs.get("lib_directory", ""),
+                    "MaintainenceDB": kwargs.get("maintenance_db", "postgres"),
+                    "port": kwargs.get("port", "5432"),
+                    "ArchiveLogDirectory": kwargs.get("archive_log_directory", ""),
+                    "BinaryDirectory": kwargs.get("binary_directory", ""),
                     "SAUser": {
                         "password": password,
-                        "userName": kwargs.get("postgres_user_name","postgres")
+                        "userName": kwargs.get("postgres_user_name", "postgres")
                     },
                     "logStoragePolicy": {
-                            "storagePolicyName": kwargs.get("storage_policy","")
+                        "storagePolicyName": kwargs.get("storage_policy", "")
                     },
 
                 }
@@ -1987,7 +1991,8 @@ class Instance(object):
             fs_options=None,
             schedule_pattern=None,
             proxy_client=None,
-            restore_jobs=[]):
+            restore_jobs=[]
+    ):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -2013,16 +2018,26 @@ class Instance(object):
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         preserve_level      : preserve level option to set in restore
+
                         proxy_client        : proxy that needed to be used for restore
+
                         impersonate_user    : Impersonate user options for restore
+
                         impersonate_password: Impersonate password option for restore
                                                 in base64 encoded form
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
+
                         versions            : list of version numbers to be backed up
+
                         validate_only       : To validate data backed up for restore
+
+                        no_of_streams   (int)       -- Number of streams to be used for restore
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
@@ -2041,6 +2056,7 @@ class Instance(object):
                     if response is empty
 
                     if response is not success
+
         """
         if not (isinstance(paths, list) and
                 isinstance(overwrite, bool) and
@@ -2078,7 +2094,8 @@ class Instance(object):
             fs_options=None,
             schedule_pattern=None,
             proxy_client=None,
-            restore_jobs=[]):
+            restore_jobs=[]
+    ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -2111,21 +2128,33 @@ class Instance(object):
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         preserve_level      : preserve level option to set in restore
+
                         proxy_client        : proxy that needed to be used for restore
+
                         impersonate_user    : Impersonate user options for restore
+
                         impersonate_password: Impersonate password option for restore
                                                 in base64 encoded form
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
+
                         versions            : list of version numbers to be backed up
+
                         media_agent         : Media Agent need to be used for Browse and restore
+
                         validate_only       : To validate data backed up for restore
+
+                        no_of_streams   (int)       -- Number of streams to be used for restore
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
+
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -2144,6 +2173,7 @@ class Instance(object):
                     if response is empty
 
                     if response is not success
+
         """
         from .client import Client
 

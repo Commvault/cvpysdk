@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.operation_window &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.operation_window &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -250,18 +250,24 @@
 <span class="sd">        client_operation_window_details.modify_operation_window(name=&quot;Modified operation window example on clientLevel&quot;)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">timedelta</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="k">import</span> <span class="n">ClientGroup</span>
-<span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
-<span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
-<span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
-<span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
-<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="kn">import</span> <span class="n">ClientGroup</span>
+<span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">.backupset</span> <span class="kn">import</span> <span class="n">Backupset</span>
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="kn">import</span> <span class="n">Subclient</span>
 
 <span class="n">DAY_OF_WEEK_MAPPING</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sunday&#39;</span><span class="p">,</span> <span class="s1">&#39;monday&#39;</span><span class="p">,</span> <span class="s1">&#39;tuesday&#39;</span><span class="p">,</span> <span class="s1">&#39;wednesday&#39;</span><span class="p">,</span> <span class="s1">&#39;thursday&#39;</span><span class="p">,</span> <span class="s1">&#39;friday&#39;</span><span class="p">,</span> <span class="s1">&#39;saturday&#39;</span><span class="p">]</span>
+<span class="n">WEEK_OF_THE_MONTH_MAPPING</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+                             <span class="s2">&quot;first&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                             <span class="s2">&quot;second&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                             <span class="s2">&quot;third&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                             <span class="s2">&quot;fourth&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                             <span class="s2">&quot;last&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">}</span>
 <span class="n">OPERATION_MAPPING</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
                      <span class="s2">&quot;NON_FULL_DATA_MANAGEMENT&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
                      <span class="s2">&quot;SYNTHETIC_FULL&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
@@ -281,13 +287,14 @@
                      <span class="s2">&quot;DATA_ANALYTICS&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
                      <span class="s2">&quot;DATA_PRUNING&quot;</span><span class="p">:</span> <span class="mi">131072</span><span class="p">,</span>
                      <span class="s2">&quot;BACKUP_COPY&quot;</span><span class="p">:</span> <span class="mi">262144</span><span class="p">,</span>
-                     <span class="s2">&quot;CLEANUP_OPERATION&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">}</span>
+                     <span class="s2">&quot;CLEANUP_OPERATION&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">,</span>
+                     <span class="s2">&quot;ALL&quot;</span><span class="p">:</span> <span class="mi">1048576</span><span class="p">}</span>
 
 
 <div class="viewcode-block" id="OperationWindow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindow">[docs]</a><span class="k">class</span> <span class="nc">OperationWindow</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all operation window related operations&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the OperationWindow class instance for</span>
 <span class="sd">           performing Operation Window related operations.</span>
 
@@ -303,7 +310,7 @@
 <span class="sd">                    If invalid instance is passed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># imports inside the __init__ method definition to avoid cyclic imports</span>
-        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
+        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="kn">import</span> <span class="n">Commcell</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Commcell</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">generic_entity_obj</span>
@@ -396,7 +403,9 @@
             <span class="n">operations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">day_of_week</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">week_of_the_month</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">do_not_submit_job</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Creates operation rule on the initialized commcell entity</span>
 
 <span class="sd">            Args:</span>
@@ -420,6 +429,12 @@
 <span class="sd">                        OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/</span>
 <span class="sd">                        MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION</span>
 
+<span class="sd">                week_of_the_month(list)     -- List of week of the month on which the operation rule applies to</span>
+<span class="sd">                        Acceptable Values:</span>
+<span class="sd">                            all/first/second/third/fourth/last</span>
+
+<span class="sd">                            default - None</span>
+
 <span class="sd">                day_of_week (list)    -- List of days of the week on which the operation rule applies to</span>
 <span class="sd">                    Acceptable Values:</span>
 <span class="sd">                        sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday</span>
@@ -433,6 +448,8 @@
 <span class="sd">                end_time    (int)     -- The end time for the &quot;do not run&quot; interval.</span>
 <span class="sd">                    Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
 <span class="sd">                    default - 86400 (6 PM)</span>
+
+<span class="sd">                do_not_submit_job   (bool) -- doNotSubmitJob of the operation rule</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                Returns the instance of created Operation window details</span>
@@ -468,7 +485,7 @@
 
         <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">day_of_week</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>  <span class="c1"># defaults to weekdays</span>
+            <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>      <span class="c1"># defaults to weekdays</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">:</span>
@@ -476,9 +493,18 @@
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
                 <span class="n">day_of_week_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
 
+        <span class="n">week_of_the_month_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">week_of_the_month</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">week</span> <span class="ow">in</span> <span class="n">week_of_the_month</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">week</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">WEEK_OF_THE_MONTH_MAPPING</span><span class="p">:</span>
+                    <span class="n">response_string</span> <span class="o">=</span> <span class="s2">&quot;Invalid input </span><span class="si">%s</span><span class="s2"> for week_of_the_month&quot;</span> <span class="o">%</span> <span class="n">week</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+                <span class="n">week_of_the_month_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">WEEK_OF_THE_MONTH_MAPPING</span><span class="p">[</span><span class="n">week</span><span class="o">.</span><span class="n">lower</span><span class="p">()])</span>
+
         <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;operationWindow&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;ruleEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;doNotSubmitJob&quot;</span><span class="p">:</span> <span class="n">do_not_submit_job</span><span class="p">,</span>
                 <span class="s2">&quot;startDate&quot;</span><span class="p">:</span> <span class="n">start_date</span><span class="p">,</span>
                 <span class="s2">&quot;endDate&quot;</span><span class="p">:</span> <span class="n">end_date</span><span class="p">,</span>
                 <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
@@ -486,6 +512,7 @@
                 <span class="s2">&quot;dayTime&quot;</span><span class="p">:</span> <span class="p">[{</span>
                     <span class="s2">&quot;startTime&quot;</span><span class="p">:</span> <span class="n">start_time</span><span class="p">,</span>
                     <span class="s2">&quot;endTime&quot;</span><span class="p">:</span> <span class="n">end_time</span><span class="p">,</span>
+                    <span class="s2">&quot;weekOfTheMonth&quot;</span><span class="p">:</span> <span class="n">week_of_the_month_list</span><span class="p">,</span>
                     <span class="s2">&quot;dayOfWeek&quot;</span><span class="p">:</span> <span class="n">day_of_week_list</span>
                 <span class="p">}]</span>
             <span class="p">},</span>
@@ -563,6 +590,7 @@
 <span class="sd">                Example --</span>
 
 <span class="sd">                    [{&#39;ruleEnabled&#39;: True,</span>
+<span class="sd">                      &#39;doNotSubmitJob&#39;: False,</span>
 <span class="sd">                      &#39;endDate&#39;: 0,</span>
 <span class="sd">                      &#39;level&#39;: 0,</span>
 <span class="sd">                      &#39;name&#39;: &#39;Rule1&#39;,</span>
@@ -574,6 +602,7 @@
 <span class="sd">                                  &#39;providerDomainName&#39;: &#39;&#39;},</span>
 <span class="sd">                      &#39;dayTime&#39;: [{&#39;startTime&#39;: 28800,</span>
 <span class="sd">                                   &#39;endTime&#39;: 64800,</span>
+<span class="sd">                                   &#39;weekOfTheMonth&#39;: [&#39;first&#39;,&#39;third&#39;],</span>
 <span class="sd">                                   &#39;dayOfWeek&#39;: [&#39;sunday&#39;,&#39;monday&#39;]}]}</span>
 <span class="sd">                    ]</span>
 
@@ -593,17 +622,22 @@
                 <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">list_of_rules</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operationWindow&quot;</span><span class="p">)</span>
-                    <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="n">wotm_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">WEEK_OF_THE_MONTH_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
                     <span class="k">if</span> <span class="n">list_of_rules</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">for</span> <span class="n">operation_rule</span> <span class="ow">in</span> <span class="n">list_of_rules</span><span class="p">:</span>
                             <span class="n">operations</span> <span class="o">=</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operations&quot;</span><span class="p">)</span>
+                            <span class="n">week_of_the_month</span> <span class="o">=</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayTime&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weekOfTheMonth&quot;</span><span class="p">)</span>
                             <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">operation_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayTime&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayOfWeek&quot;</span><span class="p">)</span>
                             <span class="k">if</span> <span class="n">operations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_reverse_mapping</span><span class="p">[</span><span class="n">operation</span><span class="p">]</span>
-                                                                <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
+                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;operations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_reverse_mapping</span><span class="p">[</span><span class="n">operation</span><span class="p">]</span> <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span>
+                                                                <span class="n">operations</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">week_of_the_month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;dayTime&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;weekOfTheMonth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">wotm_reverse_mapping</span><span class="p">[</span><span class="n">week</span><span class="p">]</span> <span class="k">for</span> <span class="n">week</span> <span class="ow">in</span>
+                                                                                  <span class="n">week_of_the_month</span><span class="p">]</span>
                             <span class="k">if</span> <span class="n">day_of_week</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;dayTime&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;dayOfWeek&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">[</span><span class="n">day</span><span class="p">]</span>
-                                                                             <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
+                                <span class="n">operation_rule</span><span class="p">[</span><span class="s2">&quot;dayTime&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;dayOfWeek&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">[</span><span class="n">day</span><span class="p">]</span> <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span>
+                                                                             <span class="n">day_of_week</span><span class="p">]</span>
                     <span class="k">return</span> <span class="n">list_of_rules</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;OperationWindow&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
@@ -655,7 +689,7 @@
 <div class="viewcode-block" id="OperationWindowDetails"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.operation_window.OperationWindowDetails">[docs]</a><span class="k">class</span> <span class="nc">OperationWindowDetails</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Helper class for modifying operation window&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">rule_id</span><span class="p">,</span> <span class="n">entity_details</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">rule_id</span><span class="p">,</span> <span class="n">entity_details</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the OperationWindowDetails class instance for</span>
 <span class="sd">           modifying OperationWindow.</span>
@@ -673,7 +707,7 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                object  -   instance of the OperationWindowDetails class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
+        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="kn">import</span> <span class="n">Commcell</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_entity_obj</span><span class="p">,</span> <span class="n">Commcell</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">generic_entity_obj</span>
         <span class="k">else</span><span class="p">:</span>
@@ -689,9 +723,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_week_of_the_month</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_day_of_week</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_not_submit_job</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroup_id</span> <span class="o">=</span> <span class="n">entity_details</span><span class="p">[</span><span class="s2">&quot;clientGroupId&quot;</span><span class="p">]</span>
@@ -731,6 +767,12 @@
 <span class="sd">                            OFFLINE_CONTENT_INDEXING/ONLINE_CONTENT_INDEXING/SRM/INFORMATION_MANAGEMENT/</span>
 <span class="sd">                            MEDIA_REFRESHING/DATA_ANALYTICS/DATA_PRUNING/BACKUP_COPY/CLEANUP_OPERATION</span>
 
+<span class="sd">                    week_of_the_month(list)     -- List of week of the month on which the operation rule applies to</span>
+<span class="sd">                        Acceptable Values:</span>
+<span class="sd">                            all/first/second/third/fourth/last</span>
+
+<span class="sd">                            default - None</span>
+
 <span class="sd">                    day_of_week (list)    -- List of days of the week on which the operation rule applies to</span>
 <span class="sd">                        Acceptable Values:</span>
 <span class="sd">                            sunday/ monday/ tuesday/ wednesday/ thursday/ friday/ saturday</span>
@@ -744,6 +786,8 @@
 <span class="sd">                    end_time    (int)     -- The end time for the &quot;do not run&quot; interval.</span>
 <span class="sd">                        Valid values are UNIX-style timestamps (seconds since January 1, 1970).</span>
 <span class="sd">                        default - 86400 (6 PM)</span>
+
+<span class="sd">                    do_not_submit_job   (bool)  -- doNotSubmitJob of the operation rule</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -761,7 +805,9 @@
         <span class="n">end_time</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="n">operations</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operations&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span><span class="p">)</span>
+        <span class="n">week_of_the_month</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;week_of_the_month&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">week_of_the_month</span><span class="p">)</span>
         <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;day_of_week&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">day_of_week</span><span class="p">)</span>
+        <span class="n">do_not_submit_job</span> <span class="o">=</span> <span class="n">modify_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;do_not_submit_job&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_not_submit_job</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">operations</span><span class="p">:</span>
             <span class="c1"># Empty list can be passed</span>
@@ -769,11 +815,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">operations_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">OPERATION_MAPPING</span><span class="p">[</span><span class="n">operation</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span> <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
 
+        <span class="n">week_of_the_month_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">WEEK_OF_THE_MONTH_MAPPING</span><span class="p">[</span><span class="n">week</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="k">for</span> <span class="n">week</span> <span class="ow">in</span> <span class="n">week_of_the_month</span><span class="p">]</span>
         <span class="n">day_of_week_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">day</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
 
         <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;operationWindow&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;ruleEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;doNotSubmitJob&quot;</span><span class="p">:</span> <span class="n">do_not_submit_job</span><span class="p">,</span>
                 <span class="s2">&quot;startDate&quot;</span><span class="p">:</span> <span class="n">start_date</span><span class="p">,</span>
                 <span class="s2">&quot;endDate&quot;</span><span class="p">:</span> <span class="n">end_date</span><span class="p">,</span>
                 <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
@@ -782,6 +830,7 @@
                 <span class="s2">&quot;dayTime&quot;</span><span class="p">:</span> <span class="p">[{</span>
                     <span class="s2">&quot;startTime&quot;</span><span class="p">:</span> <span class="n">start_time</span><span class="p">,</span>
                     <span class="s2">&quot;endTime&quot;</span><span class="p">:</span> <span class="n">end_time</span><span class="p">,</span>
+                    <span class="s2">&quot;weekOfTheMonth&quot;</span><span class="p">:</span> <span class="n">week_of_the_month_list</span><span class="p">,</span>
                     <span class="s2">&quot;dayOfWeek&quot;</span><span class="p">:</span> <span class="n">day_of_week_list</span>
                 <span class="p">}]</span>
             <span class="p">},</span>
@@ -824,12 +873,16 @@
             <span class="n">error_code</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">response_json</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operationWindow&#39;</span><span class="p">,</span> <span class="p">{})[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_do_not_submit_job</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;doNotSubmitJob&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_start_date</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;startDate&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_end_date</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;endDate&#39;</span><span class="p">)</span>
                 <span class="n">operations</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;operations&#39;</span><span class="p">)</span>
-                <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">operation_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPERATION_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span> <span class="o">=</span> <span class="p">[</span><span class="n">operation_reverse_mapping</span><span class="p">[</span><span class="n">operation</span><span class="p">]</span> <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">operations</span><span class="p">]</span>
+                <span class="n">week_of_the_month</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayTime&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weekOfTheMonth&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="n">wotm_reverse_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">WEEK_OF_THE_MONTH_MAPPING</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_week_of_the_month</span> <span class="o">=</span> <span class="p">[</span><span class="n">wotm_reverse_mapping</span><span class="p">[</span><span class="n">week</span><span class="p">]</span> <span class="k">for</span> <span class="n">week</span> <span class="ow">in</span> <span class="n">week_of_the_month</span><span class="p">]</span>
                 <span class="n">day_of_week</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayTime&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayOfWeek&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_day_of_week</span> <span class="o">=</span> <span class="p">[</span><span class="n">DAY_OF_WEEK_MAPPING</span><span class="p">[</span><span class="n">day</span><span class="p">]</span> <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_of_week</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dayTime&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;startTime&#39;</span><span class="p">)</span>
@@ -839,6 +892,19 @@
                                    <span class="n">response_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">do_not_submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats do_not_submit_job as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_not_submit_job</span>
+
+    <span class="nd">@do_not_submit_job</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">do_not_submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do_not_submit_job</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies do_not_submit_job of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">             do_not_submit_job: (bool) -- do_not_submit_job of the operation rule to be modified&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">do_not_submit_job</span><span class="o">=</span><span class="n">do_not_submit_job</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -908,6 +974,23 @@
 <span class="sd">        Returns: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">operations</span><span class="o">=</span><span class="n">operations</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">week_of_the_month</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats week_of_the_month as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_week_of_the_month</span>
+
+    <span class="nd">@week_of_the_month</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">week_of_the_month</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">week_of_the_month</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the week_of_the_month of the operation rule</span>
+<span class="sd">        Args:</span>
+<span class="sd">            week_of_the_month: (list)         --   List of week of the month on which the operation rule applies to</span>
+<span class="sd">                     Acceptable Values:</span>
+<span class="sd">                            all/first/second/third/fourth/fifth</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modify_operation_window</span><span class="p">(</span><span class="n">week_of_the_month</span><span class="o">=</span><span class="n">week_of_the_month</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">day_of_week</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

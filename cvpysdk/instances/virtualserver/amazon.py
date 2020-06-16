@@ -96,23 +96,23 @@ class AmazonInstance(VirtualServerInstance):
         """"
         Initializes the properties if the client is Tenant
         """
-        if 'virtualServerInstance' in self._properties.keys() \
-                and 'enableAdminAccount' in self._properties['virtualServerInstance']['amazonInstanceInfo'].keys():
-            admin_ins_id = self._properties['virtualServerInstance']['amazonInstanceInfo']['adminInstanceId']
-            _instance = self._services['INSTANCE'] % (admin_ins_id)
-            flag, response = self._cvpysdk_object.make_request('GET', _instance)
-
-            if flag:
-                if response.json() and "instanceProperties" in response.json():
-                    self._admin_properties = response.json()["instanceProperties"][0]
-                    if 'virtualServerInstance' in self._admin_properties:
-                        self._asscociatedclients = None
-                        self._properties['virtualServerInstance']['associatedClients'] =\
-                            self._admin_properties['virtualServerInstance']['associatedClients']
-                        self._virtualserverinstance = self._properties["virtualServerInstance"]
-                        self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
-                        self._asscociatedclients = self._virtualserverinstance['associatedClients']
-                else:
-                    raise SDKException('Response', '102')
-            else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+        if 'virtualServerInstance' in self._properties.keys():
+            if 'enableAdminAccount' in self._properties['virtualServerInstance']['amazonInstanceInfo']:
+                if self._properties['virtualServerInstance']['amazonInstanceInfo']['enableAdminAccount']:
+                    admin_ins_id = self._properties['virtualServerInstance']['amazonInstanceInfo']['adminInstanceId']
+                    _instance = self._services['INSTANCE'] % (admin_ins_id)
+                    flag, response = self._cvpysdk_object.make_request('GET', _instance)
+                    if flag:
+                        if response.json() and "instanceProperties" in response.json():
+                            self._admin_properties = response.json()["instanceProperties"][0]
+                            if 'virtualServerInstance' in self._admin_properties:
+                                self._asscociatedclients = None
+                                self._properties['virtualServerInstance']['associatedClients'] =\
+                                    self._admin_properties['virtualServerInstance']['associatedClients']
+                                self._virtualserverinstance = self._properties["virtualServerInstance"]
+                                self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
+                                self._asscociatedclients = self._virtualserverinstance['associatedClients']
+                        else:
+                            raise SDKException('Response', '102')
+                    else:
+                        raise SDKException('Response', '101', self._update_response_(response.text))

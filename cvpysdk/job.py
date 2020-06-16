@@ -2060,7 +2060,7 @@ class Job(object):
         )
 
     def _wait_for_status(self, status):
-        """Waits for 2 minutes or till the job status is changed to given status,
+        """Waits for 6 minutes or till the job status is changed to given status,
             whichever is earlier.
 
             Args:
@@ -2073,7 +2073,7 @@ class Job(object):
         start_time = time.time()
 
         while self.status.lower() != status.lower():
-            if (self.is_finished is True) or (time.time() - start_time > 120):
+            if (self.is_finished is True) or (time.time() - start_time > 360):
                 break
 
             time.sleep(3)
@@ -2217,6 +2217,16 @@ class Job(object):
     def start_time(self):
         """Treats the start time as a read-only attribute."""
         return self._start_time
+    
+    @property
+    def start_timestamp(self):
+        """Treats the unix start time as a read-only attribute."""
+        return self._summary['jobStartTime']
+
+    @property
+    def end_timestamp(self):
+        """Treats the unix end time as a read-only attribute"""
+        return self._summary['jobEndTime']
 
     @property
     def end_time(self):

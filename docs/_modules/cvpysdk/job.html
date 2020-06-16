@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.job &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.job &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -417,24 +417,22 @@
 
 <span class="sd">    disable()                       --  Disable an error rule for a specific iDA using _modify_job_status_on_errors.</span>
 
-<span class="sd">    _modify_job_status_on_errors()  --  To enable or disable job status on errors.</span>
-
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">AdvancedJobDetailType</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">AdvancedJobDetailType</span><span class="p">,</span> <span class="n">ApplicationGroup</span>
 
 
 <div class="viewcode-block" id="JobController"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobController">[docs]</a><span class="k">class</span> <span class="nc">JobController</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for controlling all the jobs associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize instance of the JobController class to get the details of Commcell Jobs.</span>
 
 <span class="sd">            Args:</span>
@@ -450,7 +448,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all active jobs on this commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -477,7 +475,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the JobController class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;JobController class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -993,7 +991,7 @@
 <div class="viewcode-block" id="JobManagement"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement">[docs]</a><span class="k">class</span> <span class="nc">JobManagement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing job management operations. &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize instance of JobManagement class for performing operations on jon management settings.</span>
 
@@ -2021,7 +2019,7 @@
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing client operations for a specific client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Job class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -2082,7 +2080,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
 
 <span class="sd">            Returns:</span>
@@ -2205,7 +2203,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_wait_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Waits for 2 minutes or till the job status is changed to given status,</span>
+        <span class="sd">&quot;&quot;&quot;Waits for 6 minutes or till the job status is changed to given status,</span>
 <span class="sd">            whichever is earlier.</span>
 
 <span class="sd">            Args:</span>
@@ -2218,7 +2216,7 @@
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="mi">120</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="mi">360</span><span class="p">):</span>
                 <span class="k">break</span>
 
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -2362,6 +2360,16 @@
     <span class="k">def</span> <span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the start time as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the unix start time as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;jobStartTime&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the unix end time as a read-only attribute&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_summary</span><span class="p">[</span><span class="s1">&#39;jobEndTime&#39;</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2617,8 +2625,7 @@
 <span class="k">class</span> <span class="nc">_ErrorRule</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for enabling, disabling, adding, getting and deleting error rules.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
-        <span class="c1">#</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xml_body</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -2656,13 +2663,14 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_rule_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span>
-                                          <span class="n">all_error_codes</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span>
-                                          <span class="n">from_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span>
-                                          <span class="n">to_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span>
-                                          <span class="n">job_decision</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span>
-                                          <span class="n">is_enabled</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span>
-                                          <span class="n">skip_reporting_error</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_rule_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">pattern</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span>
+            <span class="n">all_error_codes</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span>
+            <span class="n">from_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span>
+            <span class="n">to_error_code</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span>
+            <span class="n">job_decision</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span>
+            <span class="n">is_enabled</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span>
+            <span class="n">skip_reporting_error</span><span class="o">=</span><span class="n">rule_dict</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">add_error_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_arg</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2672,8 +2680,7 @@
 <span class="sd">            Args:</span>
 <span class="sd">                rules_arg   (dict)  --  A dictionary whose key is the application group name and value is a rules list.</span>
 
-<span class="sd">                    Supported value(s) for key is</span>
-<span class="sd">                        APPGRP_WindowsFileSystemIDA for Windows</span>
+<span class="sd">                    Supported value(s) for key is all constants under ApplicationGroup(Enum)</span>
 
 <span class="sd">                    The value for above key is a list</span>
 <span class="sd">                    where each item of the list is a dictionary of the following key value pairs.</span>
@@ -2694,17 +2701,17 @@
 
 <span class="sd">                    Example:</span>
 <span class="sd">                            {</span>
-<span class="sd">                             APPGRP_WindowsFileSystemIDA : { &#39;rule_1&#39;: { &#39;appGroupName&#39;: APPGRP_WindowsFileSystemIDA,</span>
-<span class="sd">                                                                        &#39;pattern&#39;: &quot;*&quot;,</span>
-<span class="sd">                                                                        &#39;all_error_codes&#39;: False,</span>
-<span class="sd">                                                                        &#39;from_error_code&#39;: 1,</span>
-<span class="sd">                                                                        &#39;to_error_code&#39;: 2,</span>
-<span class="sd">                                                                        &#39;job_decision&#39;: 0,</span>
-<span class="sd">                                                                        &#39;is_enabled&#39;: True,</span>
-<span class="sd">                                                                        &#39;skip_reporting_error&#39;: False</span>
-<span class="sd">                                                                        },</span>
-<span class="sd">                                                             &#39;rule_2&#39; : { ......}</span>
-<span class="sd">                                                            }</span>
+<span class="sd">                             WINDOWS : { &#39;rule_1&#39;: { &#39;appGroupName&#39;: WINDOWS,</span>
+<span class="sd">                                                     &#39;pattern&#39;: &quot;*&quot;,</span>
+<span class="sd">                                                     &#39;all_error_codes&#39;: False,</span>
+<span class="sd">                                                     &#39;from_error_code&#39;: 1,</span>
+<span class="sd">                                                     &#39;to_error_code&#39;: 2,</span>
+<span class="sd">                                                     &#39;job_decision&#39;: 0,</span>
+<span class="sd">                                                     &#39;is_enabled&#39;: True,</span>
+<span class="sd">                                                     &#39;skip_reporting_error&#39;: False</span>
+<span class="sd">                                                   },</span>
+<span class="sd">                                         &#39;rule_2&#39; : { ......}</span>
+<span class="sd">                                       }</span>
 <span class="sd">                            }</span>
 
 <span class="sd">            Returns:</span>
@@ -2718,15 +2725,22 @@
         <span class="n">old_values</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">app_group</span><span class="p">,</span> <span class="n">rules_dict</span> <span class="ow">in</span> <span class="n">rules_arg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">app_group</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ApplicationGroup</span><span class="p">])</span>
+
+            <span class="c1"># FETCH ALL EXISTING RULES ON THE COMMCELL FOR THE APPLICATION</span>
+            <span class="c1"># GROUP IN QUESTION</span>
             <span class="n">existing_error_rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_error_rules</span><span class="p">(</span><span class="n">app_group</span><span class="p">)</span>
+
             <span class="k">for</span> <span class="n">rule_name</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">rules_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">assert</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="ow">and</span>
-                        <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;Invalid key value pairs provided.&quot;</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;all_error_codes&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;skip_reporting_error&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;from_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;to_error_code&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                        <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;job_decision&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+                            <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                                <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;is_enabled&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;Invalid key value pairs provided.&quot;</span>
 
                 <span class="n">rule_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">rule</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;appGroupName&#39;</span><span class="p">}</span>
 
@@ -2861,9 +2875,9 @@
 
         <span class="n">rule_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">xml_body</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        &lt;App_GetJobErrorDecisionReq&gt;</span>
-<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{self.commcell.commcell_id}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{self.commcell.commserv_name}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commcell_id</span><span class="si">}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span><span class="si">}</span><span class="s2">&quot;/&gt;</span>
 <span class="s2">        &lt;/App_GetJobErrorDecisionReq&gt;&quot;&quot;&quot;</span>
 
         <span class="n">xml_body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xml_body</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
@@ -2877,7 +2891,7 @@
                 <span class="k">if</span> <span class="n">ida_rule_list</span><span class="p">[</span><span class="s1">&#39;ida&#39;</span><span class="p">][</span><span class="s1">&#39;appGroupName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">app_group</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">rule_list</span> <span class="o">=</span> <span class="n">ida_rule_list</span><span class="p">[</span><span class="s1">&#39;ruleList&#39;</span><span class="p">][</span><span class="s1">&#39;ruleList&#39;</span><span class="p">]</span>
-                    <span class="k">except</span><span class="p">:</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="k">pass</span>
 
         <span class="k">return</span> <span class="n">rule_list</span>

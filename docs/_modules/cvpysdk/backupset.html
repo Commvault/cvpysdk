@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -195,6 +195,8 @@
 <span class="sd">    _process_add_response()         -- to process the add backupset request using API call</span>
 
 <span class="sd">    add(backupset_name)             -- adds a new backupset to the agent of the specified client</span>
+<span class="sd">    </span>
+<span class="sd">    add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client</span>
 
 <span class="sd">    add_salesforce_backupset()      -- adds a new salesforce backupset</span>
 
@@ -269,25 +271,25 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="kn">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Backupsets"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets">[docs]</a><span class="k">class</span> <span class="nc">Backupsets</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the backupsets associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Backupsets class.</span>
 
 <span class="sd">            Args:</span>
@@ -301,8 +303,8 @@
 <span class="sd">                    if class object is not an instance of the Agent / Instance class</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
-        <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
+        <span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+        <span class="kn">from</span> <span class="nn">.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -324,14 +326,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_BACKUPSETS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_BACKUPSETS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">.backupsets.fsbackupset</span> <span class="k">import</span> <span class="n">FSBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.nasbackupset</span> <span class="k">import</span> <span class="n">NASBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.hanabackupset</span> <span class="k">import</span> <span class="n">HANABackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.cabackupset</span> <span class="k">import</span> <span class="n">CloudAppsBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.postgresbackupset</span> <span class="k">import</span> <span class="n">PostgresBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.adbackupset</span> <span class="k">import</span> <span class="n">ADBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.db2backupset</span> <span class="k">import</span> <span class="n">DB2Backupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.vsbackupset</span> <span class="k">import</span> <span class="n">VSBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.fsbackupset</span> <span class="kn">import</span> <span class="n">FSBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.nasbackupset</span> <span class="kn">import</span> <span class="n">NASBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.hanabackupset</span> <span class="kn">import</span> <span class="n">HANABackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.cabackupset</span> <span class="kn">import</span> <span class="n">CloudAppsBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.postgresbackupset</span> <span class="kn">import</span> <span class="n">PostgresBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.adbackupset</span> <span class="kn">import</span> <span class="n">ADBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.db2backupset</span> <span class="kn">import</span> <span class="n">DB2Backupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.vsbackupset</span> <span class="kn">import</span> <span class="n">VSBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.aadbackupset</span> <span class="kn">import</span> <span class="n">AzureAdBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.sharepointbackupset</span> <span class="kn">import</span> <span class="n">SharepointBackupset</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;file system&#39;</span><span class="p">:</span> <span class="n">FSBackupset</span><span class="p">,</span>
@@ -342,7 +346,9 @@
             <span class="s1">&#39;postgresql&#39;</span><span class="p">:</span> <span class="n">PostgresBackupset</span><span class="p">,</span>
             <span class="s2">&quot;active directory&quot;</span> <span class="p">:</span> <span class="n">ADBackupset</span><span class="p">,</span>
             <span class="s1">&#39;db2&#39;</span><span class="p">:</span> <span class="n">DB2Backupset</span><span class="p">,</span>
-            <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VSBackupset</span>
+            <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="n">VSBackupset</span><span class="p">,</span>
+            <span class="s2">&quot;azure ad&quot;</span> <span class="p">:</span> <span class="n">AzureAdBackupset</span><span class="p">,</span>
+            <span class="s1">&#39;sharepoint server&#39;</span><span class="p">:</span> <span class="n">SharepointBackupset</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cloud apps&#39;</span><span class="p">,</span> <span class="s1">&#39;sql server&#39;</span><span class="p">,</span> <span class="s1">&#39;sap hana&#39;</span><span class="p">]:</span>
@@ -352,7 +358,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all backupsets of the agent of a client.</span>
 
 <span class="sd">            Returns:</span>
@@ -374,15 +380,15 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Backupsets class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Backupsets class instance for Agent: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the backupsets for the selected Agent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the backupset for the given backupset ID or</span>
 <span class="sd">            the details of the backupset for given backupset Name.</span>
 
@@ -701,6 +707,120 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
+
+
+<div class="viewcode-block" id="Backupsets.add_archiveset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets.add_archiveset">[docs]</a>    <span class="k">def</span> <span class="nf">add_archiveset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveset_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Adds a new archiveset to the agent. It is just a backupset but is mainly used for archive only items</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            archiveset_name     (str) -- name of new archiveset to add</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">        object - instance of the Backupset class, if created successfully</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if type of the archiveset name argument is not string</span>
+
+<span class="sd">                if failed to create a archiveset</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+
+<span class="sd">                if archiveset with same name already exists</span>
+<span class="sd">                </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">archiveset_name</span> <span class="o">=</span> <span class="n">archiveset_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;archiveset_name&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Archiveset &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">))</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;backupSetInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;useContentFromPlan&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;planEntity&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s2">&quot;commonBackupSet&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;isArchivingEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;isDefaultBackupSet&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;backupSetEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                    <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="n">archiveset_name</span><span class="p">,</span>
+                    <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subClientList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;fsSubClientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;useGlobalFilters&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                            <span class="s2">&quot;forcedArchiving&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;diskCleanupRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;enableArchivingWithRules&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                <span class="s2">&quot;diskCleanupFileTypes&quot;</span><span class="p">:</span> <span class="p">{}</span>
+                            <span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_BACKUPSET&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response_value</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="kc">None</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;errorString&#39;</span> <span class="ow">in</span> <span class="n">response_value</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response_value</span><span class="p">[</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create new Archiveset</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_message</span>
+                        <span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Archiveset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+                            <span class="c1"># initialize the backupsets again</span>
+                            <span class="c1"># so the backupsets object has all the backupsets</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">)</span>
+                        
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Failed to create new Archiveset with error code: &quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                                     <span class="s1">&#39;Please check the documentation for &#39;</span>
+                                     <span class="s1">&#39;more details on the error&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span>
+
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create new Archiveset</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">error_message</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+
 <div class="viewcode-block" id="Backupsets.add_salesforce_backupset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets.add_salesforce_backupset">[docs]</a>    <span class="k">def</span> <span class="nf">add_salesforce_backupset</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">salesforce_options</span><span class="p">,</span>
@@ -931,7 +1051,7 @@
 <div class="viewcode-block" id="Backupset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset">[docs]</a><span class="k">class</span> <span class="nc">Backupset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing backupset operations for a specific backupset.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">backupset_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">backupset_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the backupset object.</span>
 
 <span class="sd">            Args:</span>
@@ -1025,7 +1145,7 @@
             <span class="s1">&#39;_raw_response&#39;</span><span class="p">:</span> <span class="kc">False</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the persistent attributes&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
@@ -1034,7 +1154,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Backupset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Backupset class instance for Backupset: &quot;</span><span class="si">{0}</span><span class="s1">&quot; &#39;</span>
                                  <span class="s1">&#39;for Instance: &quot;</span><span class="si">{1}</span><span class="s1">&quot; of Agent: &quot;</span><span class="si">{2}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
@@ -1088,6 +1208,8 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;planEntity&quot;</span><span class="p">][</span><span class="s2">&quot;planName&quot;</span><span class="p">]</span>
                     <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1293,7 +1415,8 @@
         <span class="c1"># if agent is not added in the dict, default value 2 will be used</span>
         <span class="n">browse_mode</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;virtual server&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-            <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="mi">3</span>
+            <span class="s1">&#39;cloud apps&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s1">&#39;azure ad&#39;</span> <span class="p">:</span> <span class="mi">3</span>						  
         <span class="p">}</span>
 
         <span class="n">mode</span> <span class="o">=</span> <span class="mi">2</span>
@@ -1761,22 +1884,33 @@
     <span class="k">def</span> <span class="nf">plan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Associates the plan to the backupset</span>
 
+<span class="sd">            Args:</span>
+<span class="sd">                value   (object)    --  the Plan object which is to be associated</span>
+<span class="sd">                                        with the backupset</span>
+<span class="sd">                </span>
+<span class="sd">                value   (str)       --  name of the plan which is to be associated</span>
+<span class="sd">                                        with the backupset</span>
+
+<span class="sd">                value   (None)      --  set value to None to remove plan associations</span>
+
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 
-<span class="sd">                    if input value is not an instance of Plan class</span>
-
 <span class="sd">                    if plan does not exist</span>
 
-<span class="sd">                    if plan associateion fails</span>
+<span class="sd">                    if plan association fails</span>
 
 <span class="sd">                    if plan is not eligible to be associated</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.plan</span> <span class="k">import</span> <span class="n">Plan</span>
+        <span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plan</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Plan</span><span class="p">):</span>
             <span class="n">plan_obj</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="n">plan_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plan_obj</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;planName&#39;</span><span class="p">:</span> <span class="kc">None</span>
+            <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Input value is not of supported type&#39;</span><span class="p">)</span>
 
@@ -1786,7 +1920,7 @@
             <span class="s1">&#39;appId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">),</span>
             <span class="s1">&#39;backupsetId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">)</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_name</span> <span class="ow">in</span> <span class="n">plans_obj</span><span class="o">.</span><span class="n">get_eligible_plans</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_name</span> <span class="ow">in</span> <span class="n">plans_obj</span><span class="o">.</span><span class="n">get_eligible_plans</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">):</span>
             <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;backupsetProperties&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;planEntity&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -1805,8 +1939,25 @@
 
             <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="k">return</span>
-            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to asspciate plan to the backupset</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to asspciate plan to the backupset</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;backupsetProperties&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;removePlanAssociation&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_update_reponse</span><span class="p">(</span>
+                <span class="n">request_json</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to dissociate plan from backupset</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Backupset&#39;</span><span class="p">,</span>

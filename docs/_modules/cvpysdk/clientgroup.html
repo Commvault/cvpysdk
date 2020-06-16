@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.clientgroup &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -192,7 +192,9 @@
 <span class="sd">    create_smart_rule()        -- Create rules required for smart client group creation</span>
 <span class="sd">    based on input parameters</span>
 
-<span class="sd">    merge_smart_rules()       -- Merge multiple rules into (SCG) rule to create smart client group</span>
+<span class="sd">    merge_smart_rules()        -- Merge multiple rules into (SCG) rule to create smart client group</span>
+
+<span class="sd">    _create_scope_dict()       -- Creates Scope Dictionary needed for Smart Client group association</span>
 
 <span class="sd">    add(clientgroup_name)      -- adds a new client group to the commcell</span>
 
@@ -271,24 +273,24 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
-<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="k">import</span> <span class="n">NetworkThrottle</span>
-<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.network</span> <span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="kn">import</span> <span class="n">NetworkThrottle</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="kn">import</span> <span class="n">Install</span>
 
 
 <div class="viewcode-block" id="ClientGroups"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups">[docs]</a><span class="k">class</span> <span class="nc">ClientGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the clientgroups associated with a Commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the ClientGroups class.</span>
 
 <span class="sd">            Args:</span>
@@ -303,7 +305,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_clientgroups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all clientgroups of the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -317,7 +319,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the ClientGroups class.</span>
 
 <span class="sd">            Returns:</span>
@@ -327,11 +329,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the client groups associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_clientgroups</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the client group for the given client group ID or</span>
 <span class="sd">            the details of the client group for given client group Name.</span>
 
@@ -687,6 +689,50 @@
         <span class="n">scg_rule</span><span class="p">[</span><span class="s2">&quot;rules&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rules_dict</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scg_rule</span></div>
 
+    <span class="k">def</span> <span class="nf">_create_scope_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_scope</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates required dictionary for given client scope</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value (string)  --  Value to be selected for the client scope dropdown</span>
+<span class="sd">                client_scope (string) -- Value of the client scope</span>
+
+<span class="sd">            Accepted Values (client_scope) --</span>
+<span class="sd">                Clients in this Commcell</span>
+<span class="sd">                Clients of Companies</span>
+<span class="sd">                Clients of User</span>
+<span class="sd">                Clients of User Groups</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dictionary - Client Scope data required for the smart client group</span>
+
+<span class="sd">            NOTE : Value is not required for client scope = &quot;Clients in this Commcell&quot;</span>
+<span class="sd">            For this, value is automatically set to the Commserve Name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scgscope</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">client_scope</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;clients in this commcell&#39;</span><span class="p">:</span>
+            <span class="n">scgscope</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;commCellName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">client_scope</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;clients of companies&#39;</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scgscope</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;providerDomainName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">61</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">client_scope</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;clients of user&#39;</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scgscope</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">13</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">client_scope</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;clients of user group&#39;</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scgscope</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;userGroupName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">15</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="n">scgscope</span>
+
 <div class="viewcode-block" id="ClientGroups.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroups.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clients</span><span class="o">=</span><span class="p">[],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Client Group to the Commcell.</span>
 
@@ -715,6 +761,10 @@
 <span class="sd">                                                                default: True</span>
 <span class="sd">                    scg_rule                (dict)       --  scg_rule required to create smart</span>
 <span class="sd">                                                                client group</span>
+
+<span class="sd">                    client_scope            (str)        --  Client scope for the Smart Client Group</span>
+
+<span class="sd">                    client_scope_value      (str)        --  Client scope value for a particular scope</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the ClientGroup class created by this method</span>
@@ -758,7 +808,30 @@
                     <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientgroup_description&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
                     <span class="s2">&quot;isSmartClientGroup&quot;</span><span class="p">:</span> <span class="n">smart_client_group</span><span class="p">,</span>
                     <span class="s2">&quot;scgRule&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scg_rule&#39;</span><span class="p">),</span>
-                    <span class="s2">&quot;clientGroupActivityControl&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="n">clientgroup_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;associatedClients&quot;</span><span class="p">:</span> <span class="n">clients_list</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">scg_scope</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Check if value is there or not</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;clients in this commcell&quot;</span><span class="p">:</span>
+                    <span class="n">scg_scope</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_scope_dict</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope&quot;</span><span class="p">))]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope_value&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">scg_scope</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_scope_dict</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope&quot;</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope_value&quot;</span><span class="p">))]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ClientGroup&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                           <span class="s2">&quot;Client Scope </span><span class="si">{0}</span><span class="s2"> requires a value&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_scope&quot;</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="n">scg_scope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;clientGroupDetail&quot;</span><span class="p">][</span><span class="s2">&quot;scgScope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scg_scope</span>
+
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_backup&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_data_aging&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_restore&quot;</span><span class="p">):</span>
+                <span class="n">client_group_activity_control</span> <span class="o">=</span> <span class="p">{</span>
                         <span class="s2">&quot;activityControlOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
                             <span class="p">{</span>
                                 <span class="s2">&quot;activityType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
@@ -774,13 +847,8 @@
                                 <span class="s2">&quot;enableActivityType&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enable_restore&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
                             <span class="p">}</span>
                         <span class="p">]</span>
-                    <span class="p">},</span>
-                    <span class="s2">&quot;clientGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="n">clientgroup_name</span>
-                    <span class="p">},</span>
-                    <span class="s2">&quot;associatedClients&quot;</span><span class="p">:</span> <span class="n">clients_list</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;clientGroupDetail&quot;</span><span class="p">][</span><span class="s2">&quot;clientGroupActivityControl&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_group_activity_control</span>
 
             <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENTGROUPS</span><span class="p">,</span> <span class="n">request_json</span>
@@ -916,7 +984,7 @@
 <div class="viewcode-block" id="ClientGroup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.clientgroup.ClientGroup">[docs]</a><span class="k">class</span> <span class="nc">ClientGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations for a specific ClientGroup.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clientgroup_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">clientgroup_name</span><span class="p">,</span> <span class="n">clientgroup_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the ClientGroup class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -955,7 +1023,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
 
 <span class="sd">            Returns:</span>

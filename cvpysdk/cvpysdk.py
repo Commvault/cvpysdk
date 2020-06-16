@@ -155,7 +155,8 @@ class CVPySDK(object):
                 "mode": 4,
                 "username": self._commcell_object._user,
                 "password": self._commcell_object._password,
-                "deviceId": self._commcell_object.device_id
+                "deviceId": self._commcell_object.device_id,
+                "clientType": 16,
             }
 
             flag, response = self.make_request(
@@ -401,7 +402,8 @@ class CVPySDK(object):
                         # pass silently if payload is alredy encoded in bytes
                         pass
 
-                    if 'Content-type' in headers:
+                    if 'Content-type' in headers and headers['Content-type'] not in [
+                            'application/x-www-form-urlencoded']:
                         try:
                             if payload is not None:
                                 xmltodict.parse(payload)

@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.index_pools &mdash; Developer SDK - Python 11.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.index_pools</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.index_pools</h1><div class="highlight"><pre>
+<span></span><span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for performing index pool related operations on the commcell</span>
+
+<span class="sd">IndexPools and IndexPool are 2 classes defined in this file</span>
+
+<span class="sd">IndexPools:   Class for representing all the index pools associated with the commcell</span>
+
+<span class="sd">IndexPool:    Class for a instance of a single index pool of the commcell</span>
+
+
+<span class="sd">IndexPools</span>
+<span class="sd">============</span>
+
+<span class="sd">    __init__()                          --  initialize object of IndexPools class associated with</span>
+<span class="sd">    the commcell</span>
+
+<span class="sd">    __str()                             --  returns all the Index pools of the commcell</span>
+
+<span class="sd">    __repr__()                          --  returns the string to represent the instance</span>
+
+<span class="sd">    __getitem__()                       --  returns the details of index pool for given pool name</span>
+
+<span class="sd">    _get_all_index_pools()              --  gets detail of all index pools using REST API call</span>
+
+<span class="sd">    _response_not_success()             --  raise exception when response is not 200</span>
+
+<span class="sd">    get()                               --  return an IndexPool object for given pool name</span>
+
+<span class="sd">    has_pool()                          --  returns whether the index pool is present or not in</span>
+<span class="sd">    the commcell</span>
+
+<span class="sd">    add()                            --  creates a new Index pool to the commcell</span>
+
+<span class="sd">    delete()                            --  deletes the index pool associated to commcell</span>
+
+<span class="sd">    refresh()                           --  refresh the index pools details associated with commcell</span>
+
+<span class="sd">IndexPools Attributes</span>
+<span class="sd">-----------------------</span>
+
+<span class="sd">    **all_index_pools**                 --  returns the dictionary consisting of all the index</span>
+<span class="sd">    pools associated with the commcell and there details</span>
+
+
+<span class="sd">IndexPool</span>
+<span class="sd">=========</span>
+
+<span class="sd">    __init__()                          --  initialize object of IndexPool class</span>
+
+<span class="sd">    __repr__()                          --  returns the string to represent the instance</span>
+
+<span class="sd">    _response_not_success()             --  raise exception when response is not 200</span>
+
+<span class="sd">    modify_node()                       --  modify/add a node to the index pool</span>
+
+<span class="sd">    node_info()                         --  returns a dict consisting details of node present in the pool</span>
+
+<span class="sd">    refresh()                           --  refresh the index pool details associated with commcell</span>
+
+<span class="sd">IndexPool Attributes</span>
+<span class="sd">----------------------</span>
+
+<span class="sd">    **pool_id**                         --  returns the pseudo client id for index pool cloud</span>
+
+<span class="sd">    **cloud_id**                        --  returns the cloud id for index pool</span>
+
+<span class="sd">    **node_names**                      --  returns a list of names of all the nodes present in pool</span>
+
+<span class="sd">    **hac_cluster**                     --  returns the hac cluster name</span>
+
+<span class="sd">    **pool_name**                       --  returns the client name for index pool</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">IndexServerConstants</span>
+
+
+<div class="viewcode-block" id="IndexPools"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools">[docs]</a><span class="k">class</span> <span class="nc">IndexPools</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the Index pools associated with the commcell&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the IndexPools class</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of IndexPools class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_pools</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all Index pools of the commcell.</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    str - string of all the index pools associated with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Index pool Name&#39;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">pool_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">:</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">index</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">representation_string</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the IndexPools class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;IndexPools class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the details of index pool for given index pool name</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str)       --  name of index pool</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   details of the index pool</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                Index pool not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;pool_name&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s2">&quot;pool_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">[</span><span class="n">value</span><span class="p">]}</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_all_index_pools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to get details of all the index pools present in commcell</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Response was not success</span>
+
+<span class="sd">                    Response was empty</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_CLIENTS&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;clientProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;clientProperties&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">][</span><span class="s1">&#39;clusterType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">14</span><span class="p">:</span>
+                        <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                        <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">])</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_pools</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_id</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to raise exception when response is not 200 (ok)</span>
+<span class="sd">            Args:</span>
+<span class="sd">                response    (object)    -   response object</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="IndexPools.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes the properties of IndexPools class&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_pools</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_index_pools</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_index_pools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a dict consisting details of all index pools</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting details for all index pools</span>
+<span class="sd">                Sample:</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &lt;pool_name_1&gt; : &lt;pool_id_1&gt;,</span>
+<span class="sd">                        &lt;pool_name_2&gt; : &lt;pool_id_2&gt;</span>
+<span class="sd">                    }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_pools</span>
+
+<div class="viewcode-block" id="IndexPools.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the IndexPool class object with given pool_name</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pool_name       (int/str)       --  Index pool name present in commcell</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -   instance of IndexPool class</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKExecption:</span>
+<span class="sd">                Data type of the input(s) is not valid</span>
+
+<span class="sd">                Index pool not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pool_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index_pool_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">[</span><span class="n">index_pool_name</span><span class="p">]</span> <span class="o">==</span> <span class="n">pool_name</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">IndexPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">index_pool_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pool_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">IndexPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">pool_name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexPools.has_pool"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools.has_pool">[docs]</a>    <span class="k">def</span> <span class="nf">has_pool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns whether a index pool is present in the commcell or not</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pool_name       (str)       --  Index pool name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool    -   True if index pool with given pool_name is present else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pool_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_index_pools</span></div>
+
+<div class="viewcode-block" id="IndexPools.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">,</span> <span class="n">node_names</span><span class="p">,</span> <span class="n">hac_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new Index pool within the commcell</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pool_name       (str)   --  Name for the index pool</span>
+<span class="sd">            node_names      (list)  --  List of strings of all the index pool node names</span>
+<span class="sd">            hac_name        (str)   --  Name of the HAC cluster to be used while creating pool</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKExecption:</span>
+<span class="sd">                Data type of the input(s) is not valid.</span>
+
+<span class="sd">                Response was not success.</span>
+
+<span class="sd">                Response was empty.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -   Returns a object of class IndexPool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hac_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudInfo&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudMetaInfos&#39;</span><span class="p">]</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;cloudName&quot;</span><span class="p">:</span> <span class="n">pool_name</span><span class="p">,</span>
+            <span class="s2">&quot;cloudDisplayName&quot;</span><span class="p">:</span> <span class="n">pool_name</span>
+        <span class="p">}</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudPoolInfo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;zookerEntity&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
+                <span class="s2">&quot;clientGroupId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">hac_clusters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hac_name</span><span class="p">)</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">),</span>
+                <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="n">hac_name</span><span class="p">,</span>
+                <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;include&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">node_name</span> <span class="ow">in</span> <span class="n">node_names</span><span class="p">:</span>
+            <span class="n">node_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+            <span class="n">node_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
+                <span class="s2">&quot;nodeClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;hostName&quot;</span><span class="p">:</span> <span class="n">node_obj</span><span class="o">.</span><span class="n">client_hostname</span><span class="p">,</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_obj</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">node_obj</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;nodeMetaInfos&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ISENABLED&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;JVMMAXMEMORY&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;8191&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;PORTNO&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;20000&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;URL&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;INDEXLOCATION&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_data</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_CREATE&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{}</span> <span class="ow">and</span> \
+                        <span class="s1">&#39;cloudId&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="n">IndexPool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">)</span>
+                <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create index pool. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexPools.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPools.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes an existing index pool cloud from commcell</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pool_name       (str)   --  Index pool cloud name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">              SDKExecption:</span>
+<span class="sd">                  Data type of the input(s) is not valid.</span>
+
+<span class="sd">                  Response was not success.</span>
+
+<span class="sd">                  Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pool_name</span><span class="p">)</span>
+        <span class="n">cloud_id</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">cloud_id</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s2">&quot;opType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_DELETE</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloud_id</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_DELETE&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> \
+                    <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="IndexPool"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPool">[docs]</a><span class="k">class</span> <span class="nc">IndexPool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing index pool operations on a specific index pool&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">,</span> <span class="n">pool_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the IndexPool class instance</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            commcell_obj        (object)    --  Instance of class Commcell</span>
+<span class="sd">            pool_name           (str)       --  Index pool name</span>
+<span class="sd">            pool_id             (int)       --  Index pool client id</span>
+<span class="sd">                default:</span>
+<span class="sd">                    None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object  -   instance of the IndexPool class</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool_name</span> <span class="o">=</span> <span class="n">pool_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool_id</span> <span class="o">=</span> <span class="n">pool_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_client</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_nodes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the IndexPool class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;IndexPool class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to raise exception when response is not 200 (ok)</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="IndexPool.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPool.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes properties of IndexPool class&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_client</span><span class="o">.</span><span class="n">client_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_client</span><span class="o">.</span>\
+            <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;pseudoClientInfo&#39;</span><span class="p">][</span><span class="s1">&#39;distributedClusterInstanceProperties&#39;</span><span class="p">][</span><span class="s1">&#39;clusterConfig&#39;</span><span class="p">][</span><span class="s1">&#39;cloudInfo&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_properties</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="IndexPool.node_info"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPool.node_info">[docs]</a>    <span class="k">def</span> <span class="nf">node_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the index pool node information</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                node_name       (str)       --  index pool node name</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting details of index pool node</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Index pool node not found</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">node_info</span><span class="p">[</span><span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">node_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">node_info</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexPools&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexPool.modify_node"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_pools.IndexPool.modify_node">[docs]</a>    <span class="k">def</span> <span class="nf">modify_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span>
+                    <span class="n">operation_type</span><span class="o">=</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_EDIT</span><span class="p">,</span>
+                    <span class="n">node_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to modify the pool node details</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node_name           (str)   --  index pool node name</span>
+<span class="sd">            operation_type      (int)   --  operation type (1, 2, 3)</span>
+<span class="sd">                                            1 - Adds a new node</span>
+<span class="sd">                                            2 - Removes existing node</span>
+<span class="sd">                                            3 - Edits the existing node (default)</span>
+<span class="sd">            node_params         (list)  --  list of all the properties for the index pool node</span>
+<span class="sd">                                            for example:</span>
+<span class="sd">                                                [{</span>
+<span class="sd">                                                    &quot;name&quot;: &lt;property_name&gt;,</span>
+<span class="sd">                                                    &quot;value&quot;: &lt;property_value&gt;</span>
+<span class="sd">                                                },</span>
+<span class="sd">                                                ]</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                Response was not success.</span>
+<span class="sd">                Response was empty.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;cloudId&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloud_id</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+            <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;opType&#39;</span><span class="p">:</span> <span class="n">operation_type</span><span class="p">,</span>
+                <span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;clientId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">node_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                    <span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">node_name</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">node_params</span><span class="p">:</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_params</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_NODE_UPDATE&#39;</span><span class="p">],</span>
+            <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pool_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the index pool client id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the index pool cloud id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_properties</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pool_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns index pool name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">node_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of index pool node names&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_nodes</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hac_cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the hac cluster name assigned to the index pool&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_properties</span><span class="p">[</span><span class="s1">&#39;solrCloudPoolInfo&#39;</span><span class="p">][</span><span class="s1">&#39;zookerEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

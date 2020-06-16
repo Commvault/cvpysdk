@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.sharepointsubclient &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.sharepointsubclient &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -181,14 +181,22 @@
 
 <span class="sd">    restore()                           --  restores the databases specified in the input paths list.</span>
 
+<span class="sd">    run_manual_discovery()              --  runs the manual disocvery for specified backupset</span>
+
+<span class="sd">    browse_for_content()                --  returns the user association content</span>
+
+<span class="sd">    associate_site_collections_and_webs()-- associates the specified site collections/webs</span>
+
+<span class="sd">    restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">SQLDefines</span>
-<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">SharepointDefines</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">..subclient</span> <span class="kn">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="kn">import</span> <span class="n">SQLDefines</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="kn">import</span> <span class="n">SharepointDefines</span>
 
 
 <div class="viewcode-block" id="SharepointSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient">[docs]</a><span class="k">class</span> <span class="nc">SharepointSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
@@ -472,7 +480,179 @@
         <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
             <span class="p">[</span><span class="s2">&quot;sharePointDBRestoreOption&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">content_json</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">request_json</span></div>
+        <span class="k">return</span> <span class="n">request_json</span>
+
+<div class="viewcode-block" id="SharepointSubclient.run_manual_discovery"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.run_manual_discovery">[docs]</a>    <span class="k">def</span> <span class="nf">run_manual_discovery</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs the manual discovery of backupset</span>
+
+<span class="sd">            Raises:</span>
+
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_MANUAL_DISCOVERY</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_DISCOVERY&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MANUAL_DISCOVERY</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
+                        <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">{})</span>
+                            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to run manual discovery</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to run manual discovery</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SharepointSubclient.browse_for_content"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.browse_for_content">[docs]</a>    <span class="k">def</span> <span class="nf">browse_for_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">discovery_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the SP content i.e. sites/web information that is discovered in auto discovery phase</span>
+
+<span class="sd">                Args:</span>
+
+<span class="sd">                    discovery_type  (int)   --  type of discovery for content</span>
+<span class="sd">                                                For all Associated Web/Sites = 6</span>
+<span class="sd">                                                For all Non-Associated Web/Sites = 7</span>
+
+<span class="sd">                Returns:</span>
+
+<span class="sd">                    web_content     (dict)  --  dictionary of web content</span>
+
+<span class="sd">                    no_of_records   (int)   --  no of records</span>
+
+<span class="sd">                Raises:</span>
+
+<span class="sd">                    SDKException:</span>
+
+<span class="sd">                        if response is empty</span>
+
+<span class="sd">                        if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_USER_POLICY_ASSOCIATION</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;USER_POLICY_ASSOCIATION&#39;</span><span class="p">]</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;discoverByType&quot;</span><span class="p">:</span> <span class="n">discovery_type</span><span class="p">,</span>
+            <span class="s2">&quot;cloudAppAssociation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;subclientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;searchInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;isSearch&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;searchKey&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_USER_POLICY_ASSOCIATION</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;pagingInfo&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">no_of_records</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pagingInfo&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;totalRecords&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">no_of_records</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="p">{},</span> <span class="n">no_of_records</span>
+                    <span class="n">associations</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;associations&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="n">site_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">if</span> <span class="n">associations</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">associations</span><span class="p">:</span>
+                            <span class="n">site_url</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userAccountInfo&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;smtpAddress&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                            <span class="n">user_account_info</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userAccountInfo&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                            <span class="n">site_dict</span><span class="p">[</span><span class="n">site_url</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                                <span class="s1">&#39;userAccountInfo&#39;</span><span class="p">:</span> <span class="n">user_account_info</span>
+                            <span class="p">}</span>
+                    <span class="k">return</span> <span class="n">site_dict</span><span class="p">,</span> <span class="n">no_of_records</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SharepointSubclient.associate_site_collections_and_webs"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.associate_site_collections_and_webs">[docs]</a>    <span class="k">def</span> <span class="nf">associate_site_collections_and_webs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">site_user_accounts_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Associates the specified site collections/webs</span>
+
+<span class="sd">                Args:</span>
+
+<span class="sd">                    site_user_accounts_list   (list)   --  list of user accounts of all sites</span>
+<span class="sd">                                                           It has all information of sites/webs</span>
+
+<span class="sd">                Raises:</span>
+
+<span class="sd">                    SDKException:</span>
+
+<span class="sd">                        if response is empty</span>
+
+<span class="sd">                        if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ASSOCIATE_CONTENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;UPDATE_USER_POLICY_ASSOCIATION&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">user_account</span> <span class="ow">in</span> <span class="n">site_user_accounts_list</span><span class="p">:</span>
+            <span class="n">user_account</span><span class="p">[</span><span class="s2">&quot;commonFlags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;cloudAppAssociation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;accountStatus&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;subclientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;cloudAppDiscoverinfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;discoverByType&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                    <span class="s2">&quot;userAccounts&quot;</span><span class="p">:</span> <span class="n">site_user_accounts_list</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ASSOCIATE_CONTENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;resp&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;resp&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to associate content</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to associate content</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SharepointSubclient.restore_in_place"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs a in-place restore job on the specified Sharepoint pseudo client</span>
+<span class="sd">           This is used by Sharepoint V2 pseudo client</span>
+
+<span class="sd">                 Args:</span>
+
+<span class="sd">                     paths     (list)   --  list of sites or webs to be restored</span>
+<span class="sd">                     Example: [</span>
+<span class="sd">                        &quot;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&quot;,</span>
+<span class="sd">                        &quot;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&quot;</span>
+<span class="sd">                        ]</span>
+
+<span class="sd">                 Returns:</span>
+
+<span class="sd">                    Job object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
+        <span class="n">parameter_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">parameter_dict</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

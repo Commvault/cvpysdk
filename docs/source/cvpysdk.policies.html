@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies package &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.policies package &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -1596,6 +1596,7 @@ sch_pol_obj.update_associations(associations, OperationType.DELETE)</p>
 <p>_get_policies()              –  gets all the storage policies of the commcell</p>
 <p>all_storage_policies()       –  returns the dict of all the storage policies on commcell</p>
 <p>has_policy(policy_name)      –  checks if a storage policy exists with the given name</p>
+<p>add_global_storage_policy()  –  adds a new global storage policy to the commcell</p>
 <p>add()                        –  adds a new storage policy to the commcell</p>
 <p>add_tape_sp()                –  add new storage policy with tape library as data path</p>
 <p>delete(storage_policy_name)  –  removes the specified storage policy from the commcell</p>
@@ -1639,6 +1640,9 @@ returns the job object</p>
 <p>get_copy()                              –  Returns the StoragePolicyCopy class object of the input copy</p>
 <p>mark_for_recovery()                     –  Marks Deduplication store for recovery</p>
 <p>run_recon()                             –  Runs non-mem DB Reconstruction job</p>
+<p>enable_entity_extraction()              –  Enables the entity extraction for subclients associated to this policy</p>
+<p>enable_content_indexing()               –  Enables the content indexing for this storage policy</p>
+<p>run_content_indexing()                  –  start the content indexing job for this storage policy</p>
 </dd>
 <dt>StoragePolicyCopy:</dt><dd><dl>
 <dt>__init__(self, commcell_object,</dt><dd><p>storage_policy_name,
@@ -1651,6 +1655,7 @@ copy_name, copy_id)         –  initialize the instance of StoragePolicy class 
 </dd>
 </dl>
 <p>get_copy_id()                                   –  Gets the storage policy id asscoiated with the storage policy</p>
+<p>get_copy_Precedence()                   –  Gets the copy precendence associated with the storage policy copy</p>
 <p>refresh()                                   –      Refresh the properties of the StoragePolicy</p>
 <p>_get_request_json()                     –  Gets all the storage policy copy properties</p>
 <p>_get_copy_properties()                      –      Gets the storage policy copy properties</p>
@@ -1666,7 +1671,7 @@ copy_name, copy_id)         –  initialize the instance of StoragePolicy class 
 <p>Class for getting all the storage policies associated with the commcell.</p>
 <dl class="method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicies.add">
-<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param">storage_policy_name</em>, <em class="sig-param">library</em>, <em class="sig-param">media_agent</em>, <em class="sig-param">dedup_path=None</em>, <em class="sig-param">incremental_sp=None</em>, <em class="sig-param">retention_period=5</em>, <em class="sig-param">number_of_streams=None</em>, <em class="sig-param">ocum_server=None</em>, <em class="sig-param">dedup_media_agent=None</em>, <em class="sig-param">dr_sp=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param">storage_policy_name</em>, <em class="sig-param">library</em>, <em class="sig-param">media_agent</em>, <em class="sig-param">dedup_path=None</em>, <em class="sig-param">incremental_sp=None</em>, <em class="sig-param">retention_period=5</em>, <em class="sig-param">number_of_streams=None</em>, <em class="sig-param">ocum_server=None</em>, <em class="sig-param">dedup_media_agent=None</em>, <em class="sig-param">dr_sp=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new Storage Policy to the Commcell.</p>
 <dl>
 <dt>Args:</dt><dd><p>storage_policy_name (str)         –  name of the new storage policy to add</p>
@@ -1681,7 +1686,7 @@ associated with the storage policy
 default: None</p>
 <p>retention_period    (int)         –  time period in days to retain
 the data backup for
-default: 5</p>
+default:5</p>
 <p>number_of_streams   (int)         –  the number of streams for the storage policy
 default: None</p>
 <p>ocum_server         (str)         –  On Command Unified Server Name
@@ -1693,6 +1698,16 @@ default:None</p>
 </dd>
 </dl>
 <p>default:False</p>
+<p><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs    –  dict of keyword arguments as follows:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>global_policy_name   (str)         –  name of the global storage policy on which you want</dt><dd><p>the policy being created to be dependent.</p>
+</dd>
+<dt>global_dedup_policy (bool)  – whether the global storage policy has a global deduplication pool</dt><dd><p>or not</p>
+</dd>
+</dl>
+<p>default:True                  (meaning the global storage policy will have deduplication enabled)</p>
+</div></blockquote>
 </dd>
 <dt>Raises:</dt><dd><dl>
 <dt>SDKException:</dt><dd><p>if type of the storage policy name argument is not string</p>
@@ -1709,19 +1724,62 @@ default:None</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicies.add_global_storage_policy">
+<code class="sig-name descname">add_global_storage_policy</code><span class="sig-paren">(</span><em class="sig-param">global_storage_policy_name</em>, <em class="sig-param">library</em>, <em class="sig-param">media_agent</em>, <em class="sig-param">dedup_path=None</em>, <em class="sig-param">dedup_path_media_agent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add_global_storage_policy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add_global_storage_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>adds a global storage policy</p>
+<dl>
+<dt>Args:</dt><dd><p>global_storage_policy_name   (str)  –  name of the global storage policy which you want to add</p>
+<p>library                      (str)  –  name of the library which you want to be associated with your
+global storage policy</p>
+<p>media_agent                  (str)  –  name of the media agent which you want to be associated with
+the global storage policy</p>
+<blockquote>
+<div><dl class="simple">
+<dt><a href="#id3"><span class="problematic" id="id4">*</span></a>enter BOTH, the dedup_path and dedup_path_media_agent if you want the deduplication</dt><dd><p>to be enabled.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>dedup_path                    (str) – path of the deduplication database
+default- None</p>
+<dl class="simple">
+<dt>dedup_path_media_agent:       (str) – name of the media agent where the deduplication database</dt><dd><p>is stored</p>
+</dd>
+</dl>
+<p>default- None</p>
+</dd>
+<dt>Returns:</dt><dd><p>the success message along with the name of the global storage policy if created successfully
+else the error messages or the exceptions raised</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if the global_storage_policy_name,library,media_agent,dedup_path,dedup_path_media_agent
+is not of type String</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicies.add_tape_sp">
-<code class="sig-name descname">add_tape_sp</code><span class="sig-paren">(</span><em class="sig-param">storage_policy_name</em>, <em class="sig-param">library</em>, <em class="sig-param">media_agent</em>, <em class="sig-param">drive_pool</em>, <em class="sig-param">scratch_pool</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add_tape_sp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add_tape_sp" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_tape_sp</code><span class="sig-paren">(</span><em class="sig-param">storage_policy_name</em>, <em class="sig-param">library</em>, <em class="sig-param">media_agent</em>, <em class="sig-param">drive_pool</em>, <em class="sig-param">scratch_pool</em>, <em class="sig-param">retention_period_days=15</em>, <em class="sig-param">ocum_server=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicies.add_tape_sp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicies.add_tape_sp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds storage policy with tape data path
 Args:</p>
 <blockquote>
 <div><blockquote>
 <div><p>storage_policy_name (str)         –  name of the new storage policy to add</p>
-<p>library             (str)          –  name or instance of the library
+<p>library             (str)     –  name or instance of the library
 to add the policy to</p>
 <p>media_agent         (str/object)  –  name or instance of media agent
 to add the policy to</p>
 <p>drive_pool          (str)         –  Drive pool name of the tape library</p>
 <p>scratch_pool      (str)          –  Scratch pool name of the tape library</p>
+<p>retention_period_days    (int)         –  time period in days to retain
+the data backup for
+default: 15</p>
+<p>ocum_server         (str)         –  On Command Unified Server Name
+default: None</p>
 </div></blockquote>
 <dl>
 <dt>Raises:</dt><dd><dl>
@@ -1961,6 +2019,62 @@ default : None</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing">
+<code class="sig-name descname">enable_content_indexing</code><span class="sig-paren">(</span><em class="sig-param">cloud_id</em>, <em class="sig-param">include_doc_type=None</em>, <em class="sig-param">max_doc_size=None</em>, <em class="sig-param">min_doc_size=None</em>, <em class="sig-param">exclude_doc_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.enable_content_indexing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing" title="Permalink to this definition">¶</a></dt>
+<dd><p>configures offline CI for this storage policy</p>
+<p>Args:</p>
+<blockquote>
+<div><p>cloud_id            (str)   –  cloud id of the search engine</p>
+<p>include_doc_type    (str)   –  include document types for content indexing</p>
+<blockquote>
+<div><p>Example : “<em>.csv,</em>.ppt”</p>
+</div></blockquote>
+<p>exclude_doc_type    (str)   –  exclude document types for content indexing</p>
+<blockquote>
+<div><p>Example : “<em>.py,</em>.txt”</p>
+</div></blockquote>
+<p>max_doc_size        (str)   –  maximum document size for CI in KB</p>
+<p>min_doc_size        (str)   –  minimum document size for CI in KB</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+<p>Raises:</p>
+<blockquote>
+<div><dl>
+<dt>SDKException:</dt><dd><p>if type of inputs is not valid</p>
+<p>if failed to configure content indexing</p>
+<p>if response received is empty</p>
+<p>if response is not success</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.enable_entity_extraction">
+<code class="sig-name descname">enable_entity_extraction</code><span class="sig-paren">(</span><em class="sig-param">entity_details</em>, <em class="sig-param">entity_names</em>, <em class="sig-param">ca_client_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.enable_entity_extraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.enable_entity_extraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>configures offline CI entity extraction for given subclient id’s on this storage policy</p>
+<dl>
+<dt>Args:</dt><dd><p>entity_details     (list)     –  List of subclient to configure for Entity Extraction</p>
+<p>Format : [[clientname,agent type,backup set name,subclient name]]</p>
+<p>entity_names         (list)   –  list of entity names to be configured for Entity Extraction</p>
+<p>Example : [Email,SSN]</p>
+<p>ca_client_name       (str)    –  client name where Content Analyzer package is installed</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if type of inputs is not valid</p>
+<p>if failed to configure EE</p>
+<p>if response received is empty</p>
+<p>if response is not success</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.get_copy">
 <code class="sig-name descname">get_copy</code><span class="sig-paren">(</span><em class="sig-param">copy_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.get_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a storage policy copy object if copy exists</p>
@@ -2124,6 +2238,26 @@ Args:</p>
 <p>if response is empty</p>
 <p>if response is not success</p>
 </div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_content_indexing">
+<code class="sig-name descname">run_content_indexing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.run_content_indexing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_content_indexing" title="Permalink to this definition">¶</a></dt>
+<dd><p>starts the offline CI job for this storage policy</p>
+<dl>
+<dt>Args:</dt><dd><p>None</p>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this CI job</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if type of inputs is not valid</p>
+<p>if failed to start content indexing job</p>
+<p>if response received is empty</p>
+<p>if response is not success</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -2371,6 +2505,12 @@ Returns:</p>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.extended_retention_rules">
 <em class="property">property </em><code class="sig-name descname">extended_retention_rules</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.extended_retention_rules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the extended retention rules setting as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_Precedence">
+<code class="sig-name descname">get_copy_Precedence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.get_copy_Precedence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_Precedence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the copyprecendence asscoiated with the storage policy copy</p>
 </dd></dl>
 
 <dl class="method">

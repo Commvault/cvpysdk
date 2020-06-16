@@ -98,10 +98,10 @@ DisasterRecoveryManagement Attributes:
     **run_post_backup_process**             --  set or get run post backup process
 
 """
-
 from base64 import b64encode
 from past.builtins import basestring
 from cvpysdk.policies.storage_policies import StoragePolicy
+from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
@@ -114,7 +114,7 @@ class DisasterRecovery(object):
         """Initializes DisasterRecovery object
 
             Args:
-                commcell    (object)    --  instance of commcell
+                commcell            (object)    --  instance of commcell
 
         """
         self.commcell = commcell
@@ -123,6 +123,7 @@ class DisasterRecovery(object):
         self._RESTORE = self.commcell._services['RESTORE']
         self._CREATE_TASK = self.commcell._services['CREATE_TASK']
         self.advbackup = False
+        self._disaster_recovery_management = None
         self.reset_to_defaults()
 
     def reset_to_defaults(self):
@@ -625,6 +626,15 @@ class DisasterRecovery(object):
         else:
             raise SDKException('DisasterRecovery', '101')
 
+    @property
+    def disaster_recovery_management(self):
+        """
+        Returns the instance of the DisasterRecoveryManagement class
+        """
+        if self._disaster_recovery_management is None:
+            self._disaster_recovery_management = DisasterRecoveryManagement(self.commcell)
+        return self._disaster_recovery_management
+
 
 class DisasterRecoveryManagement(object):
     """Class to perform all the disaster recovery management operations on commcell"""
@@ -784,7 +794,7 @@ class DisasterRecoveryManagement(object):
             Args:
                  flag       (bool)      --      True/False.
 
-                 libraryname   (str)    --      Third party cloud library name.
+                 libraryname   (str/object)    --      Third party cloud library name/disklibrary object.
 
             Returns:
                 None
@@ -793,9 +803,13 @@ class DisasterRecoveryManagement(object):
             self._export_settings['uploadBackupMetadataToCloudLib'] = flag
             if flag:
                 if isinstance(libraryname, basestring):
-                    self._export_settings['cloudLibrary']['libraryName'] = libraryname
+                    cloud_lib_obj = DiskLibrary(self._commcell, library_name=libraryname)
+                elif isinstance(libraryname, DiskLibrary):
+                    cloud_lib_obj = libraryname
                 else:
                     raise SDKException('DisasterRecovery', '101')
+                self._export_settings['cloudLibrary']['libraryName'] = cloud_lib_obj.name
+                self._export_settings['cloudLibrary']['libraryId'] = int(cloud_lib_obj.library_id)
             self._set_dr_properties()
         else:
             raise SDKException('DisasterRecovery', '101')

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.license &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.license &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -169,14 +169,14 @@
 <span class="sd">refresh()                --  refeshes the license details data</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="LicenseDetails"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.license.LicenseDetails">[docs]</a><span class="k">class</span> <span class="nc">LicenseDetails</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for accessing license details information&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_LICENSE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;LICENSE&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_license_details</span><span class="p">()</span>
@@ -188,9 +188,13 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commcellId&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cs_hostname</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;csHostNameOrAddress&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_license_ipaddress</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;licenseIpAddress&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_oemname</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;oemName&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_regcode</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;regCode&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_serialno</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;serialNo&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_license_mode</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;licenseMode&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_expiry_date</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;expiryDate&#39;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -214,9 +218,24 @@
         <span class="k">return</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ccid</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cs_hostname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the csHostName Or Address of CommCell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cs_hostname</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">license_ipaddress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the license Ip Address &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_license_ipaddress</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">oem_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;returns the oem_name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oemname</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">license_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the license mode of license&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_license_mode</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">registration_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -226,7 +245,12 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">serial_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;returns the serial number of CommCell&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serialno</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serialno</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">expiry_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the expiry date of License&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expiry_date</span></div>
 </pre></div>
 
            </div>

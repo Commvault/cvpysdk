@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.vmware &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.vmware &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -184,11 +184,11 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="k">import</span> <span class="n">RPStore</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.subclients.vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.virtualmachinepolicies</span> <span class="k">import</span> <span class="n">VirtualMachinePolicy</span>
-<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="kn">import</span> <span class="n">RPStore</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.subclients.vssubclient</span> <span class="kn">import</span> <span class="n">VirtualServerSubclient</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.virtualmachinepolicies</span> <span class="kn">import</span> <span class="n">VirtualMachinePolicy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="VMWareVirtualServerSubclient"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient">[docs]</a><span class="k">class</span> <span class="nc">VMWareVirtualServerSubclient</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">):</span>
@@ -198,7 +198,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
 <span class="sd">        Args</span>
 <span class="sd">        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the</span>
@@ -428,7 +428,7 @@
             <span class="n">vcenter_client</span><span class="o">=</span><span class="n">vcenter_client</span><span class="p">,</span>
             <span class="n">datastore</span><span class="o">=</span><span class="n">datastore</span><span class="p">,</span>
             <span class="n">esx_host</span><span class="o">=</span><span class="n">esx_host</span><span class="p">,</span>
-            <span class="n">esx_server</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">esx_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
             <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
@@ -660,7 +660,7 @@
         <span class="k">if</span> <span class="n">proxy_client</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">_attach_disk_restore_option</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">proxy_client</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">_disk_restore_option</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">co_ordinator</span>
+            <span class="n">_attach_disk_restore_option</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">co_ordinator</span>
 
         <span class="c1"># set Source item List</span>
         <span class="n">src_item_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -754,7 +754,7 @@
             <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># check mandatory input parameters are correct</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_conversion_defaults</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
@@ -838,7 +838,7 @@
                 <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">block_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">new_name</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">properties</span><span class="p">()[</span><span class="s2">&quot;vmNameEditString&quot;</span><span class="p">],</span>
-                <span class="n">prefix</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">properties</span><span class="p">()[</span><span class="s2">&quot;vmNameEditType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="n">prefix</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">properties</span><span class="p">()[</span><span class="s2">&quot;vmNameEditType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">),</span>
                 <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span><span class="p">,</span>
                 <span class="n">source_network</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">properties</span><span class="p">()[</span><span class="s2">&quot;networkList&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;sourceNetwork&quot;</span><span class="p">],</span>
                 <span class="n">destination_network</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">properties</span><span class="p">()[</span><span class="s2">&quot;networkList&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;destinationNetwork&quot;</span><span class="p">]</span>

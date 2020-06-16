@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -83,6 +83,7 @@
 <li><a class="reference internal" href="#">cvpysdk.backupsets package</a><ul>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.backupsets.aadbackupset">cvpysdk.backupsets.aadbackupset module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.backupsets.adbackupset">cvpysdk.backupsets.adbackupset module</a><ul>
 <li><a class="reference internal" href="#usage">Usage</a></li>
 </ul>
@@ -101,6 +102,10 @@
 <li><a class="reference internal" href="#module-cvpysdk.backupsets.nasbackupset">cvpysdk.backupsets.nasbackupset module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.backupsets.postgresbackupset">cvpysdk.backupsets.postgresbackupset module</a><ul>
 <li><a class="reference internal" href="#postgresbackupset">PostgresBackupset:</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cvpysdk.backupsets.sharepointbackupset">cvpysdk.backupsets.sharepointbackupset module</a><ul>
+<li><a class="reference internal" href="#spbackupset">SPBackupset:</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cvpysdk.backupsets.vsbackupset">cvpysdk.backupsets.vsbackupset module</a></li>
@@ -188,6 +193,141 @@
 </div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-cvpysdk.backupsets.aadbackupset">
+<span id="cvpysdk-backupsets-aadbackupset-module"></span><h2>cvpysdk.backupsets.aadbackupset module<a class="headerlink" href="#module-cvpysdk.backupsets.aadbackupset" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on an AD agent Backupset.</p>
+<p>adbackupset is the only class defined in this file.</p>
+<dl>
+<dt>Function:</dt><dd><p>azuread_browse_double_query     create browse options for objects in folder</p>
+<p>azuread_browse_double_query_adv    create browse options for objects attrbute</p>
+<p>azuread_browse_options_builder    build browse options for azure ad browse</p>
+</dd>
+</dl>
+<p>Class:</p>
+<blockquote>
+<div><dl>
+<dt>AzureADBackupset:  Derived class from Backuset Base class, representing a</dt><dd><blockquote>
+<div><p>Azure AD agent backupset, and to perform operations on that backupset</p>
+</div></blockquote>
+<p>_azuread_browse_basic : Do basic browse with option</p>
+<p>_azuread_browse_meta  : Get Azure ad folder meta information</p>
+<p>_azuread_browse_folder : Get Azure objects based on the folder type</p>
+<p>_adv_attributes : Get Azure AD object attribute</p>
+<p>browse() : Overwrite default browse operation</p>
+<p>_process_browse_repsonse : process the browse result</p>
+<p>azuread_get_metadata : create azure ad object meta data information</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.backupsets.aadbackupset.</code><code class="sig-name descname">AzureAdBackupset</code><span class="sig-paren">(</span><em class="sig-param">instance_object</em>, <em class="sig-param">backupset_name</em>, <em class="sig-param">backupset_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="cvpysdk.html#cvpysdk.backupset.Backupset" title="cvpysdk.backupset.Backupset"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.backupset.Backupset</span></code></a></p>
+<p>Azure AD agent backupset class</p>
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query">
+<code class="sig-name descname">azuread_browse_double_query</code><span class="sig-paren">(</span><em class="sig-param">options</em>, <em class="sig-param">request_json</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.azuread_browse_double_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>create request json for azure ad based on double query
+Args:</p>
+<blockquote>
+<div><p>options    (dict)    browse option from impoort
+request_json    (json)    request json file from basic request class</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>request_json    (json)    request json with addittional options</p>
+</dd>
+<dt>Raise:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query_adv">
+<code class="sig-name descname">azuread_browse_double_query_adv</code><span class="sig-paren">(</span><em class="sig-param">options</em>, <em class="sig-param">request_json</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.azuread_browse_double_query_adv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query_adv" title="Permalink to this definition">¶</a></dt>
+<dd><p>get advanced attribute for obeject
+Args:</p>
+<blockquote>
+<div><p>options    (dict)    browse option from impoort
+request_json    (json)    request json file from basic request class</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>request_json    (json)    request json with addittional options</p>
+</dd>
+<dt>Raise:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_obj_meta">
+<code class="sig-name descname">azuread_browse_obj_meta</code><span class="sig-paren">(</span><em class="sig-param">obj_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.azuread_browse_obj_meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_obj_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>get azure ad obj meta info
+Args:</p>
+<blockquote>
+<div><p><a href="#id8"><span class="problematic" id="id9">obj_</span></a>    (obj)    azuare ad object</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>name    (str)    azure ad display name
+metainfo     (dict)    azure ad browse meta data</p>
+</dd>
+<dt>Raise:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_options_builder">
+<code class="sig-name descname">azuread_browse_options_builder</code><span class="sig-paren">(</span><em class="sig-param">options</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.azuread_browse_options_builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_options_builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>build browse options
+Args:</p>
+<blockquote>
+<div><p>options    (dict)    browse option from impoort</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>options    (list)    create formated options based on import</p>
+</dd>
+<dt>Raise:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_get_metadata">
+<code class="sig-name descname">azuread_get_metadata</code><span class="sig-paren">(</span><em class="sig-param">result</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.azuread_get_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_get_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get azure ad meta data for browse result
+Args:</p>
+<blockquote>
+<div><p>result    (list)    objects list from browse</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>metadata    (dict)    azure ad browse meta data</p>
+</dd>
+<dt>Raise:</dt><dd><p>110    can’t find meta data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.browse">
+<code class="sig-name descname">browse</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/aadbackupset.html#AzureAdBackupset.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.browse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Browses the content of the Backupset.
+Args:</p>
+<blockquote>
+<div><p>args    list    args passed for browse
+kwargs    dict    dict passed for browse</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Return:</dt><dd><p>count     (int)    return count from browse
+browse_result    (list)    objects list from browse</p>
+</dd>
+<dt>Raise:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-cvpysdk.backupsets.adbackupset">
 <span id="cvpysdk-backupsets-adbackupset-module"></span><h2>cvpysdk.backupsets.adbackupset module<a class="headerlink" href="#module-cvpysdk.backupsets.adbackupset" title="Permalink to this headline">¶</a></h2>
@@ -479,7 +619,7 @@ and to perform operations on that backupset.</p>
 <dt>Example:</dt><dd><dl class="simple">
 <dt>find_all_versions(</dt><dd><p>path=’c:hello.txt’,
 show_deleted=True,
-to_time=‘2016-04-31 12:00:00’</p>
+to_time=’2016-04-31 12:00:00’</p>
 </dd>
 </dl>
 <p>)</p>
@@ -547,17 +687,20 @@ to_time=‘2016-04-31 12:00:00’</p>
 </div></blockquote>
 <p>default: None</p>
 </dd>
-<dt>fs_options      (dict)          – dictionary that includes all advanced options</dt><dd><dl>
-<dt>options:</dt><dd><dl class="simple">
+</dl>
+<p>fs_options      (dict)          – dictionary that includes all advanced options</p>
+<blockquote>
+<div><p>options:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>all_versions<span class="classifier">if set to True restores all the versions of the</span></dt><dd><p>specified file</p>
 </dd>
 </dl>
-<p>versions            : list of version numbers to be backed up
-validate_only       : To validate data backed up for restore</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>versions            : list of version numbers to be backed up</p>
+<p>validate_only       : To validate data backed up for restore</p>
+<p>no_of_streams   (int)       – Number of streams to be used for restore</p>
+</div></blockquote>
+</div></blockquote>
 <p>restore_jobs    (list)          –  list of jobs to be restored if the job is index free restore</p>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
@@ -603,24 +746,25 @@ at the specified destionation location.</p>
 </div></blockquote>
 <p>default: None</p>
 </dd>
-<dt>fs_options      (dict)             – dictionary that includes all advanced options</dt><dd><dl>
-<dt>options:</dt><dd><p>preserve_level      : preserve level option to set in restore
-proxy_client        : proxy that needed to be used for restore
-impersonate_user    : Impersonate user options for restore
-impersonate_password: Impersonate password option for restore</p>
+</dl>
+<p>fs_options      (dict)             – dictionary that includes all advanced options</p>
 <blockquote>
-<div><p>in base64 encoded form</p>
-</div></blockquote>
+<div><p>options:</p>
+<blockquote>
+<div><p>preserve_level      : preserve level option to set in restore</p>
+<p>proxy_client        : proxy that needed to be used for restore</p>
+<p>impersonate_user    : Impersonate user options for restore</p>
 <dl class="simple">
+<dt>impersonate_password: Impersonate password option for restore</dt><dd><p>in base64 encoded form</p>
+</dd>
 <dt>all_versions<span class="classifier">if set to True restores all the versions of the</span></dt><dd><p>specified file</p>
 </dd>
 </dl>
-<p>versions            : list of version numbers to be backed up
-validate_only       : To validate data backed up for restore</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>versions            : list of version numbers to be backed up</p>
+<p>validate_only       : To validate data backed up for restore</p>
+<p>no_of_streams   (int)       – Number of streams to be used for restore</p>
+</div></blockquote>
+</div></blockquote>
 <p>restore_jobs    (list)          –  list of jobs to be restored if the job is index free restore</p>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
@@ -965,6 +1109,37 @@ destination client</p>
 
 </div>
 </div>
+<div class="section" id="module-cvpysdk.backupsets.sharepointbackupset">
+<span id="cvpysdk-backupsets-sharepointbackupset-module"></span><h2>cvpysdk.backupsets.sharepointbackupset module<a class="headerlink" href="#module-cvpysdk.backupsets.sharepointbackupset" title="Permalink to this headline">¶</a></h2>
+<p>File for operating on a Sharepoint Backupset.</p>
+<p>SPBackupset is the only class defined in this file.</p>
+<p>SPBackupset:  Derived class from Backupset Base class, representing a sharepoint backupset,
+and to perform operations on that subclient</p>
+<div class="section" id="spbackupset">
+<h3>SPBackupset:<a class="headerlink" href="#spbackupset" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><p>azure_storage_details()      –  updates azure storage details in sharepoint backupset properties</p>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.backupsets.sharepointbackupset.</code><code class="sig-name descname">SharepointBackupset</code><span class="sig-paren">(</span><em class="sig-param">instance_object</em>, <em class="sig-param">backupset_name</em>, <em class="sig-param">backupset_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/sharepointbackupset.html#SharepointBackupset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.sharepointbackupset.SharepointBackupset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="cvpysdk.html#cvpysdk.backupset.Backupset" title="cvpysdk.backupset.Backupset"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.backupset.Backupset</span></code></a></p>
+<p>Derived class from Backupset Base class, representing a sharepoint backupset,
+and to perform operations on that backupset.</p>
+<dl class="method">
+<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.azure_storage_details">
+<em class="property">property </em><code class="sig-name descname">azure_storage_details</code><a class="headerlink" href="#cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.azure_storage_details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns azure storage details associated with backupset</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>azure_storage_account_information  (dict)  – dictionary of azure storage account details</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
 <div class="section" id="module-cvpysdk.backupsets.vsbackupset">
 <span id="cvpysdk-backupsets-vsbackupset-module"></span><h2>cvpysdk.backupsets.vsbackupset module<a class="headerlink" href="#module-cvpysdk.backupsets.vsbackupset" title="Permalink to this headline">¶</a></h2>
 <p>Module for performing operations on a Backupset for the <strong>Virtual Server</strong> Agent.</p>
@@ -1015,8 +1190,8 @@ and to perform operations on that backupset.</p>
 <div><dl>
 <dt>browse(</dt><dd><p>path=’c:hello’,</p>
 <p>show_deleted=True,</p>
-<p>from_time=‘2014-04-20 12:00:00’,</p>
-<p>to_time=‘2016-04-21 12:00:00’</p>
+<p>from_time=’2014-04-20 12:00:00’,</p>
+<p>to_time=’2016-04-21 12:00:00’</p>
 </dd>
 </dl>
 <p>)</p>

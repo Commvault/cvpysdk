@@ -49,7 +49,9 @@ ClientGroups:
     create_smart_rule()        -- Create rules required for smart client group creation
     based on input parameters
 
-    merge_smart_rules()       -- Merge multiple rules into (SCG) rule to create smart client group
+    merge_smart_rules()        -- Merge multiple rules into (SCG) rule to create smart client group
+
+    _create_scope_dict()       -- Creates Scope Dictionary needed for Smart Client group association
 
     add(clientgroup_name)      -- adds a new client group to the commcell
 
@@ -544,6 +546,50 @@ class ClientGroups(object):
         scg_rule["rules"].append(rules_dict)
         return scg_rule
 
+    def _create_scope_dict(self, client_scope, value=None):
+        """Creates required dictionary for given client scope
+
+            Args:
+                value (string)  --  Value to be selected for the client scope dropdown
+                client_scope (string) -- Value of the client scope
+
+            Accepted Values (client_scope) --
+                Clients in this Commcell
+                Clients of Companies
+                Clients of User
+                Clients of User Groups
+
+            Returns:
+                dictionary - Client Scope data required for the smart client group
+
+            NOTE : Value is not required for client scope = "Clients in this Commcell"
+            For this, value is automatically set to the Commserve Name
+        """
+        scgscope = {
+            "entity": {}
+        }
+        if client_scope.lower() == 'clients in this commcell':
+            scgscope["entity"] = {
+                "commCellName": self._commcell_object.commserv_name,
+                "_type_": 1
+            }
+        elif client_scope.lower() == 'clients of companies' and value is not None:
+            scgscope["entity"] = {
+                "providerDomainName": value,
+                "_type_": 61
+            }
+        elif client_scope.lower() == 'clients of user' and value is not None:
+            scgscope["entity"] = {
+                "userName": value,
+                "_type_": 13
+            }
+        elif client_scope.lower() == 'clients of user group' and value is not None:
+            scgscope["entity"] = {
+                "userGroupName": value,
+                "_type_": 15
+            }
+        return scgscope
+
     def add(self, clientgroup_name, clients=[], **kwargs):
         """Adds a new Client Group to the Commcell.
 
@@ -572,6 +618,10 @@ class ClientGroups(object):
                                                                 default: True
                     scg_rule                (dict)       --  scg_rule required to create smart
                                                                 client group
+
+                    client_scope            (str)        --  Client scope for the Smart Client Group
+
+                    client_scope_value      (str)        --  Client scope value for a particular scope
 
             Returns:
                 object - instance of the ClientGroup class created by this method
@@ -615,7 +665,30 @@ class ClientGroups(object):
                     "description": kwargs.get('clientgroup_description', ''),
                     "isSmartClientGroup": smart_client_group,
                     "scgRule": kwargs.get('scg_rule'),
-                    "clientGroupActivityControl": {
+                    "clientGroup": {
+                        "clientGroupName": clientgroup_name
+                    },
+                    "associatedClients": clients_list
+                }
+            }
+
+            scg_scope = None
+            if kwargs.get("client_scope") is not None:
+                # Check if value is there or not
+                if kwargs.get("client_scope").lower() == "clients in this commcell":
+                    scg_scope = [self._create_scope_dict(kwargs.get("client_scope"))]
+                else:
+                    if kwargs.get("client_scope_value") is not None:
+                        scg_scope = [self._create_scope_dict(kwargs.get("client_scope"), kwargs.get("client_scope_value"))]
+                    else:
+                        raise SDKException('ClientGroup', '102',
+                                           "Client Scope {0} requires a value".format(kwargs.get("client_scope")))
+
+            if scg_scope is not None:
+                request_json["clientGroupDetail"]["scgScope"] = scg_scope
+
+            if kwargs.get("enable_backup") or kwargs.get("enable_data_aging") or kwargs.get("enable_restore"):
+                client_group_activity_control = {
                         "activityControlOptions": [
                             {
                                 "activityType": 1,
@@ -631,13 +704,8 @@ class ClientGroups(object):
                                 "enableActivityType": kwargs.get('enable_restore', True)
                             }
                         ]
-                    },
-                    "clientGroup": {
-                        "clientGroupName": clientgroup_name
-                    },
-                    "associatedClients": clients_list
-                }
-            }
+                    }
+                request_json["clientGroupDetail"]["clientGroupActivityControl"] = client_group_activity_control
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'POST', self._CLIENTGROUPS, request_json

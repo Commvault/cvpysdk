@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.download_center &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.download_center &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -256,19 +256,19 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="k">import</span> <span class="n">ExpatError</span>
+<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="kn">import</span> <span class="n">ExpatError</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">xmltodict</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="DownloadCenter"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.download_center.DownloadCenter">[docs]</a><span class="k">class</span> <span class="nc">DownloadCenter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for doing operations on Download Center like upload or download product.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes an instance of the DownloadCenter class.</span>
 
 <span class="sd">            Args:</span>
@@ -286,7 +286,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_response</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the string representation of an instance of this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;DownloadCenter class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -346,17 +346,17 @@
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">packages</span> <span class="o">=</span> <span class="n">xmltodict</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)[</span><span class="n">root</span><span class="p">][</span><span class="s1">&#39;searchResult&#39;</span><span class="p">][</span><span class="s1">&#39;packages&#39;</span><span class="p">]</span>
+                <span class="n">packages</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;searchResult&#39;</span><span class="p">][</span><span class="s1">&#39;packages&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                     <span class="n">packages</span> <span class="o">=</span> <span class="p">[</span><span class="n">packages</span><span class="p">]</span>
 
                 <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;@name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">_packages</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;@packageId&#39;</span><span class="p">],</span>
-                        <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;@description&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;packageId&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">package</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">],</span>
                         <span class="s1">&#39;platforms&#39;</span><span class="p">:</span> <span class="p">{}</span>
                     <span class="p">}</span>
 
@@ -366,9 +366,9 @@
                         <span class="n">platforms</span> <span class="o">=</span> <span class="p">[</span><span class="n">platforms</span><span class="p">]</span>
 
                     <span class="k">for</span> <span class="n">platform</span> <span class="ow">in</span> <span class="n">platforms</span><span class="p">:</span>
-                        <span class="n">platform_name</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;@name&#39;</span><span class="p">]</span>
-                        <span class="n">platform_id</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;@id&#39;</span><span class="p">]</span>
-                        <span class="n">download_type</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;downloadType&#39;</span><span class="p">][</span><span class="s1">&#39;@name&#39;</span><span class="p">]</span>
+                        <span class="n">platform_name</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                        <span class="n">platform_id</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                        <span class="n">download_type</span> <span class="o">=</span> <span class="n">platform</span><span class="p">[</span><span class="s1">&#39;downloadType&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
 
                         <span class="k">if</span> <span class="n">platform_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_packages</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;platforms&#39;</span><span class="p">]:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_packages</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;platforms&#39;</span><span class="p">][</span><span class="n">platform_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>

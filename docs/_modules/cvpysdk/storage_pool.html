@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.storage_pool &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.storage_pool &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -191,6 +191,8 @@
 <span class="sd">    add()                       --  Adds a storage pool, according to given input and returns</span>
 <span class="sd">                                    StoragePool object</span>
 
+<span class="sd">    delete()                    --  deletes the specified storage pool</span>
+
 <span class="sd">    refresh()                   --  refresh the list of storage pools associated with the commcell</span>
 
 
@@ -228,20 +230,20 @@
 
 <span class="kn">import</span> <span class="nn">xmltodict</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 <span class="c1"># from future.standard_library import install_aliases</span>
 
 <span class="c1"># from .job import Job</span>
 
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">DiskLibrary</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">MediaAgent</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">DiskLibrary</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">MediaAgent</span>
 
 
 <div class="viewcode-block" id="StoragePools"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools">[docs]</a><span class="k">class</span> <span class="nc">StoragePools</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for doing operations on Storage Pools, like get storage poo ID.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes instance of the StoragePools class to perform operations on a storage pool.</span>
 
 <span class="sd">            Args:</span>
@@ -263,7 +265,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all storage pools present in the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -278,17 +280,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the string representation of an instance of this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;StoragePools class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the storage pools added to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_storage_pools</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the storage pool for the given storage pool ID or</span>
 <span class="sd">            the details of the storage pool for given storage pool Name.</span>
 
@@ -413,11 +415,80 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_storage_pool</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">StoragePool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">storage_pool_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_pools</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;StoragePool&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;StoragePool&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>    </div>
+    
+<div class="viewcode-block" id="StoragePools.hyperscale_create_storage_pool"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools.hyperscale_create_storage_pool">[docs]</a>    <span class="k">def</span> <span class="nf">hyperscale_create_storage_pool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">media_agents</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Create new storage pool for hyperscale</span>
+<span class="sd">            Args:</span>
+<span class="sd">                storage_pool_name (string) -- Name of the storage pools to create</span>
+<span class="sd">                </span>
+<span class="sd">                media_agents      (List)   -- List of 3 media agents with name&#39;s(str)</span>
+<span class="sd">                                                or instance of media agent&#39;s(object)</span>
+<span class="sd">                                                </span>
+<span class="sd">                Example: [&quot;ma1&quot;,&quot;ma2&quot;,&quot;ma3&quot;]</span>
 
-<div class="viewcode-block" id="StoragePools.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Refresh the list of storage pools associated to the Commcell.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pools</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_pools</span><span class="p">()</span></div>
+<span class="sd">            Return:</span>
+<span class="sd">                 flag, response -- response returned by the REST API call</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agents</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        
+        <span class="n">mediagent_obj</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">media_agent</span> <span class="ow">in</span> <span class="n">media_agents</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">MediaAgent</span><span class="p">):</span>
+                <span class="n">mediagent_obj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">media_agent</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">mediagent_obj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">media_agent</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;minimum 3 media agents are required&quot;</span><span class="p">)</span>
+        
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;App_CreateStoragePolicyReq storagePolicyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot; copyName=&quot;</span><span class="si">{0}</span><span class="s2">_Primary&quot; type=&quot;1&quot;</span>
+<span class="s2">                                     numberOfCopies=&quot;1&quot;&gt;</span>
+<span class="s2">                                    &lt;storagePolicyCopyInfo&gt;</span>
+<span class="s2">                                        &lt;storagePolicyFlags scaleOutStoragePolicy=&quot;1&quot;/&gt;</span>
+<span class="s2">                                    &lt;/storagePolicyCopyInfo&gt;</span>
+<span class="s2">                                    &lt;storage&gt;</span>
+<span class="s2">                                        &lt;mediaAgent mediaAgentId=&quot;</span><span class="si">{4}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{1}</span><span class="s2">&quot; displayName=&quot;</span><span class="si">{1}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">                                    &lt;/storage&gt;</span>
+<span class="s2">                                    &lt;storage&gt;</span>
+<span class="s2">                                        &lt;mediaAgent mediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{2}</span><span class="s2">&quot; displayName=&quot;</span><span class="si">{2}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">                                    &lt;/storage&gt;</span>
+<span class="s2">                                    &lt;storage&gt;</span>
+<span class="s2">                                        &lt;mediaAgent mediaAgentId=&quot;</span><span class="si">{6}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{3}</span><span class="s2">&quot; displayName=&quot;</span><span class="si">{3}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">                                    &lt;/storage&gt;</span>
+<span class="s2">                                    &lt;scaleoutConfiguration configurationType=&quot;1&quot;/&gt;</span>
+<span class="s2">                                &lt;/App_CreateStoragePolicyReq&gt;</span>
+<span class="s2">                                &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">,</span>
+                                           <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">,</span> <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">,</span>
+                                           <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">,</span> <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">,</span>
+                                           <span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">)</span>
+        
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_storage_pool_api</span><span class="p">,</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create storage pool</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;StoragePool&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="StoragePools.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">mountpath</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">ddb_ma</span><span class="p">,</span> <span class="n">dedup_path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -542,13 +613,69 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="StoragePools.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_pool_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;deletes the specified storage pool.</span>
 
+<span class="sd">            Args:</span>
+<span class="sd">                storage_pool_name (str)  --  name of the storage pool to delete</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the storage pool name is not string</span>
+
+<span class="sd">                    if failed to delete storage pool</span>
+
+<span class="sd">                    if no storage pool exists with the given name</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">storage_pool_name</span> <span class="o">=</span> <span class="n">storage_pool_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_storage_pool</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">):</span>
+                <span class="n">storage_pool_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pools</span><span class="p">[</span><span class="n">storage_pool_name</span><span class="p">]</span>
+
+                <span class="n">delete_storage_pool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DELETE_STORAGE_POOL&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">storage_pool_id</span><span class="p">)</span>
+
+                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">delete_storage_pool</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Failed to delete storage pools </span><span class="si">{</span><span class="n">storage_pool_name</span><span class="si">}</span><span class="s1">&#39;</span>
+                        <span class="n">o_str</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># initialize the storage pool again</span>
+                        <span class="c1"># so the storage pool object has all the storage pools</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Storage&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;No storage pool exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">storage_pool_name</span><span class="p">)</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="StoragePools.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePools.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the list of storage pools associated to the Commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pools</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_pools</span><span class="p">()</span></div></div>
+        
 <div class="viewcode-block" id="StoragePool"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePool">[docs]</a><span class="k">class</span> <span class="nc">StoragePool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for individual storage pools&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">storage_pool_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_pool_name</span><span class="p">,</span> <span class="n">storage_pool_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Intitalise the Storage Pool classs instance</span>
 
@@ -574,7 +701,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_STORAGE_POOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_STORAGE_POOL&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_pool_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s2">&quot;Storage Pool class Instance for </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">representation_string</span>
@@ -610,6 +737,90 @@
     <span class="k">def</span> <span class="nf">storage_pool_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats id as a read only attribute&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_pool_id</span>
+    
+<div class="viewcode-block" id="StoragePool.hyperscale_add_nodes"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePool.hyperscale_add_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">hyperscale_add_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_agents</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add 3 new nodes to an existing storage pool</span>
+
+<span class="sd">        args:</span>
+<span class="sd">            media_agents      (List)   -- List of 3 media agents with name&#39;s(str)</span>
+<span class="sd">                                            or instance of media agent&#39;s(object)</span>
+<span class="sd">                                            </span>
+<span class="sd">            Example: [&quot;ma1&quot;,&quot;ma2&quot;,&quot;ma3&quot;]</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if add nodes to an existing storage pool fails</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agents</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        
+        <span class="n">mediagent_obj</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">media_agent</span> <span class="ow">in</span> <span class="n">media_agents</span><span class="p">:</span>        
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">MediaAgent</span><span class="p">):</span>
+                <span class="n">mediagent_obj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">media_agent</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">mediagent_obj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">media_agent</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+                    
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Minimum 3 MediaAgents required&quot;</span><span class="p">)</span>
+        
+        
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;scaleoutOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;StoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_pool_name</span><span class="p">),</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;storage&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;displayName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">),</span>
+                        <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;displayName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">),</span>
+                        <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;displayName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">),</span>
+                        <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mediagent_obj</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">media_agent_name</span><span class="p">)</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;scaleoutConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;configurationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edit_storage_pool_api</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span>
+            <span class="s1">&#39;EDIT_STORAGE_POOL&#39;</span><span class="p">]</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edit_storage_pool_api</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">error_code</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to add nodes to storage pool</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;StoragePool&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="StoragePool.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage_pool.StoragePool.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refreshes propery of the class object&quot;&quot;&quot;</span>

@@ -1,0 +1,804 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.activate_entity &mdash; Developer SDK - Python 11.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.activate_entity</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.activate_entity</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing operations on Activate regex Entities, and a single Activate regex Entity in the commcell.</span>
+
+<span class="sd">`ActivateEntities`, and `ActivateEntity` are 2 classes defined in this file.</span>
+
+<span class="sd">ActivateEntities:   Class for representing all the regex entities in the commcell.</span>
+
+<span class="sd">ActivateEntity:     Class for representing a single regex entity in the commcell.</span>
+
+
+<span class="sd">ActivateEntities:</span>
+
+<span class="sd">    __init__(commcell_object)           --  initialise object of the ActivateEntities class</span>
+
+<span class="sd">     _response_not_success()            --  parses through the exception response, and raises SDKException</span>
+
+<span class="sd">    refresh()                           --  refresh the regex entities associated with the commcell</span>
+
+<span class="sd">    get()                               --  Returns an instance of ActivateEntity class for the given regex entity name</span>
+
+<span class="sd">    get_entity_ids()                    --  Returns an list of entity ids for the given regex entity name list</span>
+
+<span class="sd">    get_entity_keys()                   --  Returns an list of entity keys for the given regex entity name list</span>
+
+<span class="sd">    get_properties()                    --  Returns the properties for the given regex entity name</span>
+
+<span class="sd">    _get_all_activate_entities()        --  Returns dict consisting all regex entities associated with commcell</span>
+
+<span class="sd">    _get_regex_entity_from_collections()--  gets all the regex entity details from collection response</span>
+
+<span class="sd">    has_entity()                        --  Checks whether given regex entity exists in commcell or not</span>
+
+<span class="sd">    add()                               --  adds the regex entity in the commcell</span>
+
+<span class="sd">    delete()                            --  deletes the regex entity in the commcell for given entity name</span>
+
+<span class="sd">ActivateEntity:</span>
+
+<span class="sd">    __init__(</span>
+<span class="sd">        commcell_object,</span>
+<span class="sd">        entity_name,</span>
+<span class="sd">        entity_id=None)             --  initialize an object of ActivateEntity Class with the given regex entity</span>
+<span class="sd">                                                name and id</span>
+
+<span class="sd">     _response_not_success()            --  parses through the exception response, and raises SDKException</span>
+
+<span class="sd">    refresh()                           --  refresh the properties of the regex entity</span>
+
+<span class="sd">    _get_entity_id()                    --  Gets entity id for the given regex entity name</span>
+
+<span class="sd">    _get_entity_properties()            --  Gets all the details of associated regex entity</span>
+
+<span class="sd">    modify()                            --  Modifies the entity properties for the associated regex entity</span>
+
+
+<span class="sd">ActivateEntity Attributes</span>
+<span class="sd">-----------------</span>
+
+<span class="sd">    **entity_id**         --  returns the id of the regex entity</span>
+
+<span class="sd">    **entity_key**        --  returns the key of the regex entity</span>
+
+<span class="sd">    **category_name**     --  returns the category name of the regex entity</span>
+
+<span class="sd">    **is_enabled**        --  returns the enabled flag of the regex entity</span>
+
+<span class="sd">    **display_name**      --  returns the display name of the regex entity</span>
+
+<span class="sd">    **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">ActivateEntityConstants</span>
+
+
+<div class="viewcode-block" id="ActivateEntities"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities">[docs]</a><span class="k">class</span> <span class="nc">ActivateEntities</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the regex entities in the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes an instance of the ActivateEntities class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of the commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the ActivateEntities class</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_api_get_all_regex_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ACTIVATE_ENTITIES&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_api_create_regex_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api_get_all_regex_entities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_api_delete_regex_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ACTIVATE_ENTITY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ActivateEntities.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">,</span> <span class="n">entity_regex</span><span class="p">,</span> <span class="n">entity_keywords</span><span class="p">,</span> <span class="n">entity_flag</span><span class="p">,</span> <span class="n">is_derived</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">parent_entity</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the specified regex entity name in the commcell</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        entity_name (str)      --  name of the regex entity</span>
+
+<span class="sd">                        entity_regex (str)     --  Regex for the entity</span>
+
+<span class="sd">                        entity_keywords (str)  --  Keywords for the entity</span>
+
+<span class="sd">                        entity_flag (int)      --  Sensitivity flag value for entity</span>
+<span class="sd">                                                        5-Highly sensitive</span>
+<span class="sd">                                                        3-Moderate sensitive</span>
+<span class="sd">                                                        1-Low sensitive</span>
+
+<span class="sd">                        is_derived (bool)      --  represents whether it is derived entity or not</span>
+
+<span class="sd">                        parent_entity(int)     -- entity id of the parent entity in case of derived entity</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        None</span>
+
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+
+<span class="sd">                                if response is empty</span>
+
+<span class="sd">                                if response is not success</span>
+
+<span class="sd">                                if unable to add regex entity in commcell</span>
+
+<span class="sd">                                if entity_flag is not in proper allowed values [1,3,5]</span>
+
+<span class="sd">                                if input data type is not valid</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_regex</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> \
+                <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_keywords</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entity_flag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unsupported entity flag value&#39;</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">ActivateEntityConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;regularExpression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{</span><span class="se">\&quot;</span><span class="s2">entity_key</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> \
+            <span class="n">entity_name</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\&quot;</span><span class="s2">entity_regex</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">entity_regex</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">}&quot;</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_flag</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_name</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityXML&#39;</span><span class="p">][</span><span class="s1">&#39;keywords&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_keywords</span>
+        <span class="k">if</span> <span class="n">is_derived</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;regularExpression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{</span><span class="se">\&quot;</span><span class="s2">entity_key</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">entity_name</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">}&quot;</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_entity</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;parentEntityId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_entity</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_entity</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;parentEntityId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">parent_entity</span><span class="p">][</span><span class="s1">&#39;entityId&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unsupported parent entity id type provided&#39;</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api_create_regex_entity</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;entityDetails&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;err&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActivateEntities.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;deletes the specified regex entity name in the commcell</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        entity_name (str)      --  name of the regex entity</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        None</span>
+
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+
+<span class="sd">                                if response is empty</span>
+
+<span class="sd">                                if response is not success</span>
+
+<span class="sd">                                if unable to delete regex entity in commcell</span>
+
+<span class="sd">                                if unable to find entity name in the commcell</span>
+
+<span class="sd">                                if data type of entity_name is invalid</span>
+
+
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entity_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unable to find given regex entity name in the commcell&#39;</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api_delete_regex_entity</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">entity_name</span><span class="p">][</span><span class="s1">&#39;entityId&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to raise an exception when reponse status is not 200 (OK).</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                response    (object)    --  response class object,</span>
+
+<span class="sd">                received upon running an API request, using the `requests` python package</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ActivateEntities.get_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.get_properties">[docs]</a>    <span class="k">def</span> <span class="nf">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a properties of the specified regex entity name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_name (str)  --  name of the regex entity</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict -  properties for the given regex entity name</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">entity_name</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_all_activate_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the list of all regex entities associated with this commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of dictionaries, where each dictionary stores the</span>
+<span class="sd">                                details of a single regex entity</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;entityDetails&quot;: [</span>
+<span class="sd">                            {</span>
+<span class="sd">                                &quot;displayName&quot;: &quot;US Social Security number&quot;,</span>
+<span class="sd">                                &quot;flags&quot;: 5,</span>
+<span class="sd">                                &quot;description&quot;: &quot;&quot;,</span>
+<span class="sd">                                &quot;categoryName&quot;: &quot;US&quot;,</span>
+<span class="sd">                                &quot;enabled&quot;: true,</span>
+<span class="sd">                                &quot;entityName&quot;: &quot;SSN&quot;,</span>
+<span class="sd">                                &quot;attribute&quot;: 3,</span>
+<span class="sd">                                &quot;entityType&quot;: 2,</span>
+<span class="sd">                                &quot;entityKey&quot;: &quot;ssn&quot;,</span>
+<span class="sd">                                &quot;entityId&quot;: 1111,</span>
+<span class="sd">                                &quot;entityXML&quot;: {</span>
+<span class="sd">                                    &quot;keywords&quot;: &quot;Social Security,Social Security#,Soc Sec,SSN,SSNS,SSN#,SS#,SSID&quot;,</span>
+<span class="sd">                                    &quot;entityKey&quot;: &quot;ssn&quot;,</span>
+<span class="sd">                                    &quot;isSystemDefinedEntity&quot;: true,</span>
+<span class="sd">                                    &quot;inheritBaseWords&quot;: false</span>
+<span class="sd">                                }</span>
+<span class="sd">                            },</span>
+<span class="sd">                            {</span>
+<span class="sd">                                &quot;displayName&quot;: &quot;Person Name&quot;,</span>
+<span class="sd">                                &quot;flags&quot;: 1,</span>
+<span class="sd">                                &quot;description&quot;: &quot;Name of a person.&quot;,</span>
+<span class="sd">                                &quot;categoryName&quot;: &quot;Generic&quot;,</span>
+<span class="sd">                                &quot;enabled&quot;: true,</span>
+<span class="sd">                                &quot;entityName&quot;: &quot;Person&quot;,</span>
+<span class="sd">                                &quot;attribute&quot;: 3,</span>
+<span class="sd">                                &quot;entityType&quot;: 1,</span>
+<span class="sd">                                &quot;entityKey&quot;: &quot;person&quot;,</span>
+<span class="sd">                                &quot;entityId&quot;: 1112,</span>
+<span class="sd">                                &quot;entityXML&quot;: {</span>
+<span class="sd">                                    &quot;keywords&quot;: &quot;&quot;,</span>
+<span class="sd">                                    &quot;entityKey&quot;: &quot;person&quot;,</span>
+<span class="sd">                                    &quot;inheritBaseWords&quot;: false</span>
+<span class="sd">                                }</span>
+<span class="sd">                            }</span>
+<span class="sd">                            ]</span>
+<span class="sd">                            }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api_get_all_regex_entities</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;entityDetails&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_regex_entity_from_collections</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_regex_entity_from_collections</span><span class="p">(</span><span class="n">collections</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extracts all the regex entities, and their details from the list of collections given,</span>
+<span class="sd">            and returns the dictionary of all regex entities</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                collections     (list)  --  list of all collections</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of dictionaries, where each dictionary stores the</span>
+<span class="sd">                                details of a single regex entity</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_regex_entity</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">regex_entity</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">[</span><span class="s1">&#39;entityDetails&#39;</span><span class="p">]:</span>
+            <span class="n">regex_entity_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;displayName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;displayName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityKey&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;entityKey&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;categoryName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;categoryName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityXML&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;entityXML&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;entityId&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;entityType&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">regex_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">_regex_entity</span><span class="p">[</span><span class="n">regex_entity</span><span class="p">[</span><span class="s1">&#39;entityName&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">regex_entity_dict</span>
+        <span class="k">return</span> <span class="n">_regex_entity</span>
+
+<div class="viewcode-block" id="ActivateEntities.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the activate regex entities associated with the commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_activate_entities</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ActivateEntities.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a ActivateEntity object for the given regex entity name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_name (str)  --  name of the regex entity</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                obj                 -- Object of ActivateEntity class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if entity_name is not of type string</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_entity</span><span class="p">(</span><span class="n">entity_name</span><span class="p">):</span>
+            <span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">entity_name</span><span class="p">][</span><span class="s1">&#39;entityId&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">ActivateEntity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Unable to get ActivateEntity class object&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActivateEntities.get_entity_ids"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.get_entity_ids">[docs]</a>    <span class="k">def</span> <span class="nf">get_entity_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of entity id for the given regex entity name list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_name (list)  --  names of the regex entity</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                list                -- entity id&#39;s for the given entity names</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">entity_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">regex_entity</span> <span class="ow">in</span> <span class="n">entity_name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">regex_entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">:</span>
+                <span class="n">entity_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">regex_entity</span><span class="p">][</span><span class="s1">&#39;entityId&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unable to find entity id for given entity name :</span><span class="si">{</span><span class="n">regex_entity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entity_ids</span></div>
+
+<div class="viewcode-block" id="ActivateEntities.get_entity_keys"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.get_entity_keys">[docs]</a>    <span class="k">def</span> <span class="nf">get_entity_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of entity keys for the given regex entity name list.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_name (list)  --  names of the regex entity</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                list                -- entity keys for the given entity names</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">entity_keys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">regex_entity</span> <span class="ow">in</span> <span class="n">entity_name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">regex_entity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">:</span>
+                <span class="n">entity_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">[</span><span class="n">regex_entity</span><span class="p">][</span><span class="s1">&#39;entityKey&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unable to find entity keys for given entity name :</span><span class="si">{</span><span class="n">regex_entity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entity_keys</span></div>
+
+<div class="viewcode-block" id="ActivateEntities.has_entity"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntities.has_entity">[docs]</a>    <span class="k">def</span> <span class="nf">has_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a regex entity exists in the commcell with the input name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                entity_name (str)  --  name of the regex entity</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the regex entity exists in the commcell or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the regex entity name argument is not string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span> <span class="ow">and</span> <span class="n">entity_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regex_entities</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ActivateEntity"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntity">[docs]</a><span class="k">class</span> <span class="nc">ActivateEntity</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing operations on a single regex entity&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">,</span> <span class="n">entity_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an object of the ActivateEntity class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of the commcell class</span>
+
+<span class="sd">                entity_name     (str)           --  name of the regex entity</span>
+
+<span class="sd">                entity_id       (str)           --  id of the regex entity</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the ActivateEntity class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_name</span> <span class="o">=</span> <span class="n">entity_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_display_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_enabled</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_category_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">entity_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_entity_id</span><span class="p">(</span><span class="n">entity_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="n">entity_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_api_modify_regex_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ACTIVATE_ENTITY&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to raise an exception when reponse status is not 200 (OK).</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                response    (object)    --  response class object,</span>
+
+<span class="sd">                received upon running an API request, using the `requests` python package</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ActivateEntity.modify"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntity.modify">[docs]</a>    <span class="k">def</span> <span class="nf">modify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_regex</span><span class="p">,</span> <span class="n">entity_keywords</span><span class="p">,</span> <span class="n">entity_flag</span><span class="p">,</span> <span class="n">is_derived</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">parent_entity</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the specified regex entity details</span>
+
+<span class="sd">                    Args:</span>
+
+<span class="sd">                        entity_regex (str)     --  Regex for the entity</span>
+
+<span class="sd">                        entity_keywords (str)  --  Keywords for the entity</span>
+
+<span class="sd">                        entity_flag (int)      --  Sensitivity flag value for entity</span>
+<span class="sd">                                                        5-Highly sensitive</span>
+<span class="sd">                                                        3-Moderate sensitive</span>
+<span class="sd">                                                        1-Low sensitive</span>
+
+<span class="sd">                        is_derived (bool)      --  represents whether it is derived entity or not</span>
+
+<span class="sd">                        parent_entity(int)     -- entity id of the parent entity in case of derived entity</span>
+
+<span class="sd">                    Returns:</span>
+<span class="sd">                        None</span>
+
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+
+<span class="sd">                                if response is empty</span>
+
+<span class="sd">                                if response is not success</span>
+
+<span class="sd">                                if unable to modify regex entity in commcell</span>
+
+<span class="sd">                                if input entity_keywords &amp; entity_regex is not string</span>
+
+<span class="sd">                                if entity_flag value is not in allowed values[1,3,5]</span>
+
+
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_regex</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> \
+                <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_keywords</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entity_flag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unsupported entity flag value&#39;</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">ActivateEntityConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;regularExpression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{</span><span class="se">\&quot;</span><span class="s2">entity_key</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_entity_name</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\&quot;</span><span class="s2">entity_regex</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">entity_regex</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">}&quot;</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_flag</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_name</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityXML&#39;</span><span class="p">][</span><span class="s1">&#39;keywords&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_keywords</span>
+        <span class="k">if</span> <span class="n">is_derived</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;regularExpression&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;{</span><span class="se">\&quot;</span><span class="s2">entity_key</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_name</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">}&quot;</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;entityType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_entity</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;parentEntityId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_entity</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_entity</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;parentEntityId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActivateEntities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">entity_name</span><span class="o">=</span><span class="n">parent_entity</span><span class="p">)</span><span class="o">.</span><span class="n">entity_id</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unsupported parent entity id type provided&#39;</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_obj</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_modify_regex_entity</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span><span class="p">),</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;entityDetails&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;err&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ActivateEntity&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_entity_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get regex entity id for given entity name</span>
+<span class="sd">                Args:</span>
+
+<span class="sd">                    entity_name (str)  -- Name of the regex entity</span>
+
+<span class="sd">                Returns:</span>
+
+<span class="sd">                    int                -- id of the regex entity</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">activate_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entity_name</span><span class="p">)</span><span class="o">.</span><span class="n">entity_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_entity_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get regex entity properties for given entity name</span>
+<span class="sd">                Args:</span>
+
+<span class="sd">                    None</span>
+
+<span class="sd">                Returns:</span>
+
+<span class="sd">                    None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">regex_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">activate_entity</span><span class="o">.</span><span class="n">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_display_name</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;displayName&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_category_name</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;categoryName&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityId&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_enabled</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityKey&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_type</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityType&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">regex_entity_dict</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entity_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the regex entity id attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entity_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity type attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_type</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">category_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity category name attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_category_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity display name attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_display_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity isenabled attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_enabled</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entity_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity key attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span>
+
+<div class="viewcode-block" id="ActivateEntity.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntity.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the regex entity details for associated object&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_entity_properties</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

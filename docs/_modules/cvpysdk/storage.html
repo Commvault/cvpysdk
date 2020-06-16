@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.storage &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.storage &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -187,6 +187,8 @@
 
 <span class="sd">    get(media_agent_name)       --  returns the instance of MediaAgent class</span>
 <span class="sd">    of the media agent specified</span>
+<span class="sd">    </span>
+<span class="sd">    delete(media_agent)     --  Deletes the media agent from the commcell.</span>
 
 <span class="sd">    refresh()                   --  refresh the media agents associated with the commcell</span>
 
@@ -206,6 +208,16 @@
 <span class="sd">    _get_media_agent_properties()           --  returns media agent properties</span>
 
 <span class="sd">    _initialize_media_agent_properties()    --  initializes media agent properties</span>
+
+<span class="sd">    enable_power_management()               --  Enable VM Management (power management)</span>
+
+<span class="sd">    _perform_power_operation()              --  Performs power operation (power-on/power-off)</span>
+
+<span class="sd">    power_on()                              --  Power-on MediaAgent if VM management is enabled</span>
+
+<span class="sd">    power_off()                             --  Power-off MediaAgent if VM management is enabled</span>
+
+<span class="sd">    wait_for_power_status()                 -- Waits till the expected power status is not achieved</span>
 
 <span class="sd">    media_agent_name()                      --  returns media agent name</span>
 
@@ -256,25 +268,34 @@
 
 <span class="sd">    _get_library_id()           --  gets the id of the DiskLibrary instance from commcell</span>
 
+<span class="sd">    move_mountpath()            --  To perform move mountpath operation</span>
+
+<span class="sd">    validate_mountpath()        --  To perform storage validation on mountpath</span>
+
+<span class="sd">    add_cloud_mount_path()      --  Adds a mount path to the cloud library</span>
+
 <span class="sd">    add_mount_path()            --  adds the mount path on the local/ remote machine</span>
 
 <span class="sd">    _get_library_properties()   --  gets the disk library properties</span>
 
+<span class="sd">    refresh()                   --  Refresh the properties of this disk library.</span>
+
 <span class="sd">DiskLibrary instance Attributes</span>
 
 <span class="sd">    **media_agents_associated**  --  returns the media agents associated with the disk library</span>
+<span class="sd">    **library_properties**       --  Returns the dictionary consisting of the full properties of the library</span>
 
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">import</span> <span class="nn">uuid</span><span class="o">,</span> <span class="nn">time</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="kn">import</span> <span class="n">install_aliases</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -282,7 +303,7 @@
 <div class="viewcode-block" id="MediaAgents"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgents">[docs]</a><span class="k">class</span> <span class="nc">MediaAgents</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the media agents associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the MediaAgents class.</span>
 
 <span class="sd">            Args:</span>
@@ -296,7 +317,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all media agents of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -310,7 +331,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the MediaAgents class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;MediaAgents class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -445,6 +466,63 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                 <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No media agent exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">media_agent_name</span><span class="p">)</span>
             <span class="p">)</span></div>
+    
+<div class="viewcode-block" id="MediaAgents.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgents.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes the media agent from the commcell.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                media_agent (str)  --  name of the Mediaagent to remove from the commcell</span>
+<span class="sd">                </span>
+<span class="sd">                force       (bool)     --  True if you want to delete media agent forcefully.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the media agent name argument is not string</span>
+
+<span class="sd">                    if failed to delete Media agent</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if no media agent exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">media_agent</span> <span class="o">=</span> <span class="n">media_agent</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_media_agent</span><span class="p">(</span><span class="n">media_agent</span><span class="p">):</span>
+                <span class="n">mediagent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_media_agents</span><span class="p">[</span><span class="n">media_agent</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                <span class="n">mediagent_delete_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MEDIA_AGENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">mediagent_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">force</span><span class="p">:</span>
+                    <span class="n">mediagent_delete_service</span> <span class="o">+=</span> <span class="s2">&quot;?forceDelete=1&quot;</span>
+
+                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="n">mediagent_delete_service</span><span class="p">)</span>
+
+                <span class="n">error_code</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete mediaagent&#39;</span> 
+                        <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> 
+                        <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="c1"># initialize the mediaagents again</span>
+                            <span class="c1"># so the mediaagents object has all the mediaagents</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>                                
+                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                                <span class="n">o_str</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>                        
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No Mediaagent exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">media_agent</span><span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="MediaAgents.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgents.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the media agents associated with the Commcell.&quot;&quot;&quot;</span>
@@ -454,7 +532,7 @@
 <div class="viewcode-block" id="MediaAgent"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent">[docs]</a><span class="k">class</span> <span class="nc">MediaAgent</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for a specific media agent.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the MediaAgent object.</span>
 
 <span class="sd">            Args:</span>
@@ -479,6 +557,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_MEDIA_AGENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MEDIA_AGENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent_name</span>
         <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_CLOUD_MEDIA_AGENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_MEDIA_AGENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent_id</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_TASK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_MEDIA_AGENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_MEDIA_AGENTS&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">media_agent_id</span>
@@ -486,7 +569,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;MediaAgent class instance for MA: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, of Commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
 
@@ -535,6 +618,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_platform</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index_cache_enabled</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_allowed</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_supported</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_management_enabled</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_power_management_controller_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_power_status</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_media_agent_properties</span><span class="p">()</span>
 
@@ -565,6 +653,155 @@
         <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;mediaAgentProps&#39;</span><span class="p">][</span><span class="s1">&#39;mediaAgentIdxCacheProps&#39;</span><span class="p">][</span><span class="s1">&#39;cachePath&#39;</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_index_cache</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;mediaAgentProps&#39;</span><span class="p">][</span><span class="s1">&#39;mediaAgentIdxCacheProps&#39;</span>
                                                                    <span class="p">][</span><span class="s1">&#39;cachePath&#39;</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerMgmtSupported&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_supported</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerMgmtSupported&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_supported</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerManagementEnabled&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_management_enabled</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerManagementEnabled&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerMgmtAllowed&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_allowed</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;isPowerMgmtAllowed&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;powerStatus&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_power_status</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;powerStatus&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;selectedCloudController&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_power_management_controller_name</span> <span class="o">=</span> <span class="n">mediaagent_list</span><span class="p">[</span><span class="s1">&#39;powerManagementInfo&#39;</span><span class="p">][</span><span class="s1">&#39;selectedCloudController&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="MediaAgent.enable_power_management"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.enable_power_management">[docs]</a>    <span class="k">def</span> <span class="nf">enable_power_management</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pseudo_client_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Enables power management using the provided cloud controller (pseudo client)</span>
+
+<span class="sd">                Args :</span>
+<span class="sd">                        pseudo_client_name : VSA pseudo client to be used as cloud controller</span>
+<span class="sd">                Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                                    If response is not success</span>
+<span class="sd">                                    </span>
+<span class="sd">                                    If Power management is not supported</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_mgmt_allowed</span><span class="p">:</span>
+            <span class="n">client_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pseudo_client_name</span><span class="p">)</span>
+            <span class="n">pseudo_client_name_client_id</span> <span class="o">=</span> <span class="n">client_obj</span><span class="o">.</span><span class="n">_get_client_id</span><span class="p">()</span>
+
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            payLoad = &#39;&lt;EVGui_SetCloudVMManagementInfoReq hostId=&quot;&#39; + self.media_agent_id + &#39;&quot; useMediaAgent=&quot;1&quot;&gt; &lt;powerManagementInfo isPowerManagementEnabled=&quot;1&quot; &gt; &lt;selectedCloudController clientId=&quot;&#39; + PseudoClientName_client_id + &#39;&quot; clientName=&quot;&#39; + \</span>
+<span class="sd">                      PseudoClientName + &#39;&quot;/&gt;&lt;/powerManagementInfo&gt;&lt;/EVGui_SetCloudVMManagementInfoReq&gt;&#39;</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">payLoad</span> <span class="o">=</span> <span class="s1">&#39;&lt;EVGui_SetCloudVMManagementInfoReq hostId=&quot;</span><span class="si">{0}</span><span class="s1">&quot; useMediaAgent=&quot;1&quot;&gt; &lt;powerManagementInfo isPowerManagementEnabled=&quot;1&quot; &gt; &lt;selectedCloudController clientId=&quot;</span><span class="si">{1}</span><span class="s1">&quot; clientName=&quot;</span><span class="si">{2}</span><span class="s1">&quot;/&gt;&lt;/powerManagementInfo&gt;&lt;/EVGui_SetCloudVMManagementInfoReq&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">,</span> <span class="n">pseudo_client_name_client_id</span><span class="p">,</span> <span class="n">pseudo_client_name</span><span class="p">)</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_qoperation_execute</span><span class="p">(</span><span class="n">payLoad</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Power management is not supported&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_perform_power_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Performs power operation</span>
+
+<span class="sd">                Args :</span>
+<span class="sd">                        self : Object</span>
+<span class="sd">                        operation : Operation to perform</span>
+<span class="sd">                        </span>
+<span class="sd">                Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                                        If operation is not 1 or 0</span>
+<span class="sd">                                            </span>
+<span class="sd">                                        If ower management is NOT enabled or NOT supported on MediaAgent</span>
+
+<span class="sd">                                        If API response is empty</span>
+
+<span class="sd">                                        If API response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operation</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s2">&quot;Invalid power operation type&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_power_management_enabled</span><span class="p">:</span>
+            <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+                <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CLOUD_MEDIA_AGENT</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">operation</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                   <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;Power management is NOT enabled or NOT supported&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MediaAgent.power_on"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.power_on">[docs]</a>    <span class="k">def</span> <span class="nf">power_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_till_online</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Power-on the MediaAgent</span>
+
+<span class="sd">                Args :</span>
+<span class="sd">                        self : Object</span>
+<span class="sd">                        wait_till_online :</span>
+<span class="sd">                                            True : Waits until the MediaAgent is online</span>
+<span class="sd">                                            False : Just submits the power-on request</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_power_status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Starting&quot;</span><span class="p">,</span> <span class="s2">&quot;Started&quot;</span><span class="p">,</span> <span class="s2">&quot;Online&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_perform_power_operation</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wait_till_online</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_power_status</span> <span class="o">!=</span> <span class="s2">&quot;Online&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_power_status</span><span class="p">(</span><span class="s2">&quot;Online&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MediaAgent.power_off"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.power_off">[docs]</a>    <span class="k">def</span> <span class="nf">power_off</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_till_stopped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Power-off MediaAgent</span>
+
+<span class="sd">                Args :</span>
+<span class="sd">                        self : Object</span>
+<span class="sd">                        wait_till_stopped :</span>
+<span class="sd">                                            True : Waits until the MediaAgent is stopped</span>
+<span class="sd">                                            False : Just submits the power-off request</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_power_status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Stopping&quot;</span><span class="p">,</span> <span class="s2">&quot;Stopped&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_perform_power_operation</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wait_till_stopped</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_power_status</span> <span class="o">!=</span> <span class="s2">&quot;Stopped&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_power_status</span><span class="p">(</span><span class="s2">&quot;Stopped&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MediaAgent.wait_for_power_status"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.wait_for_power_status">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_power_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expected_power_status</span><span class="p">,</span> <span class="n">time_out_sec</span><span class="o">=</span><span class="mi">600</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Waits until the expected power status not achieved</span>
+
+<span class="sd">                Args :</span>
+<span class="sd">                                        self : Object</span>
+<span class="sd">                                        expected_power_status : The expected power status as following.</span>
+<span class="sd">                                                                    Starting</span>
+<span class="sd">                                                                    Started</span>
+<span class="sd">                                                                    Online</span>
+<span class="sd">                                                                    Stopping</span>
+<span class="sd">                                                                    Stopped</span>
+<span class="sd">                                        time_out_sec : Maximum time to wait for the expected power status</span>
+
+<span class="sd">                                        Raises:</span>
+<span class="sd">                                                SDKException:</span>
+<span class="sd">                                                                If time_out_sec is not an integer and time_out_sec not None</span>
+
+<span class="sd">                                                                If expected power status is not achieved within time_out_sec time</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">time_out_sec</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_out_sec</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                   <span class="s1">&#39;Expected an integer value for [time_out_sec]&#39;</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_power_status</span> <span class="o">!=</span> <span class="n">expected_power_status</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">time_out_sec</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">time_out_sec</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                                       <span class="s1">&#39;The expected power status is not achieved within expected time&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="MediaAgent.change_index_cache"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.change_index_cache">[docs]</a>    <span class="k">def</span> <span class="nf">change_index_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_index_cache_path</span><span class="p">,</span> <span class="n">new_index_cache_path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -698,6 +935,26 @@
         <span class="sd">&quot;&quot;&quot;Treats the cache enabled value as a read-only attribute&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_cache_enabled</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">current_power_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                Returns the power state of the MA.</span>
+
+<span class="sd">                    Args :</span>
+<span class="sd">                            self : Object</span>
+<span class="sd">                    Returns :</span>
+<span class="sd">                            str - Current power status of the MediaAgent as following</span>
+<span class="sd">                                    Starting : Power-on process in going on</span>
+<span class="sd">                                    Started : MA is powered-on successfully but still not synced with CS</span>
+<span class="sd">                                    Online : Powered-on and synced with CS. MA is ready to use.</span>
+<span class="sd">                                    Stopping : Power-off operation is going on.</span>
+<span class="sd">                                    Stopped : MA is powered-off</span>
+<span class="sd">                                    Unknown : MA power status is still not synced with cloud provider. MA discovery is going on or power state sync with happening with cloud provider or something is NOT right.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">power_status</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;Starting&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;Started&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s1">&#39;Online&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="s1">&#39;Stopping&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="s1">&#39;Stopped&#39;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">power_status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_power_status</span><span class="p">)</span>
+
 <div class="viewcode-block" id="MediaAgent.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.MediaAgent.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the MediaAgent.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_media_agent_properties</span><span class="p">()</span></div></div>
@@ -706,7 +963,7 @@
 <div class="viewcode-block" id="DiskLibraries"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibraries">[docs]</a><span class="k">class</span> <span class="nc">DiskLibraries</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the disk libraries associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the DiskLibraries class.</span>
 
 <span class="sd">            Args:</span>
@@ -721,7 +978,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_libraries</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all disk libraries of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -735,7 +992,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the DiskLibraries class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;DiskLibraries class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -1003,7 +1260,7 @@
 <div class="viewcode-block" id="DiskLibrary"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary">[docs]</a><span class="k">class</span> <span class="nc">DiskLibrary</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for a specific disk library.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">library_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_details</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">library_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">library_details</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the DiskLibrary object.</span>
 
 <span class="sd">            Args:</span>
@@ -1031,12 +1288,236 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">mountpath</span> <span class="o">=</span> <span class="n">library_details</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mountPath&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mediaagent</span> <span class="o">=</span> <span class="n">library_details</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mediaAgentName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;DiskLibrary class instance for library: &quot;</span><span class="si">{0}</span><span class="s1">&quot; of Commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">library_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
+
+<div class="viewcode-block" id="DiskLibrary.move_mountpath"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.move_mountpath">[docs]</a>    <span class="k">def</span> <span class="nf">move_mountpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mountpath_id</span><span class="p">,</span> <span class="n">source_device_path</span><span class="p">,</span>
+                       <span class="n">source_mediaagent_id</span><span class="p">,</span> <span class="n">target_device_path</span><span class="p">,</span> <span class="n">target_mediaagent_id</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; To perform move mountpath operation</span>
+<span class="sd">        Args:</span>
+<span class="sd">            mountpath_id  (int)   --  Mountpath Id that need to be moved.</span>
+
+<span class="sd">            source_device_path (str)   -- Present Mountpath location</span>
+
+<span class="sd">            source_mediaagent_id    (int)   -- MediaAgent Id on which present mountpath exists</span>
+
+<span class="sd">            target_device_path    (str)   -- New Mountpath location</span>
+
+<span class="sd">            target_mediaagent_id    (int)   -- MediaAgent Id on which new mountpath exists</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            instance of the Job class for this move mountpath job</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">            Exception:</span>
+<span class="sd">                - if argument datatype is invalid</span>
+
+<span class="sd">                - if API response error code is not 0</span>
+
+<span class="sd">                - if response is empty</span>
+
+<span class="sd">                - if response code is not as expected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">mountpath_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_mediaagent_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_mediaagent_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_device_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_device_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;TMMsg_CreateTaskReq&gt;</span>
+<span class="s2">                        &lt;taskInfo&gt;</span>
+<span class="s2">                            &lt;task initiatedFrom=&quot;1&quot; ownerId=&quot;1&quot; sequenceNumber=&quot;0&quot; taskId=&quot;0&quot; taskType=&quot;1&quot;&gt;</span>
+<span class="s2">                                &lt;taskFlags disabled=&quot;0&quot; /&gt;</span>
+<span class="s2">                            &lt;/task&gt;</span>
+<span class="s2">                            &lt;associations mountPathId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                            &lt;subTasks subTaskOperation=&quot;1&quot;&gt;</span>
+<span class="s2">                                &lt;subTask operationType=&quot;5017&quot; subTaskType=&quot;1&quot; /&gt;</span>
+<span class="s2">                                &lt;options&gt; &lt;adminOpts&gt; &lt;libraryOption&gt;</span>
+<span class="s2">                                    &lt;library libraryId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;moveMPOption&gt;</span>
+<span class="s2">                                        &lt;mountPathMoveList mountPathId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; sourceDevicePath=&quot;</span><span class="si">{2}</span><span class="s2">&quot; </span>
+<span class="s2">                                        sourcemediaAgentId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; targetDevicePath=&quot;</span><span class="si">{4}</span><span class="s2">&quot; targetMediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">                                        &lt;credential credentialId=&quot;0&quot; credentialName=&quot; &quot; /&gt;</span>
+<span class="s2">                                        &lt;/mountPathMoveList&gt;</span>
+<span class="s2">                                    &lt;/moveMPOption&gt;</span>
+<span class="s2">                                &lt;/libraryOption&gt; &lt;/adminOpts&gt; &lt;/options&gt;</span>
+<span class="s2">                            &lt;/subTasks&gt;</span>
+<span class="s2">                        &lt;/taskInfo&gt;</span>
+<span class="s2">                    &lt;/TMMsg_CreateTaskReq&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">library_id</span><span class="p">,</span> <span class="n">mountpath_id</span><span class="p">,</span> <span class="n">source_device_path</span><span class="p">,</span>
+                                                     <span class="n">source_mediaagent_id</span><span class="p">,</span> <span class="n">target_device_path</span><span class="p">,</span> <span class="n">target_mediaagent_id</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_xml</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="kn">from</span> <span class="nn">cvpysdk.job</span> <span class="kn">import</span> <span class="n">Job</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DiskLibrary.validate_mountpath"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.validate_mountpath">[docs]</a>    <span class="k">def</span> <span class="nf">validate_mountpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mountpath_drive_id</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot; To perform storage validation on mountpath</span>
+<span class="sd">        Args:</span>
+<span class="sd">            mountpath_drive_id  (int)   --  Drive Id of mountpath that need to be validate.</span>
+
+<span class="sd">            media_agent (str)   -- MediaAgent on which Mountpath exists</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            instance of the Job class for this storage validation job</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">            Exception:</span>
+<span class="sd">                - if argument datatype is invalid</span>
+
+<span class="sd">                - if API response error code is not 0</span>
+
+<span class="sd">                - if response is empty</span>
+
+<span class="sd">                - if response code is not as expected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">mountpath_drive_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;TMMsg_CreateTaskReq&gt;</span>
+<span class="s2">                        &lt;taskInfo taskOperation=&quot;1&quot;&gt;</span>
+<span class="s2">                            &lt;task associatedObjects=&quot;0&quot; description=&quot;Storage Validation - Automation&quot; initiatedFrom=&quot;1&quot; </span>
+<span class="s2">                            isEZOperation=&quot;0&quot; isEditing=&quot;0&quot; isFromCommNetBrowserRootNode=&quot;0&quot; ownerId=&quot;1&quot; ownerName=&quot;&quot; </span>
+<span class="s2">                            policyType=&quot;0&quot; runUserId=&quot;1&quot; sequenceNumber=&quot;0&quot; taskType=&quot;1&quot;&gt;</span>
+<span class="s2">                            &lt;taskFlags notRunnable=&quot;0&quot; /&gt;</span>
+<span class="s2">                            &lt;/task&gt;</span>
+<span class="s2">                            &lt;subTasks subTaskOperation=&quot;1&quot;&gt;</span>
+<span class="s2">                                &lt;subTask flags=&quot;0&quot; operationType=&quot;4013&quot; subTaskId=&quot;1&quot; subTaskOrder=&quot;0&quot; subTaskType=&quot;1&quot;/&gt;</span>
+<span class="s2">                                &lt;options originalJobId=&quot;0&quot;&gt;</span>
+<span class="s2">                                    &lt;adminOpts&gt;</span>
+<span class="s2">                                        &lt;libraryOption  operation=&quot;13&quot; validationFlags=&quot;0&quot; validattionReservedFlags=&quot;0&quot;&gt;</span>
+<span class="s2">                                            &lt;library libraryId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                            &lt;mediaAgent mediaAgentName=&quot;</span><span class="si">{1}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                            &lt;driveIds driveId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                            &lt;validateDrive chunkSize=&quot;16384&quot; chunksTillEnd=&quot;0&quot; fileMarkerToStart=&quot;2&quot;</span>
+<span class="s2">                                             numberOfChunks=&quot;2&quot; threadCount=&quot;2&quot; volumeBlockSize=&quot;64&quot; /&gt;</span>
+<span class="s2">                                        &lt;/libraryOption&gt; &lt;/adminOpts&gt; &lt;/options&gt; &lt;/subTasks&gt;  &lt;/taskInfo&gt;</span>
+<span class="s2">                            &lt;/TMMsg_CreateTaskReq&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">library_id</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">mountpath_drive_id</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="kn">from</span> <span class="nn">cvpysdk.job</span> <span class="kn">import</span> <span class="n">Job</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;105&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DiskLibrary.add_cloud_mount_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.add_cloud_mount_path">[docs]</a>    <span class="k">def</span> <span class="nf">add_cloud_mount_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mount_path</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">server_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Adds a mount path to the cloud library</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mount_path  (str)   -- cloud container or bucket.</span>
+
+<span class="sd">            media_agent (str)   -- MediaAgent on which mountpath exists</span>
+
+<span class="sd">            username    (str)   -- Username to access the mount path in the format &lt;Service Host&gt;//&lt;Account Name&gt;</span>
+<span class="sd">            Eg: s3.us-west-1.amazonaws.com//MyAccessKeyID. For more information refer http://documentation.commvault.com/commvault/v11/article?p=97863.htm.</span>
+
+<span class="sd">            password    (str)   -- Password to access the mount path</span>
+
+<span class="sd">            server_type  (int)   -- provide cloud library server type</span>
+<span class="sd">                                    Eg: 3-Microsoft Azure Storage . For more information refer http://documentation.commvault.com/commvault/v11/article?p=97863.htm.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">            Exception:</span>
+<span class="sd">                - if mountpath or mediaagent or username or password or servertype arguments dataype is invalid</span>
+
+<span class="sd">                - if servertype input data is incorrect</span>
+
+<span class="sd">                - if API response error code is not 0</span>
+
+<span class="sd">                - if response is empty</span>
+
+<span class="sd">                - if response code is not as expected</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">mount_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">server_type</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;isConfigRequired&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="s2">&quot;isCloud&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">media_agent</span><span class="p">,</span>
+                <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_library_name</span><span class="p">,</span>
+                <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="n">mount_path</span><span class="p">,</span>
+                <span class="s2">&quot;loginName&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+                <span class="s2">&quot;serverType&quot;</span><span class="p">:</span> <span class="n">server_type</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">exec_command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;LIBRARY&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">exec_command</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;library&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">_response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;library&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">_response</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">_response</span><span class="p">[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">_response</span><span class="p">[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_stdout</span> <span class="o">=</span> <span class="s1">&#39;Failed to add mount path [</span><span class="si">{0}</span><span class="s1">] for library [</span><span class="si">{1}</span><span class="s1">] with error: </span><span class="se">\n</span><span class="s1"> [</span><span class="si">{2}</span><span class="s1">]&#39;</span>
+            <span class="n">_stderr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">_stdout</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mount_path</span><span class="p">,</span>
+                                                                 <span class="bp">self</span><span class="o">.</span><span class="n">_library_name</span><span class="p">,</span>
+                                                                 <span class="n">_stderr</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">_get_library_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the disk library properties.</span>
@@ -1073,6 +1554,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">libraries</span> <span class="o">=</span> <span class="n">DiskLibraries</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">libraries</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">library_name</span><span class="p">)</span><span class="o">.</span><span class="n">library_id</span>
+
+<div class="viewcode-block" id="DiskLibrary.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of this disk library.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_library_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_library_properties</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="DiskLibrary.add_mount_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.add_mount_path">[docs]</a>    <span class="k">def</span> <span class="nf">add_mount_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mount_path</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Adds a mount path [local/remote] to the disk library</span>
@@ -1168,6 +1653,12 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_library_id</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">library_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dictionary consisting of the full properties of the library&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_library_properties</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">mount_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the library id as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mountpath</span>
@@ -1176,32 +1667,98 @@
     <span class="k">def</span> <span class="nf">media_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the library id as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mediaagent</span>
-
-<div class="viewcode-block" id="DiskLibrary.shareMountpath"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.shareMountpath">[docs]</a>    <span class="k">def</span> <span class="nf">shareMountpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newMA</span><span class="p">,</span> <span class="n">newmountpath</span><span class="p">):</span>
+        
+<div class="viewcode-block" id="DiskLibrary.share_mount_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.DiskLibrary.share_mount_path">[docs]</a>    <span class="k">def</span> <span class="nf">share_mount_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_media_agent</span><span class="p">,</span> <span class="n">new_mount_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        method to specify share mountpath to a disklibrary</span>
+<span class="sd">        Method to share a mountpath to a disklibrary</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        </span>
+<span class="sd">            new_media_agent (str)   -- Media agent which is accessing the shared mount path</span>
+<span class="sd">            </span>
+<span class="sd">            new_mount_path  (int)   -- Mount path to be shared</span>
+<span class="sd">            </span>
+<span class="sd">            \*\*kwargs  (dict)  --  Optional arguments</span>
+
+<span class="sd">                    Available kwargs Options:</span>
+<span class="sd">            </span>
+<span class="sd">                        media_agent     (str)   -- Media agent associated with library</span>
+<span class="sd">                        </span>
+<span class="sd">                        library_name    (str)   -- Name of the library which has the mount path</span>
+<span class="sd">                    </span>
+<span class="sd">                        mount_path      (str)   -- Mount path to be shared</span>
+<span class="sd">                        </span>
+<span class="sd">                        access_type     (int)   -- The access type of the shared mount path</span>
+
+<span class="sd">                                                    Read Device Access = 4</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Read/ Write Device Access = 6</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Read Device Access with Preferred = 12</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Read/Write Device Access with Preferred = 14</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - IP Read = 20</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - IP Read/ Write = 22</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - FC Read = 36</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - FC Read/ Write = 38</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - iSCSI Read = 132</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Data Server - iSCSI Read/ Write = 134</span>
+<span class="sd">                                                    </span>
+<span class="sd">                                                    Note: For the Data Server device access type,</span>
+<span class="sd">                                                          enter the local path provided in the library/mountPath</span>
+<span class="sd">                                                          parameter in the libNewProp/mountPath parameter also.</span>
+<span class="sd">                        </span>
+
+<span class="sd">                        username        (str)   -- Username to access the mount path, if UNC</span>
+
+<span class="sd">                        password        (str)   -- Password to access the mount path, if UNC</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">            Exception:</span>
+<span class="sd">                - if any of the parameter&#39;s dataype is invalid</span>
+
+<span class="sd">                - if API response error code is not 0</span>
+
+<span class="sd">                - if response is empty</span>
+
+<span class="sd">                - if response code is not as expected</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">media_agent</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;media_agent&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mediaagent</span><span class="p">)</span>
+        <span class="n">library_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;library_name&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">library_name</span><span class="p">)</span>
+        <span class="n">mount_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mount_path&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mountpath</span><span class="p">)</span>
+        <span class="n">access_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_type&#39;</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+       
         <span class="bp">self</span><span class="o">.</span><span class="n">_EXECUTE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
-            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
-                              <span class="bp">self</span><span class="o">.</span><span class="n">mediaagent</span><span class="p">,</span>
-            <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">library_name</span><span class="p">,</span>
+            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">media_agent</span><span class="p">,</span>
+            <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="n">library_name</span><span class="p">,</span>
             <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
-                         <span class="bp">self</span><span class="o">.</span><span class="n">mountpath</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">libNewprop</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;deviceAccessType&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
-            <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;loginName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">newMA</span><span class="p">,</span>
-            <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">newmountpath</span><span class="p">),</span>
+                         <span class="n">mount_path</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lib_new_prop</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;deviceAccessType&quot;</span><span class="p">:</span> <span class="n">access_type</span><span class="p">,</span>
+            <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+            <span class="s2">&quot;loginName&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">new_media_agent</span><span class="p">,</span>
+            <span class="s2">&quot;mountPath&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_mount_path</span><span class="p">),</span>
             <span class="s2">&quot;proxyPassword&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;EVGui_ConfigureStorageLibraryReq&quot;</span><span class="p">:</span>
                 <span class="p">{</span>
                     <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span><span class="p">,</span>
-                    <span class="s2">&quot;libNewProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">libNewprop</span>
+                    <span class="s2">&quot;libNewProp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lib_new_prop</span>
                 <span class="p">}</span>
         <span class="p">}</span>
 
@@ -1225,7 +1782,7 @@
 
 
 <div class="viewcode-block" id="RPStores"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.RPStores">[docs]</a><span class="k">class</span> <span class="nc">RPStores</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the MediaAgents class.</span>
 
 <span class="sd">            Args:</span>
@@ -1334,7 +1891,7 @@
 
 
 <div class="viewcode-block" id="RPStore"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.storage.RPStore">[docs]</a><span class="k">class</span> <span class="nc">RPStore</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">rpstore_name</span><span class="p">,</span> <span class="n">rpstore_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">rpstore_name</span><span class="p">,</span> <span class="n">rpstore_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rpstore_name</span> <span class="o">=</span> <span class="n">rpstore_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rpstore_id</span> <span class="o">=</span> <span class="n">rpstore_id</span>

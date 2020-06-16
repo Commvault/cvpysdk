@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.client &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.client &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -188,6 +188,8 @@
 
 <span class="sd">    _get_clients()                        --  gets all the clients associated with the commcell</span>
 
+<span class="sd">    _get_office_365_clients()             --  get all office365 clients in the commcell</span>
+
 <span class="sd">    _get_hidden_clients()                 --  gets all the hidden clients associated with the</span>
 <span class="sd">    commcell</span>
 
@@ -213,9 +215,16 @@
 <span class="sd">    _process_add_response()               -- to process the add client request using API call</span>
 
 <span class="sd">    add_vmware_client()                   --  adds a new VMWare Virtualization Client to the</span>
-<span class="sd">    Commcell</span>
+<span class="sd">                                              Commcell</span>
+
+<span class="sd">    add_kubernetes_client()               --  adds a new Kubernetes Virtualization Client to the</span>
+<span class="sd">                                              Commcell</span>
+
+<span class="sd">    add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell</span>
 
 <span class="sd">    add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell</span>
+
+<span class="sd">    add_splunk_client()                   --  adds a new Splunk Client to the Commcell</span>
 
 <span class="sd">    add_case_client()                     --  adds a new Case Manger Client to the Commcell</span>
 
@@ -228,6 +237,8 @@
 
 <span class="sd">    delete(client_name)                   --  deletes the client specified by the client name from</span>
 <span class="sd">    the commcell</span>
+
+<span class="sd">    filter_clients_return_displaynames()  --  filter clients based on criteria</span>
 
 <span class="sd">    refresh()                             --  refresh the clients associated with the commcell</span>
 
@@ -242,6 +253,9 @@
 
 <span class="sd">    **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization</span>
 <span class="sd">    clients that are associated with the commcell and their information such as id and hostname</span>
+<span class="sd">    </span>
+<span class="sd">    **office365_clients** -- returns the dictioanry consisting of all the office 365 clients that are</span>
+<span class="sd">    associated with the commcell</span>
 
 
 <span class="sd">Client</span>
@@ -311,7 +325,7 @@
 <span class="sd">    push_network_config()        --  performs a push network configuration on the client</span>
 
 <span class="sd">    add_user_association()       --  adds the user associations on this client</span>
-<span class="sd">	</span>
+
 <span class="sd">	add_client_owner()			 --  adds users to owner list of this client</span>
 
 <span class="sd">    refresh()                    --  refresh the properties of the client</span>
@@ -321,7 +335,7 @@
 <span class="sd">    delete_additional_setting()  --  deletes registry key from the client property</span>
 
 <span class="sd">    release_license()            --  releases a license from a client</span>
-<span class="sd">    </span>
+
 <span class="sd">    retire()                     --  perform retire operation on the client</span>
 
 <span class="sd">    reconfigure_client()         --  reapplies license to the client</span>
@@ -419,38 +433,38 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">requests</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agents</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
-<span class="kn">from</span> <span class="nn">.deployment.uninstall</span> <span class="k">import</span> <span class="n">Uninstall</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agents</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="kn">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.deployment.uninstall</span> <span class="kn">import</span> <span class="n">Uninstall</span>
 
-<span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
-<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="k">import</span> <span class="n">NetworkThrottle</span>
+<span class="kn">from</span> <span class="nn">.network</span> <span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="kn">import</span> <span class="n">NetworkThrottle</span>
 
-<span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">Users</span>
+<span class="kn">from</span> <span class="nn">.security.user</span> <span class="kn">import</span> <span class="n">Users</span>
 
-<span class="kn">from</span> <span class="nn">.name_change</span> <span class="k">import</span> <span class="n">NameChange</span>
+<span class="kn">from</span> <span class="nn">.name_change</span> <span class="kn">import</span> <span class="n">NameChange</span>
 
 
 <div class="viewcode-block" id="Clients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients">[docs]</a><span class="k">class</span> <span class="nc">Clients</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the clients associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Clients class.</span>
 
 <span class="sd">            Args:</span>
@@ -469,17 +483,19 @@
         <span class="c1"># and use a single API call to get all types of clients, and to be able to distinguish</span>
         <span class="c1"># them</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_CLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_CLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_CLIENTS&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_OFFICE_365_CLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_OFFICE_365_ENTITIES&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ALL_CLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_VIRTUALIZATION_CLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_VIRTUAL_CLIENTS&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_EXCHANGE_CLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_EXCHANGE&#39;</span><span class="p">]</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_EXCHANGE_CLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SHAREPOINT_CLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_PSEUDO_CLIENT&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SPLUNK_CLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_PSEUDO_CLIENT&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_clients</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_virtualization_clients</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_office_365_clients</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all clients of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -493,17 +509,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Clients class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Clients class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the clients associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the client for the given client ID or</span>
 <span class="sd">            the details of the client for given client Name.</span>
 
@@ -579,6 +595,57 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+        
+    <span class="k">def</span> <span class="nf">_get_office_365_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;REST API call to get all office365 clients in the commcell</span>
+
+<span class="sd">                  Returns:</span>
+<span class="sd">                      dict    -   consists of all office 365 clients in the commcell</span>
+<span class="sd">                          {</span>
+<span class="sd">                              &quot;client1_name&quot;: {</span>
+
+<span class="sd">                                  &quot;id&quot;: client1_id</span>
+
+<span class="sd">                              },</span>
+
+<span class="sd">                              &quot;client2_name&quot;: {</span>
+
+<span class="sd">                                  &quot;id&quot;: client2_id</span>
+<span class="sd">                              }</span>
+<span class="sd">                          }</span>
+
+<span class="sd">                  Raises:</span>
+<span class="sd">                      SDKException:</span>
+<span class="sd">                          if response is empty</span>
+
+<span class="sd">                          if response is not success</span>
+
+<span class="sd">              &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_OFFICE_365_CLIENTS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;o365Client&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">clients_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;o365Client&#39;</span><span class="p">]:</span>
+                    <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;clientId&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">clients_dict</span><span class="p">[</span><span class="n">temp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">temp_id</span>
+                    <span class="p">}</span>
+
+                <span class="k">return</span> <span class="n">clients_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">office_365_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dict of all office 365 clients in the commcell&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_office_365_clients</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_office_365_clients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_office_365_clients</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_office_365_clients</span>
 
     <span class="k">def</span> <span class="nf">_get_hidden_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets all the clients associated with the commcell, including all VM&#39;s and hidden clients</span>
@@ -825,22 +892,22 @@
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;App_CreatePseudoClientRequest&#39;</span><span class="p">:</span>
-            <span class="p">{</span>
-                <span class="s2">&quot;registerClient&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;clientInfo&quot;</span><span class="p">:{</span>
-                    <span class="s2">&quot;clientType&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="s2">&quot;openVMSProperties&quot;</span><span class="p">:{</span>
-                        <span class="s2">&quot;cvdPort&quot;</span><span class="p">:</span><span class="mi">0</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;registerClient&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;openVMSProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;cvdPort&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;ibmiInstallOptions&quot;</span><span class="p">:</span> <span class="p">{}</span>
                     <span class="p">},</span>
-                    <span class="s2">&quot;ibmiInstallOptions&quot;</span><span class="p">:{}</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;entity&quot;</span><span class="p">:{</span>
-                    <span class="s2">&quot;hostName&quot;</span><span class="p">:</span><span class="n">client_name</span><span class="p">,</span>
-                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span><span class="n">client_name</span><span class="p">,</span>
-                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span><span class="mi">3</span>
+                    <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;hostName&quot;</span><span class="p">:</span> <span class="n">client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                    <span class="p">}</span>
                 <span class="p">}</span>
-            <span class="p">}</span>
         <span class="p">}</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
@@ -990,6 +1057,109 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
+
+<div class="viewcode-block" id="Clients.add_kubernetes_client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients.add_kubernetes_client">[docs]</a>    <span class="k">def</span> <span class="nf">add_kubernetes_client</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="p">,</span>
+            <span class="n">master_node</span><span class="p">,</span>
+            <span class="n">secret_name</span><span class="p">,</span>
+            <span class="n">secret_key</span><span class="p">,</span>
+            <span class="n">vsaclient</span><span class="p">,</span>
+            <span class="n">vsaclient_id</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new Kubernetes Virtualization Client to the Commcell.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_name         (str)   --  name of the new Kubernetes Virtual Client</span>
+
+<span class="sd">                master_node         (str)   --  Kubernetes kubectl node</span>
+
+<span class="sd">                secret_name         (str)   --  Kubernetes Secret name</span>
+
+<span class="sd">                secret_key          (str)   --  Kubernetes Secret Key</span>
+
+<span class="sd">                vsaclient           (str)   --  Virtual Server proxy client</span>
+
+<span class="sd">                vsaclient_id        (int)   --  Virtual Server Client id</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Client class for this new client</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client with given name already exists</span>
+
+<span class="sd">                    if failed to add the client</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">host_name</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{0}</span><span class="s2">:6443&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_node</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_name</span><span class="p">))</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+                <span class="s2">&quot;virtualServerClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;virtualServerInstanceInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;vsInstanceType&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                        <span class="s2">&quot;k8s&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;secretName&quot;</span><span class="p">:</span> <span class="n">secret_name</span><span class="p">,</span>
+                            <span class="s2">&quot;secretKey&quot;</span><span class="p">:</span> <span class="n">secret_key</span><span class="p">,</span>
+                            <span class="s2">&quot;secretType&quot;</span><span class="p">:</span> <span class="s2">&quot;ServiceAccount&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;endpointurl&quot;</span><span class="p">:</span> <span class="n">host_name</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;associatedClients&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;memberServers&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">vsaclient</span><span class="p">,</span>
+                                        <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">vsaclient_id</span><span class="p">,</span>
+                                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">]</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;vmwareVendor&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;vcenterHostName&quot;</span><span class="p">:</span> <span class="n">host_name</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_CLIENT</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+
 <div class="viewcode-block" id="Clients.add_vmware_client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients.add_vmware_client">[docs]</a>    <span class="k">def</span> <span class="nf">add_vmware_client</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">client_name</span><span class="p">,</span>
@@ -1069,6 +1239,375 @@
                 <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Clients.add_share_point_client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients.add_share_point_client">[docs]</a>    <span class="k">def</span> <span class="nf">add_share_point_client</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">client_name</span><span class="p">,</span>
+            <span class="n">server_plan</span><span class="p">,</span>
+            <span class="n">service_type</span><span class="p">,</span>
+            <span class="n">index_server</span><span class="p">,</span>
+            <span class="n">access_nodes_list</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new Office 365 Share Point Pseudo Client to the Commcell.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                client_name                 (str)   --  name of the new Sharepoint Pseudo Client</span>
+
+<span class="sd">                server_plan                 (str)   --  server_plan to associate with the client</span>
+
+<span class="sd">                service_type                (dict)  --  service type of Sharepoint</span>
+<span class="sd">                                                         &quot;ServiceType&quot;: {</span>
+<span class="sd">                                                                    &quot;Sharepoint Global Administrator&quot;: 4</span>
+<span class="sd">                                                         }</span>
+
+<span class="sd">                index_server                (str)   --  index server for virtual client</span>
+
+<span class="sd">                access_nodes_list           (list)  --  list containing client names / client objects</span>
+
+<span class="sd">            Kwargs :</span>
+
+<span class="sd">                tenant_url                  (str)   --  url of sharepoint tenant</span>
+
+<span class="sd">                user_username                (str)   --  username of sharepoint user</span>
+
+<span class="sd">                user_password               (str)   -- password of sharepoint user</span>
+
+<span class="sd">                azure_username              (str)   --  username of azure app</span>
+
+<span class="sd">                azure_secret                (str)   --  secret key of azure app</span>
+
+<span class="sd">                global_administrator        (str)   --  username of global administrator</span>
+
+<span class="sd">                global_administrator_password (str)  -- password of global administrator</span>
+
+<span class="sd">                azure_app_id            (str)       --  azure app id for sharepoint online</span>
+
+<span class="sd">                azure_app_key_id        (str)       --  app key for sharepoint online</span>
+
+<span class="sd">                azure_directory_id    (str)   --  azure directory id for sharepoint online</span>
+
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Client class for this new client</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if client with given name already exists</span>
+
+<span class="sd">                    if index_server is not found</span>
+
+<span class="sd">                    if server_plan is not found</span>
+
+<span class="sd">                    if failed to add the client</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Client &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_name</span><span class="p">))</span>
+
+        <span class="n">index_server_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">index_server</span><span class="p">):</span>
+            <span class="n">index_server_cloud</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index_server</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">index_server_cloud</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">has_agent</span><span class="p">(</span><span class="s1">&#39;big data apps&#39;</span><span class="p">):</span>
+                <span class="n">index_server_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgentId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">index_server_cloud</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                    <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">index_server_cloud</span><span class="o">.</span><span class="n">client_name</span>
+                <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">server_plan</span><span class="p">):</span>
+            <span class="n">server_plan_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">server_plan</span><span class="p">)</span>
+            <span class="n">server_plan_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;planId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">server_plan_object</span><span class="o">.</span><span class="n">plan_id</span><span class="p">),</span>
+                <span class="s2">&quot;planType&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">server_plan_object</span><span class="o">.</span><span class="n">plan_type</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="n">member_servers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">access_nodes_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">client</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+                    <span class="n">client_dict</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client</span><span class="p">,</span>
+                            <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">client</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                            <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                    <span class="n">member_servers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">):</span>
+                <span class="n">client_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="n">member_servers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_dict</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">37</span><span class="p">,</span>
+                <span class="s2">&quot;lookupPlanInfo&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;sharepointPseudoClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;sharePointVersion&quot;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span>
+                    <span class="s2">&quot;sharepointBackupSet&quot;</span><span class="p">:</span> <span class="p">{</span>
+
+                    <span class="p">},</span>
+                    <span class="s2">&quot;indexServer&quot;</span><span class="p">:</span> <span class="n">index_server_dict</span><span class="p">,</span>
+                    <span class="s2">&quot;jobResultsDir&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s2">&quot;primaryMemberServer&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;sharePointVersion&quot;</span><span class="p">:</span> <span class="mi">23</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;spMemberServers&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;memberServers&quot;</span><span class="p">:</span> <span class="n">member_servers</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;plan&quot;</span><span class="p">:</span> <span class="n">server_plan_dict</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client_name</span>
+            <span class="p">}</span>
+
+        <span class="p">}</span>
+        <span class="n">tenant_url</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tenant_url&#39;</span><span class="p">)</span>
+        <span class="n">global_administrator</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;global_administrator&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tenant_url</span><span class="p">:</span>
+            <span class="n">azure_secret</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_secret&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="n">user_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_password&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;clientInfo&quot;</span><span class="p">][</span><span class="s2">&quot;sharepointPseudoClientProperties&quot;</span><span class="p">][</span><span class="s2">&quot;sharepointBackupSet&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;spOffice365BackupSetProp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;tenantUrlItem&quot;</span><span class="p">:</span> <span class="n">tenant_url</span><span class="p">,</span>
+                    <span class="s2">&quot;cloudRegion&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;infraStructurePoolEnabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;serviceAccounts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;accounts&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;serviceType&quot;</span><span class="p">:</span> <span class="n">service_type</span><span class="p">[</span><span class="s2">&quot;Sharepoint Online&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;userAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">user_password</span><span class="p">,</span>
+                                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_username&#39;</span><span class="p">)</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;serviceType&quot;</span><span class="p">:</span> <span class="n">service_type</span><span class="p">[</span><span class="s2">&quot;Sharepoint Azure Storage&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;userAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">azure_secret</span><span class="p">,</span>
+                                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_username&#39;</span><span class="p">)</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;office365Credentials&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;azureAppList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;azureApps&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;azureDirectoryId&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;azureAppId&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+        <span class="k">elif</span> <span class="n">global_administrator</span><span class="p">:</span>
+            <span class="n">azure_app_key_id</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_app_key_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+            <span class="n">global_administrator_password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;global_administrator_password&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;clientInfo&quot;</span><span class="p">][</span><span class="s2">&quot;sharepointPseudoClientProperties&quot;</span><span class="p">][</span><span class="s2">&quot;sharepointBackupSet&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;spOffice365BackupSetProp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;cloudRegion&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;infraStructurePoolEnabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;serviceAccounts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;accounts&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;serviceType&quot;</span><span class="p">:</span> <span class="n">service_type</span><span class="p">[</span><span class="s2">&quot;Sharepoint Global Administrator&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;userAccount&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">global_administrator</span><span class="p">,</span>
+                                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">global_administrator_password</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;office365Credentials&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s2">&quot;azureAppList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;azureApps&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;azureAppId&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_app_id&#39;</span><span class="p">),</span>
+                                <span class="s2">&quot;azureAppKeyValue&quot;</span><span class="p">:</span> <span class="n">azure_app_key_id</span><span class="p">,</span>
+                                <span class="s2">&quot;azureDirectoryId&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;azure_directory_id&#39;</span><span class="p">)</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SHAREPOINT_CLIENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+
+                        <span class="c1"># initialize the clients again</span>
+                        <span class="c1"># so the client object has all the clients</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Clients.add_splunk_client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients.add_splunk_client">[docs]</a>    <span class="k">def</span> <span class="nf">add_splunk_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">new_client_name</span><span class="p">,</span>
+                          <span class="n">password</span><span class="p">,</span>
+                          <span class="n">master_uri</span><span class="p">,</span>
+                          <span class="n">master_node</span><span class="p">,</span>
+                          <span class="n">user_name</span><span class="p">,</span>
+                          <span class="n">plan</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds new splunk client after clientname and plan validation</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_client_name       (str)   --  new splunk client name</span>
+
+<span class="sd">            password              (str)   --  splunk instance password</span>
+
+<span class="sd">            master_uri            (str)   --  URI for the master node</span>
+
+<span class="sd">            master_node           (str)   --  master node name</span>
+
+<span class="sd">            user_name             (str)   --  splunk instance username</span>
+
+<span class="sd">            plan                  (str)   --  plan assocated with the new client</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                client_object     (obj)   --  client object associated with the new splunk client</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if failed to add the client</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">):</span>
+            <span class="n">plan_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+            <span class="n">plan_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_object</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+            <span class="n">plan_type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_object</span><span class="o">.</span><span class="n">plan_type</span><span class="p">)</span>
+            <span class="n">plan_subtype</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_object</span><span class="o">.</span><span class="n">subtype</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Provide Valid Plan Name&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="n">master_node</span><span class="p">):</span>
+            <span class="n">client_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">all_clients</span><span class="p">[</span><span class="n">master_node</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Provide Valid Master Client&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">29</span><span class="p">,</span>
+                <span class="s2">&quot;distributedClusterInstanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clusterType&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+                    <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">new_client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">new_client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="mi">64</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;clusterConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;splunkConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">master_uri</span><span class="p">,</span>
+                            <span class="s2">&quot;primaryNode&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">client_id</span><span class="p">,</span>
+                                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">master_node</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;splunkUser&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+                                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">user_name</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;plan&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;planSubtype&quot;</span><span class="p">:</span> <span class="n">plan_subtype</span><span class="p">,</span>
+                    <span class="s2">&quot;planType&quot;</span><span class="p">:</span> <span class="n">plan_type</span><span class="p">,</span>
+                    <span class="s2">&quot;planName&quot;</span><span class="p">:</span> <span class="n">plan</span><span class="p">,</span>
+                    <span class="s2">&quot;planId&quot;</span><span class="p">:</span> <span class="n">plan_id</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">new_client_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SPLUNK_CLIENT</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorString&#39;</span><span class="p">]</span>
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># initialize the clients again</span>
+                        <span class="c1"># so the client object has all the clients</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">new_client_name</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="s1">&#39;errorMessage&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create client</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
+
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
@@ -1463,11 +2002,11 @@
                                         <span class="s2">&quot;dbEnabled&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
                                         <span class="s2">&quot;dbPort&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_port&#39;</span><span class="p">,</span> <span class="s1">&#39;1433&#39;</span><span class="p">),</span>
                                         <span class="s2">&quot;dbInstance&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_instance&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
-                                        <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_name&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instance_name&#39;</span><span class="p">,</span><span class="s1">&#39;ORG1&#39;</span><span class="p">)),</span>
+                                        <span class="s2">&quot;dbName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_name&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instance_name&#39;</span><span class="p">,</span> <span class="s1">&#39;ORG1&#39;</span><span class="p">)),</span>
                                         <span class="s2">&quot;dbType&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_type&#39;</span><span class="p">,</span> <span class="s2">&quot;SQLSERVER&quot;</span><span class="p">),</span>
                                         <span class="s2">&quot;dbHost&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_host_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
                                         <span class="s2">&quot;dbUserPassword&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                            <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_user_name&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">),</span>
+                                            <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">db_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;db_user_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
                                             <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">db_user_password</span><span class="p">,</span>
 
                                         <span class="p">},</span>
@@ -1483,7 +2022,7 @@
                                 <span class="p">],</span>
                                 <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
                                     <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
                                     <span class="p">},</span>
                                 <span class="p">},</span>
                             <span class="p">},</span>
@@ -1663,7 +2202,7 @@
                 <span class="n">error_code</span> <span class="o">=</span> <span class="n">warning_code</span> <span class="o">=</span> <span class="mi">0</span>
 
                 <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                         <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to delete client&#39;</span>
                         <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1704,13 +2243,13 @@
         <span class="sd">&quot;&quot;&quot;Refresh the clients associated with the Commcell.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_clients</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_clients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hidden_clients</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_virtualization_clients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_virtualization_clients</span><span class="p">()</span></div></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_virtualization_clients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_virtualization_clients</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_office_365_clients</span> <span class="o">=</span> <span class="kc">None</span></div></div>
 
 <div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing client operations for a specific client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Client class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -1784,7 +2323,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Client class instance for Client: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
@@ -1865,7 +2404,7 @@
 
                 <span class="k">if</span> <span class="s1">&#39;version&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;versionInfo&#39;</span><span class="p">]:</span>
                     <span class="n">service_pack</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span>
-                        <span class="sa">r</span><span class="s1">&#39;ServicePack:([\d]*)&#39;</span><span class="p">,</span>
+                        <span class="sa">r</span><span class="s1">&#39;[ServicePack|FeatureRelease]:([\d]*)&#39;</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;versionInfo&#39;</span><span class="p">][</span><span class="s1">&#39;version&#39;</span><span class="p">]</span>
                     <span class="p">)</span>
 
@@ -2277,9 +2816,11 @@
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
-                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
-                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to set property</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                            <span class="n">error_message</span><span class="p">)</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_message</span><span class="p">:</span>
+                            <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+                        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to set property</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
                         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
@@ -2400,7 +2941,7 @@
     <span class="k">def</span> <span class="nf">_security_association</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the security association object&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.security.security_association</span> <span class="k">import</span> <span class="n">SecurityAssociation</span>
+            <span class="kn">from</span> <span class="nn">.security.security_association</span> <span class="kn">import</span> <span class="n">SecurityAssociation</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span> <span class="o">=</span> <span class="n">SecurityAssociation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span>
@@ -3296,6 +3837,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">def</span> <span class="nf">_create_destination_path</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Returns the path obtained by joining the items in argument</span>
 
@@ -3517,8 +4059,8 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
         <span class="n">properties_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
         <span class="n">owners</span><span class="p">,</span> <span class="n">current_owners</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">if</span> <span class="s1">&#39;owners&#39;</span> <span class="ow">in</span> <span class="n">properties_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientProps&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">,{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s1">&#39;ownerAssociations&#39;</span><span class="p">,{}):</span>
+        <span class="k">if</span> <span class="s1">&#39;owners&#39;</span> <span class="ow">in</span> <span class="n">properties_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clientProps&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;ownerAssociations&#39;</span><span class="p">,</span> <span class="p">{}):</span>
             <span class="n">owners</span> <span class="o">=</span> <span class="n">properties_dict</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">][</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">][</span>
                 <span class="s1">&#39;ownerAssociations&#39;</span><span class="p">][</span><span class="s1">&#39;owners&#39;</span><span class="p">]</span>
             <span class="n">current_owners</span> <span class="o">=</span> <span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">owners</span><span class="p">)</span>
@@ -3536,9 +4078,82 @@
                 <span class="n">properties_dict</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">][</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ownerAssociations&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;ownersOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;owners&quot;</span><span class="p">:</span> <span class="n">owners</span><span class="p">}}</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">properties_dict</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;ownerAssociations&#39;</span><span class="p">:{</span>
+            <span class="n">properties_dict</span><span class="p">[</span><span class="s1">&#39;clientProps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;ownerAssociations&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;ownersOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;owners&quot;</span><span class="p">:</span> <span class="n">owners</span><span class="p">}}}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Client.filter_clients_return_displaynames"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.filter_clients_return_displaynames">[docs]</a>    <span class="k">def</span> <span class="nf">filter_clients_return_displaynames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_by</span><span class="o">=</span><span class="s2">&quot;OS&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets all the clients associated with the commcell with properties</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filter_by   (str)         --  filters clients based on criteria</span>
+
+<span class="sd">                                            Accepted values:</span>
+
+<span class="sd">                                            1. OS</span>
+
+<span class="sd">            **kwargs    (str)         --  accepted optional arguments:</span>
+
+<span class="sd">                                            os_type    (str)  - accepted values Windows, Unix, NAS</span>
+
+<span class="sd">                                            url_params (dict) - dict of url parameters and values</span>
+
+<span class="sd">                                                                Example:</span>
+
+<span class="sd">                                                               {&quot;Hiddenclients&quot;:&quot;true&quot;}</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">            list    -   list of clients of given os_type</span>
+
+<span class="sd">        Raises:</span>
+
+<span class="sd">            SDKException:</span>
+
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">client_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">param_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s2">&quot;url_params&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">url_param</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;url_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">param_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">url_param</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">param_val</span><span class="si">}</span><span class="s2">&amp;&quot;</span>
+
+        <span class="k">if</span> <span class="s2">&quot;os_type&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">os_filter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;os_type&#39;</span><span class="p">]</span>
+
+        <span class="c1"># To get the complete properties in the response</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;EdgeMode&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;FILTER_CLIENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">param_string</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;clientProperties&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;clientProperties&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">filter_by</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;os&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dictionary</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;displayName&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s1">&#39;idaList&#39;</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]:</span>
+                    <span class="n">ida_list</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;idaList&#39;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">ida</span> <span class="ow">in</span> <span class="n">ida_list</span><span class="p">:</span>
+                        <span class="n">os_type</span> <span class="o">=</span> <span class="n">ida</span><span class="p">[</span><span class="s1">&#39;idaEntity&#39;</span><span class="p">][</span><span class="s1">&#39;appName&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">os_filter</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">os_type</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                            <span class="n">client_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">client_list</span></div>
 
 <div class="viewcode-block" id="Client.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refreshes the properties of the Client.&quot;&quot;&quot;</span>
@@ -3862,25 +4477,25 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
-        
+
 <div class="viewcode-block" id="Client.retire"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.retire">[docs]</a>    <span class="k">def</span> <span class="nf">retire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Uninstalls the CommVault Software on the client, releases the license and deletes the client.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            Job - job object of the uninstall job</span>
-<span class="sd">            </span>
+
 <span class="sd">        Raises:</span>
-<span class="sd">                                        </span>
+
 <span class="sd">            SDKException:</span>
-<span class="sd">            </span>
+
 <span class="sd">                if failed to retire client</span>
-<span class="sd">                            </span>
+
 <span class="sd">                if response is empty</span>
-<span class="sd">                        </span>
+
 <span class="sd">                if response code is not as expected</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span> 
-            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span> 
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
                 <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_name</span>
             <span class="p">}</span>
@@ -3888,7 +4503,7 @@
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;DELETE&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RETIRE&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">request_json</span>
         <span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;response&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
@@ -3899,7 +4514,7 @@
                         <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobId&#39;</span><span class="p">]))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to Retire Client. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_string</span><span class="p">)</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>  
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Client&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -4074,7 +4689,7 @@
                                 <span class="s1">&#39;licenseName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">license_details</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">]</span>
                             <span class="n">licenses_dict</span><span class="p">[</span><span class="n">license_details</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                                 <span class="s1">&#39;licenseName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)][</span><span class="s1">&#39;platformType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">license_details</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                                    <span class="s1">&#39;platformType&#39;</span><span class="p">)</span>
+                                <span class="s1">&#39;platformType&#39;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="o">=</span> <span class="n">licenses_dict</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_license_info</span> <span class="o">=</span> <span class="p">{}</span>
@@ -4171,7 +4786,8 @@
 
 <span class="k">class</span> <span class="nc">_Readiness</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot; Class for checking the connection details of a client &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span> <span class="o">=</span> <span class="n">client_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reason</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4195,7 +4811,8 @@
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="p">)</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>

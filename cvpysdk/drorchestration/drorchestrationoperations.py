@@ -154,8 +154,23 @@ class DROrchestrationOperations(object):
                 "24": "Shutdown",
                 "25": "Storage Operation",
                 "26": "Finalize",
-                "27": "DR Approval"
-
+                "27": "DR Approval",
+                "28": "Delete VM",
+                "29": "Create VM",
+                "30": "Get VM Information",
+                "31": "Create DR VM",
+                "32": "Post VM Failover",
+                "33": "Mount Snap Primary",
+                "34": "DR VM Snap Mount",
+                "35": "Break Volume Relationship",
+                "36": "Resync Volume Relationship",
+                "37": "DR VM Snap Unmount",
+                "38": "DR Test VM Snap Mount",
+                "39": "DR Test VM Snap Unmount",
+                "40": "Delete DR VM",
+                "41": "Post VM Failover",
+                "42": "Clone VM",
+                "43": "Refresh VM"
             }
 
             self._dr_orchestration_job_phase = _dr_orchestration_job_phase

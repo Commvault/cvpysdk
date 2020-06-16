@@ -546,7 +546,7 @@ class UserGroup(object):
                 security_properties = self._properties.get('securityAssociations', {}).get(
                     'associations', {})
                 self._security_associations = SecurityAssociation.fetch_security_association(
-                            security_dict=security_properties)
+                    security_dict=security_properties)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -563,7 +563,7 @@ class UserGroup(object):
                 SDKException:
                     if user is not found on this commcell
         """
-        if usergroup_list != None:
+        if usergroup_list is not None:
             for usergroup in usergroup_list:
                 if not self._commcell_object.user_groups.has_user_group(usergroup):
                     raise SDKException(
@@ -731,7 +731,7 @@ class UserGroup(object):
 
                     if failed update local usergroup properties
         """
-        if users_list != None:
+        if users_list is not None:
             for user in users_list:
                 if not self._commcell_object.users.has_user(user):
                     raise SDKException(
@@ -740,13 +740,13 @@ class UserGroup(object):
         else:
             userlist_json = []
 
-        if external_usergroups != None:
+        if external_usergroups is not None:
             self._has_usergroup(external_usergroups)
             usergroup_json = [{"userGroupName": name} for name in external_usergroups]
         else:
             usergroup_json = []
 
-        if local_usergroups != None:
+        if local_usergroups is not None:
             self._has_usergroup(local_usergroups)
             local_groups_json = [{"userGroupName": user_name} for user_name in local_usergroups]
         else:
@@ -813,7 +813,7 @@ class UserGroup(object):
             "localUserGroups": local_group_blob,
             "users": users_blob
         }
-        if external_group_blob != None:
+        if external_group_blob is not None:
             group_json.update({"associatedExternalUserGroups": external_group_blob})
 
         request_json = {

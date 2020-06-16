@@ -44,6 +44,8 @@ MediaAgents:
 
     get(media_agent_name)       --  returns the instance of MediaAgent class
     of the media agent specified
+    
+    delete(media_agent)     --  Deletes the media agent from the commcell.
 
     refresh()                   --  refresh the media agents associated with the commcell
 
@@ -63,6 +65,16 @@ MediaAgent:
     _get_media_agent_properties()           --  returns media agent properties
 
     _initialize_media_agent_properties()    --  initializes media agent properties
+
+    enable_power_management()               --  Enable VM Management (power management)
+
+    _perform_power_operation()              --  Performs power operation (power-on/power-off)
+
+    power_on()                              --  Power-on MediaAgent if VM management is enabled
+
+    power_off()                             --  Power-off MediaAgent if VM management is enabled
+
+    wait_for_power_status()                 -- Waits till the expected power status is not achieved
 
     media_agent_name()                      --  returns media agent name
 
@@ -123,15 +135,18 @@ DiskLibrary:
 
     _get_library_properties()   --  gets the disk library properties
 
+    refresh()                   --  Refresh the properties of this disk library.
+
 DiskLibrary instance Attributes
 
     **media_agents_associated**  --  returns the media agents associated with the disk library
+    **library_properties**       --  Returns the dictionary consisting of the full properties of the library
 
 
 """
 from __future__ import absolute_import
 from __future__ import unicode_literals
-import uuid
+import uuid, time
 
 from base64 import b64encode
 
@@ -308,6 +323,63 @@ class MediaAgents(object):
             raise SDKException(
                 'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
             )
+    
+    def delete(self, media_agent, force=False):
+        """Deletes the media agent from the commcell.
+
+            Args:
+                media_agent (str)  --  name of the Mediaagent to remove from the commcell
+                
+                force       (bool)     --  True if you want to delete media agent forcefully.
+
+            Raises:
+                SDKException:
+                    if type of the media agent name argument is not string
+
+                    if failed to delete Media agent
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no media agent exists with the given name
+
+        """
+        if not isinstance(media_agent, basestring):
+            raise SDKException('Storage', '101')
+        else:
+            media_agent = media_agent.lower()
+
+            if self.has_media_agent(media_agent):
+                mediagent_id = self.all_media_agents[media_agent]['id']
+                mediagent_delete_service = self._commcell_object._services['MEDIA_AGENT'] % (mediagent_id)
+                if force:
+                    mediagent_delete_service += "?forceDelete=1"
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', mediagent_delete_service)
+
+                error_code = 0
+                if flag:
+                    if 'errorCode' in response.json():
+                        o_str = 'Failed to delete mediaagent' 
+                        error_code = response.json()['errorCode'] 
+                        if error_code == 0:
+                            # initialize the mediaagents again
+                            # so the mediaagents object has all the mediaagents
+                            self.refresh()
+                        else:                                
+                            error_message = response.json()['errorMessage']
+                            if error_message:
+                                o_str += '\nError: "{0}"'.format(error_message)                        
+                            raise SDKException('Storage', '102', o_str)
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+            else:
+                raise SDKException(
+                    'Storage', '102', 'No Mediaagent exists with name: {0}'.format(media_agent)
+                )
 
     def refresh(self):
         """Refresh the media agents associated with the Commcell."""
@@ -342,6 +414,11 @@ class MediaAgent(object):
         self._MEDIA_AGENT = self._commcell_object._services['MEDIA_AGENT'] % (
             self._media_agent_name
         )
+
+        self._CLOUD_MEDIA_AGENT = self._commcell_object._services['CLOUD_MEDIA_AGENT'] % (
+            self._media_agent_id
+        )
+
         self._CREATE_TASK = self._commcell_object._services['CREATE_TASK']
         self._MEDIA_AGENTS = self._commcell_object._services['GET_MEDIA_AGENTS'] + "/{0}".format(
             self.media_agent_id
@@ -398,6 +475,11 @@ class MediaAgent(object):
         self._platform = None
         self._index_cache_enabled = None
         self._index_cache = None
+        self._is_power_mgmt_allowed = None
+        self._is_power_mgmt_supported = None
+        self._is_power_management_enabled = None
+        self._power_management_controller_name = None
+        self._power_status = None
 
         properties = self._get_media_agent_properties()
 
@@ -428,6 +510,155 @@ class MediaAgent(object):
         if mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps']['cachePath']['path']:
             self._index_cache = mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps'
                                                                    ]['cachePath']['path']
+
+        if mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']:
+            self._is_power_mgmt_supported = mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']
+
+        if self._is_power_mgmt_supported:
+
+            if mediaagent_list['powerManagementInfo']['isPowerManagementEnabled']:
+                self._is_power_management_enabled = mediaagent_list['powerManagementInfo']['isPowerManagementEnabled']
+
+            if mediaagent_list['powerManagementInfo']['isPowerMgmtAllowed']:
+                self._is_power_mgmt_allowed = mediaagent_list['powerManagementInfo']['isPowerMgmtAllowed']
+
+            if mediaagent_list['powerManagementInfo']['powerStatus']:
+                self._power_status = mediaagent_list['powerManagementInfo']['powerStatus']
+
+            if mediaagent_list['powerManagementInfo']['selectedCloudController']['clientName']:
+                self._power_management_controller_name = mediaagent_list['powerManagementInfo']['selectedCloudController']['clientName']
+
+    def enable_power_management(self, pseudo_client_name):
+        """
+            Enables power management using the provided cloud controller (pseudo client)
+
+                Args :
+                        pseudo_client_name : VSA pseudo client to be used as cloud controller
+                Raises:
+                        SDKException:
+                                    If response is not success
+                                    
+                                    If Power management is not supported
+        """
+        if self._is_power_mgmt_allowed:
+            client_obj = self._commcell_object._clients.get(pseudo_client_name)
+            pseudo_client_name_client_id = client_obj._get_client_id()
+
+            """
+            payLoad = '<EVGui_SetCloudVMManagementInfoReq hostId="' + self.media_agent_id + '" useMediaAgent="1"> <powerManagementInfo isPowerManagementEnabled="1" > <selectedCloudController clientId="' + PseudoClientName_client_id + '" clientName="' + \
+                      PseudoClientName + '"/></powerManagementInfo></EVGui_SetCloudVMManagementInfoReq>'
+            """
+            payLoad = '<EVGui_SetCloudVMManagementInfoReq hostId="{0}" useMediaAgent="1"> <powerManagementInfo isPowerManagementEnabled="1" > <selectedCloudController clientId="{1}" clientName="{2}"/></powerManagementInfo></EVGui_SetCloudVMManagementInfoReq>'.format(
+                self.media_agent_id, pseudo_client_name_client_id, pseudo_client_name)
+
+            response = self._commcell_object._qoperation_execute(payLoad)
+
+            if response['errorCode'] != 0:
+                raise SDKException('Response', '102', str(response))
+        else:
+            raise SDKException('Storage', '102', "Power management is not supported")
+
+    def _perform_power_operation(self, operation):
+        """
+            Performs power operation
+
+                Args :
+                        self : Object
+                        operation : Operation to perform
+                        
+                Raises:
+                        SDKException:
+                                        If operation is not 1 or 0
+                                            
+                                        If ower management is NOT enabled or NOT supported on MediaAgent
+
+                                        If API response is empty
+
+                                        If API response is not success
+        """
+        if not operation in ("1", "0"):
+            raise SDKException('Response', '102',
+                               "Invalid power operation type")
+
+        if self._is_power_management_enabled:
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'GET', self._CLOUD_MEDIA_AGENT + "/" + operation
+            )
+            if not flag:
+                raise SDKException('Response', '102',
+                                   str(response))
+            if response.json()['errorCode'] != 0:
+                raise SDKException('Response', '102', str(response))
+        else:
+            raise SDKException('Storage', '102',
+                               'Power management is NOT enabled or NOT supported')
+
+    def power_on(self, wait_till_online=True):
+        """
+            Power-on the MediaAgent
+
+                Args :
+                        self : Object
+                        wait_till_online :
+                                            True : Waits until the MediaAgent is online
+                                            False : Just submits the power-on request
+        """
+
+        if self.current_power_status not in ["Starting", "Started", "Online"]:
+            self._perform_power_operation("1")
+
+        if wait_till_online == True and self.current_power_status != "Online":
+            self.wait_for_power_status("Online")
+
+    def power_off(self, wait_till_stopped=True):
+        """
+            Power-off MediaAgent
+
+                Args :
+                        self : Object
+                        wait_till_stopped :
+                                            True : Waits until the MediaAgent is stopped
+                                            False : Just submits the power-off request
+        """
+
+        if self.current_power_status not in ["Stopping", "Stopped"]:
+            self._perform_power_operation("0")
+
+        if wait_till_stopped == True and self.current_power_status != "Stopped":
+            self.wait_for_power_status("Stopped")
+
+    def wait_for_power_status(self, expected_power_status, time_out_sec=600):
+        """
+            Waits until the expected power status not achieved
+
+                Args :
+                                        self : Object
+                                        expected_power_status : The expected power status as following.
+                                                                    Starting
+                                                                    Started
+                                                                    Online
+                                                                    Stopping
+                                                                    Stopped
+                                        time_out_sec : Maximum time to wait for the expected power status
+
+                                        Raises:
+                                                SDKException:
+                                                                If time_out_sec is not an integer and time_out_sec not None
+
+                                                                If expected power status is not achieved within time_out_sec time
+        """
+        if time_out_sec != None:
+            if not isinstance(time_out_sec, int):
+                raise SDKException('Storage', '102',
+                                   'Expected an integer value for [time_out_sec]')
+
+        start_time = time.time()
+        while self.current_power_status != expected_power_status:
+            time.sleep(10)
+            if time_out_sec != None:
+                if time.time() - start_time > time_out_sec:
+                    raise SDKException('Storage', '102',
+                                       'The expected power status is not achieved within expected time')
 
     def change_index_cache(self, old_index_cache_path, new_index_cache_path):
         """
@@ -560,6 +791,26 @@ class MediaAgent(object):
     def index_cache_enabled(self):
         """Treats the cache enabled value as a read-only attribute"""
         return self._index_cache_enabled
+
+    @property
+    def current_power_status(self):
+        """
+                Returns the power state of the MA.
+
+                    Args :
+                            self : Object
+                    Returns :
+                            str - Current power status of the MediaAgent as following
+                                    Starting : Power-on process in going on
+                                    Started : MA is powered-on successfully but still not synced with CS
+                                    Online : Powered-on and synced with CS. MA is ready to use.
+                                    Stopping : Power-off operation is going on.
+                                    Stopped : MA is powered-off
+                                    Unknown : MA power status is still not synced with cloud provider. MA discovery is going on or power state sync with happening with cloud provider or something is NOT right.
+        """
+        self.refresh()
+        power_status = {0: 'Unknown', 1: 'Starting', 2: 'Started', 3: 'Online', 4: 'Stopping', 5: 'Stopped'}
+        return power_status.get(self._power_status)
 
     def refresh(self):
         """Refresh the properties of the MediaAgent."""
@@ -1004,7 +1255,7 @@ class DiskLibrary(object):
         """
 
         if not (isinstance(mountpath_drive_id, int) and
-                isinstance(media_agent,basestring)):
+                isinstance(media_agent, basestring)):
             raise SDKException('Storage', '101')
 
 
@@ -1026,7 +1277,7 @@ class DiskLibrary(object):
                                             <validateDrive chunkSize="16384" chunksTillEnd="0" fileMarkerToStart="2"
                                              numberOfChunks="2" threadCount="2" volumeBlockSize="64" />
                                         </libraryOption> </adminOpts> </options> </subTasks>  </taskInfo>
-                            </TMMsg_CreateTaskReq>""".format(self.library_id,media_agent,mountpath_drive_id)
+                            </TMMsg_CreateTaskReq>""".format(self.library_id, media_agent, mountpath_drive_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['CREATE_TASK'], request_xml
@@ -1083,8 +1334,8 @@ class DiskLibrary(object):
             """
 
         if not (isinstance(mount_path, basestring) or isinstance(media_agent, basestring)
-                or isinstance(username,basestring) or isinstance(password,basestring)
-                or isinstance(server_type,int)):
+                or isinstance(username, basestring) or isinstance(password, basestring)
+                or isinstance(server_type, int)):
             raise SDKException('Storage', '101')
 
         request_json = {
@@ -1160,6 +1411,10 @@ class DiskLibrary(object):
         """
         libraries = DiskLibraries(self._commcell_object)
         return libraries.get(self.library_name).library_id
+
+    def refresh(self):
+        """Refresh the properties of this disk library."""
+        self._library_properties = self._get_library_properties()
 
     def add_mount_path(self, mount_path, media_agent, username='', password=''):
         """ Adds a mount path [local/remote] to the disk library
@@ -1255,6 +1510,12 @@ class DiskLibrary(object):
         return self._library_id
 
     @property
+    def library_properties(self):
+        """Returns the dictionary consisting of the full properties of the library"""
+        self.refresh()
+        return self._library_properties
+
+    @property
     def mount_path(self):
         """Treats the library id as a read-only attribute."""
         return self.mountpath
@@ -1263,32 +1524,98 @@ class DiskLibrary(object):
     def media_agent(self):
         """Treats the library id as a read-only attribute."""
         return self.mediaagent
+        
+    def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
+        """
+        Method to share a mountpath to a disklibrary
 
-    def shareMountpath(self, newMA, newmountpath):
+        Args:
+        
+            new_media_agent (str)   -- Media agent which is accessing the shared mount path
+            
+            new_mount_path  (int)   -- Mount path to be shared
+            
+            \*\*kwargs  (dict)  --  Optional arguments
+
+                    Available kwargs Options:
+            
+                        media_agent     (str)   -- Media agent associated with library
+                        
+                        library_name    (str)   -- Name of the library which has the mount path
+                    
+                        mount_path      (str)   -- Mount path to be shared
+                        
+                        access_type     (int)   -- The access type of the shared mount path
+
+                                                    Read Device Access = 4
+                                                    
+                                                    Read/ Write Device Access = 6
+                                                    
+                                                    Read Device Access with Preferred = 12
+                                                    
+                                                    Read/Write Device Access with Preferred = 14
+                                                    
+                                                    Data Server - IP Read = 20
+                                                    
+                                                    Data Server - IP Read/ Write = 22
+                                                    
+                                                    Data Server - FC Read = 36
+                                                    
+                                                    Data Server - FC Read/ Write = 38
+                                                    
+                                                    Data Server - iSCSI Read = 132
+                                                    
+                                                    Data Server - iSCSI Read/ Write = 134
+                                                    
+                                                    Note: For the Data Server device access type,
+                                                          enter the local path provided in the library/mountPath
+                                                          parameter in the libNewProp/mountPath parameter also.
+                        
+
+                        username        (str)   -- Username to access the mount path, if UNC
+
+                        password        (str)   -- Password to access the mount path, if UNC
+
+        Returns:
+            None
+
+        Raises
+            Exception:
+                - if any of the parameter's dataype is invalid
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
         """
-        method to specify share mountpath to a disklibrary
-        """
+        
+        media_agent = kwargs.get('media_agent', self.mediaagent)
+        library_name = kwargs.get('library_name', self.library_name)
+        mount_path = kwargs.get('mount_path', self.mountpath)
+        access_type = kwargs.get('access_type', 22)
+        username = kwargs.get('username', '')
+        password = kwargs.get('password', '')
+       
         self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
         self.library = {
             "opType": 64,
-            "mediaAgentName": "%s" %
-                              self.mediaagent,
-            "libraryName": "%s" %
-                           self.library_name,
+            "mediaAgentName": media_agent,
+            "libraryName": library_name,
             "mountPath": "%s" %
-                         self.mountpath}
-        self.libNewprop = {
-            "deviceAccessType": 22,
-            "password": "",
-            "loginName": "",
-            "mediaAgentName": newMA,
-            "mountPath": "{}".format(newmountpath),
+                         mount_path}
+        self.lib_new_prop = {
+            "deviceAccessType": access_type,
+            "password": password,
+            "loginName": username,
+            "mediaAgentName": new_media_agent,
+            "mountPath": "{}".format(new_mount_path),
             "proxyPassword": ""}
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
                 {
                     "library": self.library,
-                    "libNewProp": self.libNewprop
+                    "libNewProp": self.lib_new_prop
                 }
         }
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -181,6 +181,8 @@
 
 <span class="sd">    has_policy(policy_name)      --  checks if a storage policy exists with the given name</span>
 
+<span class="sd">    add_global_storage_policy()  --  adds a new global storage policy to the commcell</span>
+
 <span class="sd">    add()                        --  adds a new storage policy to the commcell</span>
 
 <span class="sd">    add_tape_sp()                --  add new storage policy with tape library as data path</span>
@@ -251,6 +253,12 @@
 
 <span class="sd">    run_recon()                             --  Runs non-mem DB Reconstruction job</span>
 
+<span class="sd">    enable_entity_extraction()              --  Enables the entity extraction for subclients associated to this policy</span>
+
+<span class="sd">    enable_content_indexing()               --  Enables the content indexing for this storage policy</span>
+
+<span class="sd">    run_content_indexing()                  --  start the content indexing job for this storage policy</span>
+
 
 <span class="sd">StoragePolicyCopy:</span>
 <span class="sd">    __init__(self, commcell_object,</span>
@@ -262,6 +270,8 @@
 <span class="sd">                                                StoragePolicy instance</span>
 
 <span class="sd">    get_copy_id()		                    --	Gets the storage policy id asscoiated with the storage policy</span>
+
+<span class="sd">    get_copy_Precedence()                   --  Gets the copy precendence associated with the storage policy copy</span>
 
 <span class="sd">    refresh()		                        --	Refresh the properties of the StoragePolicy</span>
 
@@ -277,19 +287,19 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="kn">import</span> <span class="n">install_aliases</span>
 
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="kn">import</span> <span class="n">Job</span>
 
-<span class="kn">from</span> <span class="nn">..storage</span> <span class="k">import</span> <span class="n">DiskLibrary</span>
-<span class="kn">from</span> <span class="nn">..storage</span> <span class="k">import</span> <span class="n">MediaAgent</span>
+<span class="kn">from</span> <span class="nn">..storage</span> <span class="kn">import</span> <span class="n">DiskLibrary</span>
+<span class="kn">from</span> <span class="nn">..storage</span> <span class="kn">import</span> <span class="n">MediaAgent</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -297,7 +307,7 @@
 <div class="viewcode-block" id="StoragePolicies"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicies</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the storage policies associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the StoragePolicies class.</span>
 
 <span class="sd">            Args:</span>
@@ -312,7 +322,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all storage policies of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -326,7 +336,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Clients class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;StoragePolicies class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -431,6 +441,148 @@
                 <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No policy exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">)</span>
             <span class="p">)</span></div>
 
+<div class="viewcode-block" id="StoragePolicies.add_global_storage_policy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies.add_global_storage_policy">[docs]</a>    <span class="k">def</span> <span class="nf">add_global_storage_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                  <span class="n">global_storage_policy_name</span><span class="p">,</span>
+                                  <span class="n">library</span><span class="p">,</span>
+                                  <span class="n">media_agent</span><span class="p">,</span>
+                                  <span class="n">dedup_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">dedup_path_media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;adds a global storage policy</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                global_storage_policy_name   (str)  --  name of the global storage policy which you want to add</span>
+
+<span class="sd">                library                      (str)  --  name of the library which you want to be associated with your</span>
+<span class="sd">                global storage policy</span>
+
+<span class="sd">                media_agent                  (str)  --  name of the media agent which you want to be associated with</span>
+<span class="sd">                the global storage policy</span>
+
+<span class="sd">                        *enter BOTH, the dedup_path and dedup_path_media_agent if you want the deduplication</span>
+<span class="sd">                         to be enabled.</span>
+
+<span class="sd">                dedup_path                    (str) -- path of the deduplication database</span>
+<span class="sd">                default- None</span>
+
+<span class="sd">                dedup_path_media_agent:       (str) -- name of the media agent where the deduplication database</span>
+<span class="sd">                                                       is stored</span>
+<span class="sd">                default- None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                    the success message along with the name of the global storage policy if created successfully</span>
+<span class="sd">                    else the error messages or the exceptions raised</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                        if the global_storage_policy_name,library,media_agent,dedup_path,dedup_path_media_agent</span>
+<span class="sd">                        is not of type String</span>
+
+<span class="sd">                        if response is empty</span>
+
+<span class="sd">                        if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">global_storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">library</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;Storage&quot;</span><span class="p">,</span> <span class="s2">&quot;101&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">((</span><span class="n">dedup_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dedup_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">))</span> <span class="ow">or</span>
+                <span class="n">dedup_path_media_agent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dedup_path_media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;Storage&quot;</span><span class="p">,</span> <span class="s2">&quot;101&quot;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">global_storage_policy_name</span><span class="p">,</span>
+            <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="s2">&quot;Primary_Global&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;globalStoragePolicy&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="n">library</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">media_agent</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;retainArchiverDataForDays&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;retainBackupDataForCycles&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">dedup_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dedup_path_media_agent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">storage_policy_copy_info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;dedupeFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enableDASHFull&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;hostGlobalDedupStore&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;storagePolicyFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;blockLevelDedup&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;enableGlobalDeduplication&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;DDBPartitionInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;maInfoList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">dedup_path_media_agent</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;subStoreList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;diskFreeWarningThreshholdMB&quot;</span><span class="p">:</span> <span class="mi">10240</span><span class="p">,</span>
+                                    <span class="s2">&quot;diskFreeThresholdMB&quot;</span><span class="p">:</span> <span class="mi">5120</span><span class="p">,</span>
+                                    <span class="s2">&quot;accessPath&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">dedup_path</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">]</span>
+                        <span class="p">}</span>
+                    <span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">storage_policy_copy_info</span><span class="p">)</span>
+
+        <span class="c1"># don&#39;t create dedup global storage policy if the arguments are not supplied</span>
+        <span class="k">elif</span><span class="p">(</span><span class="n">dedup_path</span> <span class="ow">or</span> <span class="n">dedup_path_media_agent</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;Storage&quot;</span><span class="p">,</span> <span class="s2">&quot;101&quot;</span><span class="p">,</span> <span class="s2">&quot;cannot create dedup global policy without complete arguments </span><span class="se">\n</span><span class="s2">&quot;</span>
+                               <span class="s2">&quot;supply both dedup path and dedup path media agent&quot;</span><span class="p">)</span>
+
+        <span class="c1"># checking to create non dedup global storage policy</span>
+        <span class="k">elif</span><span class="p">(</span><span class="n">dedup_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dedup_path_media_agent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">storage_policy_copyinfo</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;extendedFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;globalStoragePolicy&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">storage_policy_copyinfo</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_POLICY</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># initialize the policies again</span>
+                    <span class="c1"># so the policies object has all the policies</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create storage policy</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">global_storage_policy_name</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="StoragePolicies.add"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">storage_policy_name</span><span class="p">,</span>
             <span class="n">library</span><span class="p">,</span>
@@ -441,7 +593,8 @@
             <span class="n">number_of_streams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">ocum_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">dedup_media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">dr_sp</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">dr_sp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new Storage Policy to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -462,7 +615,7 @@
 
 <span class="sd">                retention_period    (int)         --  time period in days to retain</span>
 <span class="sd">                the data backup for</span>
-<span class="sd">                default: 5</span>
+<span class="sd">                default:5</span>
 
 <span class="sd">                number_of_streams   (int)         --  the number of streams for the storage policy</span>
 <span class="sd">                default: None</span>
@@ -476,6 +629,15 @@
 <span class="sd">                dr_sp                (bool)         --  if True creates dr storage policy</span>
 <span class="sd">                                                        if False creates data protection policy</span>
 <span class="sd">                default:False</span>
+
+<span class="sd">                **kwargs    --  dict of keyword arguments as follows:</span>
+
+<span class="sd">                    global_policy_name   (str)         --  name of the global storage policy on which you want</span>
+<span class="sd">                                                           the policy being created to be dependent.</span>
+
+<span class="sd">                    global_dedup_policy (bool)  -- whether the global storage policy has a global deduplication pool</span>
+<span class="sd">                                                   or not</span>
+<span class="sd">                    default:True                  (meaning the global storage policy will have deduplication enabled)</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -493,6 +655,12 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">extra_arguments</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;global_policy_name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;global_dedup_policy&#39;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+        <span class="n">extra_arguments</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">((</span><span class="n">dedup_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dedup_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">))</span> <span class="ow">or</span>
                 <span class="p">(</span><span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
@@ -532,38 +700,11 @@
             <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">sp_type</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="n">number_of_streams</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">number_of_streams_dict</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;numberOfStreams&quot;</span><span class="p">:</span> <span class="n">number_of_streams</span>
-            <span class="p">}</span>
-            <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">number_of_streams_dict</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">ocum_server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ocum_server_dict1</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;dfmServer&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">ocum_server</span><span class="p">,</span>
-                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">0</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-            <span class="n">ocum_server_dict2</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;storagePolicyFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;enableSnapshot&quot;</span><span class="p">:</span> <span class="mi">1</span>
-                    <span class="p">},</span>
-                    <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;retainBackupDataForCycles&quot;</span><span class="p">:</span> <span class="mi">1</span>
-                    <span class="p">}</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-
-            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict2</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">])</span>
-            <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict1</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">dedup_path</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">dedup_media_agent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">dedup_media_agent</span> <span class="o">=</span> <span class="n">media_agent</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">has_media_agent</span><span class="p">(</span><span class="n">dedup_media_agent</span><span class="p">):</span>
-                <span class="k">pass</span>
+                <span class="n">dedup_media_agent</span> <span class="o">=</span> <span class="n">MediaAgent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">dedup_media_agent</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
 
@@ -589,9 +730,81 @@
 
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dedup_info</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">])</span>
 
+        <span class="c1"># since we are supplying a global policy thus there is no need of the</span>
+        <span class="c1"># dedup store details and the library details which got included above,</span>
+        <span class="c1"># it will take up the settings of the global storage policy</span>
+        <span class="c1"># thus redefining request_json</span>
+
+        <span class="k">if</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_policy_name&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_dedup_policy&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;useGlobalPolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_policy_name&quot;</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="n">retention_period</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;dedupeFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;useGlobalDedupStore&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;enableClientSideDedup&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;enableDASHFull&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span>
+            <span class="p">}</span>
+
+        <span class="k">elif</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_policy_name&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_dedup_policy&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span><span class="p">,</span>
+                <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;dedupeFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableDASHFull&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="n">retention_period</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;extendedFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;useGlobalStoragePolicy&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;useGlobalPolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">extra_arguments</span><span class="p">[</span><span class="s2">&quot;global_policy_name&quot;</span><span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">number_of_streams</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">number_of_streams_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;numberOfStreams&quot;</span><span class="p">:</span> <span class="n">number_of_streams</span>
+            <span class="p">}</span>
+            <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">number_of_streams_dict</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ocum_server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ocum_server_dict1</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;dfmServer&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">ocum_server</span><span class="p">,</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">ocum_server_dict2</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;snapLibrary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="s2">&quot;Use primary copy&#39;s library and mediaAgent&quot;</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;storagePolicyFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableSnapshot&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict2</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">])</span>
+            <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict1</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">incremental_sp</span><span class="p">:</span>
             <span class="n">incremental_sp_info</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;incrementalStoragePolicy&quot;</span><span class="p">:</span> <span class="n">incremental_sp</span>
+                <span class="s2">&quot;incrementalStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">incremental_sp</span>
+                <span class="p">}</span>
             <span class="p">}</span>
 
             <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">incremental_sp_info</span><span class="p">)</span>
@@ -620,13 +833,14 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StoragePolicies.add_tape_sp"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies.add_tape_sp">[docs]</a>    <span class="k">def</span> <span class="nf">add_tape_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">library</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">drive_pool</span><span class="p">,</span> <span class="n">scratch_pool</span><span class="p">):</span>
+<div class="viewcode-block" id="StoragePolicies.add_tape_sp"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies.add_tape_sp">[docs]</a>    <span class="k">def</span> <span class="nf">add_tape_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">library</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">,</span> <span class="n">drive_pool</span><span class="p">,</span> <span class="n">scratch_pool</span><span class="p">,</span> <span class="n">retention_period_days</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+                    <span class="n">ocum_server</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds storage policy with tape data path</span>
 <span class="sd">        Args:</span>
 <span class="sd">                storage_policy_name (str)         --  name of the new storage policy to add</span>
 
-<span class="sd">                library             (str)          --  name or instance of the library</span>
+<span class="sd">                library             (str)     --  name or instance of the library</span>
 <span class="sd">                to add the policy to</span>
 
 <span class="sd">                media_agent         (str/object)  --  name or instance of media agent</span>
@@ -635,6 +849,13 @@
 <span class="sd">                drive_pool          (str)         --  Drive pool name of the tape library</span>
 
 <span class="sd">                scratch_pool      (str)          --  Scratch pool name of the tape library</span>
+
+<span class="sd">                retention_period_days    (int)         --  time period in days to retain</span>
+<span class="sd">                the data backup for</span>
+<span class="sd">                default: 15</span>
+
+<span class="sd">                ocum_server         (str)         --  On Command Unified Server Name</span>
+<span class="sd">                default: None</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -652,40 +873,72 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="k">import</span> <span class="n">urlencode</span>
+        <span class="n">tape_library</span> <span class="o">=</span> <span class="n">library</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">drive_pool</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">scratch_pool</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">library</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">tape_library</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="p">(</span><span class="n">retention_period_days</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retention_period_days</span><span class="p">,</span> <span class="nb">int</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="n">tape_library</span> <span class="o">=</span> <span class="n">library</span>
-        <span class="n">encode_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;storagepolicy&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="s2">&quot;mediaagent&quot;</span><span class="p">:</span> <span class="n">media_agent</span><span class="p">,</span>
-                       <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="n">tape_library</span><span class="p">,</span> <span class="s2">&quot;drivepool&quot;</span><span class="p">:</span> <span class="n">drive_pool</span><span class="p">,</span>
-                       <span class="s2">&quot;scratchpool&quot;</span><span class="p">:</span> <span class="n">scratch_pool</span><span class="p">}</span>
-        <span class="n">web_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_POLICY</span> <span class="o">+</span> <span class="s1">&#39;?&#39;</span> <span class="o">+</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">encode_dict</span><span class="p">)</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="n">retention_period_days</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;library&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="n">tape_library</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">media_agent</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;drivePool&quot;</span><span class="p">:</span> <span class="n">drive_pool</span><span class="p">,</span>
+            <span class="s2">&quot;scratchpool&quot;</span><span class="p">:</span> <span class="n">scratch_pool</span><span class="p">,</span>
+            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span>
+        <span class="p">}</span>
 
-        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="n">web_service</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ocum_server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ocum_server_dict1</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;dfmServer&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">ocum_server</span><span class="p">,</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">ocum_server_dict2</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;snapLibrary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;libraryName&quot;</span><span class="p">:</span> <span class="s2">&quot;Use primary copy&#39;s library and mediaAgent&quot;</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;storagePolicyFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableSnapshot&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict2</span><span class="p">[</span><span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">])</span>
+            <span class="n">request_json</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ocum_server_dict1</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_POLICY</span><span class="p">,</span> <span class="n">request_json</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                        <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
-                        <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to add storage policy</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-                            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">))</span>
-
-            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="c1"># initialize the policies again</span>
                     <span class="c1"># so the policies object has all the policies</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-                    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create storage policy with tape data path</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
@@ -748,7 +1001,7 @@
 <div class="viewcode-block" id="StoragePolicy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing storage policy operations for a specific storage policy&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">storage_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">storage_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Storage Policy class instance.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
@@ -765,7 +1018,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_copies</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy class instance for Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">)</span>
@@ -889,7 +1142,7 @@
 
         <span class="n">media_agent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">_media_agents</span><span class="p">[</span><span class="n">media_agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
 
-        <span class="n">snap_copy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">snap_copy</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">snap_copy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">snap_copy</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">drive_pool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -945,6 +1198,221 @@
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StoragePolicy.run_content_indexing"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.run_content_indexing">[docs]</a>    <span class="k">def</span> <span class="nf">run_content_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;starts the offline CI job for this storage policy</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this CI job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                        if type of inputs is not valid</span>
+
+<span class="sd">                        if failed to start content indexing job</span>
+
+<span class="sd">                        if response received is empty</span>
+
+<span class="sd">                        if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;TMMsg_CreateTaskReq&gt;</span>
+<span class="s2">        &lt;taskInfo&gt;</span>
+<span class="s2">        &lt;associations subclientId=&quot;0&quot; storagePolicyId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; applicationId=&quot;0&quot; clientName=&quot;&quot; backupsetId=&quot;0&quot;</span>
+<span class="s2">        instanceId=&quot;0&quot; commCellId=&quot;0&quot; clientId=&quot;0&quot; subclientName=&quot;&quot; mediaAgentId=&quot;0&quot; mediaAgentName=&quot;&quot; backupsetName=&quot;&quot;</span>
+<span class="s2">        instanceName=&quot;&quot; storagePolicyName=&quot;</span><span class="si">{1}</span><span class="s2">&quot; _type_=&quot;0&quot; appName=&quot;&quot; /&gt;</span>
+<span class="s2">        &lt;task ownerId=&quot;1&quot; taskType=&quot;1&quot; ownerName=&quot;admin&quot; sequenceNumber=&quot;0&quot; initiatedFrom=&quot;1&quot; policyType=&quot;0&quot; taskId=&quot;0&quot;&gt;</span>
+<span class="s2">        &lt;taskFlags disabled=&quot;0&quot; /&gt;&lt;/task&gt;</span>
+<span class="s2">        &lt;subTasks subTaskOperation=&quot;1&quot;&gt;&lt;subTask subTaskType=&quot;1&quot; operationType=&quot;4022&quot; /&gt;</span>
+<span class="s2">        &lt;options&gt;&lt;backupOpts&gt;&lt;mediaOpt&gt;</span>
+<span class="s2">        &lt;auxcopyJobOption maxNumberOfStreams=&quot;0&quot; allCopies=&quot;1&quot; useMaximumStreams=&quot;1&quot;&gt;&lt;mediaAgent mediaAgentId=&quot;0&quot;</span>
+<span class="s2">        _type_=&quot;11&quot; mediaAgentName=&quot;&quot; /&gt;</span>
+<span class="s2">        &lt;/auxcopyJobOption&gt;&lt;/mediaOpt&gt;&lt;/backupOpts&gt;&lt;adminOpts&gt;</span>
+<span class="s2">        &lt;contentIndexingOption fileAnalytics=&quot;0&quot; subClientBasedAnalytics=&quot;0&quot; reanalyze=&quot;0&quot; /&gt;</span>
+<span class="s2">        &lt;/adminOpts&gt;</span>
+<span class="s2">        &lt;restoreOptions&gt;&lt;virtualServerRstOption isBlockLevelReplication=&quot;0&quot; /&gt;&lt;commonOptions syncRestore=&quot;0&quot; /&gt;</span>
+<span class="s2">        &lt;/restoreOptions&gt;&lt;/options&gt;&lt;/subTasks&gt;</span>
+<span class="s2">        &lt;/taskInfo&gt;&lt;/TMMsg_CreateTaskReq&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Unable to get job id for CI job&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Empty response&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StoragePolicy.enable_content_indexing"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing">[docs]</a>    <span class="k">def</span> <span class="nf">enable_content_indexing</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">cloud_id</span><span class="p">,</span>
+            <span class="n">include_doc_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">max_doc_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">min_doc_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">exclude_doc_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;configures offline CI for this storage policy</span>
+
+<span class="sd">                Args:</span>
+
+<span class="sd">                    cloud_id            (str)   --  cloud id of the search engine</span>
+
+<span class="sd">                    include_doc_type    (str)   --  include document types for content indexing</span>
+
+<span class="sd">                        Example : &quot;*.csv,*.ppt&quot;</span>
+
+<span class="sd">                    exclude_doc_type    (str)   --  exclude document types for content indexing</span>
+
+<span class="sd">                        Example : &quot;*.py,*.txt&quot;</span>
+
+<span class="sd">                    max_doc_size        (str)   --  maximum document size for CI in KB</span>
+
+<span class="sd">                    min_doc_size        (str)   --  minimum document size for CI in KB</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    None</span>
+
+<span class="sd">                Raises:</span>
+
+<span class="sd">                    SDKException:</span>
+<span class="sd">                            if type of inputs is not valid</span>
+
+<span class="sd">                            if failed to configure content indexing</span>
+
+<span class="sd">                            if response received is empty</span>
+
+<span class="sd">                            if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_id</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">include_doc_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">include_doc_type</span> <span class="o">=</span> <span class="s2">&quot;*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg,*.log,*.msg,*.odg,&quot;</span> \
+                               <span class="s2">&quot;*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt,*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml&quot;</span>
+        <span class="k">if</span> <span class="n">max_doc_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_doc_size</span> <span class="o">=</span> <span class="s2">&quot;51200&quot;</span>
+
+        <span class="k">if</span> <span class="n">min_doc_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">min_doc_size</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+
+        <span class="k">if</span> <span class="n">exclude_doc_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">exclude_doc_type</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;EVGui_ContentIndexingControlReq operation=&quot;16&quot;&gt;&lt;header localeId=&quot;0&quot; userId=&quot;0&quot;/&gt;</span>
+<span class="s2">        &lt;ciProps archGroupId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; calendarId=&quot;1&quot; cloudId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; contentIndexDataOver=&quot;0&quot; dayNumber=&quot;0&quot; deferredDays=&quot;0&quot;</span>
+<span class="s2">         enable=&quot;1&quot; entityIds=&quot;&quot; excludeDocTypes=&quot;</span><span class="si">{5}</span><span class="s2">&quot; filterSelected=&quot;1&quot; flags=&quot;0&quot;</span>
+<span class="s2">         includeDocTypes=&quot;</span><span class="si">{2}</span><span class="s2">&quot; indexType=&quot;0&quot; jobsOlderThan=&quot;0&quot;</span>
+<span class="s2">         maxDocSizeKB=&quot;</span><span class="si">{3}</span><span class="s2">&quot; minDocSizeKB=&quot;</span><span class="si">{4}</span><span class="s2">&quot; numPeriod=&quot;1&quot; retentionDays=&quot;-1&quot; sourceCopyId=&quot;0&quot; startTime=&quot;0&quot;</span>
+<span class="s2">         synchronizeOn=&quot;0&quot; type=&quot;0&quot;/&gt;&lt;/EVGui_ContentIndexingControlReq&gt;&quot;&quot;&quot;</span>\
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span><span class="p">,</span> <span class="n">cloud_id</span><span class="p">,</span> <span class="n">include_doc_type</span><span class="p">,</span> <span class="n">max_doc_size</span><span class="p">,</span> <span class="n">min_doc_size</span><span class="p">,</span> <span class="n">exclude_doc_type</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;error&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to enable content indexing for this storage policy&quot;</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No success error code found in response&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StoragePolicy.enable_entity_extraction"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.enable_entity_extraction">[docs]</a>    <span class="k">def</span> <span class="nf">enable_entity_extraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_details</span><span class="p">,</span> <span class="n">entity_names</span><span class="p">,</span> <span class="n">ca_client_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;configures offline CI entity extraction for given subclient id&#39;s on this storage policy</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    entity_details     (list)     --  List of subclient to configure for Entity Extraction</span>
+
+<span class="sd">                    Format : [[clientname,agent type,backup set name,subclient name]]</span>
+
+<span class="sd">                    entity_names         (list)   --  list of entity names to be configured for Entity Extraction</span>
+
+<span class="sd">                    Example : [Email,SSN]</span>
+
+<span class="sd">                    ca_client_name       (str)    --  client name where Content Analyzer package is installed</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        if type of inputs is not valid</span>
+
+<span class="sd">                        if failed to configure EE</span>
+
+<span class="sd">                        if response received is empty</span>
+
+<span class="sd">                        if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_details</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ca_client_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;EVGui_SetEntityExtractionListReq archGroupId=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">        &lt;entityExtraction isConfigured=&quot;1&quot;&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">subclient</span> <span class="ow">in</span> <span class="n">entity_details</span><span class="p">:</span>
+            <span class="n">client_name</span> <span class="o">=</span> <span class="n">subclient</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">app_name</span> <span class="o">=</span> <span class="n">subclient</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">backup_set_name</span> <span class="o">=</span> <span class="n">subclient</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">subclient_name</span> <span class="o">=</span> <span class="n">subclient</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">client_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+            <span class="n">agent_obj</span> <span class="o">=</span> <span class="n">client_obj</span><span class="o">.</span><span class="n">agents</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">app_name</span><span class="p">)</span>
+            <span class="n">backup_set_obj</span> <span class="o">=</span> <span class="n">agent_obj</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">backup_set_name</span><span class="p">)</span>
+            <span class="n">subclient_obj</span> <span class="o">=</span> <span class="n">backup_set_obj</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">subclient_obj</span><span class="o">.</span><span class="n">storage_policy</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; is not a part of this storage policy&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+            <span class="n">subclient_prop</span> <span class="o">=</span> <span class="n">subclient_obj</span><span class="o">.</span><span class="n">properties</span>
+            <span class="n">request_xml</span> <span class="o">=</span> <span class="n">request_xml</span> <span class="o">+</span> <span class="s2">&quot;&quot;&quot;&lt;appList appOperation=&quot;0&quot; appTypeId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; archGroupId=&quot;0&quot;</span>
+<span class="s2">                backupSetId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; clientId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; instanceId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; subClientId=&quot;</span><span class="si">{4}</span><span class="s2">&quot;/&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;applicationId&#39;</span><span class="p">],</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;backupsetId&#39;</span><span class="p">],</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientId&#39;</span><span class="p">],</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;instanceId&#39;</span><span class="p">],</span>
+                <span class="n">subclient_prop</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientId&#39;</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">entity_names</span><span class="p">:</span>
+            <span class="n">entity_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">activate_entity</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+            <span class="n">request_xml</span> <span class="o">=</span> <span class="n">request_xml</span> <span class="o">+</span> <span class="s2">&quot;&quot;&quot;&lt;entities enabled=&quot;1&quot; entityId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; entityName=&quot;</span><span class="si">{1}</span><span class="s2">&quot;/&gt;&quot;&quot;&quot;</span>\
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">entity_obj</span><span class="o">.</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+
+        <span class="n">client_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ca_client_name</span><span class="p">)</span>
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="n">request_xml</span> <span class="o">+</span> <span class="s2">&quot;&quot;&quot;&lt;extractingClientList enabled=&quot;1&quot;&gt;</span>
+<span class="s2">        &lt;eeClient clientId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; clientName=&quot;</span><span class="si">{1}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;/extractingClientList&gt;&lt;/entityExtraction&gt;&lt;/EVGui_SetEntityExtractionListReq&gt;&quot;&quot;&quot;</span>\
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_obj</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">ca_client_name</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to enable entity extraction for this storage policy&quot;</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No success error code found in response&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1213,7 +1681,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">source_copy_for_snap_to_tape_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;source_copy_for_snapshot_catalog&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">source_copy_for_snapshot_catalog_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copies</span><span class="p">[</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;source_copy_for_snapshot_catalog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;copyId&#39;</span><span class="p">]</span>
+            <span class="n">source_copy_for_snapshot_catalog_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copies</span><span class="p">[</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;source_copy_for_snapshot_catalog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+            <span class="p">)][</span><span class="s1">&#39;copyId&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">source_copy_for_snapshot_catalog_id</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -1222,11 +1691,11 @@
         <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                    &lt;EVGui_SetSnapOpPropsReq deferredCatalogOperation=&quot;</span><span class="si">{0}</span><span class="s2">&quot; snapshotToTapeOperation=&quot;</span><span class="si">{1}</span><span class="s2">&quot;&gt;</span>
 <span class="s2">                        &lt;header localeId=&quot;0&quot; userId=&quot;0&quot; /&gt;</span>
-<span class="s2">                        &lt;snapshotToTapeProps archGroupId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; calendarId=&quot;1&quot; dayNumber=&quot;0&quot; deferredDays=&quot;0&quot; </span>
-<span class="s2">                            enable=&quot;</span><span class="si">{3}</span><span class="s2">&quot; flags=&quot;0&quot; infoFlags=&quot;0&quot; numOfReaders=&quot;0&quot; numPeriod=&quot;1&quot; </span>
+<span class="s2">                        &lt;snapshotToTapeProps archGroupId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; calendarId=&quot;1&quot; dayNumber=&quot;0&quot; deferredDays=&quot;0&quot;</span>
+<span class="s2">                            enable=&quot;</span><span class="si">{3}</span><span class="s2">&quot; flags=&quot;0&quot; infoFlags=&quot;0&quot; numOfReaders=&quot;0&quot; numPeriod=&quot;1&quot;</span>
 <span class="s2">                            sourceCopyId=&quot;</span><span class="si">{4}</span><span class="s2">&quot; startTime=&quot;0&quot; type=&quot;0&quot; /&gt;</span>
-<span class="s2">                        &lt;deferredCatalogProps archGroupId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; calendarId=&quot;1&quot; dayNumber=&quot;0&quot; deferredDays=&quot;0&quot; </span>
-<span class="s2">                            enable=&quot;</span><span class="si">{5}</span><span class="s2">&quot; flags=&quot;0&quot; infoFlags=&quot;0&quot; numOfReaders=&quot;0&quot; numPeriod=&quot;1&quot; </span>
+<span class="s2">                        &lt;deferredCatalogProps archGroupId=&quot;</span><span class="si">{2}</span><span class="s2">&quot; calendarId=&quot;1&quot; dayNumber=&quot;0&quot; deferredDays=&quot;0&quot;</span>
+<span class="s2">                            enable=&quot;</span><span class="si">{5}</span><span class="s2">&quot; flags=&quot;0&quot; infoFlags=&quot;0&quot; numOfReaders=&quot;0&quot; numPeriod=&quot;1&quot;</span>
 <span class="s2">                            sourceCopyId=&quot;</span><span class="si">{6}</span><span class="s2">&quot; startTime=&quot;0&quot; type=&quot;0&quot; /&gt;</span>
 <span class="s2">                    &lt;/EVGui_SetSnapOpPropsReq&gt;</span>
 <span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">defferred_catalog_value</span><span class="p">,</span> <span class="n">backup_copy_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span>
@@ -1815,46 +2284,46 @@
                 <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
                     <span class="p">{</span>
                         <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="n">copy_name</span><span class="p">,</span> <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span>
-                        <span class="p">}</span>
-                    <span class="p">],</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;taskId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
-                        <span class="p">}</span>
-                    <span class="p">},</span> <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4007</span>
-                            <span class="p">},</span>
-                            <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                            <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                                            <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                            <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                            <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                                            <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                                <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
-                                            <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">],</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span> <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4007</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
                                         <span class="p">}</span>
                                     <span class="p">}</span>
-                                <span class="p">},</span> <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;archiveCheckOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;ddbVerificationLevel&quot;</span><span class="p">:</span> <span class="n">ddb_ver_level</span><span class="p">,</span>
-                                        <span class="s2">&quot;jobsToVerify&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                        <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">ver_type</span>
-                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span> <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;archiveCheckOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;ddbVerificationLevel&quot;</span><span class="p">:</span> <span class="n">ddb_ver_level</span><span class="p">,</span>
+                                    <span class="s2">&quot;jobsToVerify&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                    <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">ver_type</span>
                                 <span class="p">}</span>
                             <span class="p">}</span>
                         <span class="p">}</span>
-                    <span class="p">]</span>
-                <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
             <span class="p">}</span>
+        <span class="p">}</span>
         <span class="n">data_verf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data_verf</span><span class="p">,</span> <span class="n">request</span>
@@ -1927,24 +2396,24 @@
                     <span class="p">{</span>
                         <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="n">copy_name</span><span class="p">,</span> <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span>
                     <span class="p">}</span>
-                    <span class="p">],</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;taskId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
-                            <span class="p">}</span>
-                    <span class="p">},</span> <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">5013</span>
-                            <span class="p">},</span> <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;libraryOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;ddbMoveOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                            <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;subStoreList&quot;</span><span class="p">:</span> <span class="p">[</span>
-                                                <span class="p">{</span>
+                <span class="p">],</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span> <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">5013</span>
+                        <span class="p">},</span> <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;libraryOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;ddbMoveOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;subStoreList&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                            <span class="p">{</span>
                                                     <span class="s2">&quot;srcPath&quot;</span><span class="p">:</span> <span class="n">src_path</span><span class="p">,</span>
                                                     <span class="s2">&quot;changeOnlyDB&quot;</span><span class="p">:</span> <span class="n">config_only</span><span class="p">,</span>
                                                     <span class="s2">&quot;destPath&quot;</span><span class="p">:</span> <span class="n">dest_path</span><span class="p">,</span>
@@ -1953,16 +2422,16 @@
                                                     <span class="p">},</span> <span class="s2">&quot;srcMediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">src_media_agent</span>
                                                     <span class="p">}</span>
-                                                <span class="p">}</span>
-                                            <span class="p">]</span>
-                                        <span class="p">}</span>
+                                            <span class="p">}</span>
+                                        <span class="p">]</span>
                                     <span class="p">}</span>
                                 <span class="p">}</span>
                             <span class="p">}</span>
                         <span class="p">}</span>
-                    <span class="p">]</span>
-                <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
             <span class="p">}</span>
+        <span class="p">}</span>
         <span class="n">ddb_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">ddb_move</span><span class="p">,</span> <span class="n">request</span>
@@ -2017,12 +2486,12 @@
             <span class="n">media_agent</span> <span class="o">=</span> <span class="n">MediaAgent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">media_agent</span><span class="p">)</span>
 
         <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">        &lt;EVGui_ParallelDedupConfigReq commCellId=&quot;2&quot; copyId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; operation=&quot;15&quot;&gt; </span>
+<span class="s2">        &lt;EVGui_ParallelDedupConfigReq commCellId=&quot;2&quot; copyId=&quot;</span><span class="si">{0}</span><span class="s2">&quot; operation=&quot;15&quot;&gt;</span>
 <span class="s2">        &lt;SIDBStore SIDBStoreId=&quot;</span><span class="si">{1}</span><span class="s2">&quot;/&gt;</span>
-<span class="s2">        &lt;dedupconfigItem commCellId=&quot;0&quot;&gt; </span>
-<span class="s2">        &lt;maInfoList&gt;&lt;clientInfo id=&quot;</span><span class="si">{2}</span><span class="s2">&quot; name=&quot;</span><span class="si">{3}</span><span class="s2">&quot;/&gt; </span>
-<span class="s2">        &lt;subStoreList&gt;&lt;accessPath path=&quot;</span><span class="si">{4}</span><span class="s2">&quot;/&gt; </span>
-<span class="s2">        &lt;/subStoreList&gt;&lt;/maInfoList&gt;&lt;/dedupconfigItem&gt; </span>
+<span class="s2">        &lt;dedupconfigItem commCellId=&quot;0&quot;&gt;</span>
+<span class="s2">        &lt;maInfoList&gt;&lt;clientInfo id=&quot;</span><span class="si">{2}</span><span class="s2">&quot; name=&quot;</span><span class="si">{3}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;subStoreList&gt;&lt;accessPath path=&quot;</span><span class="si">{4}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;/subStoreList&gt;&lt;/maInfoList&gt;&lt;/dedupconfigItem&gt;</span>
 <span class="s2">        &lt;/EVGui_ParallelDedupConfigReq&gt;</span>
 
 <span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_id</span><span class="p">,</span> <span class="n">sidb_store_id</span><span class="p">,</span> <span class="n">media_agent</span><span class="o">.</span><span class="n">media_agent_id</span><span class="p">,</span>
@@ -2097,9 +2566,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        &lt;TMMsg_DedupSyncTaskReq flags=&quot;0&quot;&gt;</span>
-<span class="s2">            &lt;taskInfo&gt;&lt;associations _type_=&quot;0&quot; appName=&quot;&quot; applicationId=&quot;0&quot; backupsetId=&quot;0&quot; backupsetName=&quot;&quot; </span>
-<span class="s2">            clientId=&quot;0&quot; clientName=&quot;&quot; clientSidePackage=&quot;1&quot; commCellId=&quot;0&quot; consumeLicense=&quot;1&quot; copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot; </span>
-<span class="s2">            instanceId=&quot;1&quot; instanceName=&quot;&quot; srmReportSet=&quot;0&quot; srmReportType=&quot;0&quot; storagePolicyName=&quot;</span><span class="si">{1}</span><span class="s2">&quot; </span>
+<span class="s2">            &lt;taskInfo&gt;&lt;associations _type_=&quot;0&quot; appName=&quot;&quot; applicationId=&quot;0&quot; backupsetId=&quot;0&quot; backupsetName=&quot;&quot;</span>
+<span class="s2">            clientId=&quot;0&quot; clientName=&quot;&quot; clientSidePackage=&quot;1&quot; commCellId=&quot;0&quot; consumeLicense=&quot;1&quot; copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span>
+<span class="s2">            instanceId=&quot;1&quot; instanceName=&quot;&quot; srmReportSet=&quot;0&quot; srmReportType=&quot;0&quot; storagePolicyName=&quot;</span><span class="si">{1}</span><span class="s2">&quot;</span>
 <span class="s2">            subclientId=&quot;0&quot; subclientName=&quot;&quot; type=&quot;0&quot;/&gt;</span>
 <span class="s2">            &lt;subTasks&gt;</span>
 <span class="s2">                &lt;options&gt;</span>
@@ -2116,7 +2585,7 @@
 <span class="s2">                &lt;/options&gt;</span>
 <span class="s2">                &lt;subTask operationType=&quot;4036&quot; subTaskType=&quot;1&quot;/&gt;</span>
 <span class="s2">            &lt;/subTasks&gt;</span>
-<span class="s2">            &lt;task initiatedFrom=&quot;1&quot; ownerId=&quot;1&quot; ownerName=&quot;admin&quot; policyType=&quot;0&quot; sequenceNumber=&quot;0&quot; </span>
+<span class="s2">            &lt;task initiatedFrom=&quot;1&quot; ownerId=&quot;1&quot; ownerName=&quot;admin&quot; policyType=&quot;0&quot; sequenceNumber=&quot;0&quot;</span>
 <span class="s2">            taskId=&quot;0&quot; taskType=&quot;1&quot;&gt;&lt;taskFlags disabled=&quot;0&quot;/&gt;</span>
 <span class="s2">            &lt;/task&gt;</span>
 <span class="s2">            &lt;/taskInfo&gt;</span>
@@ -2134,7 +2603,7 @@
 <div class="viewcode-block" id="StoragePolicyCopy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicyCopy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing storage policy copy operations for a specific storage policy copy&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">copy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">copy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Storage Policy Copy class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -2172,7 +2641,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy Copy class instance for Storage Policy/ Copy: &quot;</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">)</span>
@@ -2193,6 +2662,10 @@
 <div class="viewcode-block" id="StoragePolicyCopy.get_copy_id"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_copy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the storage policy id asscoiated with the storage policy&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_copies</span><span class="p">[</span><span class="s2">&quot;copyId&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="StoragePolicyCopy.get_copy_Precedence"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_Precedence">[docs]</a>    <span class="k">def</span> <span class="nf">get_copy_Precedence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the copyprecendence asscoiated with the storage policy copy&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_copies</span><span class="p">[</span><span class="s2">&quot;copyPrecedence&quot;</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="StoragePolicyCopy.refresh"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the StoragePolicy.&quot;&quot;&quot;</span>
@@ -2660,9 +3133,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">managed_disk_space_value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">managed_disk_space_value</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">managed_disk_space_value</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_retention_rules</span><span class="p">[</span><span class="s1">&#39;retentionFlags&#39;</span><span class="p">][</span><span class="s1">&#39;enableManagedDiskSpace&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="n">managed_disk_space_value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">managed_disk_space_value</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_retention_rules</span><span class="p">[</span><span class="s1">&#39;retentionFlags&#39;</span><span class="p">][</span><span class="s1">&#39;enableManagedDiskSpace&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span>
 
@@ -2681,41 +3154,41 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;EVGui_MMSMArrayReplicaPairReq&quot;</span><span class="p">:{</span>
-                <span class="s2">&quot;processinginstructioninfo&quot;</span><span class="p">:{</span>
-                    <span class="s2">&quot;locale&quot;</span><span class="p">:{</span>
-                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span><span class="mi">66</span><span class="p">,</span>
-                        <span class="s2">&quot;localeId&quot;</span><span class="p">:</span><span class="mi">0</span>
+            <span class="s2">&quot;EVGui_MMSMArrayReplicaPairReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;processinginstructioninfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;locale&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">66</span><span class="p">,</span>
+                        <span class="s2">&quot;localeId&quot;</span><span class="p">:</span> <span class="mi">0</span>
                     <span class="p">},</span>
-                    <span class="s2">&quot;formatFlags&quot;</span><span class="p">:{</span>
-                        <span class="s2">&quot;ignoreUnknownTags&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="s2">&quot;elementBased&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">&quot;skipIdToNameConversion&quot;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="s2">&quot;formatted&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">&quot;filterUnInitializedFields&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">&quot;skipNameToIdConversion&quot;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">&quot;continueOnError&quot;</span><span class="p">:</span><span class="kc">False</span>
+                    <span class="s2">&quot;formatFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;ignoreUnknownTags&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;elementBased&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;skipIdToNameConversion&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;formatted&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;filterUnInitializedFields&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;skipNameToIdConversion&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;continueOnError&quot;</span><span class="p">:</span> <span class="kc">False</span>
                     <span class="p">},</span>
-                    <span class="s2">&quot;user&quot;</span><span class="p">:{</span>
-                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span><span class="mi">13</span><span class="p">,</span>
-                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;userId&quot;</span><span class="p">:</span><span class="mi">1</span>
+                    <span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">1</span>
                     <span class="p">}</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_id</span><span class="p">,</span>
-                <span class="s2">&quot;flags&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;operation&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
-                <span class="s2">&quot;userId&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;replPairList&quot;</span><span class="p">:[</span>
+                <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;replPairList&quot;</span><span class="p">:</span> <span class="p">[</span>
                     <span class="p">{</span>
-                        <span class="s2">&quot;copyId&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;flags&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;replicaPairId&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="s2">&quot;srcArray&quot;</span><span class="p">:{</span>
+                        <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;replicaPairId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;srcArray&quot;</span><span class="p">:</span> <span class="p">{</span>
                             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">source_array</span><span class="p">,</span>
                             <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">src_array_id</span>
                         <span class="p">},</span>
-                        <span class="s2">&quot;tgtArray&quot;</span><span class="p">:{</span>
+                        <span class="s2">&quot;tgtArray&quot;</span><span class="p">:</span> <span class="p">{</span>
                             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">target_array</span><span class="p">,</span>
                             <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">tgt_array_id</span>
                         <span class="p">}</span>

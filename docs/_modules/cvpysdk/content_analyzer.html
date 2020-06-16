@@ -1,0 +1,598 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.content_analyzer &mdash; Developer SDK - Python 11.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.content_analyzer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.content_analyzer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing operations on content analyzers, and a single content analyzer cloud in the commcell.</span>
+
+<span class="sd">`ContentAnalyzers`, and `ContentAnalyzer` are 2 classes defined in this file.</span>
+
+<span class="sd">ContentAnalyzers:    Class for representing all the Content analyzers in the commcell.</span>
+
+<span class="sd">ContentAnalyzer:     Class for representing a single content analyzer cloud in the commcell.</span>
+
+
+<span class="sd">ContentAnalyzers:</span>
+
+<span class="sd">    __init__(commcell_object)           --  initialise object of the ContentAnalyzers class</span>
+
+<span class="sd">     _response_not_success()            --  parses through the exception response, and raises SDKException</span>
+
+<span class="sd">    refresh()                           --  refresh the content analyzers associated with the commcell</span>
+
+<span class="sd">    get()                               --  Returns an instance of ContentAnalyzer class for the given CAcloud name</span>
+
+<span class="sd">    get_properties()                    --  Returns the properties for the given content analyzer cloud name</span>
+
+<span class="sd">    _get_all_contentanalyzers()         --  Returns dict consisting all content analyzers associated with commcell</span>
+
+<span class="sd">    _get_cloud_from_collections()       --  gets all the content analyzer details from collection response</span>
+
+<span class="sd">    has_cloud()                         --  Checks whether given CA cloud exists in commcell or not</span>
+
+<span class="sd">    create()                            --  Creates the content analyzer cloud for the given client name</span>
+
+<span class="sd">    delete()                            --  deletes the content analyzer cloud for the given cloud name</span>
+
+<span class="sd">ContentAnalyzer:</span>
+
+<span class="sd">    __init__(</span>
+<span class="sd">        commcell_object,</span>
+<span class="sd">        cloud_name,</span>
+<span class="sd">        cloud_id=None)                  --  initialize an object of ContentAnalyzer Class with the given CACloud</span>
+<span class="sd">                                                name and id associated to the commcell</span>
+
+<span class="sd">    refresh()                           --  refresh the properties of the CAcloud</span>
+
+<span class="sd">    _get_cloud_id()                     --  Gets content analyzer cloud id for the given CA cloud name</span>
+
+<span class="sd">    _get_cloud_properties()             --  Gets all the details of associated content analyzer cloud</span>
+
+
+<span class="sd">ContentAnalyzer Attributes</span>
+<span class="sd">-----------------</span>
+
+<span class="sd">    **cloud_id**    --  returns the cloudid of the content analyzer</span>
+
+<span class="sd">    **cloud_url**   --  returns the url of the content analyzer</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">ContentAnalyzerConstants</span>
+
+
+<div class="viewcode-block" id="ContentAnalyzers"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers">[docs]</a><span class="k">class</span> <span class="nc">ContentAnalyzers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the ContentAnalyzers in the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes an instance of the ContentAnalyzers class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of the commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the ContentAnalyzers class</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_api_get_content_analyzer_cloud</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_CONTENT_ANALYZER_CLOUD&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to raise an exception when reponse status is not 200 (OK).</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                response    (object)    --  response class object,</span>
+
+<span class="sd">                received upon running an API request, using the `requests` python package</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="ContentAnalyzers.get_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.get_properties">[docs]</a>    <span class="k">def</span> <span class="nf">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cacloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a properties of the specified content analyzer cloud name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                cacloud_name (str)  --  name of the content analyzer cloud</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict -  properties for the given content analyzer cloud name</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span><span class="p">[</span><span class="n">cacloud_name</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_all_content_analyzers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the list of all content analyzers associated with this commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of dictionaries, where each dictionary stores the</span>
+<span class="sd">                                details of a single content analyzer</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;contentAnalyzerList&quot;: [</span>
+<span class="sd">                                {</span>
+<span class="sd">                                    &quot;caUrl&quot;: &quot;http://V11LotusClient.idx.commvault.com:22005&quot;,</span>
+<span class="sd">                                     &quot;cloudName&quot;: &quot;V11lotusClientCloud&quot;,</span>
+<span class="sd">                                     &quot;cloudId&quot;: 1010</span>
+<span class="sd">                                },</span>
+<span class="sd">                                {</span>
+<span class="sd">                                      &quot;caUrl&quot;: &quot;http://imsolrscale1.sna.commvault.com:22001&quot;,</span>
+<span class="sd">                                      &quot;cloudName&quot;: &quot;Imsolrcloud&quot;,</span>
+<span class="sd">                                      &quot;cloudId&quot;: 1026</span>
+<span class="sd">                                }</span>
+<span class="sd">                        ]</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api_get_content_analyzer_cloud</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;contentAnalyzerList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cloud_from_collections</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_cloud_from_collections</span><span class="p">(</span><span class="n">collections</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extracts all the content analyzers, and their details from the list of collections given,</span>
+<span class="sd">            and returns the dictionary of all content analyzers.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                collections     (list)  --  list of all collections</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   dictionary consisting of dictionaries, where each dictionary stores the</span>
+<span class="sd">                                details of a single content analyzer</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_cacloud</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">cacloud</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">[</span><span class="s1">&#39;contentAnalyzerList&#39;</span><span class="p">]:</span>
+            <span class="n">cacloud_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">cacloud_dict</span><span class="p">[</span><span class="s1">&#39;caUrl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cacloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;caUrl&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">cacloud_dict</span><span class="p">[</span><span class="s1">&#39;cloudName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cacloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cloudName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">cacloud_dict</span><span class="p">[</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cacloud</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cloudId&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">_cacloud</span><span class="p">[</span><span class="n">cacloud</span><span class="p">[</span><span class="s1">&#39;cloudName&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">cacloud_dict</span>
+        <span class="k">return</span> <span class="n">_cacloud</span>
+
+<div class="viewcode-block" id="ContentAnalyzers.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the content analyzers associated with the commcell.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_content_analyzers</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ContentAnalyzers.create"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">content_analyzer_name</span><span class="p">,</span> <span class="n">temp_directory</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an content analyzer cloud within the commcell</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    client_name            (str)    --  Name of the client where content analyzer package is installed</span>
+<span class="sd">                    content_analyzer_name  (str)    --  name for the content analyzer cloud</span>
+<span class="sd">                    temp_directory        (str)     --  temp location for the content extractor</span>
+<span class="sd">                    cloud_param           (list)    --  list of custom parameters to be parsed</span>
+<span class="sd">                                                    into the json for content analyser meta info</span>
+<span class="sd">                                                    [</span>
+<span class="sd">                                                        {</span>
+<span class="sd">                                                            &quot;name&quot;: &lt;name&gt;,</span>
+<span class="sd">                                                            &quot;value&quot;: &lt;value&gt;</span>
+<span class="sd">                                                        }</span>
+<span class="sd">                                                    ]</span>
+<span class="sd">                Returns:</span>
+<span class="sd">                    None</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Data type of the input(s) is not valid.</span>
+
+<span class="sd">                        Response was not success.</span>
+
+<span class="sd">                        Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content_analyzer_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">ContentAnalyzerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">ContentAnalyzerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
+                <span class="s2">&quot;nodeClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;hostName&quot;</span><span class="p">:</span> <span class="n">client</span><span class="o">.</span><span class="n">client_hostname</span><span class="p">,</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;nodeMetaInfos&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;PORTNO&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;22000&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;JVMMAXMEMORY&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;4096&quot;</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;INDEXLOCATION&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">temp_directory</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_analyzer_name</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudDisplayName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_analyzer_name</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INDEX_SERVER_CREATION&#39;</span><span class="p">],</span> <span class="n">req_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create content analyzer cloud. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContentAnalyzers.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes / removes an content analyzer from the commcell</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    cloud_name      (str)   --  cloud name of content analyzer to be deleted from the commcell</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Data type of the input(s) is not valid.</span>
+
+<span class="sd">                        Response was not success.</span>
+
+<span class="sd">                        Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cloud_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">)</span><span class="o">.</span><span class="n">cloud_id</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">ContentAnalyzerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s2">&quot;opType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ContentAnalyzerConstants</span><span class="o">.</span><span class="n">OPERATION_DELETE</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloud_id</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;INDEX_SERVER_DELETION&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">(</span>
+            <span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContentAnalyzers.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a ContentAnalyzer object for the given CA cloud name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                cloud_name (str)    --  name of the Content analyzer cloud</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                obj                 -- Object of ContentAnalyzer class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if cacloud_name is not of type string</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_cloud</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">):</span>
+            <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span><span class="p">[</span><span class="n">cloud_name</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">ContentAnalyzer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">,</span> <span class="n">cloud_id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Unable to get ContentAnalyzer class object&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContentAnalyzers.has_cloud"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzers.has_cloud">[docs]</a>    <span class="k">def</span> <span class="nf">has_cloud</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a content analyzer cloud exists in the commcell with the input name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                cloud_name (str)    --  name of the content analyzer</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the CA cloud exists in the commcell or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the CA cloud name argument is not string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;ContentAnalyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="ow">and</span> <span class="n">cloud_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ContentAnalyzer"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzer">[docs]</a><span class="k">class</span> <span class="nc">ContentAnalyzer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing operations on a single content analyzer cloud&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">,</span> <span class="n">cloud_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an object of the ContentAnalyzer class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)    --  instance of the commcell class</span>
+
+<span class="sd">                cloud_name     (str)            --  name of the content analyzer cloud</span>
+
+<span class="sd">                cloud_id       (str)            --  id of the content analyzer cloud</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the ContentAnalyzer class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_name</span> <span class="o">=</span> <span class="n">cloud_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_url</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">cloud_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cloud_id</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="n">cloud_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get CA cloud id for given CA cloud name</span>
+<span class="sd">                Args:</span>
+
+<span class="sd">                    cloud_name (str)   -- Name of the content analyzer cloud</span>
+
+<span class="sd">                Returns:</span>
+
+<span class="sd">                    int                -- Content analyzer cloud id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">content_analyzers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">)</span><span class="o">.</span><span class="n">cloud_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_cloud_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get CA cloud properties for all content analyzers cloud in the commcell</span>
+<span class="sd">                Args:</span>
+
+<span class="sd">                    None</span>
+
+<span class="sd">                Returns:</span>
+
+<span class="sd">                    None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content_analyzers_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">content_analyzers</span><span class="o">.</span><span class="n">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cloud_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_url</span> <span class="o">=</span> <span class="n">content_analyzers_dict</span><span class="p">[</span><span class="s1">&#39;caUrl&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="n">content_analyzers_dict</span><span class="p">[</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">content_analyzers_dict</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the Content analyzer cloud id attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the Content analyzer cloud url attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_url</span>
+
+<div class="viewcode-block" id="ContentAnalyzer.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.content_analyzer.ContentAnalyzer.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the content analyzer details associated with this commcell&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_cloud_properties</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

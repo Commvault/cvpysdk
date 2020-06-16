@@ -52,6 +52,8 @@ Backupsets:
     _process_add_response()         -- to process the add backupset request using API call
 
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
+    
+    add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client
 
     add_salesforce_backupset()      -- adds a new salesforce backupset
 
@@ -189,7 +191,8 @@ class Backupsets(object):
         from .backupsets.adbackupset import ADBackupset
         from .backupsets.db2backupset import DB2Backupset
         from .backupsets.vsbackupset import VSBackupset
-        from .backupsets.aadbackupset import AzureAdBackupset															 
+        from .backupsets.aadbackupset import AzureAdBackupset
+        from .backupsets.sharepointbackupset import SharepointBackupset
 
         self._backupsets_dict = {
             'file system': FSBackupset,
@@ -201,7 +204,8 @@ class Backupsets(object):
             "active directory" : ADBackupset,
             'db2': DB2Backupset,
             'virtual server': VSBackupset,
-            "azure ad" : AzureAdBackupset										 
+            "azure ad" : AzureAdBackupset,
+            'sharepoint server': SharepointBackupset
         }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
@@ -559,6 +563,120 @@ request_json['backupSetInfo'].update({
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+
+    def add_archiveset(self, archiveset_name):
+        """ 
+        Adds a new archiveset to the agent. It is just a backupset but is mainly used for archive only items
+
+        Args:
+            archiveset_name     (str) -- name of new archiveset to add
+            
+        Returns:
+        object - instance of the Backupset class, if created successfully
+
+        Raises:
+            SDKException:
+                if type of the archiveset name argument is not string
+
+                if failed to create a archiveset
+
+                if response is empty
+
+                if response is not success
+
+                if archiveset with same name already exists
+                
+
+        """        
+        if not (isinstance(archiveset_name, basestring)):
+            raise SDKException('Backupset', '101')
+        else:
+            archiveset_name = archiveset_name.lower()
+
+        if self.has_backupset(archiveset_name):
+            raise SDKException('archiveset_name', '102', 'Archiveset "{0}" already exists.'.format(archiveset_name))
+
+        request_json = {
+            "backupSetInfo": {
+                "useContentFromPlan": False,
+                "planEntity": {},
+                "commonBackupSet": {
+                    "isArchivingEnabled": True,
+                    "isDefaultBackupSet": False
+                },
+                "backupSetEntity": {
+                    "_type_": 6,
+                    "clientId": int(self._client_object.client_id),
+                    "backupsetName": archiveset_name,
+                    "applicationId": int(self._agent_object.agent_id)
+                },
+                "subClientList": [
+                    {
+                        "contentOperationType": 1,
+                        "fsSubClientProp": {
+                            "useGlobalFilters": 2,
+                            "forcedArchiving": True,
+                            "diskCleanupRules": {
+                                "enableArchivingWithRules": True,
+                                "diskCleanupFileTypes": {}
+                            }
+                        },
+                        "content": [
+                            {
+                                "path": ""
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_BACKUPSET'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    response_value = response.json()['response'][0]
+                    error_code = str(response_value['errorCode'])
+                    error_message = None
+
+                    if 'errorString' in response_value:
+                        error_message = response_value['errorString']
+
+                    if error_message:
+                        o_str = 'Failed to create new Archiveset\nError: "{0}"'.format(
+                            error_message
+                        )
+                        raise SDKException('Archiveset', '102', o_str)
+                    else:
+                        if error_code == '0':
+                            # initialize the backupsets again
+                            # so the backupsets object has all the backupsets
+                            self.refresh()
+                            return self.get(archiveset_name)
+                        
+                        else:
+                            o_str = ('Failed to create new Archiveset with error code: "{0}"\n'
+                                     'Please check the documentation for '
+                                     'more details on the error').format(error_code)
+
+                            raise SDKException('Backupset', '102', o_str)
+                else:
+                    error_code = response.json()['errorCode']
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to create new Archiveset\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Backupset', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
 
     def add_salesforce_backupset(
             self,
@@ -947,6 +1065,8 @@ class Backupset(object):
                     self._plan = self._commcell_object.plans.get(
                         self._properties["planEntity"]["planName"]
                     )
+                else:
+                    self._plan = None
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1621,14 +1741,21 @@ class Backupset(object):
     def plan(self, value):
         """Associates the plan to the backupset
 
+            Args:
+                value   (object)    --  the Plan object which is to be associated
+                                        with the backupset
+                
+                value   (str)       --  name of the plan which is to be associated
+                                        with the backupset
+
+                value   (None)      --  set value to None to remove plan associations
+
             Raises:
                 SDKException:
 
-                    if input value is not an instance of Plan class
-
                     if plan does not exist
 
-                    if plan associateion fails
+                    if plan association fails
 
                     if plan is not eligible to be associated
         """
@@ -1637,6 +1764,10 @@ class Backupset(object):
             plan_obj = value
         elif isinstance(value, basestring):
             plan_obj = self._commcell_object.plans.get(value)
+        elif value is None:
+            plan_obj = {
+                'planName': None
+            }
         else:
             raise SDKException('Backupset', '102', 'Input value is not of supported type')
 
@@ -1646,7 +1777,7 @@ class Backupset(object):
             'appId': int(self._agent_object.agent_id),
             'backupsetId': int(self.backupset_id)
         }
-        if plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
+        if value is not None and plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
             request_json = {
                 'backupsetProperties': {
                     'planEntity': {
@@ -1665,8 +1796,25 @@ class Backupset(object):
 
             if response[0]:
                 return
-            o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
-            raise SDKException('Backupset', '102', o_str.format(response[2]))
+            else:
+                o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(response[2]))
+        elif value is None:
+            request_json = {
+                'backupsetProperties': {
+                    'removePlanAssociation': True
+                }
+            }
+
+            response = self._process_update_reponse(
+                request_json
+            )
+
+            if response[0]:
+                return
+            else:
+                o_str = 'Failed to dissociate plan from backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(response[2]))
         else:
             raise SDKException(
                 'Backupset',

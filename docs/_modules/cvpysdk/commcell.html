@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -187,6 +187,8 @@
 
 <span class="sd">    _qoperation_execscript()    --  runs the qoperation execute qscript with specified arguements</span>
 
+<span class="sd">    get_gxglobalparam_value()	--	makes a rest api call to get values from GXGlobalParam</span>
+
 <span class="sd">    _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)</span>
 
 <span class="sd">    logout()                    --  logs out the user associated with the current instance</span>
@@ -208,12 +210,22 @@
 
 <span class="sd">    download_software()         --  triggers the Download Software job with the given options</span>
 
+<span class="sd">    get_remote_cache_path()     --  returns remote cache path</span>
+
+<span class="sd">    configure_remotecache()     --  configures client as remote cache</span>
+
+<span class="sd">    configure_packages_to_sync()    --  configures packages to sync for the remote cache</span>
+
 <span class="sd">    push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes</span>
 
 <span class="sd">    install_software()              --  triggers the install Software job with the given options</span>
 
 <span class="sd">    enable_auth_code()              --  executes the request on the server to enable Auth Code</span>
 <span class="sd">    for installation on the commcell</span>
+
+<span class="sd">    enable_shared_laptop()          --   Executes the request on the server to enable Shared Laptop on commcell</span>
+
+<span class="sd">    disable_shared_laptop()         --  Executes the request on the server to disable Shared Laptop on commcell</span>
 
 <span class="sd">    execute_qcommand()              --  executes the ExecuteQCommand API on the commcell</span>
 
@@ -270,6 +282,8 @@
 <span class="sd">    **clients**                 --  returns the instance of the `Clients` class,</span>
 <span class="sd">    to interact with the clients added on the Commcell</span>
 
+<span class="sd">    **commserv_cache**          --  returns the instance of the `CommServeCache` class</span>
+
 <span class="sd">    **media_agents**            --  returns the instance of the `MediaAgents` class,</span>
 <span class="sd">    to interact with the media agents associated with the Commcell class instance</span>
 
@@ -288,6 +302,9 @@
 <span class="sd">    **schedule_policies**       --  returns the instance of the `SchedulePolicies` class,</span>
 <span class="sd">    to interact with the schedule policies added to the Commcell</span>
 
+<span class="sd">    **schedules**       --  returns the instance of the `Schedules` class,</span>
+<span class="sd">    to interact with the schedules associated to the Commcell</span>
+
 <span class="sd">    **user_groups**             --  returns the instance of the `UserGroups` class,</span>
 <span class="sd">    to interact with the user groups added to the Commcell</span>
 
@@ -302,6 +319,12 @@
 
 <span class="sd">    **datacube**                --  returns the instance of the `Datacube` class,</span>
 <span class="sd">    to interact with the datacube engine deployed on the Commcell</span>
+
+<span class="sd">    **content_analyzers**       --  returns the instance of the `ContentAnalyzers` class,</span>
+<span class="sd">    to interact with the CA cloud deployed on the Commcell</span>
+
+<span class="sd">    **activate_entity**         --  returns the instance of the `ActivateEntities` class,</span>
+<span class="sd">    to interact with the regex entity on the Commcell</span>
 
 <span class="sd">    **plans**                   --  returns the instance of the `Plans` class,</span>
 <span class="sd">    to interact with the plans associated with the Commcell</span>
@@ -365,65 +388,75 @@
 <span class="sd">    **reports**                 --  Return the instance of Report class</span>
 
 <span class="sd">    **job_management**          --  Returns an instance of the JobManagement class.</span>
-<span class="sd">    </span>
+
+<span class="sd">    **hac_clusters**            --  Returns an instance of the HAC Clusters class</span>
+
+<span class="sd">    **index_pools**             --  Returns an instance of the IndexPools class</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">getpass</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="n">SSLError</span>
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="n">Timeout</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="n">SSLError</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="n">Timeout</span>
 
 <span class="c1"># ConnectionError is a built-in exception, do not override it</span>
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">RequestsConnectionError</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">RequestsConnectionError</span>
 
-
-<span class="kn">from</span> <span class="nn">.services</span> <span class="k">import</span> <span class="n">get_services</span>
-<span class="kn">from</span> <span class="nn">.cvpysdk</span> <span class="k">import</span> <span class="n">CVPySDK</span>
-<span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Clients</span>
-<span class="kn">from</span> <span class="nn">.alert</span> <span class="k">import</span> <span class="n">Alerts</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">MediaAgents</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">DiskLibraries</span>
-<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="k">import</span> <span class="n">UserGroups</span>
-<span class="kn">from</span> <span class="nn">.domains</span> <span class="k">import</span> <span class="n">Domains</span>
-<span class="kn">from</span> <span class="nn">.workflow</span> <span class="k">import</span> <span class="n">WorkFlows</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="k">import</span> <span class="n">ClientGroups</span>
-<span class="kn">from</span> <span class="nn">.globalfilter</span> <span class="k">import</span> <span class="n">GlobalFilters</span>
-<span class="kn">from</span> <span class="nn">.datacube.datacube</span> <span class="k">import</span> <span class="n">Datacube</span>
-<span class="kn">from</span> <span class="nn">.plan</span> <span class="k">import</span> <span class="n">Plans</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobController</span>
-<span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">Users</span>
-<span class="kn">from</span> <span class="nn">.security.role</span> <span class="k">import</span> <span class="n">Roles</span>
-<span class="kn">from</span> <span class="nn">.credential_manager</span> <span class="k">import</span> <span class="n">Credentials</span>
-<span class="kn">from</span> <span class="nn">.download_center</span> <span class="k">import</span> <span class="n">DownloadCenter</span>
-<span class="kn">from</span> <span class="nn">.organization</span> <span class="k">import</span> <span class="n">Organizations</span>
-<span class="kn">from</span> <span class="nn">.storage_pool</span> <span class="k">import</span> <span class="n">StoragePools</span>
-<span class="kn">from</span> <span class="nn">.monitoring</span> <span class="k">import</span> <span class="n">MonitoringPolicies</span>
-<span class="kn">from</span> <span class="nn">.policy</span> <span class="k">import</span> <span class="n">Policies</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.activitycontrol</span> <span class="k">import</span> <span class="n">ActivityControl</span>
-<span class="kn">from</span> <span class="nn">.eventviewer</span> <span class="k">import</span> <span class="n">Events</span>
-<span class="kn">from</span> <span class="nn">.array_management</span> <span class="k">import</span> <span class="n">ArrayManagement</span>
-<span class="kn">from</span> <span class="nn">.disasterrecovery</span> <span class="k">import</span> <span class="n">DisasterRecovery</span>
-<span class="kn">from</span> <span class="nn">.operation_window</span> <span class="k">import</span> <span class="n">OperationWindow</span>
-<span class="kn">from</span> <span class="nn">.identity_management</span> <span class="k">import</span> <span class="n">IdentityManagementApps</span>
-<span class="kn">from</span> <span class="nn">.system</span> <span class="k">import</span> <span class="n">System</span>
-<span class="kn">from</span> <span class="nn">.commcell_migration</span> <span class="k">import</span> <span class="n">CommCellMigration</span>
-<span class="kn">from</span> <span class="nn">.deployment.download</span> <span class="k">import</span> <span class="n">Download</span>
-<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
-<span class="kn">from</span> <span class="nn">.name_change</span> <span class="k">import</span> <span class="n">NameChange</span>
-<span class="kn">from</span> <span class="nn">.backup_network_pairs</span> <span class="k">import</span> <span class="n">BackupNetworkPairs</span>
-<span class="kn">from</span> <span class="nn">.reports</span> <span class="k">import</span> <span class="n">report</span>
-<span class="kn">from</span> <span class="nn">.recovery_targets</span> <span class="k">import</span> <span class="n">RecoveryTargets</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobManagement</span>
+<span class="kn">from</span> <span class="nn">.services</span> <span class="kn">import</span> <span class="n">get_services</span>
+<span class="kn">from</span> <span class="nn">.cvpysdk</span> <span class="kn">import</span> <span class="n">CVPySDK</span>
+<span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Clients</span>
+<span class="kn">from</span> <span class="nn">.alert</span> <span class="kn">import</span> <span class="n">Alerts</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">MediaAgents</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">DiskLibraries</span>
+<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="kn">import</span> <span class="n">UserGroups</span>
+<span class="kn">from</span> <span class="nn">.domains</span> <span class="kn">import</span> <span class="n">Domains</span>
+<span class="kn">from</span> <span class="nn">.workflow</span> <span class="kn">import</span> <span class="n">WorkFlows</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="kn">import</span> <span class="n">ClientGroups</span>
+<span class="kn">from</span> <span class="nn">.globalfilter</span> <span class="kn">import</span> <span class="n">GlobalFilters</span>
+<span class="kn">from</span> <span class="nn">.datacube.datacube</span> <span class="kn">import</span> <span class="n">Datacube</span>
+<span class="kn">from</span> <span class="nn">.content_analyzer</span> <span class="kn">import</span> <span class="n">ContentAnalyzers</span>
+<span class="kn">from</span> <span class="nn">.activate_entity</span> <span class="kn">import</span> <span class="n">ActivateEntities</span>
+<span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plans</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">JobController</span>
+<span class="kn">from</span> <span class="nn">.security.user</span> <span class="kn">import</span> <span class="n">Users</span>
+<span class="kn">from</span> <span class="nn">.security.role</span> <span class="kn">import</span> <span class="n">Roles</span>
+<span class="kn">from</span> <span class="nn">.credential_manager</span> <span class="kn">import</span> <span class="n">Credentials</span>
+<span class="kn">from</span> <span class="nn">.download_center</span> <span class="kn">import</span> <span class="n">DownloadCenter</span>
+<span class="kn">from</span> <span class="nn">.organization</span> <span class="kn">import</span> <span class="n">Organizations</span>
+<span class="kn">from</span> <span class="nn">.storage_pool</span> <span class="kn">import</span> <span class="n">StoragePools</span>
+<span class="kn">from</span> <span class="nn">.monitoring</span> <span class="kn">import</span> <span class="n">MonitoringPolicies</span>
+<span class="kn">from</span> <span class="nn">.policy</span> <span class="kn">import</span> <span class="n">Policies</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.activitycontrol</span> <span class="kn">import</span> <span class="n">ActivityControl</span>
+<span class="kn">from</span> <span class="nn">.eventviewer</span> <span class="kn">import</span> <span class="n">Events</span>
+<span class="kn">from</span> <span class="nn">.array_management</span> <span class="kn">import</span> <span class="n">ArrayManagement</span>
+<span class="kn">from</span> <span class="nn">.disasterrecovery</span> <span class="kn">import</span> <span class="n">DisasterRecovery</span>
+<span class="kn">from</span> <span class="nn">.operation_window</span> <span class="kn">import</span> <span class="n">OperationWindow</span>
+<span class="kn">from</span> <span class="nn">.identity_management</span> <span class="kn">import</span> <span class="n">IdentityManagementApps</span>
+<span class="kn">from</span> <span class="nn">.system</span> <span class="kn">import</span> <span class="n">System</span>
+<span class="kn">from</span> <span class="nn">.commcell_migration</span> <span class="kn">import</span> <span class="n">CommCellMigration</span>
+<span class="kn">from</span> <span class="nn">.deployment.download</span> <span class="kn">import</span> <span class="n">Download</span>
+<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="kn">import</span> <span class="n">CommServeCache</span>
+<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="kn">import</span> <span class="n">RemoteCache</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="kn">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.name_change</span> <span class="kn">import</span> <span class="n">NameChange</span>
+<span class="kn">from</span> <span class="nn">.backup_network_pairs</span> <span class="kn">import</span> <span class="n">BackupNetworkPairs</span>
+<span class="kn">from</span> <span class="nn">.reports</span> <span class="kn">import</span> <span class="n">report</span>
+<span class="kn">from</span> <span class="nn">.recovery_targets</span> <span class="kn">import</span> <span class="n">RecoveryTargets</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">JobManagement</span>
+<span class="kn">from</span> <span class="nn">.index_server</span> <span class="kn">import</span> <span class="n">IndexServers</span>
+<span class="kn">from</span> <span class="nn">.hac_clusters</span> <span class="kn">import</span> <span class="n">HACClusters</span>
+<span class="kn">from</span> <span class="nn">.index_pools</span> <span class="kn">import</span> <span class="n">IndexPools</span>
 
 <span class="n">USER_LOGGED_OUT_MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;User Logged Out. Please initialize the Commcell object again.&#39;</span>
 <span class="sd">&quot;&quot;&quot;str:     Message to be returned to the user, when trying the get the value of an attribute</span>
@@ -435,7 +468,7 @@
 <div class="viewcode-block" id="Commcell"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell">[docs]</a><span class="k">class</span> <span class="nc">Commcell</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for establishing a session to the Commcell via Commvault REST API.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">webconsole_hostname</span><span class="p">,</span>
             <span class="n">commcell_username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -584,6 +617,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disaster_recovery</span> <span class="o">=</span> <span class="kc">None</span>
@@ -591,12 +625,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_disk_libraries</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_filters</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_controller</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_users</span> <span class="o">=</span> <span class="kc">None</span>
@@ -620,11 +657,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_reports</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_recovery_targets</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_management</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_password</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
 
 <span class="sd">            Returns:</span>
@@ -634,7 +674,7 @@
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Commcell class instance of Commcell: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, for User: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the current instance.</span>
 
 <span class="sd">            Returns:</span>
@@ -643,7 +683,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Logs out the user associated with the current instance.&quot;&quot;&quot;</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">_logout</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_remove_attribs_</span><span class="p">()</span>
@@ -669,12 +709,14 @@
     <span class="k">def</span> <span class="nf">_remove_attribs_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes all the attributes associated with the instance of this class.&quot;&quot;&quot;</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_libraries</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span>
@@ -683,6 +725,8 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_groups</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_filters</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_controller</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_users</span>
@@ -705,6 +749,9 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_network_pairs</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_management</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span>
         <span class="k">del</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_get_commserv_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -851,6 +898,34 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
+<div class="viewcode-block" id="Commcell.get_gxglobalparam_value"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.get_gxglobalparam_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_gxglobalparam_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Makes a rest api call to get values from GXGlobalParam</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   json response received from the server</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_GLOBAL_PARAM&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;output&#39;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
     <span class="k">def</span> <span class="nf">_set_gxglobalparam_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Updates GXGlobalParam table (Commcell level configuration parameters)</span>
 
@@ -968,6 +1043,50 @@
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commserv_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the CommServeCache  class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span> <span class="o">=</span> <span class="n">CommServeCache</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index_servers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the Index Servers class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span> <span class="o">=</span> <span class="n">IndexServers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hac_clusters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the HAC Clusters class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="o">=</span> <span class="n">HACClusters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index_pools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the HAC Clusters class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="o">=</span> <span class="n">IndexPools</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">media_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the MediaAgents class.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1020,6 +1139,17 @@
     <span class="k">def</span> <span class="nf">schedule_policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the SchedulePolicies class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">policies</span><span class="o">.</span><span class="n">schedule_policies</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the Schedules class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span> <span class="o">=</span> <span class="n">Schedules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">policies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1084,6 +1214,28 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span> <span class="o">=</span> <span class="n">Datacube</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content_analyzers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the ContentAnalyzers class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="o">=</span> <span class="n">ContentAnalyzers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">activate_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the ContentAnalyzers class.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span> <span class="o">=</span> <span class="n">ActivateEntities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
@@ -1472,17 +1624,21 @@
 <div class="viewcode-block" id="Commcell.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Commcell.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_cache</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_media_agents</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alerts</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disk_libraries</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_policies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_schedules</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_filters</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_datacube</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activate_entity</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_content_analyzers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job_controller</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_users</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1503,7 +1659,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_migration</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_commserv_details</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_registered_commcells</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_rules_service</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="Commcell.run_data_aging"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.run_data_aging">[docs]</a>    <span class="k">def</span> <span class="nf">run_data_aging</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1583,7 +1742,7 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
+                    <span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
                     <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
 
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1795,6 +1954,81 @@
             <span class="n">service_pack</span><span class="o">=</span><span class="n">service_pack</span>
         <span class="p">)</span></div>
 
+<div class="viewcode-block" id="Commcell.get_remote_cache_path"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.get_remote_cache_path">[docs]</a>    <span class="k">def</span> <span class="nf">get_remote_cache_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns remote cache path</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client_name (str) -- Client name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">                remote cache path (str)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            exception if qoperation fails</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">remote_cache</span> <span class="o">=</span> <span class="n">RemoteCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">remote_cache</span><span class="o">.</span><span class="n">get_remote_cache_path</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Commcell.configure_remotecache"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.configure_remotecache">[docs]</a>    <span class="k">def</span> <span class="nf">configure_remotecache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache_path</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configures client as remote cache</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cache_path (str)  -- Remote cache path</span>
+
+<span class="sd">            client_name (str) -- Client name</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            exception if qoperation fails</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">remote_cache</span> <span class="o">=</span> <span class="n">RemoteCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">remote_cache</span><span class="o">.</span><span class="n">configure_remotecache</span><span class="p">(</span><span class="n">cache_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commcell.configure_packages_to_sync"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.configure_packages_to_sync">[docs]</a>    <span class="k">def</span> <span class="nf">configure_packages_to_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">win_os</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">win_package_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unix_os</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">unix_package_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configures packages to sync for the remote cache</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client_name (str) 	 	-- name of the client</span>
+<span class="sd">            win_os 		(list)	 	-- list of windows oses to sync</span>
+<span class="sd">            win_package_list  (list)-- list of windows packages to sync</span>
+<span class="sd">            unix_os (list) 		  	-- list of unix oses to sync</span>
+<span class="sd">            unix_package_list (list)-- list of unix packages to sync</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">            - Failed to execute the api</span>
+
+<span class="sd">            - Response is incorrect</span>
+
+<span class="sd">            - Incorrect input</span>
+
+<span class="sd">        Usage:</span>
+<span class="sd">            commcell_obj.configure_packages_to_sync()</span>
+
+<span class="sd">            win_os = [&quot;WINDOWS_32&quot;, &quot;WINDOWS_64&quot;]</span>
+<span class="sd">            unix_os = [&quot;UNIX_LINUX64&quot;, &quot;UNIX_AIX&quot;]</span>
+<span class="sd">            win_package_list = [&quot;FILE_SYSTEM&quot;, &quot;MEDIA_AGENT&quot;]</span>
+<span class="sd">            unix_package_list = [&quot;FILE_SYSTEM&quot;, &quot;MEDIA_AGENT&quot;]</span>
+
+<span class="sd">            OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for</span>
+<span class="sd">            providing input to the configure_packages_to_sync method, it can be imported by</span>
+
+<span class="sd">                &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures</span>
+<span class="sd">                    from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping</span>
+<span class="sd">                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">remote_cache</span> <span class="o">=</span> <span class="n">RemoteCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">remote_cache</span><span class="o">.</span><span class="n">configure_packages_to_sync</span><span class="p">(</span>
+            <span class="n">win_os</span><span class="o">=</span><span class="n">win_os</span><span class="p">,</span>
+            <span class="n">win_package_list</span><span class="o">=</span><span class="n">win_package_list</span><span class="p">,</span>
+            <span class="n">unix_os</span><span class="o">=</span><span class="n">unix_os</span><span class="p">,</span>
+            <span class="n">unix_package_list</span><span class="o">=</span><span class="n">unix_package_list</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Commcell.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">client_computers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1968,6 +2202,73 @@
 
         <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;organizationProperties&#39;</span><span class="p">][</span><span class="s1">&#39;authCode&#39;</span><span class="p">]</span></div>
 
+<div class="viewcode-block" id="Commcell.enable_shared_laptop"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.enable_shared_laptop">[docs]</a>    <span class="k">def</span> <span class="nf">enable_shared_laptop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes the request on the server to enable Shared Laptop on commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if failed to enable shared laptop</span>
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ENABLE_SHARED_LAPTOP&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to enable shared laptop&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commcell.disable_shared_laptop"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.disable_shared_laptop">[docs]</a>    <span class="k">def</span> <span class="nf">disable_shared_laptop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes the request on the server to disable Shared Laptop on commcell</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+<span class="sd">                    if failed to disable shared laptop</span>
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;PUT&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DISABLE_SHARED_LAPTOP&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to disable shared laptop&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Commcell.set_default_plan"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.set_default_plan">[docs]</a>    <span class="k">def</span> <span class="nf">set_default_plan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to set Default Plan at commcell level.</span>
 <span class="sd">            This is independent of the organization, as id is 0.</span>
@@ -2048,7 +2349,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="k">import</span> <span class="n">urlencode</span>
+        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlencode</span>
 
         <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;application/x-www-form-urlencoded&#39;</span>
@@ -2096,7 +2397,7 @@
 <span class="s2">                &lt;UserMappings/&gt;</span>
 <span class="s2">                &lt;assocTree _type_=&quot;13&quot; userName=&quot;</span><span class="si">{3}</span><span class="s2">&quot;/&gt;</span>
 <span class="s2">            &lt;/clientThirdPartyApps&gt;</span>
-<span class="s2">        &lt;/App_SetClientThirdPartyAppPropReq&gt; </span>
+<span class="s2">        &lt;/App_SetClientThirdPartyAppPropReq&gt;</span>
 <span class="s2">        	&quot;&quot;&quot;</span>\
             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">saml_app_key</span><span class="p">),</span> <span class="n">saml_app_name</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">user_to_be_added</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_qoperation_execute</span><span class="p">(</span><span class="n">xml_execute_command</span><span class="p">)</span></div>
@@ -2161,7 +2462,7 @@
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;redirectRules&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="n">redirect_rules_list</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">redirect_rules_list</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;redirectRules&#39;</span><span class="p">][</span><span class="s1">&#39;domains&#39;</span><span class="p">]</span> <span class="o">+</span> \
-                                      <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;redirectRules&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;redirectRules&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span>
                 <span class="k">return</span> <span class="n">redirect_rules_list</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>

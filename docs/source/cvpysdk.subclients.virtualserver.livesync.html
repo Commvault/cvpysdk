@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.livesync package &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.livesync package &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -83,6 +83,7 @@
 <li><a class="reference internal" href="#">cvpysdk.subclients.virtualserver.livesync package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.livesync.hyperv_live_sync">cvpysdk.subclients.virtualserver.livesync.hyperv_live_sync module</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.livesync.vmware_live_sync">cvpysdk.subclients.virtualserver.livesync.vmware_live_sync module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.subclients.virtualserver.livesync.vsa_live_sync">cvpysdk.subclients.virtualserver.livesync.vsa_live_sync module</a><ul>
 <li><a class="reference internal" href="#vsalivesync">VsaLiveSync:</a><ul>
 <li><a class="reference internal" href="#vsalivesync-attributes">VsaLiveSync Attributes:</a></li>
@@ -207,6 +208,104 @@
 </dd>
 </dl>
 <p>distribute_vm_workload      (int)   – Virtual machines to be used per job</p>
+<p>restored_vm_name            (str)   – Name used for the VM when restored</p>
+<p>restore_option              (dict)  – Restore options dictionary with advanced options</p>
+<p>pattern_dict                (dict)  – Dictionary to generate the live sync schedule</p>
+<blockquote>
+<div><p>Sample:</p>
+<blockquote>
+<div><p>for after_job_completes :
+{</p>
+<blockquote>
+<div><p>“freq_type”: ‘after_job_completes’,
+“active_start_date”: date_in_%m/%d/%y (str),
+“active_start_time”: time_in_%H/%S (str),
+“repeat_days”: days_to_repeat (int)</p>
+</div></blockquote>
+<p>}</p>
+<p>for daily:
+{</p>
+<blockquote>
+<div><p>“freq_type”: ‘daily’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_days”: days_to_repeat (int)</p>
+</div></blockquote>
+<p>}</p>
+<p>for weekly:
+{</p>
+<blockquote>
+<div><p>“freq_type”: ‘weekly’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_weeks”: weeks_to_repeat (int)
+“weekdays”: list of weekdays [‘Monday’,’Tuesday’]</p>
+</div></blockquote>
+<p>}</p>
+<p>for monthly:
+{</p>
+<blockquote>
+<div><p>“freq_type”: ‘monthly’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_months”: weeks_to_repeat (int)
+“on_day”: Day to run schedule (int)</p>
+</div></blockquote>
+<p>}</p>
+<p>for yearly:
+{</p>
+<blockquote>
+<div><p>“active_start_time”: time_in_%H/%S (str),
+“on_month”: month to run schedule (str) January, Febuary…
+“on_day”: Day to run schedule (int)</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>object - instance of the Schedule class for this Live sync</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-cvpysdk.subclients.virtualserver.livesync.vmware_live_sync">
+<span id="cvpysdk-subclients-virtualserver-livesync-vmware-live-sync-module"></span><h2>cvpysdk.subclients.virtualserver.livesync.vmware_live_sync module<a class="headerlink" href="#module-cvpysdk.subclients.virtualserver.livesync.vmware_live_sync" title="Permalink to this headline">¶</a></h2>
+<p>File for configuring and monitoring live sync on the VMW subclient.</p>
+<p>VMWareLiveSync is the only class defined in this file.</p>
+<p>VMWareLiveSync: Class for configuring and monitoring VMWare subclient live sync</p>
+<p>VMWareLiveSync:</p>
+<blockquote>
+<div><p>configure_live_sync()     – To configure live sync from supplied parameters</p>
+</div></blockquote>
+<dl class="class">
+<dt id="cvpysdk.subclients.virtualserver.livesync.vmware_live_sync.VMWareLiveSync">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.subclients.virtualserver.livesync.vmware_live_sync.</code><code class="sig-name descname">VMWareLiveSync</code><span class="sig-paren">(</span><em class="sig-param">subclient_object</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/virtualserver/livesync/vmware_live_sync.html#VMWareLiveSync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.livesync.vmware_live_sync.VMWareLiveSync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.VsaLiveSync" title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.VsaLiveSync"><code class="xref py py-class docutils literal notranslate"><span class="pre">cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.VsaLiveSync</span></code></a></p>
+<p>Class for configuring and monitoring VMWare live sync operations</p>
+<dl class="method">
+<dt id="cvpysdk.subclients.virtualserver.livesync.vmware_live_sync.VMWareLiveSync.configure_live_sync">
+<code class="sig-name descname">configure_live_sync</code><span class="sig-paren">(</span><em class="sig-param">schedule_name=None</em>, <em class="sig-param">destination_client=None</em>, <em class="sig-param">proxy_client=None</em>, <em class="sig-param">copy_precedence=0</em>, <em class="sig-param">vm_to_restore=None</em>, <em class="sig-param">destination_network=None</em>, <em class="sig-param">power_on=True</em>, <em class="sig-param">overwrite=False</em>, <em class="sig-param">distribute_vm_workload=None</em>, <em class="sig-param">datastore=None</em>, <em class="sig-param">restored_vm_name=None</em>, <em class="sig-param">restore_option=None</em>, <em class="sig-param">pattern_dict=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/virtualserver/livesync/vmware_live_sync.html#VMWareLiveSync.configure_live_sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.virtualserver.livesync.vmware_live_sync.VMWareLiveSync.configure_live_sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>To configure live</p>
+<p>Args:</p>
+<blockquote>
+<div><p>schedule_name               (str)   – Name of the Live sync schedule to be created</p>
+<p>destination_client          (str)   – VMWare Host Client Name where VM needs to be restored</p>
+<p>proxy_client                (str)   – Name of the proxy client to be used</p>
+<dl class="simple">
+<dt>copy_precedence             (int)   – Copy id from which restore needs to be performed</dt><dd><p>default: 0</p>
+</dd>
+</dl>
+<p>vm_to_restore               (list)  – VM’s to be restored</p>
+<p>destination_network         (str)   – Network card name on the destination machine</p>
+<dl class="simple">
+<dt>power_on                    (bool)  – To validate destination VM power on and off</dt><dd><p>default: True</p>
+</dd>
+<dt>overwrite                   (bool)  – To overwrite VM and VHDs in destination path</dt><dd><p>default: False</p>
+</dd>
+</dl>
+<p>distribute_vm_workload      (int)   – Virtual machines to be used per job</p>
+<p>datastore                   (str)   – Datastore to restore the VM</p>
 <p>restored_vm_name            (str)   – Name used for the VM when restored</p>
 <p>restore_option              (dict)  – Restore options dictionary with advanced options</p>
 <p>pattern_dict                (dict)  – Dictionary to generate the live sync schedule</p>

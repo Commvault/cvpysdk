@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.agent &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.agent &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -232,25 +232,25 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">string</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instances</span>
-<span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.instance</span> <span class="kn">import</span> <span class="n">Instances</span>
+<span class="kn">from</span> <span class="nn">.backupset</span> <span class="kn">import</span> <span class="n">Backupsets</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Agents"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.agent.Agents">[docs]</a><span class="k">class</span> <span class="nc">Agents</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the agents associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Agents class.</span>
 
 <span class="sd">            Args:</span>
@@ -271,7 +271,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_agents</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-        <span class="kn">from</span> <span class="nn">.agents.exchange_database_agent</span> <span class="k">import</span> <span class="n">ExchangeDatabaseAgent</span>
+        <span class="kn">from</span> <span class="nn">.agents.exchange_database_agent</span> <span class="kn">import</span> <span class="n">ExchangeDatabaseAgent</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
@@ -279,7 +279,7 @@
             <span class="s1">&#39;exchange database&#39;</span><span class="p">:</span> <span class="n">ExchangeDatabaseAgent</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all agents of the client.</span>
 
 <span class="sd">            Returns:</span>
@@ -298,15 +298,15 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Agents class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Agents class instance for Client: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the Agents licensed for the selected Client.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_agents</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the agent for the given agent ID or</span>
 <span class="sd">            the details of the agent for given agent Name.</span>
 
@@ -511,17 +511,17 @@
             <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;createAgent&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[</span>
-                        <span class="p">{</span>
-                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
-                            <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="n">agent_name</span>
-                        <span class="p">}</span>
-                    <span class="p">]</span>
-                <span class="p">},</span>
-                <span class="s2">&quot;agentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;AgentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;createAgent&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;association&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="n">agent_name</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;agentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;AgentProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;createIndexOnFail&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                     <span class="s2">&quot;createIndexOnFull&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                     <span class="s2">&quot;installDate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -537,8 +537,8 @@
                         <span class="p">{</span>
                             <span class="s2">&quot;dbSoftwareConfigList&quot;</span><span class="p">:</span> <span class="p">[</span>
                                 <span class="p">{</span>
-                                    <span class="s2">&quot;installDir&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install_dir&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
-                                    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span><span class="s2">&quot;10.0&quot;</span><span class="p">)</span>
+                                    <span class="s2">&quot;installDir&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                                    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;10.0&quot;</span><span class="p">)</span>
                                 <span class="p">}</span>
                             <span class="p">],</span>
                             <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -559,7 +559,7 @@
 <div class="viewcode-block" id="Agent"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.agent.Agent">[docs]</a><span class="k">class</span> <span class="nc">Agent</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing agent operations of an agent for a specific client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="n">agent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_object</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="n">agent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the instance of the Agent class.</span>
 
 <span class="sd">            Args:</span>
@@ -594,7 +594,7 @@
             <span class="c1"># Get the agent id if agent id is not provided</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_agent_id</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">GET_AGENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_AGENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GET_AGENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_AGENT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_properties</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -604,7 +604,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;</span><span class="si">{0}</span><span class="s1">&quot; Agent instance for Client: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
 

@@ -368,17 +368,17 @@ class Agents(object):
             )
 
         request_json = {
-                "createAgent": True,
-                "association": {
-                    "entity": [
-                        {
-                            "clientName": self._client_object.client_name,
-                            "appName": agent_name
-                        }
-                    ]
-                },
-                "agentProperties": {
-                    "AgentProperties": {
+            "createAgent": True,
+            "association": {
+                "entity": [
+                    {
+                        "clientName": self._client_object.client_name,
+                        "appName": agent_name
+                    }
+                ]
+            },
+            "agentProperties": {
+                "AgentProperties": {
                     "createIndexOnFail": False,
                     "createIndexOnFull": False,
                     "installDate": 0,
@@ -394,8 +394,8 @@ class Agents(object):
                         {
                             "dbSoftwareConfigList": [
                                 {
-                                    "installDir": kwargs.get("install_dir",""),
-                                    "version": kwargs.get("version","10.0")
+                                    "installDir": kwargs.get("install_dir", ""),
+                                    "version": kwargs.get("version", "10.0")
                                 }
                             ],
                             "client": {
@@ -451,7 +451,7 @@ class Agent(object):
             # Get the agent id if agent id is not provided
             self._agent_id = self._get_agent_id()
 
-        self.GET_AGENT = self._services['GET_AGENT'] % (self._client_object.client_id, agent_id)
+        self.GET_AGENT = self._services['GET_AGENT'] % (self._client_object.client_id, self._agent_id)
 
         self._agent_properties = None
 

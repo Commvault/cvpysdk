@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.services &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.services &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -179,8 +179,8 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 
 <span class="n">SERVICES_DICT_TEMPLATE</span> <span class="o">=</span> <span class="p">{</span>
@@ -194,6 +194,7 @@
     <span class="s1">&#39;GET_ALL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_VIRTUAL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?PseudoClientType=VSPseudo&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CLIENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FILTER_CLIENTS&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?hiddenclients=true&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_PSEUDO_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?PseudoClientType&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/CheckReadiness?network=</span><span class="si">%s</span><span class="s1">&amp;resourceCapacity=</span><span class="si">%s</span><span class="s1">&#39;</span>
@@ -225,6 +226,9 @@
     <span class="s1">&#39;ALL_JOBS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Jobs&#39;</span><span class="p">,</span>
     <span class="s1">&#39;JOB_MANAGEMENT_SETTINGS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/JobManagementSetting&#39;</span><span class="p">,</span>
 
+    <span class="s1">&#39;ENABLE_SHARED_LAPTOP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/SharedLaptopUsage/Action/Enable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DISABLE_SHARED_LAPTOP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/SharedLaptopUsage/Action/Disable&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;GET_MEDIA_AGENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/MediaAgents&#39;</span><span class="p">,</span>
     <span class="s1">&#39;LIBRARY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Library&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_LIBRARY_PROPERTIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Library/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
@@ -237,6 +241,7 @@
     <span class="s1">&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Task&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_SCHEDULE_POLICY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">SchedulePolicy/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;MEDIA_AGENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">MediaAgent/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_MEDIA_AGENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">MediaAgent/</span><span class="si">%s</span><span class="s1">/CloudVMPowerManagement&#39;</span><span class="p">,</span>
     <span class="s1">&#39;STORAGE_POLICY_COPY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/StoragePolicy/</span><span class="si">%s</span><span class="s1">/Copy/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_ALL_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule&#39;</span><span class="p">,</span>
@@ -244,6 +249,8 @@
     <span class="s1">&#39;CREATE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Groups&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DELETE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/continuous/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GRANULAR_BLR_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Replications/Monitors/continuous/VmScale?destProxyClientId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&amp;vmUuid=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;GET_VM_BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMBrowse?inventoryPath=</span><span class="si">%%</span><span class="s1">5CFOLDER</span><span class="si">%%</span><span class="s1">3AApplications</span><span class="si">%%</span><span class="s1">3AApplications&amp;PseudoClientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;MODIFY_ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">/Action/Modify&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_CONSOLE_ALERTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Alert?pageNo=</span><span class="si">%s</span><span class="s1">&amp;pageCount=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
@@ -278,6 +285,8 @@
 
     <span class="s1">&#39;BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">DoBrowse&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RESTORE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CreateTask&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SQL_CLONES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">sql/clones&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SQL_DATABASES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">sql/databases?databaseName=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_WORKFLOWS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DEPLOY_WORKFLOW&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Workflow/</span><span class="si">%s</span><span class="s1">/action/deploy&#39;</span><span class="p">,</span>
@@ -328,6 +337,9 @@
     <span class="s1">&#39;DELETE_HANDLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/deletehandler/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;SHARE_HANDLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/share/handler&#39;</span><span class="p">,</span>
     <span class="s1">&#39;SHARE_DATASOURCE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/share/datasource&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_CONTENT_ANALYZER_CLOUD&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">getContentAnalyzerCloud&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ACTIVATE_ENTITIES&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/entity&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ACTIVATE_ENTITY&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/entity/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GLOBAL_FILTER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">GlobalFilter&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RESTORE_OPTIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Restore/GetDestinationsToRestore?clientId=0&amp;appId=</span><span class="si">%s</span><span class="s1">&amp;flag=8&#39;</span><span class="p">,</span>
@@ -341,11 +353,17 @@
     <span class="s1">&#39;ADD_USERS_TO_PLAN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/Plan/</span><span class="si">%s</span><span class="s1">/Users&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_PLAN_TEMPLATE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/Plan/template?type=</span><span class="si">%s</span><span class="s1">&amp;subType=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ELIGIBLE_PLANS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/Plan/Eligible?</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ASSOCIATED_ENTITIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">V2/Plan/</span><span class="si">%s</span><span class="s1">/AssociatedEntities&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;DOMAIN_CONTROLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommCell/DomainController&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DELETE_DOMAIN_CONTROLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommCell/DomainController/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;DRBACKUP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/CommServ/DRBackup&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DISASTER_RECOVERY_PROPERTIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Commcell/DRBackup/Properties&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CVDRBACKUP_STATUS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/cvdrbackup/status?commcellid=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CVDRBACKUP_INFO&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/cvdrbackup/info&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CVDRBACKUP_DOWNLOAD&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/cvdrbackup/download&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;ORACLE_INSTANCE_BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Instance/DBBrowse/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;METRICS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/MetricsReporting&#39;</span><span class="p">,</span>
@@ -395,6 +413,8 @@
     <span class="s1">&#39;STORAGE_POOL&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePool&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_STORAGE_POOL&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePool/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ADD_STORAGE_POOL&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePool?Action=create&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DELETE_STORAGE_POOL&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePool/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EDIT_STORAGE_POOL&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">StoragePool?Action=edit&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_ALL_MONITORING_POLICIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">logmonitoring/monitoringpolicy&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_ANALYTICS_SERVERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AnalyticsServers&#39;</span><span class="p">,</span>
@@ -412,6 +432,12 @@
     <span class="s1">&#39;REVERSE_REPLICATION_TASK&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming/Operation&#39;</span><span class="p">,</span>
     <span class="s1">&#39;REPLICATION_MONITOR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=0&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RPSTORE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/RPStore&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;CREATE_PSEUDO_CLIENT&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">pseudoClient&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_OFFICE_365_ENTITIES&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Office365/entities&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_DISCOVERY&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Instance/</span><span class="si">%s</span><span class="s1">/CloudDiscovery?clientId=</span><span class="si">%s</span><span class="s1">&amp;appType=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;USER_POLICY_ASSOCIATION&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Office365/CloudApps/UserPolicyAssociation&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UPDATE_USER_POLICY_ASSOCIATION&#39;</span><span class="p">:</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Office365/CloudApps/UpdateUserPolicyAssociation&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;ADD_EXCHANGE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">pseudoClient&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CREATE_CONFIGURATION_POLICIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">ConfigurationPolicies&#39;</span><span class="p">,</span>
@@ -440,6 +466,7 @@
     <span class="s1">&#39;IDENTITY_APPS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">ThirdParty/App&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GLOBAL_PARAM&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/setGlobalParam&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_GLOBAL_PARAM&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/CommServ/AddRemoveSoftware/CommServeSoftwareCache&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;SNAP_OPERATIONS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Snaps/Operations&#39;</span><span class="p">,</span>
     <span class="s1">&#39;STORAGE_ARRAYS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/StorageArrays&#39;</span><span class="p">,</span>
@@ -476,7 +503,15 @@
         <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMAllocationPolicy?showResourceGroupPolicy=true&amp;showNonResourceGroupPolicy=false&amp;deep=true&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_RECOVERY_TARGET&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMAllocationPolicy/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
-    <span class="s1">&#39;RETIRE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/Retire&#39;</span>
+    <span class="s1">&#39;RETIRE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/Retire&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;CLOUD_CREATE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/create&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_MODIFY&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/modify&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_DELETE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/delete&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_ROLE_UPDATE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/role/update&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CLOUD_NODE_UPDATE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/node/update&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_ALL_INDEX_SERVERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getAnalyticsEngine?retrieveall=true&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GET_ALL_ROLES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">IndexingGateway/GetAnalyticsRolesInfo&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 
 

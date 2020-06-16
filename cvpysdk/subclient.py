@@ -462,7 +462,7 @@ class Subclients(object):
                                 self._default_subclient = temp_name
 
                     elif self._instance_object is not None:
-                        if (self._instance_object.instance_name in instance and
+                        if (self._instance_object.instance_name == instance and
                                 self._agent_object.agent_name in agent):
                             temp_name = dictionary['subClientEntity']['subclientName'].lower(
                             )
@@ -829,11 +829,11 @@ class Subclients(object):
         content = []
         for item in subclient_content:
             content.append({
-                    "equalsOrNotEquals": True,
-                    "name": item['name'],
-                    "allOrAnyChildren": True,
-                    "type": item['type'].value
-                })
+                "equalsOrNotEquals": True,
+                "name": item['name'],
+                "allOrAnyChildren": True,
+                "type": item['type'].value
+            })
 
         request_json = {
             "subClientProperties": {
@@ -874,10 +874,10 @@ class Subclients(object):
                     'Storage Policy: "{0}" does not exist in the Commcell'.format(kwargs.get('storage_policy'))
                 )
             request_json['subClientProperties']['commonProperties']['storageDevice'] = {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": kwargs.get('storage_policy')
-                        }
-                    }
+                "dataBackupStoragePolicy": {
+                    "storagePolicyName": kwargs.get('storage_policy')
+                }
+            }
         else:
             raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
 
@@ -1051,6 +1051,15 @@ class Subclient(object):
             '_json_restore_subtask'
         ]
 
+        self._restore_options_json = [
+            '_impersonation_json_',
+            '_browse_restore_json',
+            '_destination_restore_json',
+            '_commonoption_restore_json',
+            '_fileoption_restore_json',
+
+        ]
+
         self._backupcopy_interfaces = {
             'FILESYSTEM': 1,
             'RMAN': 2,
@@ -1077,6 +1086,8 @@ class Subclient(object):
     def __getattr__(self, attribute):
         """Returns the persistent attributes"""
         if attribute in self._restore_methods:
+            return getattr(self._backupset_object, attribute)
+        if attribute in self._restore_options_json:
             return getattr(self._backupset_object, attribute)
 
         return super(Subclient, self).__getattribute__(attribute)
@@ -1123,6 +1134,9 @@ class Subclient(object):
 
                 if 'proxyClient' in self._subclient_properties:
                     self._proxyClient = self._subclient_properties['proxyClient']
+
+                if 'planEntity' in self._subclient_properties:
+                    self._planEntity = self._subclient_properties['planEntity']
 
             else:
                 raise SDKException('Response', '102')
@@ -1378,7 +1392,9 @@ class Subclient(object):
             request_json["taskInfo"]["subTasks"][0]["options"]["commonOpts"] = advance_job_option_dict
 
         if schedule_pattern:
-            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+            request_json = SchedulePattern(
+                schedule_pattern=schedule_pattern
+            ).create_schedule(request_json, schedule_pattern)
 
         return request_json
 
@@ -1459,7 +1475,7 @@ c
     @property
     def subclient_guid(self):
         """Returns the SubclientGUID"""
-        return self._subclient_properties.get('subClientEntity' , {}).get('subclientGUID')
+        return self._subclient_properties.get('subClientEntity', {}).get('subclientGUID')
 
     @display_name.setter
     def display_name(self, display_name):
@@ -2072,7 +2088,8 @@ c
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None):
+            proxy_client=None
+    ):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -2098,12 +2115,16 @@ c
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
                         versions            : list of version numbers to be backed up
+
                         validate_only       : To validate data backed up for restore
 
+                        no_of_streams   (int)          -- Number of streams to be used for restore
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -2142,7 +2163,7 @@ c
             to_time=to_time,
             fs_options=fs_options,
             schedule_pattern=schedule_pattern,
-            proxy_client=proxy_client
+            proxy_client=proxy_client,
         )
 
     def restore_out_of_place(
@@ -2157,7 +2178,8 @@ c
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None):
+            proxy_client=None
+    ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -2190,18 +2212,28 @@ c
                     default: None
 
                 fs_options      (dict)          -- dictionary that includes all advanced options
+
                     options:
+
                         preserve_level      : preserve level option to set in restore
+
                         proxy_client        : proxy that needed to be used for restore
+
                         impersonate_user    : Impersonate user options for restore
+
                         impersonate_password: Impersonate password option for restore
                                                 in base64 encoded form
+
                         all_versions        : if set to True restores all the versions of the
                                                 specified file
+
                         versions            : list of version numbers to be backed up
+
                         media_agent         : Media Agent need to be used for Browse and restore
+
                         validate_only       : To validate data backed up for restore
 
+                        no_of_streams   (int)       -- Number of streams to be used for restore
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -2567,3 +2599,63 @@ c
                     "enableDeduplication": enable_dedupe[0],
                 }
             )
+
+    @property
+    def plan(self):
+        """Returns the name of the plan associated with the subclient.
+           Returns None if no plan is associated
+        """
+
+        if 'planEntity' in self._subclient_properties:
+            planEntity = self._subclient_properties['planEntity']
+
+            if bool(planEntity):
+                return planEntity['planName']
+            else:
+                return None
+        else:
+            raise SDKException('Subclient', '112')
+    
+    @plan.setter
+    def plan(self, value):
+        """Associates a plan to the subclient.
+
+            Args:
+                value   (object)    --  the Plan object which is to be associated
+                                        with the subclient
+
+                value   (str)       --  name of the plan to be associated
+
+                value   (None)      --  set value to None to remove plan associations
+
+            Raises:
+                SDKException:
+                    if the type of input is incorrect
+
+                    if the plan association is unsuccessful
+        """
+        from .plan import Plan
+        if isinstance(value, Plan):
+            if self._commcell_object.plans.has_plan(value.plan_name):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value.plan_name
+                    }
+                })
+            else:
+                raise SDKException('Subclient','102', 'Plan does not exist')
+        elif isinstance(value, basestring):
+            if self._commcell_object.plans.has_plan(value):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value
+                    }
+                })
+            else:
+                raise SDKException('Subclient','102', 'Plan does not exist')
+        elif value is None:
+            self.update_properties({
+                'removePlanAssociation': True
+            })
+        else:
+            raise SDKException('Subclient', '101')

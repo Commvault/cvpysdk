@@ -1,0 +1,705 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.hac_clusters &mdash; Developer SDK - Python 11.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.hac_clusters</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.hac_clusters</h1><div class="highlight"><pre>
+<span></span><span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for performing hac cluster related operations on the commcell</span>
+
+<span class="sd">HACClusters and HACCluster are 2 classes defined in this file</span>
+
+<span class="sd">HACClusters:   Class for representing all the hac clusters associated with the commcell</span>
+
+<span class="sd">HACCluster:    Class for a instance of a single hac cluster of the commcell</span>
+
+
+<span class="sd">HACClusters</span>
+<span class="sd">============</span>
+
+<span class="sd">    __init__()                          --  initialize object of HAC clusters class associated with</span>
+<span class="sd">    the commcell</span>
+
+<span class="sd">    __str()                             --  returns all the HAC clusters of the commcell</span>
+
+<span class="sd">    __repr__()                          --  returns the string to represent the instance</span>
+
+<span class="sd">    __get_item()                        --  returns the details of HAC cluster for given cloud name</span>
+
+<span class="sd">    _get_all_clusters()                 --  gets detail of all hac cluster associated to commcell</span>
+
+<span class="sd">    _response_not_success()             --  raise exception when response is not 200</span>
+
+<span class="sd">    get()                               --  return an HACCluster object for given cluster name</span>
+
+<span class="sd">    has_cluster()                       --  returns whether the hac cluster is present or not in</span>
+<span class="sd">    the commcell</span>
+
+<span class="sd">    add()                            --  creates a new hac cluster to the commcell</span>
+
+<span class="sd">    delete()                            --  deletes the hac cluster associated to commcell</span>
+
+<span class="sd">    refresh()                           --  refresh the hac clusters details associated with commcell</span>
+
+<span class="sd">HACClusters Attributes</span>
+<span class="sd">-----------------------</span>
+
+<span class="sd">    **all_hac_clusters**                 --  returns the dictionary consisting of all the hac clusters</span>
+<span class="sd">    associated with the commcell and there details</span>
+
+<span class="sd">HACCluster</span>
+<span class="sd">============</span>
+
+<span class="sd">    __init__()                          --  initialize object of IndexPool class</span>
+
+<span class="sd">    __repr__()                          --  returns the string to represent the instance</span>
+
+<span class="sd">    _response_not_success()             --  raise exception when response is not 200</span>
+
+<span class="sd">    modify_node()                       --  methods to modify the HAC cluster node properties</span>
+
+<span class="sd">    node_info()                         --  returns a dict consisting details of node present in the cluster</span>
+
+<span class="sd">    refresh()                           --  refresh the index pool details associated with commcell</span>
+
+<span class="sd">HACCluster Attributes</span>
+<span class="sd">-----------------------</span>
+
+<span class="sd">    **cluster_id**                      --  returns the cluster id for HAC cluster</span>
+
+<span class="sd">    **cluster_name**                    --  returns the HAC cluster name</span>
+
+<span class="sd">    **cloud_id**                        --  returns HAC cluster cloud id</span>
+
+<span class="sd">    **node_names**                      --  returns a list of names of all HAC cluster nodes</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">IndexServerConstants</span>
+
+
+<div class="viewcode-block" id="HACClusters"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters">[docs]</a><span class="k">class</span> <span class="nc">HACClusters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the HAC clusters associated with the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the HACClusters class</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)    --  instance of class Commcell</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of class HACClusters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all HAC Clusters of the commcell.</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    str - string of all the HAC clusters associated with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;HAC Name&#39;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">hac_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">:</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">index</span><span class="p">,</span> <span class="n">hac_name</span><span class="p">)</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">representation_string</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the HACClusters class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;HACClusters class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the details of HAC cluster for given HAC name</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value   (str)       --  name of HAC cluster</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict    -   details of the HAC cluster</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                HAC cluster not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">[</span><span class="n">value</span><span class="p">]}</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACClusters&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to raise exception when response is not 200 (ok)</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                response    (object)    -   response object</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_all_clusters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets details of all HAC clusters associated to the commcell&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">has_clientgroup</span><span class="p">(</span><span class="s2">&quot;HAC Cluster&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;HAC Cluster&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">client_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span><span class="o">.</span><span class="n">associated_clients</span><span class="p">:</span>
+                <span class="n">client_obj</span> <span class="o">=</span> <span class="n">HACCluster</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">client_name</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span><span class="p">[</span><span class="n">client_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">client_obj</span><span class="o">.</span><span class="n">cloud_id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HACClusters.has_cluster"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters.has_cluster">[docs]</a>    <span class="k">def</span> <span class="nf">has_cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hac_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns whether the HAC cluster with given name is present or not</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                hac_name    (str)       --  hac cluster name</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                boolean     -   True if hac cluster is associated with the commcell</span>
+<span class="sd">                else returns False</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Data type of the input(s) is not valid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hac_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACClusters&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hac_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span></div>
+
+<div class="viewcode-block" id="HACClusters.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hac_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns instance of HACCluster class is cluster is found</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                hac_name        (str/int)   --      hac cluster name or id</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object          (HACCluster)   --  Instance of a single hac cluster</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Data type of the input(s) is not valid</span>
+
+<span class="sd">                    HAC Cluster not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hac_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">hac_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">HACCluster</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">hac_name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hac_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">cluster_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span><span class="p">[</span><span class="n">cluster_name</span><span class="p">])</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">hac_name</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">HACCluster</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">cluster_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACClusters&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;HACClusters&quot;</span><span class="p">,</span> <span class="s2">&quot;102&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HACClusters.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes properties for HACClusters class&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hac_group</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_clusters</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HACClusters.add"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">,</span> <span class="n">cloud_node_names</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a new HAC cluster</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                cloud_name      (str)       --  hac cluster cloud name</span>
+<span class="sd">                cloud_node_names    (list)  --  string array of node names to be added to cluster</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Data type of the input(s) is not valid.</span>
+
+<span class="sd">                    Response was not success.</span>
+
+<span class="sd">                    Response was empty.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                Object  -   Instance of class HACCluster</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_node_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACClusters&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">cloud_node_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cloud_node_names</span><span class="p">)</span>
+        <span class="n">node_meta_infos</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;zkDataPort&#39;</span><span class="p">:</span> <span class="s1">&#39;8091&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;zkElectionPort&#39;</span><span class="p">:</span> <span class="s1">&#39;8097&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;zkListenerPort&#39;</span><span class="p">:</span> <span class="s1">&#39;8090&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;zkServerId&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;zkDataDir&#39;</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="p">}</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudInfo&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudMetaInfos&#39;</span><span class="p">]</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">169</span><span class="p">,</span>
+            <span class="s2">&quot;cloudName&quot;</span><span class="p">:</span> <span class="n">cloud_name</span><span class="p">,</span>
+            <span class="s2">&quot;cloudDisplayName&quot;</span><span class="p">:</span> <span class="n">cloud_name</span>
+        <span class="p">}</span>
+        <span class="n">server_id</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">node_name</span> <span class="ow">in</span> <span class="n">cloud_node_names</span><span class="p">:</span>
+            <span class="n">node_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+            <span class="n">node_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;nodeClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;hostName&quot;</span><span class="p">:</span> <span class="n">node_obj</span><span class="o">.</span><span class="n">client_hostname</span><span class="p">,</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">node_name</span><span class="p">,</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_obj</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;nodeMetaInfos&quot;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+            <span class="n">node_meta_infos</span><span class="p">[</span><span class="s1">&#39;zkServerId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">server_id</span><span class="p">)</span>
+            <span class="n">node_meta_infos</span><span class="p">[</span><span class="s1">&#39;zkDataDir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_obj</span><span class="o">.</span><span class="n">install_directory</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">iDataAgent</span><span class="se">\\</span><span class="s2">JobResults</span><span class="se">\\</span><span class="s2">ZKData&quot;</span>
+            <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">node_meta_infos</span><span class="p">:</span>
+                <span class="n">node_data</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">node_info</span><span class="p">,</span>
+                    <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">node_meta_infos</span><span class="p">[</span><span class="n">node_info</span><span class="p">]</span>
+                <span class="p">})</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_data</span><span class="p">)</span>
+            <span class="n">server_id</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_CREATE&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{}</span> <span class="ow">and</span> \
+                        <span class="s1">&#39;cloudId&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="n">HACCluster</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create HAC Cluster. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HACClusters.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACClusters.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes an existing HAC cluster</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cloud_name  (str)   --  HAC cluster cloud name to be deleted</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                Data type of the input(s) is not valid.</span>
+
+<span class="sd">                Response was not success.</span>
+
+<span class="sd">                Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACCluster&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hac_clusters</span><span class="p">[</span><span class="n">cloud_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s2">&quot;opType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_DELETE</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloud_id</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_DELETE&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> \
+                    <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_hac_clusters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the details of all HAC clusters associated with commcell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_hac_clusters</span></div>
+
+
+<div class="viewcode-block" id="HACCluster"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACCluster">[docs]</a><span class="k">class</span> <span class="nc">HACCluster</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to perform HAC cluster operations on a specific HAC cluster&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">cluster_name</span><span class="p">,</span> <span class="n">cluster_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the HACCluster class object</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object     (object)        --  Instance of commcell class</span>
+<span class="sd">                cluster_name        (str)           --  HAC cluster cloud name</span>
+<span class="sd">                cluster_id          (int)           --  HAC cluster cloud id</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the HACCluster class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_name</span> <span class="o">=</span> <span class="n">cluster_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_id</span> <span class="o">=</span> <span class="n">cluster_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_client_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_nodes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the HACCluster class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;HACCluster class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to raise exception when response is not 200 (ok)</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+<div class="viewcode-block" id="HACCluster.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACCluster.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes properties of the HAC cluster&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cluster_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACClusters&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_client_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cluster_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_client_obj</span><span class="o">.</span><span class="n">client_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_client_obj</span><span class="o">.</span>\
+            <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;pseudoClientInfo&#39;</span><span class="p">][</span><span class="s1">&#39;distributedClusterInstanceProperties&#39;</span><span class="p">][</span><span class="s1">&#39;clusterConfig&#39;</span><span class="p">][</span><span class="s1">&#39;cloudInfo&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_properties</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="HACCluster.modify_node"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACCluster.modify_node">[docs]</a>    <span class="k">def</span> <span class="nf">modify_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">listener_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">election_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Methods to modify the hac cluster node properties</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node_name       (str)       -   Client name for the node</span>
+<span class="sd">            listener_port   (int/str)   -   zkListenerPort address to be updated</span>
+<span class="sd">                default - None              Sample: &#39;8090&#39; or 8090</span>
+<span class="sd">            data_port       (int/str)   -   zkDataPort address to be updated</span>
+<span class="sd">                default - None              Sample: &#39;8091&#39; or 8091</span>
+<span class="sd">            election_port   (int/str)   -   zkElectionPort address to be updated</span>
+<span class="sd">                default - None              Sample: &#39;8097&#39; or 8097</span>
+<span class="sd">            data_dir        (str)       -   zoo keeper data directory</span>
+<span class="sd">                default - None</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                HAC zKeeper node not found</span>
+
+<span class="sd">                Response was not success</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">node_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_info</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+        <span class="n">port_infos</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">node_meta_info</span> <span class="o">=</span> <span class="n">node_info</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">meta_info</span> <span class="ow">in</span> <span class="n">node_meta_info</span><span class="p">:</span>
+            <span class="n">port_infos</span><span class="p">[</span><span class="n">meta_info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">meta_info</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">listener_port</span><span class="p">:</span>
+            <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKLISTENERPORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">listener_port</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">election_port</span><span class="p">:</span>
+            <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKELECTIONPORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">election_port</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data_port</span><span class="p">:</span>
+            <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKDATAPORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_port</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data_dir</span><span class="p">:</span>
+            <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKDATADIR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;cloudId&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloud_id</span><span class="p">,</span>
+            <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;opType&#39;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_EDIT</span><span class="p">,</span>
+                <span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;clientId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">node_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                    <span class="s1">&#39;hostName&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">node_name</span><span class="p">][</span><span class="s1">&#39;hostname&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">node_name</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;zkListenerPort&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKLISTENERPORT&#39;</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;zkDataPort&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKDATAPORT&#39;</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;zkElectionPort&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKELECTIONPORT&#39;</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;zkDataDir&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">port_infos</span><span class="p">[</span><span class="s1">&#39;ZKDATADIR&#39;</span><span class="p">]</span>
+                    <span class="p">}]</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_NODE_UPDATE&#39;</span><span class="p">],</span>
+            <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HACCluster.node_info"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.hac_clusters.HACCluster.node_info">[docs]</a>    <span class="k">def</span> <span class="nf">node_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the hac cluster node information</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node_name       (str)   -   HAC cluster node name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict        -   dictionary containing details of the hac node</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                HAC zKeeper node not found</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">node_info</span><span class="p">[</span><span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">node_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">node_info</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;HACCluster&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns HAC cluster cloud id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_properties</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">node_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of HAC cluster node names&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_nodes</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s1">&#39;nodeClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cluster_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the HAC cluster pseudo client id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cluster_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the HAC cluster cloud name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cluster_name</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

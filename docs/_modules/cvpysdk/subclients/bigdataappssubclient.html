@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.bigdataappssubclient &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.bigdataappssubclient &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -169,18 +169,48 @@
 <span class="sd">            set_data_access_nodes(data_access_nodes) -- adds the passed json object as data access</span>
 <span class="sd">                                                        nodes for this subclient.</span>
 
-
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.subclients.fssubclient</span> <span class="k">import</span> <span class="n">FileSystemSubclient</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.subclients.fssubclient</span> <span class="kn">import</span> <span class="n">FileSystemSubclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="BigDataAppsSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient">[docs]</a><span class="k">class</span> <span class="nc">BigDataAppsSubclient</span><span class="p">(</span><span class="n">FileSystemSubclient</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Derived class from FileSystemSubclient. Can perform fs subclient operations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Object creation function for BigDataAppsSubclient which returns appropiate</span>
+<span class="sd">        sub class object based on cluster type</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            backupset_object    (obj)   --  Backupset object associated with the</span>
+<span class="sd">            subclient</span>
+
+<span class="sd">            subclient_name      (str)   --  Subclient name</span>
+
+<span class="sd">            subclient_id        (int)   --  Subclient Id</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object              (obj)   --  Object associated with the Bigdatapps subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">cvpysdk.subclients.splunksubclient</span> <span class="kn">import</span> <span class="n">SplunkSubclient</span>
+
+        <span class="n">cluster_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">16</span><span class="p">:</span> <span class="n">SplunkSubclient</span>
+        <span class="p">}</span>
+
+        <span class="n">bigdata_apps_cluster_type</span> <span class="o">=</span> <span class="n">backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span> \
+            <span class="n">get</span><span class="p">(</span><span class="s1">&#39;distributedClusterInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clusterType&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">bigdata_apps_cluster_type</span> <span class="ow">in</span> <span class="n">cluster_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">cluster_type</span> <span class="o">=</span> <span class="n">cluster_types</span><span class="p">[</span><span class="n">bigdata_apps_cluster_type</span><span class="p">]</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">cluster_type</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BigDataAppsSubclient.set_data_access_nodes"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.set_data_access_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">set_data_access_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_access_nodes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

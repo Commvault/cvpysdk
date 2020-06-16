@@ -26,7 +26,6 @@
             set_data_access_nodes(data_access_nodes) -- adds the passed json object as data access
                                                         nodes for this subclient.
 
-
 """
 
 from __future__ import unicode_literals
@@ -38,6 +37,37 @@ class BigDataAppsSubclient(FileSystemSubclient):
     """
         Derived class from FileSystemSubclient. Can perform fs subclient operations.
     """
+    def __new__(cls, backupset_object, subclient_name, subclient_id=None):
+        """
+        Object creation function for BigDataAppsSubclient which returns appropiate
+        sub class object based on cluster type
+
+        Args:
+            backupset_object    (obj)   --  Backupset object associated with the
+            subclient
+
+            subclient_name      (str)   --  Subclient name
+
+            subclient_id        (int)   --  Subclient Id
+
+        Returns:
+            object              (obj)   --  Object associated with the Bigdatapps subclient
+
+        """
+        from cvpysdk.subclients.splunksubclient import SplunkSubclient
+
+        cluster_types = {
+            16: SplunkSubclient
+        }
+
+        bigdata_apps_cluster_type = backupset_object._instance_object.properties. \
+            get('distributedClusterInstance', {}).get('clusterType', -1)
+
+        if bigdata_apps_cluster_type in cluster_types.keys():
+            cluster_type = cluster_types[bigdata_apps_cluster_type]
+            return object.__new__(cluster_type)
+
+        return object.__new__(cls)
 
     def set_data_access_nodes(self, data_access_nodes):
         """

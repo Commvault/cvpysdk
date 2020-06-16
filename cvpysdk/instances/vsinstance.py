@@ -78,7 +78,8 @@ VSINSTANCE_TYPE = {
     1102: "oracle_cloud_infrastructure",
     1301: "google_cloud_platform",
     1401: "alibaba_cloud",
-    1503: "vcloud_director"
+    1503: "vcloud_director",
+    1501: "kubernetes"
 }
 
 

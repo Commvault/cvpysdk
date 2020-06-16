@@ -1,0 +1,974 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.index_server &mdash; Developer SDK - Python 11.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.index_server</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.index_server</h1><div class="highlight"><pre>
+<span></span><span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;File for performing index server related operations on the commcell</span>
+
+<span class="sd">IndexServers, IndexServer and _Roles are 3 classes defined in this file</span>
+
+<span class="sd">IndexServers:   Class for representing all the index servers associated with the commcell</span>
+
+<span class="sd">IndexServer:    Class for a instance of a single index server of the commcell</span>
+
+<span class="sd">_Roles:         Class for storing all the cloud role details</span>
+
+
+<span class="sd">IndexServers</span>
+<span class="sd">============</span>
+
+<span class="sd">    __init__()                          --  initialize object of IndexServers class associated with</span>
+<span class="sd">    the commcell</span>
+
+<span class="sd">    __str()                             --  returns all the index servers of the commcell</span>
+
+<span class="sd">    __repr__()                          --  returns the string to represent the instance</span>
+
+<span class="sd">    __len__()                           --  returns the number of index servers associated</span>
+
+<span class="sd">    _get_index_servers()                --  gets all the index server associated with the commcell</span>
+
+<span class="sd">    _response_not_success()             --  raise exception when response is not 200</span>
+
+<span class="sd">    _get_all_roles()                    --  creates an instance of _Roles class</span>
+
+<span class="sd">    has()                               --  returns whether the index server is present or not</span>
+
+<span class="sd">    get()                               --  returns a IndexServer object for given cloud name</span>
+
+<span class="sd">    create()                            --  creates a index server within the commcell</span>
+
+<span class="sd">    delete()                            --  deletes a index server associated with commcell</span>
+
+<span class="sd">    update_roles_data()                 --  fetches the cloud roles data from commcell</span>
+
+<span class="sd">    get_properties()                    --  returns a dict of data of index server for the given</span>
+<span class="sd">                                            cloud name</span>
+
+<span class="sd">    refresh()                           --  refresh the index servers associated with commcell</span>
+
+<span class="sd">IndexServers Attributes</span>
+<span class="sd">-----------------------</span>
+
+<span class="sd">    **all_index_servers**               --  returns the dictionary consisting of all the index</span>
+<span class="sd">    servers associated with the commcell and there details</span>
+
+<span class="sd">    **roles_data**                      --  returns the list of cloud roles details</span>
+
+
+<span class="sd">IndexServer</span>
+<span class="sd">===========</span>
+
+<span class="sd">    __init()__                          --  initializes the object with the specified commcell</span>
+<span class="sd">    object, index server name and the cloud id</span>
+
+<span class="sd">    __repr__()                          --  returns the index server&#39;s name, the instance is</span>
+<span class="sd">    associated with</span>
+
+<span class="sd">    _get_cloud_id()                     --  gets the cloud id</span>
+
+<span class="sd">    _get_properties()                   --  gets all the properties of the index server</span>
+
+<span class="sd">    refresh()                           --  refresh all the properties of client</span>
+
+<span class="sd">    update_roles_data()                 --  fetches the cloud roles data from commcell</span>
+
+<span class="sd">    modify()                            --  to modify the index server node details</span>
+
+<span class="sd">    update_role()                       --  to update the roles assigned to cloud</span>
+
+<span class="sd">IndexServer Attributes</span>
+<span class="sd">----------------------</span>
+
+<span class="sd">    **properties**                      --  returns the properties of this index server</span>
+
+<span class="sd">    **roles_data**                      --  returns all the available cloud roles data</span>
+
+<span class="sd">    **host_name**                       --  returns the host name for the index server</span>
+
+<span class="sd">    **internal_cloud_name**             --  returns the internal cloud name</span>
+
+<span class="sd">    **client_name**                     --  returns the client name for index server</span>
+
+<span class="sd">    **server_url**                      --  returns the content indexing server url</span>
+
+<span class="sd">    **type**                            --  returns the type of the index server</span>
+
+<span class="sd">    **base_port**                       --  returns the base port of this index server</span>
+
+<span class="sd">    **client_id**                       --  returns the client id for this index server</span>
+
+<span class="sd">    **roles**                           --  returns the array of roles installed</span>
+<span class="sd">    with the index server within the commcell</span>
+
+<span class="sd">    **cloud_id**                        --  returns the cloud id of the index server</span>
+
+<span class="sd">    **server_type**                     --  returns the server type of the index server</span>
+
+<span class="sd">    **engine_name**                     --  returns the engine name that is index server name</span>
+
+<span class="sd">    **index_server_client_id**          --  returns the index server client id</span>
+
+
+<span class="sd">_Roles</span>
+<span class="sd">======</span>
+
+<span class="sd">    __init__()                          --  initializes the class with commcell object</span>
+
+<span class="sd">    refresh()                           --  refreshes the attributes</span>
+
+<span class="sd">    _get_all_roles()                    --  fetches the cloud roles data from commcell</span>
+
+<span class="sd">    get_role_id()                       --  returns role id for given role name</span>
+
+<span class="sd">    update_roles_data()                 --  fetches the cloud roles data from commcell</span>
+
+<span class="sd">_Roles Attributes</span>
+<span class="sd">-----------------</span>
+
+<span class="sd">    **roles_data**                      --  returns the list of details of all cloud roles</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">IndexServerConstants</span>
+
+
+<div class="viewcode-block" id="IndexServers"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers">[docs]</a><span class="k">class</span> <span class="nc">IndexServers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing all the index servers associated with the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the IndexServers class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the IndexServers class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all index servers of the commcell.</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    str - string of all the index servers with different roles associated</span>
+<span class="sd">                    with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;IS Name&#39;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">index_server</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">index</span><span class="p">,</span> <span class="n">index_server</span><span class="p">[</span><span class="s1">&#39;engineName&#39;</span><span class="p">])</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">representation_string</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the IndexServers class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;IndexServers class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the index servers associated with the commcell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_response_not_success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method to raise exception when response is not 200 (ok)</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_index_servers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to retrieve all the index server available on commcell.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Failed to get the list of analytics engines</span>
+
+<span class="sd">                    Response was not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_INDEX_SERVERS&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;listOfCIServer&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;listOfCIServer&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;cloudID&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;cloudID&#39;</span><span class="p">]][</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">item</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">item</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;cloudID&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_all_roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an instance of _Roles class and adds it to the IndexServer class&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="n">_Roles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_index_servers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the details of all the index server for associated commcell.</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    dict - dictionary consisting details of all the index servers</span>
+<span class="sd">                    associated with commcell</span>
+<span class="sd">                    Sample - {</span>
+<span class="sd">                                &lt;cloud_id_1&gt;   :</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &quot;engineName&quot; : &lt;property_value&gt;,</span>
+<span class="sd">                                        &quot;internalCloudName&quot; : &lt;property_value&gt;,</span>
+<span class="sd">                                        ...</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                &lt;cloud_id_2&gt;   :</span>
+<span class="sd">                                    {</span>
+<span class="sd">                                        &quot;engineName&quot; : &lt;property_value&gt;,</span>
+<span class="sd">                                        &quot;cloudID&quot; : &lt;property_value&gt;,</span>
+<span class="sd">                                        ...</span>
+<span class="sd">                                    }</span>
+<span class="sd">                            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the details of all the cloud roles data</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    list - list of dictionary containing details of the cloud roles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">roles_data</span>
+
+<div class="viewcode-block" id="IndexServers.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of IndexServers class&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_index_servers</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_roles</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="IndexServers.update_roles_data"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.update_roles_data">[docs]</a>    <span class="k">def</span> <span class="nf">update_roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronises all the cloud roles details with the commcell&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">update_roles_data</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="IndexServers.get_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.get_properties">[docs]</a>    <span class="k">def</span> <span class="nf">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns all details of a index server with the cloud name</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    cloud_name     (str)       --  cloud name of index server</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    dict        -   dict consisting details of the index server</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">index_server</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">index_server</span><span class="p">][</span><span class="s1">&#39;engineName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cloud_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">index_server</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServers.has"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.has">[docs]</a>    <span class="k">def</span> <span class="nf">has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if the index server with given name is present in commcell.</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    cloud_name     (str)       --  the engine name of index server</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    boolean     -   True if index server with given name as is_name</span>
+<span class="sd">                    is associated with the commcell else returns False</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKExecption:</span>
+<span class="sd">                        Data type of the input(s) is not valid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index_server</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">index_server</span><span class="p">][</span><span class="s2">&quot;engineName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">cloud_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServers.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns IndexServer object if a index server is found.</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    cloud_data        (int/str)       --    cloud name or</span>
+<span class="sd">                                                            cloud ID of index server</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    object            (IndexServer)   --  Instance on index server with</span>
+<span class="sd">                    the engine name or cloud id as item</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Index Server not found.</span>
+
+<span class="sd">                        Data type of the input(s) is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">cloud_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">IndexServer</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">cloud_data</span><span class="p">][</span><span class="s1">&#39;engineName&#39;</span><span class="p">],</span>
+                    <span class="n">cloud_data</span><span class="p">)</span>
+            <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_data</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">cloud_data</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">itter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">itter</span><span class="p">][</span><span class="s1">&#39;engineName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
+                <span class="p">)</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">IndexServer</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">itter</span><span class="p">][</span><span class="s1">&#39;engineName&#39;</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">[</span><span class="n">itter</span><span class="p">][</span><span class="s1">&#39;cloudID&#39;</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServers.create"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">index_server_name</span><span class="p">,</span>
+            <span class="n">index_server_node_names</span><span class="p">,</span>
+            <span class="n">index_directory</span><span class="p">,</span>
+            <span class="n">index_server_roles</span><span class="p">,</span>
+            <span class="n">index_pool_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">is_cloud</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">cloud_param</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates an index server within the commcell</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    index_server_node_names         (list)  --  client names for index server node</span>
+<span class="sd">                    index_server_name               (str)   --  name for the index server</span>
+<span class="sd">                    index_directory                 (str)   --  index location for the index server</span>
+<span class="sd">                    index_server_roles              (list)  --  list of role names to be assigned</span>
+<span class="sd">                    index_pool_name                 (str)   --  name for the index pool to used by cloud index server</span>
+<span class="sd">                    cloud_param                     (list)  --  list of custom parameters to be parsed</span>
+<span class="sd">                                                    into the json for index server meta info</span>
+<span class="sd">                                                    [</span>
+<span class="sd">                                                        {</span>
+<span class="sd">                                                            &quot;name&quot;: &lt;name&gt;,</span>
+<span class="sd">                                                            &quot;value&quot;: &lt;value&gt;</span>
+<span class="sd">                                                        }</span>
+<span class="sd">                                                    ]</span>
+<span class="sd">                    is_cloud            (bool)  --  if true then creates a cloud mode index server</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Data type of the input(s) is not valid.</span>
+
+<span class="sd">                        Response was not success.</span>
+
+<span class="sd">                        Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_roles</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_node_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">cloud_meta_infos</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;INDEXLOCATION&#39;</span><span class="p">:</span> <span class="n">index_directory</span><span class="p">,</span>
+            <span class="s1">&#39;REPLICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;LANGUAGE&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span>
+        <span class="p">}</span>
+        <span class="n">node_meta_infos</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;PORTNO&#39;</span><span class="p">:</span> <span class="s1">&#39;20000&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;JVMMAXMEMORY&#39;</span><span class="p">:</span> <span class="s1">&#39;8191&#39;</span>
+        <span class="p">}</span>
+        <span class="n">role_meta_infos</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="p">)</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;cloudName&#39;</span><span class="p">:</span> <span class="n">index_server_name</span><span class="p">,</span>
+            <span class="s1">&#39;cloudDisplayName&#39;</span><span class="p">:</span> <span class="n">index_server_name</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">is_cloud</span><span class="p">:</span>
+            <span class="n">index_pool_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">index_pools</span><span class="p">[</span><span class="n">index_pool_name</span><span class="p">]</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudInfo&#39;</span><span class="p">][</span><span class="s1">&#39;cloudPoolInfo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;cloudId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">index_pool_obj</span><span class="p">[</span><span class="s1">&#39;pool_id&#39;</span><span class="p">])</span>
+            <span class="p">}</span>
+            <span class="n">role_meta_infos</span><span class="p">[</span><span class="s1">&#39;ISCLOUDMODE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
+            <span class="n">node_meta_infos</span><span class="p">[</span><span class="s1">&#39;WEBSERVER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
+        <span class="k">for</span> <span class="n">node_name</span> <span class="ow">in</span> <span class="n">index_server_node_names</span><span class="p">:</span>
+            <span class="n">node_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">node_name</span><span class="p">]</span>
+            <span class="n">node_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
+                <span class="s2">&quot;nodeClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;hostName&quot;</span><span class="p">:</span> <span class="n">node_obj</span><span class="p">[</span><span class="s1">&#39;hostname&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_obj</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">node_name</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">node_meta_infos</span><span class="p">:</span>
+                <span class="n">node_data</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">node_info</span><span class="p">,</span>
+                    <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">node_meta_infos</span><span class="p">[</span><span class="n">node_info</span><span class="p">]</span>
+                <span class="p">})</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_data</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">index_server_roles</span><span class="p">:</span>
+            <span class="n">role_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">get_role_id</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">role_id</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+            <span class="n">role_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;roleId&quot;</span><span class="p">:</span> <span class="n">role_id</span><span class="p">,</span>
+                <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="n">role</span><span class="p">,</span>
+                <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
+                <span class="s1">&#39;roleMetaInfos&#39;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">role_info</span> <span class="ow">in</span> <span class="n">role_meta_infos</span><span class="p">:</span>
+                <span class="n">role_data</span><span class="p">[</span><span class="s1">&#39;roleMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">role_info</span><span class="p">,</span>
+                    <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">role_meta_infos</span><span class="p">[</span><span class="n">role_info</span><span class="p">]</span>
+                <span class="p">})</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudInfo&#39;</span><span class="p">][</span><span class="s1">&#39;roles&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">role_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cloud_param</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">cloud_param</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">cloud_meta_infos</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">cloud_meta_infos</span><span class="p">[</span><span class="n">param</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span>
+                <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cloud_info</span> <span class="ow">in</span> <span class="n">cloud_meta_infos</span><span class="p">:</span>
+            <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">cloud_info</span><span class="p">,</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">cloud_meta_infos</span><span class="p">[</span><span class="n">cloud_info</span><span class="p">]</span>
+            <span class="p">})</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_CREATE&#39;</span><span class="p">],</span> <span class="n">req_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+                <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">][</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create Index Server. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">error_string</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServers.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cloud_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deletes / removes an index server from the commcell</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    cloud_name      (str)   --  cloud name of index server</span>
+<span class="sd">                    to be removed from the commcell</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                        Data type of the input(s) is not valid.</span>
+
+<span class="sd">                        Response was not success.</span>
+
+<span class="sd">                        Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cloud_name</span><span class="p">)</span><span class="o">.</span><span class="n">cloud_id</span>
+        <span class="n">req_json</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="p">)</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s2">&quot;opType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_DELETE</span>
+        <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloud_id</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_DELETE&#39;</span><span class="p">],</span> <span class="n">req_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> \
+                    <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;genericResp&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                    <span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;genericResp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;errorMessage&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_not_success</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="IndexServer"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer">[docs]</a><span class="k">class</span> <span class="nc">IndexServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing index server operations for a specific index server&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cloud_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the IndexServer class instance.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_obj    (object)        --  instance of the Commcell class</span>
+
+<span class="sd">                name            (str)           --  name of the index server</span>
+
+<span class="sd">                cloud_id        (int)           --  cloud id of the index server</span>
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the IndexServer class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span> <span class="o">=</span> <span class="n">commcell_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="o">.</span><span class="n">_services</span>
+        <span class="k">if</span> <span class="n">cloud_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="n">cloud_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cloud_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;IndexServer class instance for index server: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the cloud id for the index server</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    int - cloud id for the index server</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="o">.</span><span class="n">index_servers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_engine_name</span><span class="p">)</span><span class="o">.</span><span class="n">cloud_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the properties of the index server&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="o">.</span><span class="n">index_servers</span><span class="o">.</span><span class="n">get_properties</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IndexServer.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the index server properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_properties</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="n">_Roles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServer.update_roles_data"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.update_roles_data">[docs]</a>    <span class="k">def</span> <span class="nf">update_roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronize the cloud roles data with the commcell&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">update_roles_data</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="IndexServer.modify"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.modify">[docs]</a>    <span class="k">def</span> <span class="nf">modify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_location</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">node_params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Modifies the properties of an index server</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                index_location      (str)       --  index server data directory</span>
+<span class="sd">                node_name           (str)       --  index server node name</span>
+<span class="sd">                node_params         (dict)      --  parameters to be passed</span>
+<span class="sd">                                                    [</span>
+<span class="sd">                                                        {</span>
+<span class="sd">                                                            &quot;name&quot; : &lt;property_name&gt;,</span>
+<span class="sd">                                                            &quot;value&quot; : &lt;property_value&gt;</span>
+<span class="sd">                                                        }</span>
+<span class="sd">                                                    ]</span>
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Response was not success.</span>
+<span class="sd">                    Response was empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_req</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">REQUEST_JSON</span><span class="p">)</span>
+        <span class="n">json_req</span><span class="p">[</span><span class="s1">&#39;opType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_EDIT</span>
+        <span class="n">json_req</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_EDIT</span><span class="p">,</span>
+            <span class="s2">&quot;nodeClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;nodeMetaInfos&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;INDEXLOCATION&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">index_location</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}]</span>
+        <span class="n">json_req</span><span class="p">[</span><span class="s1">&#39;cloudInfoEntity&#39;</span><span class="p">][</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloud_id</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">node_params</span><span class="p">:</span>
+            <span class="n">json_req</span><span class="p">[</span><span class="s1">&#39;cloudNodes&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_MODIFY&#39;</span><span class="p">],</span> <span class="n">json_req</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;cloudId&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IndexServer.update_role"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.update_role">[docs]</a>    <span class="k">def</span> <span class="nf">update_role</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates a role of an Index Server</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                props               (list)  --  array of dictionaries</span>
+<span class="sd">                consisting details of the roles such as role name</span>
+<span class="sd">                and operation type.</span>
+<span class="sd">                                            [{</span>
+<span class="sd">                                                &quot;roleName&quot;: &lt;name&gt;          (str)</span>
+<span class="sd">                                                &quot;operationType&quot;: 1 or 2     (int)</span>
+<span class="sd">                                                    1 for adding a role</span>
+<span class="sd">                                                    2 for removing a role</span>
+<span class="sd">                                            }]</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_req</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cloudId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloud_id</span><span class="p">,</span> <span class="s2">&quot;roles&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">if</span> <span class="n">props</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+                <span class="n">role_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">get_role_id</span><span class="p">(</span><span class="n">prop</span><span class="p">[</span><span class="s1">&#39;roleName&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">role_id</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+                <span class="n">prop</span><span class="p">[</span><span class="s1">&#39;roleId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">role_id</span>
+                <span class="n">json_req</span><span class="p">[</span><span class="s1">&#39;roles&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CLOUD_ROLE_UPDATE&#39;</span><span class="p">],</span> <span class="n">json_req</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;errorCode&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+                    <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_cloud</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_type</span> <span class="o">==</span> <span class="mi">5</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the cloud roles data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span><span class="o">.</span><span class="n">roles_data</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the index server properties&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">host_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the host name of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">HOST_NAME</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the internal cloud name of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLOUD_NAME</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client name of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLIENT_NAME</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">server_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the content indexing url of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CI_SERVER_URL</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the type of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">TYPE</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">base_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the base port of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">BASE_PORT</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">client_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the client id of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLIENT_ID</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the roles of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">ROLES</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the cloud id of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLOUD_ID</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">server_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the server type of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">SERVER_TYPE</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">engine_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the engine name of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">ENGINE_NAME</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index_server_client_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the index server client id of index server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">INDEX_SERVER_CLIENT_ID</span><span class="p">]</span></div>
+
+
+<span class="k">class</span> <span class="nc">_Roles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for cloud roles data operations&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes _Roles class with commcell object</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)    --  instance of Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of _Roles class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_roles_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes the class data&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_roles</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_all_roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to get all cloud roles details available on the commcell.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    Response was empty.</span>
+
+<span class="sd">                    Response was not success.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_ROLES&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;rolesInfo&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_roles_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;rolesInfo&#39;</span><span class="p">]</span>
+                    <span class="k">return</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_role_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to get a cloud role id with given name</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                role_name       (str)   --  cloud role name of which role id has to be returned</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                role_id         (int)   --  if role name is found in roles data then returns the id</span>
+<span class="sd">                                            else returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">role_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">role_data</span><span class="p">[</span><span class="s1">&#39;roleName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">role_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">role_data</span><span class="p">[</span><span class="s1">&#39;roleId&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">update_roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Synchronize the cloud role data with the commcell database&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_roles</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of dictionary of details of each cloud role&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_roles_data</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

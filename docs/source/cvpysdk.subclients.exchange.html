@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.exchange package &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.exchange package &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -494,11 +494,29 @@ and can perform discover and restore operations on only that subclient.</p>
 <p>Databases()                         –  creates Db association for  the subclient</p>
 <p>Adgroups()                          –  creates Adgroup association for subclient</p>
 <p>restore_in_place()                  –  runs in-place restore for the subclient</p>
-<p>set_pst_association()               –  Create PST assocaition for UserMailboxSubclient</p>
+<p>set_pst_association()               –  Create PST association for UserMailboxSubclient</p>
 <dl class="simple">
 <dt>set_fs_association_for_pst()        –  Helper method to create pst association for</dt><dd><p>PST Ingestion by FS association</p>
 </dd>
+<dt>_association_json_with_plan()       –  Create the Association JSON for</dt><dd><p>associations using Exchange Plan</p>
+</dd>
 </dl>
+<p>_association_mailboxes_json()       –  Association for particular mailboxes</p>
+<p>backup_mailboxes()                  –  Backup specific mailboxes</p>
+<p>_backup_generic_items_json()        –  JSON to backup generic items</p>
+<dl class="simple">
+<dt>backup_generic_items()              –  Backup Generic Items</dt><dd><dl class="simple">
+<dt>viz. All Public Folders/</dt><dd><p>All User Mailboxes/
+All Group Mailboxes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>set_adgroup_associations()          –  Create Association for ADGroups</p>
+<p>_get_discover_adgroups()            –  Get the discovered AD Groups</p>
+<p>_get_discover_users()               –  Get the discovered users</p>
+<p>set_o365group_asscoiations()        –  Create O365 group association for UsermailboxSubclient</p>
+<p>delete_o365group_association()      –  delete O365 group association for UsermailboxSubclient</p>
 </div></blockquote>
 <dl class="class">
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient">
@@ -511,6 +529,52 @@ and can perform discover and restore operations on only that subclient.</p>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.adgroups">
 <em class="property">property </em><code class="sig-name descname">adgroups</code><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.adgroups" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the list of AD groups associated with the UserMailbox subclient.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_generic_items">
+<code class="sig-name descname">backup_generic_items</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.backup_generic_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_generic_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Backups the Generic Items for any Exchange Online Client
+GGeneric Items:</p>
+<blockquote>
+<div><p>All Public Folders/ All O365 Group ailboxes/ All Users</p>
+</div></blockquote>
+<dl>
+<dt>Args:</dt><dd><p>subclient_content   (list)  List having dictionary of items to be backed up</p>
+<dl class="simple">
+<dt>subclient_content = [</dt><dd><p>{
+“associationName” : “All Public Folders”,
+“associationType”:12
+},
+{
+“associationName” : “All Users”,
+“associationType”:12
+}</p>
+</dd>
+</dl>
+<p>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_mailboxes">
+<code class="sig-name descname">backup_mailboxes</code><span class="sig-paren">(</span><em class="sig-param">mailbox_alias_names</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.backup_mailboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_mailboxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Backup specific mailboxes.
+Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>mailbox_alias_names(list): alias names of all the mailboxes to backup</dt><dd><dl class="simple">
+<dt>Sample Values:</dt><dd><p>[‘aj’, ‘tkumar’]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>job(Job): instance of job class for the backup job</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -562,9 +626,9 @@ and can perform discover and restore operations on only that subclient.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_user_assocaition">
-<code class="sig-name descname">delete_user_assocaition</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.delete_user_assocaition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_user_assocaition" title="Permalink to this definition">¶</a></dt>
-<dd><p>delete User assocaition for UserMailboxSubclient.</p>
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_o365group_association">
+<code class="sig-name descname">delete_o365group_association</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.delete_o365group_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_o365group_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete O365 group association for UserMailboxSubclient.</p>
 <dl>
 <dt>Args:</dt><dd><p>subclient_content   (dict)  –  dict of the Users to delete from subclient</p>
 <blockquote>
@@ -579,6 +643,33 @@ and can perform discover and restore operations on only that subclient.</p>
 </div></blockquote>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_user_assocaition">
+<code class="sig-name descname">delete_user_assocaition</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em>, <em class="sig-param">use_policies=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.delete_user_assocaition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_user_assocaition" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete User assocaition for UserMailboxSubclient.
+Args:</p>
+<blockquote>
+<div><dl>
+<dt>subclient_content   (dict)  –  dict of the Users to delete from subclient</dt><dd><dl>
+<dt>subclient_content = {</dt><dd><p>‘mailboxNames’ : [“AutoCi2”],
+– if use_policies is True –
+‘archive_policy’ : “CIPLAN Archiving policy”,</p>
+<p>‘cleanup_policy’ : ‘CIPLAN Clean-up policy’,</p>
+<p>‘retention_policy’: ‘CIPLAN Retention policy’
+–
+– if use_policies is False –
+‘plan_name’: Plan Name,
+‘plan_id’: int or None (Optional)
+–</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>use_policies (bool) – If True uses policies else uses Plan</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -643,6 +734,12 @@ assigned to all user assocaitions</p>
 <p>plan_name  (str)  –  Name of the plan to associate with users/groups</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups">
+<em class="property">property </em><code class="sig-name descname">o365groups</code><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of discovered O365 groups for the UserMailbox subclient.</p>
 </dd></dl>
 
 <dl class="method">
@@ -712,6 +809,25 @@ all backupsets under client2 to the association</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_o365group_asscoiations">
+<code class="sig-name descname">set_o365group_asscoiations</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.set_o365group_asscoiations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_o365group_asscoiations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create O365 Group association for UserMailboxSubclient.
+Args:</p>
+<blockquote>
+<div><p>subclient_content   (dict)  –  dict of the policies to associate</p>
+<blockquote>
+<div><p>subclient_content = {</p>
+<blockquote>
+<div><p>‘archive_policy’ : “CIPLAN Archiving policy”,</p>
+<p>‘cleanup_policy’ : ‘CIPLAN Clean-up policy’,</p>
+<p>‘retention_policy’: ‘CIPLAN Retention policy’</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_pst_association">
 <code class="sig-name descname">set_pst_association</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.set_pst_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_pst_association" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create PST assocaition for UserMailboxSubclient.</p>
@@ -745,7 +861,7 @@ all backupsets under client2 to the association</p>
 
 <dl class="method">
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_user_assocaition">
-<code class="sig-name descname">set_user_assocaition</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.set_user_assocaition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_user_assocaition" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_user_assocaition</code><span class="sig-paren">(</span><em class="sig-param">subclient_content</em>, <em class="sig-param">use_policies=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchange/usermailbox_subclient.html#UsermailboxSubclient.set_user_assocaition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_user_assocaition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create User assocaition for UserMailboxSubclient.</p>
 <dl>
 <dt>Args:</dt><dd><p>subclient_content   (dict)  –  dict of the Users to add to the subclient</p>
@@ -753,9 +869,18 @@ all backupsets under client2 to the association</p>
 <div><p>subclient_content = {</p>
 <blockquote>
 <div><p>‘mailboxNames’ : [“AutoCi2”],,</p>
-<p>‘archive_policy’ : “CIPLAN Archiving policy”,</p>
+<p class="attribution">—if use_policies is True –</p>
+</div></blockquote>
+<blockquote>
+<div><p>‘archive_policy’ : “CIPLAN Archiving policy”,</p>
 <p>‘cleanup_policy’ : ‘CIPLAN Clean-up policy’,</p>
 <p>‘retention_policy’: ‘CIPLAN Retention policy’</p>
+<p class="attribution">—if use_policies is False –</p>
+</div></blockquote>
+<blockquote>
+<div><p>‘plan_name’: ‘Exchange Plan Name’,</p>
+<p>‘plan_id’: int or None (Optional)
+–</p>
 </div></blockquote>
 <p>}</p>
 </div></blockquote>

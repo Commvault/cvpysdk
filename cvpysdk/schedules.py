@@ -722,7 +722,13 @@ class SchedulePattern:
                 "threshold": pattern_dict.get("min_network_bandwidth",
                                               self._pattern.get("minNetworkBandwidth",
                                                                 {'threshold': 128})['threshold'])
-            }
+            },
+            "sweepStartTime": pattern_dict.get("sweep_start_time",
+                                               self._pattern.get("sweepStartTime", 3600)
+                                               ),
+            "useStorageSpaceFromMA": pattern_dict.get("use_storage_space_ma",
+                                               self._pattern.get("useStorageSpaceFromMA", False)
+                                               )
         }
 
         self._pattern = automatic_pattern

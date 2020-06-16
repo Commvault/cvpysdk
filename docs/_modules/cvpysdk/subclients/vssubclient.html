@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -283,26 +283,26 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
-<span class="kn">from</span> <span class="nn">importlib</span> <span class="k">import</span> <span class="n">import_module</span>
-<span class="kn">from</span> <span class="nn">inspect</span> <span class="k">import</span> <span class="n">getmembers</span><span class="p">,</span> <span class="n">isclass</span><span class="p">,</span> <span class="n">isabstract</span>
+<span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">import_module</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getmembers</span><span class="p">,</span> <span class="n">isclass</span><span class="p">,</span> <span class="n">isabstract</span>
 
 <span class="kn">import</span> <span class="nn">xmltodict</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">cvpysdk.plan</span> <span class="k">import</span> <span class="n">Plans</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..subclient</span> <span class="k">import</span> <span class="n">Subclient</span>
-<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">VSAObjects</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.plan</span> <span class="kn">import</span> <span class="n">Plans</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..subclient</span> <span class="kn">import</span> <span class="n">Subclient</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="kn">import</span> <span class="n">VSAObjects</span>
 
 
 <div class="viewcode-block" id="VirtualServerSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient">[docs]</a><span class="k">class</span> <span class="nc">VirtualServerSubclient</span><span class="p">(</span><span class="n">Subclient</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Derived class from Subclient Base class, representing a virtual server subclient,</span>
 <span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Decides which instance object needs to be created&quot;&quot;&quot;</span>
         <span class="n">instance_name</span> <span class="o">=</span> <span class="n">backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span>
         <span class="n">instance_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[^A-Za-z0-9_]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">instance_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">))</span>
@@ -318,7 +318,7 @@
             <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">_class</span><span class="p">,</span> <span class="n">VirtualServerSubclient</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_class</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">instance_name</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">_class</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
 
 <span class="sd">            Args:</span>
@@ -689,7 +689,7 @@
     <span class="k">def</span> <span class="nf">live_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the VSALiveSync class&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_live_sync</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.virtualserver.livesync.vsa_live_sync</span> <span class="k">import</span> <span class="n">VsaLiveSync</span>
+            <span class="kn">from</span> <span class="nn">.virtualserver.livesync.vsa_live_sync</span> <span class="kn">import</span> <span class="n">VsaLiveSync</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_live_sync</span> <span class="o">=</span> <span class="n">VsaLiveSync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_live_sync</span>
@@ -849,9 +849,8 @@
 <span class="sd">                                                and corresponding</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="s1">&#39;google cloud platform&#39;</span><span class="p">:</span>
             <span class="n">new_name</span> <span class="o">=</span> <span class="n">name</span>
-
         <span class="n">temp_disk_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">temp_disk_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">disk_pattern</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
         <span class="n">temp_disk_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">disk_pattern</span><span class="o">.</span><span class="n">datastore</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">datastore</span>
@@ -932,6 +931,12 @@
         <span class="n">vm_nics_list</span> <span class="o">=</span> <span class="n">nics_dict_from_browse</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">network_card_dict</span> <span class="ow">in</span> <span class="n">vm_nics_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="s1">&#39;google cloud platform&#39;</span><span class="p">:</span>
+                <span class="n">current_project</span> <span class="o">=</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnetId&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">6</span><span class="p">]</span>
+                <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;subnetId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnetId&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">current_project</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;project_id&#39;</span><span class="p">))</span>
+                <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sourceNetwork&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">current_project</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;project_id&#39;</span><span class="p">))</span>
             <span class="n">_destnetwork</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_network&quot;</span><span class="p">,</span>
                                      <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;network&#39;</span><span class="p">,</span>
                                                <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
@@ -939,7 +944,7 @@
             <span class="n">nics</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;subnetId&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnetId&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;sourceNetwork&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;sourceNetworkId&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sourceNetworkId&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sourceNetwork&#39;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;networkName&quot;</span><span class="p">:</span><span class="n">_destnetwork</span> <span class="p">,</span>
                 <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">network_card_dict</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">],</span>
                 <span class="s2">&quot;networkName&quot;</span><span class="p">:</span> <span class="n">_destnetwork</span><span class="p">,</span>
@@ -976,9 +981,12 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">vcenter_userpwd</span> <span class="o">=</span><span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;vmware&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">:</span>
+            <span class="n">vcenter_userpwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_user_name</span>
 
         <span class="n">json_disklevel_option_restore</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;esxServerName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esx_server_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;esxServerName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esx_server&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;vmFolderName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vm_folder&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;dataCenterName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_center&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;hostOrCluster&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;host_cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
@@ -988,7 +996,7 @@
             <span class="s2">&quot;passUnconditionalOverride&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;powerOnVmAfterRestore&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power_on&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;registerWithFailoverCluster&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;add_to_failover&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="s2">&quot;userPassword&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">}</span>
+            <span class="s2">&quot;userPassword&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">vcenter_userpwd</span> <span class="ow">or</span> <span class="s2">&quot;admin&quot;</span><span class="p">}</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;in_place&#39;</span><span class="p">]:</span>
             <span class="n">json_disklevel_option_restore</span><span class="p">[</span><span class="s2">&quot;dataStore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1025,6 +1033,7 @@
             <span class="s2">&quot;newGuid&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_guid&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;newName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;new_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;esxHost&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esx_host&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;projectId&quot;</span> <span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;project_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;cluster&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;nics&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nics&quot;</span><span class="p">,</span> <span class="p">[]),</span>
@@ -1315,12 +1324,14 @@
             <span class="n">label</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">)</span>
             <span class="n">subnet</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subnet&#39;</span><span class="p">)</span>
             <span class="n">networkDisplayName</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;networkDisplayName&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">sourceNetwork</span> <span class="o">=</span> <span class="n">nic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
             <span class="n">nic_info</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
                 <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
                 <span class="s1">&#39;subnetId&#39;</span><span class="p">:</span> <span class="n">subnet</span><span class="p">,</span>
-                <span class="s1">&#39;networkDisplayName&#39;</span><span class="p">:</span> <span class="n">networkDisplayName</span>
+                <span class="s1">&#39;networkDisplayName&#39;</span><span class="p">:</span> <span class="n">networkDisplayName</span><span class="p">,</span>
+                <span class="s1">&#39;sourceNetwork&#39;</span><span class="p">:</span> <span class="n">sourceNetwork</span>
             <span class="p">}</span>
             <span class="n">nic_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nic_info</span><span class="p">)</span>
 
@@ -1681,6 +1692,7 @@
         <span class="n">fbr_ma</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fbr_ma&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
         <span class="n">browse_ma</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browse_ma&#39;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">agentless</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;agentless&#39;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">in_place</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;in_place&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">_vm_names</span><span class="p">,</span> <span class="n">_vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
         <span class="n">_file_restore_option</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1732,6 +1744,7 @@
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;preserve_level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">preserve_level</span>
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unconditional_overwrite</span>
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;restore_ACL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_ACL</span>
+        <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;in_place&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_place</span>
 
         <span class="c1"># set the browse option</span>
         <span class="n">_file_restore_option</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2125,6 +2138,8 @@
             <span class="n">new_name_prefix</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;disk_name_prefix&quot;</span><span class="p">)</span>
             <span class="n">new_name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">new_name_prefix</span> <span class="ow">is</span> <span class="kc">None</span> \
                 <span class="k">else</span> <span class="n">new_name_prefix</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="s1">&#39;google cloud platform&#39;</span><span class="p">:</span>
+                <span class="n">new_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
             <span class="k">if</span> <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;destination_instance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;vmware&#39;</span><span class="p">:</span>
                 <span class="n">_disk_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_dict_pattern</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;snap_display_name&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">,</span> <span class="n">new_name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -2137,7 +2152,7 @@
         <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;disks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vm_disks</span>
 
         <span class="c1"># prepare nics info json</span>
-        <span class="k">if</span> <span class="s2">&quot;nics&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;nics&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">restore_option</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="s1">&#39;google cloud platform&#39;</span><span class="p">:</span>
             <span class="n">nics_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_nics_advancedRestoreOptions</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
             <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;nics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nics_list</span>
             <span class="k">if</span> <span class="s2">&quot;source_ip&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span> <span class="ow">and</span> <span class="s2">&quot;destination_ip&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
@@ -2157,7 +2172,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
             <span class="n">restore_option</span><span class="p">,</span>
             <span class="n">disks</span><span class="o">=</span><span class="n">vm_disks</span><span class="p">,</span>
-            <span class="n">esx_host</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;esx_host&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">vs_metadata</span><span class="p">[</span><span class="s1">&#39;esxHost&#39;</span><span class="p">],</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;esx_host&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">vs_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;esxHost&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="n">instanceSize</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instanceSize&#39;</span><span class="p">,</span> <span class="n">instanceSize</span><span class="p">),</span>
             <span class="n">new_name</span><span class="o">=</span><span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_name&#39;</span><span class="p">,</span> <span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">vm_to_restore</span><span class="p">)</span>
         <span class="p">)</span>
@@ -2212,7 +2227,7 @@
             <span class="k">if</span> <span class="s2">&quot;datastore&quot;</span> <span class="ow">in</span> <span class="n">restore_option</span><span class="p">:</span>
                 <span class="n">ds</span> <span class="o">=</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;datastore&quot;</span><span class="p">]</span>
             <span class="n">new_name_prefix</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;disk_name_prefix&quot;</span><span class="p">)</span>
-            <span class="n">new_name</span> <span class="o">=</span> <span class="s2">&quot;delete_&quot;</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">new_name_prefix</span> <span class="ow">is</span> <span class="kc">None</span> \
+            <span class="n">new_name</span> <span class="o">=</span> <span class="s2">&quot;del_&quot;</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">new_name_prefix</span> <span class="ow">is</span> <span class="kc">None</span> \
                 <span class="k">else</span> <span class="n">new_name_prefix</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
             <span class="n">_disk_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disk_dict_pattern</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;snap_display_name&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">,</span> <span class="n">new_name</span><span class="p">)</span>
             <span class="n">vm_disks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_disk_dict</span><span class="p">)</span>
@@ -2520,7 +2535,7 @@
                         <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
                     <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;restore_new_name&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Delete&quot;</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span>
+                    <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;del&quot;</span> <span class="o">+</span> <span class="n">_each_vm_to_restore</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">restore_option</span><span class="p">[</span><span class="s2">&quot;new_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_each_vm_to_restore</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_advanced_vm_restore_options</span><span class="p">(</span><span class="n">_each_vm_to_restore</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>

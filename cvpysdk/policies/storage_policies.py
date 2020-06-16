@@ -110,6 +110,12 @@ StoragePolicy:
 
     run_recon()                             --  Runs non-mem DB Reconstruction job
 
+    enable_entity_extraction()              --  Enables the entity extraction for subclients associated to this policy
+
+    enable_content_indexing()               --  Enables the content indexing for this storage policy
+
+    run_content_indexing()                  --  start the content indexing job for this storage policy
+
 
 StoragePolicyCopy:
     __init__(self, commcell_object,
@@ -121,6 +127,8 @@ StoragePolicyCopy:
                                                 StoragePolicy instance
 
     get_copy_id()		                    --	Gets the storage policy id asscoiated with the storage policy
+
+    get_copy_Precedence()                   --  Gets the copy precendence associated with the storage policy copy
 
     refresh()		                        --	Refresh the properties of the StoragePolicy
 
@@ -296,7 +304,6 @@ class StoragePolicies(object):
                                   media_agent,
                                   dedup_path=None,
                                   dedup_path_media_agent=None):
-
         """adds a global storage policy
 
             Args:
@@ -397,14 +404,14 @@ class StoragePolicies(object):
 
         # don't create dedup global storage policy if the arguments are not supplied
         elif(dedup_path or dedup_path_media_agent):
-            raise SDKException("Storage","101","cannot create dedup global policy without complete arguments \n"
-                                               "supply both dedup path and dedup path media agent")
+            raise SDKException("Storage", "101", "cannot create dedup global policy without complete arguments \n"
+                               "supply both dedup path and dedup path media agent")
 
         # checking to create non dedup global storage policy
         elif(dedup_path is None and dedup_path_media_agent is None):
             storage_policy_copyinfo = {
-                "extendedFlags" : {
-                    "globalStoragePolicy" : 1
+                "extendedFlags": {
+                    "globalStoragePolicy": 1
                 }
             }
             request_json["storagePolicyCopyInfo"].update(storage_policy_copyinfo)
@@ -445,7 +452,6 @@ class StoragePolicies(object):
             dedup_media_agent=None,
             dr_sp=False,
             **kwargs):
-
         """Adds a new Storage Policy to the Commcell.
 
             Args:
@@ -993,7 +999,7 @@ class StoragePolicy(object):
 
         media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
 
-        snap_copy = int(snap_copy == True)
+        snap_copy = int(snap_copy)
 
         if drive_pool is not None:
             request_xml = """
@@ -1049,6 +1055,221 @@ class StoragePolicy(object):
 
                 else:
                     raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def run_content_indexing(self):
+        """starts the offline CI job for this storage policy
+
+            Args:
+                None
+
+            Returns:
+                object - instance of the Job class for this CI job
+
+            Raises:
+                SDKException:
+                        if type of inputs is not valid
+
+                        if failed to start content indexing job
+
+                        if response received is empty
+
+                        if response is not success
+        """
+        request_xml = """<TMMsg_CreateTaskReq>
+        <taskInfo>
+        <associations subclientId="0" storagePolicyId="{0}" applicationId="0" clientName="" backupsetId="0"
+        instanceId="0" commCellId="0" clientId="0" subclientName="" mediaAgentId="0" mediaAgentName="" backupsetName=""
+        instanceName="" storagePolicyName="{1}" _type_="0" appName="" />
+        <task ownerId="1" taskType="1" ownerName="admin" sequenceNumber="0" initiatedFrom="1" policyType="0" taskId="0">
+        <taskFlags disabled="0" /></task>
+        <subTasks subTaskOperation="1"><subTask subTaskType="1" operationType="4022" />
+        <options><backupOpts><mediaOpt>
+        <auxcopyJobOption maxNumberOfStreams="0" allCopies="1" useMaximumStreams="1"><mediaAgent mediaAgentId="0"
+        _type_="11" mediaAgentName="" />
+        </auxcopyJobOption></mediaOpt></backupOpts><adminOpts>
+        <contentIndexingOption fileAnalytics="0" subClientBasedAnalytics="0" reanalyze="0" />
+        </adminOpts>
+        <restoreOptions><virtualServerRstOption isBlockLevelReplication="0" /><commonOptions syncRestore="0" />
+        </restoreOptions></options></subTasks>
+        </taskInfo></TMMsg_CreateTaskReq>""".format(self._storage_policy_id, self._storage_policy_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                else:
+                    raise SDKException('Storage', '102', 'Unable to get job id for CI job')
+            else:
+                raise SDKException('Response', '102', 'Empty response')
+        else:
+            raise SDKException('Response', '101')
+
+    def enable_content_indexing(
+            self,
+            cloud_id,
+            include_doc_type=None,
+            max_doc_size=None,
+            min_doc_size=None,
+            exclude_doc_type=None):
+        """configures offline CI for this storage policy
+
+                Args:
+
+                    cloud_id            (str)   --  cloud id of the search engine
+
+                    include_doc_type    (str)   --  include document types for content indexing
+
+                        Example : "*.csv,*.ppt"
+
+                    exclude_doc_type    (str)   --  exclude document types for content indexing
+
+                        Example : "*.py,*.txt"
+
+                    max_doc_size        (str)   --  maximum document size for CI in KB
+
+                    min_doc_size        (str)   --  minimum document size for CI in KB
+
+                Returns:
+                    None
+
+                Raises:
+
+                    SDKException:
+                            if type of inputs is not valid
+
+                            if failed to configure content indexing
+
+                            if response received is empty
+
+                            if response is not success
+        """
+        if not isinstance(cloud_id, basestring):
+            raise SDKException('Storage', '101')
+
+        if include_doc_type is None:
+            include_doc_type = "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg,*.log,*.msg,*.odg," \
+                               "*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt,*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+        if max_doc_size is None:
+            max_doc_size = "51200"
+
+        if min_doc_size is None:
+            min_doc_size = "0"
+
+        if exclude_doc_type is None:
+            exclude_doc_type = ""
+
+        request_xml = """<EVGui_ContentIndexingControlReq operation="16"><header localeId="0" userId="0"/>
+        <ciProps archGroupId="{0}" calendarId="1" cloudId="{1}" contentIndexDataOver="0" dayNumber="0" deferredDays="0"
+         enable="1" entityIds="" excludeDocTypes="{5}" filterSelected="1" flags="0"
+         includeDocTypes="{2}" indexType="0" jobsOlderThan="0"
+         maxDocSizeKB="{3}" minDocSizeKB="{4}" numPeriod="1" retentionDays="-1" sourceCopyId="0" startTime="0"
+         synchronizeOn="0" type="0"/></EVGui_ContentIndexingControlReq>"""\
+            .format(self._storage_policy_id, cloud_id, include_doc_type, max_doc_size, min_doc_size, exclude_doc_type)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 1:
+                        error_message = "Failed to enable content indexing for this storage policy"
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102', 'No success error code found in response')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def enable_entity_extraction(self, entity_details, entity_names, ca_client_name):
+        """configures offline CI entity extraction for given subclient id's on this storage policy
+
+                Args:
+                    entity_details     (list)     --  List of subclient to configure for Entity Extraction
+
+                    Format : [[clientname,agent type,backup set name,subclient name]]
+
+                    entity_names         (list)   --  list of entity names to be configured for Entity Extraction
+
+                    Example : [Email,SSN]
+
+                    ca_client_name       (str)    --  client name where Content Analyzer package is installed
+
+                Raises:
+                    SDKException:
+                        if type of inputs is not valid
+
+                        if failed to configure EE
+
+                        if response received is empty
+
+                        if response is not success
+        """
+        if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
+            raise SDKException('Storage', '101')
+        if not isinstance(ca_client_name, basestring):
+            raise SDKException('Storage', '101')
+        request_xml = """<EVGui_SetEntityExtractionListReq archGroupId="{0}">
+        <entityExtraction isConfigured="1">""".format(self._storage_policy_id)
+        for subclient in entity_details:
+            client_name = subclient[0]
+            app_name = subclient[1]
+            backup_set_name = subclient[2]
+            subclient_name = subclient[3]
+            client_obj = self._commcell_object.clients.get(client_name)
+            agent_obj = client_obj.agents.get(app_name)
+            backup_set_obj = agent_obj.backupsets.get(backup_set_name)
+            subclient_obj = backup_set_obj.subclients.get(subclient_name)
+            if subclient_obj.storage_policy.lower() != self._storage_policy_name.lower():
+                err_msg = 'Subclient "{0}" is not a part of this storage policy'.format(subclient_name)
+                raise SDKException('Storage', '102', err_msg)
+            subclient_prop = subclient_obj.properties
+            request_xml = request_xml + """<appList appOperation="0" appTypeId="{0}" archGroupId="0"
+                backupSetId="{1}" clientId="{2}" instanceId="{3}" subClientId="{4}"/>""".format(
+                subclient_prop['subClientEntity']['applicationId'],
+                subclient_prop['subClientEntity']['backupsetId'],
+                subclient_prop['subClientEntity']['clientId'],
+                subclient_prop['subClientEntity']['instanceId'],
+                subclient_prop['subClientEntity']['subclientId'],
+            )
+
+        for entity in entity_names:
+            entity_obj = self._commcell_object.activate_entity.get(entity)
+            request_xml = request_xml + """<entities enabled="1" entityId="{0}" entityName="{1}"/>"""\
+                .format(entity_obj.entity_id, entity)
+
+        client_obj = self._commcell_object.clients.get(ca_client_name)
+        request_xml = request_xml + """<extractingClientList enabled="1">
+        <eeClient clientId="{0}" clientName="{1}"/>
+        </extractingClientList></entityExtraction></EVGui_SetEntityExtractionListReq>"""\
+            .format(client_obj.client_id, ca_client_name)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_xml
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to enable entity extraction for this storage policy"
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102', 'No success error code found in response')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1317,7 +1538,8 @@ class StoragePolicy(object):
         else:
             source_copy_for_snap_to_tape_id = 0
         if options['source_copy_for_snapshot_catalog'] is not None:
-            source_copy_for_snapshot_catalog_id = self._copies[options['source_copy_for_snapshot_catalog'].lower()]['copyId']
+            source_copy_for_snapshot_catalog_id = self._copies[options['source_copy_for_snapshot_catalog'].lower(
+            )]['copyId']
         else:
             source_copy_for_snapshot_catalog_id = 0
 
@@ -1326,11 +1548,11 @@ class StoragePolicy(object):
         request_xml = """
                     <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
                         <header localeId="0" userId="0" />
-                        <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0" 
-                            enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1" 
+                        <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                            enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
                             sourceCopyId="{4}" startTime="0" type="0" />
-                        <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0" 
-                            enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1" 
+                        <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                            enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
                             sourceCopyId="{6}" startTime="0" type="0" />
                     </EVGui_SetSnapOpPropsReq>
         """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
@@ -1919,46 +2141,46 @@ class StoragePolicy(object):
                 "associations": [
                     {
                         "copyName": copy_name, "storagePolicyName": self.storage_policy_name
-                        }
-                    ], "task": {
-                        "taskType": 1,
-                        "initiatedFrom": 1,
-                        "policyType": 0,
-                        "taskId": 0,
-                        "taskFlags": {
-                            "disabled": False
-                        }
-                    }, "subTasks": [
-                        {
-                            "subTaskOperation": 1, "subTask": {
-                                "subTaskType": 1, "operationType": 4007
-                            },
-                            "options": {
-                                "backupOpts": {
-                                    "mediaOpt": {
-                                        "auxcopyJobOption": {
-                                            "maxNumberOfStreams": 0,
-                                            "allCopies": True,
-                                            "useMaximumStreams": True,
-                                            "useScallableResourceManagement": False,
-                                            "mediaAgent": {
-                                                "mediaAgentName": ""
-                                            }
+                    }
+                ], "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskId": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                }, "subTasks": [
+                    {
+                        "subTaskOperation": 1, "subTask": {
+                            "subTaskType": 1, "operationType": 4007
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": 0,
+                                        "allCopies": True,
+                                        "useMaximumStreams": True,
+                                        "useScallableResourceManagement": False,
+                                        "mediaAgent": {
+                                            "mediaAgentName": ""
                                         }
                                     }
-                                }, "adminOpts": {
-                                    "archiveCheckOption": {
-                                        "ddbVerificationLevel": ddb_ver_level,
-                                        "jobsToVerify": 0,
-                                        "allCopies": True,
-                                        "backupLevel": ver_type
-                                    }
+                                }
+                            }, "adminOpts": {
+                                "archiveCheckOption": {
+                                    "ddbVerificationLevel": ddb_ver_level,
+                                    "jobsToVerify": 0,
+                                    "allCopies": True,
+                                    "backupLevel": ver_type
                                 }
                             }
                         }
-                    ]
-                }
+                    }
+                ]
             }
+        }
         data_verf = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', data_verf, request
@@ -2031,24 +2253,24 @@ class StoragePolicy(object):
                     {
                         "copyName": copy_name, "storagePolicyName": self.storage_policy_name
                     }
-                    ], "task": {
-                        "taskType": 1,
-                        "initiatedFrom": 1,
-                        "policyType": 0,
-                        "taskId": 0,
-                        "taskFlags": {
-                            "disabled": False
-                            }
-                    }, "subTasks": [
-                        {
-                            "subTaskOperation": 1, "subTask": {
-                                "subTaskType": 1, "operationType": 5013
-                            }, "options": {
-                                "adminOpts": {
-                                    "libraryOption": {
-                                        "operation": 20, "ddbMoveOption": {
-                                            "flags": 2, "subStoreList": [
-                                                {
+                ], "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskId": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                }, "subTasks": [
+                    {
+                        "subTaskOperation": 1, "subTask": {
+                            "subTaskType": 1, "operationType": 5013
+                        }, "options": {
+                            "adminOpts": {
+                                "libraryOption": {
+                                    "operation": 20, "ddbMoveOption": {
+                                        "flags": 2, "subStoreList": [
+                                            {
                                                     "srcPath": src_path,
                                                     "changeOnlyDB": config_only,
                                                     "destPath": dest_path,
@@ -2057,16 +2279,16 @@ class StoragePolicy(object):
                                                     }, "srcMediaAgent": {
                                                         "name": src_media_agent
                                                     }
-                                                }
-                                            ]
-                                        }
+                                            }
+                                        ]
                                     }
                                 }
                             }
                         }
-                    ]
-                }
+                    }
+                ]
             }
+        }
         ddb_move = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', ddb_move, request
@@ -2121,12 +2343,12 @@ class StoragePolicy(object):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
         request_xml = """
-        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15"> 
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15">
         <SIDBStore SIDBStoreId="{1}"/>
-        <dedupconfigItem commCellId="0"> 
-        <maInfoList><clientInfo id="{2}" name="{3}"/> 
-        <subStoreList><accessPath path="{4}"/> 
-        </subStoreList></maInfoList></dedupconfigItem> 
+        <dedupconfigItem commCellId="0">
+        <maInfoList><clientInfo id="{2}" name="{3}"/>
+        <subStoreList><accessPath path="{4}"/>
+        </subStoreList></maInfoList></dedupconfigItem>
         </EVGui_ParallelDedupConfigReq>
 
         """.format(copy_id, sidb_store_id, media_agent.media_agent_id,
@@ -2201,9 +2423,9 @@ class StoragePolicy(object):
         """
         request_xml = """
         <TMMsg_DedupSyncTaskReq flags="0">
-            <taskInfo><associations _type_="0" appName="" applicationId="0" backupsetId="0" backupsetName="" 
-            clientId="0" clientName="" clientSidePackage="1" commCellId="0" consumeLicense="1" copyName="{0}" 
-            instanceId="1" instanceName="" srmReportSet="0" srmReportType="0" storagePolicyName="{1}" 
+            <taskInfo><associations _type_="0" appName="" applicationId="0" backupsetId="0" backupsetName=""
+            clientId="0" clientName="" clientSidePackage="1" commCellId="0" consumeLicense="1" copyName="{0}"
+            instanceId="1" instanceName="" srmReportSet="0" srmReportType="0" storagePolicyName="{1}"
             subclientId="0" subclientName="" type="0"/>
             <subTasks>
                 <options>
@@ -2220,7 +2442,7 @@ class StoragePolicy(object):
                 </options>
                 <subTask operationType="4036" subTaskType="1"/>
             </subTasks>
-            <task initiatedFrom="1" ownerId="1" ownerName="admin" policyType="0" sequenceNumber="0" 
+            <task initiatedFrom="1" ownerId="1" ownerName="admin" policyType="0" sequenceNumber="0"
             taskId="0" taskType="1"><taskFlags disabled="0"/>
             </task>
             </taskInfo>
@@ -2297,6 +2519,10 @@ class StoragePolicyCopy(object):
     def get_copy_id(self):
         """Gets the storage policy id asscoiated with the storage policy"""
         return self.all_copies["copyId"]
+
+    def get_copy_Precedence(self):
+        """Gets the copyprecendence asscoiated with the storage policy copy"""
+        return self.all_copies["copyPrecedence"]
 
     def refresh(self):
         """Refresh the properties of the StoragePolicy."""
@@ -2764,9 +2990,9 @@ class StoragePolicyCopy(object):
         if not isinstance(managed_disk_space_value, bool):
             raise SDKException('Storage', '101')
 
-        if managed_disk_space_value == False:
+        if not managed_disk_space_value:
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 0
-        if managed_disk_space_value == True:
+        if managed_disk_space_value:
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
         self._set_copy_properties()
 
@@ -2785,41 +3011,41 @@ class StoragePolicyCopy(object):
         """
 
         request_json = {
-            "EVGui_MMSMArrayReplicaPairReq":{
-                "processinginstructioninfo":{
-                    "locale":{
-                        "_type_":66,
-                        "localeId":0
+            "EVGui_MMSMArrayReplicaPairReq": {
+                "processinginstructioninfo": {
+                    "locale": {
+                        "_type_": 66,
+                        "localeId": 0
                     },
-                    "formatFlags":{
-                        "ignoreUnknownTags":True,
-                        "elementBased":False,
-                        "skipIdToNameConversion":True,
-                        "formatted":False,
-                        "filterUnInitializedFields":False,
-                        "skipNameToIdConversion":False,
-                        "continueOnError":False
+                    "formatFlags": {
+                        "ignoreUnknownTags": True,
+                        "elementBased": False,
+                        "skipIdToNameConversion": True,
+                        "formatted": False,
+                        "filterUnInitializedFields": False,
+                        "skipNameToIdConversion": False,
+                        "continueOnError": False
                     },
-                    "user":{
-                        "_type_":13,
-                        "userName":"admin",
-                        "userId":1
+                    "user": {
+                        "_type_": 13,
+                        "userName": "admin",
+                        "userId": 1
                     }
                 },
                 "copyId": self.copy_id,
-                "flags":0,
-                "operation":2,
-                "userId":1,
-                "replPairList":[
+                "flags": 0,
+                "operation": 2,
+                "userId": 1,
+                "replPairList": [
                     {
-                        "copyId":0,
-                        "flags":0,
-                        "replicaPairId":0,
-                        "srcArray":{
+                        "copyId": 0,
+                        "flags": 0,
+                        "replicaPairId": 0,
+                        "srcArray": {
                             "name": source_array,
                             "id": src_array_id
                         },
-                        "tgtArray":{
+                        "tgtArray": {
                             "name": target_array,
                             "id": tgt_array_id
                         }

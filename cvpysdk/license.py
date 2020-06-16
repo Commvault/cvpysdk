@@ -45,9 +45,13 @@ class LicenseDetails(object):
         if flag:
             if response.json():
                 self._commcell_id = response.json()['commcellId']
+                self._cs_hostname = response.json()['csHostNameOrAddress']
+                self._license_ipaddress = response.json()['licenseIpAddress']
                 self._oemname = response.json()['oemName']
                 self._regcode = response.json()['regCode']
                 self._serialno = response.json()['serialNo']
+                self._license_mode = response.json()['licenseMode']
+                self._expiry_date = response.json()['expiryDate']
             else:
                 raise SDKException('Response', '102')
         else:
@@ -71,9 +75,24 @@ class LicenseDetails(object):
         return hex(ccid).split('x')[1].upper()
 
     @property
+    def cs_hostname(self):
+        """ Returns the csHostName Or Address of CommCell"""
+        return self._cs_hostname
+
+    @property
+    def license_ipaddress(self):
+        """ Returns the license Ip Address """
+        return self._license_ipaddress
+
+    @property
     def oem_name(self):
         """returns the oem_name"""
         return self._oemname
+
+    @property
+    def license_mode(self):
+        """ Returns the license mode of license"""
+        return self._license_mode
 
     @property
     def registration_code(self):
@@ -84,3 +103,8 @@ class LicenseDetails(object):
     def serial_number(self):
         """returns the serial number of CommCell"""
         return self._serialno
+
+    @property
+    def expiry_date(self):
+        """ Returns the expiry date of License"""
+        return self._expiry_date

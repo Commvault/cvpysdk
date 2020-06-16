@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.subclients.sqlsubclient &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -167,9 +167,9 @@
 
 <span class="sd">SQLServerSubclient:</span>
 
-<span class="sd">    _get_subclient_properties()         --  gets the subclient  related properties of SQL subclient.</span>
+<span class="sd">    _get_subclient_properties()         --  gets the subclient related properties of SQL subclient.</span>
 
-<span class="sd">    _get_subclient_properties_json()    --  gets all the subclient  related properties of SQL subclient.</span>
+<span class="sd">    _get_subclient_properties_json()    --  gets all the subclient related properties of SQL subclient.</span>
 
 <span class="sd">    content()                           --  sets the content of the subclient.</span>
 
@@ -179,12 +179,14 @@
 
 <span class="sd">    update_content()                    --  add, delete, overwrite the sql server subclient contents.</span>
 
+<span class="sd">    blocklevel_backup_option            --  setter for block level backup option on SQL subclient</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="k">import</span> <span class="n">DatabaseSubclient</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="kn">import</span> <span class="n">DatabaseSubclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="SQLServerSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.sqlsubclient.SQLServerSubclient">[docs]</a><span class="k">class</span> <span class="nc">SQLServerSubclient</span><span class="p">(</span><span class="n">DatabaseSubclient</span><span class="p">):</span>
@@ -501,7 +503,38 @@
             <span class="k">return</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to update content of subclient</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">blocklevel_backup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns True if block level backup is enabled else returns false</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean value based on blocklevel enable status</span>
+
+<span class="sd">                    True if block level is enabled</span>
+<span class="sd">                    False if block level is not enabled</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;mssqlSubClientProp&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;useBlockLevelBackupWithOptimizedRecovery&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+    <span class="nd">@blocklevel_backup_option</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">blocklevel_backup_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables or disables block level option on SQL subclient</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                value (bool)  --  Boolean value whether to set block level option on or off</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_file_group_subclient</span><span class="p">:</span>
+            <span class="n">err_message</span> <span class="o">=</span> <span class="s1">&#39;Updating properties is not supported for FILE/ FILE GROUP subclient.&#39;</span>
+            <span class="s1">&#39;Please use Commcell Console to update the subclient.&#39;</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_message</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_subclient_properties</span><span class="p">(</span><span class="s2">&quot;_mssql_subclient_prop[&#39;useBlockLevelBackupWithOptimizedRecovery&#39;]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

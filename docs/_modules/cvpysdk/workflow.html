@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.19 documentation</title>
+  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.20 documentation</title>
   
 
   
@@ -246,6 +246,10 @@
 
 <span class="sd">    clone_workflow()                    --  Clones the workflow</span>
 
+<span class="sd">    schedule_workflow()                 --  Creates a schedule for the workflow</span>
+
+<span class="sd">    _process_workflow_schedule_response -- processes the response received schedule creation request</span>
+
 <span class="sd">    refresh()                           --  Refreshes the workflow properties</span>
 
 <span class="sd">    @Property</span>
@@ -257,27 +261,27 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64decode</span>
-<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="k">import</span> <span class="n">ExpatError</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64decode</span>
+<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="kn">import</span> <span class="n">ExpatError</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">xmltodict</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">raw_input</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">raw_input</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="WorkFlows"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlows">[docs]</a><span class="k">class</span> <span class="nc">WorkFlows</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all workflows associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the WorkFlow class instance for performing workflow related</span>
 <span class="sd">            operations.</span>
 
@@ -304,7 +308,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh_activities</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all workflows of the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -383,17 +387,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the WorkFlow class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;WorkFlow class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the workflows associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_workflows</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the workflow for the given workflow ID or</span>
 <span class="sd">            the details of the workflow for given workflow Name.</span>
 
@@ -693,7 +697,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workflow_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
+        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="kn">import</span> <span class="n">Commcell</span>
 
         <span class="n">cloud_commcell</span> <span class="o">=</span> <span class="n">Commcell</span><span class="p">(</span><span class="s1">&#39;cloud.commvault.com&#39;</span><span class="p">,</span> <span class="n">cloud_username</span><span class="p">,</span> <span class="n">cloud_password</span><span class="p">)</span>
         <span class="n">cvpysdk_object</span> <span class="o">=</span> <span class="n">cloud_commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
@@ -905,7 +909,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_xml</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="k">import</span> <span class="n">escape</span>
+        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">escape</span>
         <span class="n">escaped_xml</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">input_xml</span><span class="p">)</span>
         <span class="n">commserve_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
 
@@ -961,7 +965,7 @@
 <div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing a workflow on a commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">workflow_name</span><span class="p">,</span> <span class="n">workflow_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">workflow_name</span><span class="p">,</span> <span class="n">workflow_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the WorkFlow class instance for performing workflow related operations.</span>
 
 <span class="sd">            Args:</span>
@@ -988,6 +992,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_EXECUTE_WORKFLOW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_WORKFLOW&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_GET_WORKFLOW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_WORKFLOW&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workflow_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_GET_WORKFLOW_DEFINITION</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_WORKFLOW_DEFINITION&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_SCHEDULE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_MODIFY_SCHEDULE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">all_workflows</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_activities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">all_activities</span>
@@ -1151,7 +1157,7 @@
 <span class="sd">                    if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">config_xml</span> <span class="o">=</span> <span class="s2">&quot;&lt;configuration&gt;</span><span class="si">{0}</span><span class="s2">&lt;/configuration&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_xml</span><span class="p">)</span>
-        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="k">import</span> <span class="n">escape</span>
+        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">escape</span>
         <span class="n">escaped_xml</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">config_xml</span><span class="p">)</span>
 
         <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;Workflow_SetConfigurationSettings configSettings=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
@@ -1499,6 +1505,133 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to clone the workflow&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.schedule_workflow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.schedule_workflow">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">,</span> <span class="n">workflow_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a schedule for a workflow</span>
+
+<span class="sd">             Args:</span>
+<span class="sd">                  schedule_pattern(dict)    -- Please refer SchedulePattern.create_schedule in</span>
+<span class="sd">                                            schedules.py for the types of pattern to be sent</span>
+
+<span class="sd">                                     eg: {</span>
+<span class="sd">                                            &quot;schedule_name: &#39;schedule1&#39;,</span>
+<span class="sd">                                            &quot;freq_type&quot;: &#39;daily&#39;,</span>
+<span class="sd">                                            &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                            &quot;repeat_days&quot;: days_to_repeat (int)</span>
+<span class="sd">                                         }</span>
+
+<span class="sd">                  workflow_inputs(dict) --  dictionary consisting of inputs for the workflow</span>
+
+<span class="sd">                    if inputs are not given, user will be prompted for inputs on the command line</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">                    inputs dict format:</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                            &#39;input1_name&#39;: &#39;input1_value&#39;,</span>
+
+<span class="sd">                            &#39;input2_name&#39;: &#39;input2_value&#39;</span>
+<span class="sd">                    }</span>
+
+<span class="sd">                    e.g.:</span>
+
+<span class="sd">                    for executing the Demo_CheckReadiness workflow, inputs dict would be:</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                    &quot;ClientGroupName&quot;: &quot;client_group_value&quot;</span>
+<span class="sd">                    }</span>
+
+<span class="sd">             Returns:</span>
+<span class="sd">                     Object : An instance of the Schedule class for the schedule created</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">cvpysdk.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span>
+        <span class="k">if</span> <span class="n">workflow_inputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xml</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">xmltodict</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">input_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;inputs&quot;</span><span class="p">:</span> <span class="n">workflow_inputs</span><span class="p">})</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">task_req</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;processinginstructioninfo&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;workflowName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_name</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">2001</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;workflowJobOptions&quot;</span><span class="p">:</span> <span class="n">xml</span> <span class="k">if</span> <span class="n">workflow_inputs</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;contentIndexingOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;subClientBasedAnalytics&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">task_req</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CREATE_SCHEDULE</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_workflow_schedule_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;taskId&quot;</span><span class="p">])</span>
+        <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to create Schedule</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Schedules&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_workflow_schedule_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        processes the response received post create schedule request</span>
+<span class="sd">        Args:</span>
+<span class="sd">        flag: (bool) -- True or false based on response</span>
+<span class="sd">        response: (dict) response from modify request</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            flag: (Bool) -- based on success and failure</span>
+<span class="sd">            error_code: (int) -- error_code from response</span>
+<span class="sd">            error_message: (str) -- error_message from the response if any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;taskId&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">task_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;taskId&quot;</span><span class="p">])</span>
+
+                    <span class="k">if</span> <span class="n">task_id</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorCode&#39;</span><span class="p">])</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+                    <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">error_code</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WorkFlow.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refreshes the properties of the workflow.&quot;&quot;&quot;</span>
