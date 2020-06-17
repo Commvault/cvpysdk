@@ -716,8 +716,8 @@ class Commcell(object):
         import time
         now = datetime.datetime.now()
         then = now - datetime.timedelta(days=days)
-        start_dt = time.mktime(then.timetuple())
-        end_dt = time.mktime(now.timetuple())
+        start_dt = int(time.mktime(then.timetuple()))
+        end_dt = int(time.mktime(now.timetuple()))
         return start_dt, end_dt
 
     @property
