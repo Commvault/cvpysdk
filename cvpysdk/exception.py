@@ -411,6 +411,10 @@ EXCEPTION_DICT = {
         '102': 'Index Server not found',
         '103': 'Invalid role name',
         '104': '',
+        '105': 'Unsupported backup level specified. Please check',
+        '106': 'Storage policy is not associated with subclient. Please associate',
+        '107': 'Backup is not enabled for client/subclient',
+        '108': 'Client name not specified for solr cloud restore'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',

@@ -277,7 +277,7 @@ class Credentials(object):
 
             isuser_flag (Str)   --  decider whether owner is user or usergroup
         """
-        if isuser_flag is 1:
+        if isuser_flag == 1:
             creator = {
                 "createAs": {
                     "user": {

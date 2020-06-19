@@ -40,6 +40,7 @@ GooglecloudVirtualServerSubclient:
 """
 
 from ..vssubclient import VirtualServerSubclient
+from ...exception import SDKException
 
 
 class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
@@ -169,8 +170,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        if restore_option is None:
-            restore_option = {}
+        restore_option = {}
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]

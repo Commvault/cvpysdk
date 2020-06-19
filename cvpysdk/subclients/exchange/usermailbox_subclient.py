@@ -81,6 +81,8 @@ from ...subclient import Subclients
 
 from ...backupset import Backupsets
 
+import time
+
 
 class UsermailboxSubclient(ExchangeSubclient):
     """Derived class from ExchangeSubclient Base class.
@@ -250,7 +252,9 @@ class UsermailboxSubclient(ExchangeSubclient):
         """
         mailboxes_json = []
         mailbox_alias_names = set(mailbox_alias_names)
-        for user in self._users:
+        associated_mailboxes = self._users + self._o365groups
+
+        for user in associated_mailboxes:
             if user['alias_name'] in mailbox_alias_names:
                 mailbox_info = {
                     "aliasName": user["alias_name"],
@@ -377,8 +381,13 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_discover_users(self):
+    def _get_discover_users(self, use_without_refresh_url=False, retry_attempts=0):
         """Gets the discovered users from the Subclient .
+
+            Args:
+                use_without_refresh_url (boolean)   -   discovery without refresh cache
+
+                retry_attempts(int)                 - retry for discovery
 
             Returns:
                 list    -   list of discovered users associated with the subclient
@@ -388,17 +397,33 @@ class UsermailboxSubclient(ExchangeSubclient):
             int(self._backupset_object.backupset_id), 'User'
         )
 
+        if use_without_refresh_url:
+            self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
+                int(self._backupset_object.backupset_id), 'User'
+            )
+
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._DISCOVERY)
 
         if flag:
-            discover_content = response.json()
-            if 'discoverInfo' in discover_content.keys():
+            if response and response.json():
+                discover_content = response.json()
 
-                if 'mailBoxes' in discover_content['discoverInfo']:
-                    self._discover_users = discover_content['discoverInfo']['mailBoxes']
+                if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
+                    time.sleep(10) # the results might take some time depending on domains
+                    if retry_attempts > 10:
+                        raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
-                return self._discover_users
+                    return self._get_discover_users(use_without_refresh_url=True ,
+                                                    retry_attempts=retry_attempts + 1)
 
+
+                if 'discoverInfo' in discover_content.keys():
+                    if 'mailBoxes' in discover_content['discoverInfo']:
+                        self._discover_users = discover_content['discoverInfo']['mailBoxes']
+
+                        return self._discover_users
+            else:
+                raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -723,6 +748,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             }
                         }
                         users.append(mailbox_dict)
+                        break
 
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
@@ -735,8 +761,8 @@ class UsermailboxSubclient(ExchangeSubclient):
             _association_json_ = self._association_json(subclient_content)
         else:
             _association_json_ = self._association_json_with_plan(subclient_content)
-        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._set_association_request(_assocaition_json_)
+        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._set_association_request(_association_json_)
 
     def set_pst_association(self, subclient_content):
         """Create PST assocaition for UserMailboxSubclient.
@@ -860,7 +886,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                                       }
                     backupset_dict.update(client_dict)
                     for subclient_name in subclients:
-                        if subclient_name not in backupset_obj.subclients.all_subclients:
+                        if subclient_name.lower() not in backupset_obj.subclients.all_subclients:
                             raise SDKException('Subclient', '102',
                                                "Subclient %s not present in backupset %s" %
                                                (str(subclient_name), str(backupset_name)))
@@ -1162,8 +1188,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             _association_json_ = self._association_json_with_plan(subclient_content)
         _association_json_["emailAssociation"]["emailStatus"] = 1
-        _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._update_association_request(_assocaition_json_)
+        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._update_association_request(_association_json_)
 
     def delete_o365group_association(self, subclient_content):
         """delete O365 group association for UserMailboxSubclient.

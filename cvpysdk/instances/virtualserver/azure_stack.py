@@ -33,8 +33,8 @@ AzureStackInstance:         Derived class from VirtualServer
                                             overwritten to get azure Stack
                                             Specific instance properties as well
 
-	_get_instance_properties_json()		 -- get the all instance related
-											properties of this subclient.
+    _get_instance_properties_json()		 -- get the all instance related
+                                            properties of this subclient.
 
 """
 
@@ -62,8 +62,7 @@ class AzureStackInstance(VirtualServerInstance):
         self._vendor_id = 403
         super(AzureStackInstance, self).__init__(agent, name, iid)
 
-
-    def  _get_instance_properties(self):
+    def _get_instance_properties(self):
         """
         Get the properties of this instance
 
@@ -83,14 +82,12 @@ class AzureStackInstance(VirtualServerInstance):
                 'virtualCenter']['userName']
 
         if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                                                ["associatedClients"]["memberServers"]
+            _member_servers = self._properties["virtualServerInstance"][
+                "associatedClients"]["memberServers"]
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
-
-
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
@@ -100,7 +97,7 @@ class AzureStackInstance(VirtualServerInstance):
 
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -108,11 +105,10 @@ class AzureStackInstance(VirtualServerInstance):
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
-                    }
-                       }
-               }
+                }
+            }
+        }
         return instance_json
-
 
     @property
     def server_host_name(self):

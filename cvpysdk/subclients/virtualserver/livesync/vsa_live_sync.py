@@ -144,6 +144,9 @@ class VsaLiveSync:
         if instance_name == hv_type.MS_VIRTUAL_SERVER.value.lower():
             from .hyperv_live_sync import HyperVLiveSync
             return object.__new__(HyperVLiveSync)
+        if instance_name == hv_type.AZURE_V2.value.lower():
+            from .azure_live_sync import AzureLiveSync
+            return object.__new__(AzureLiveSync)
 
         if instance_name == hv_type.VIRTUAL_CENTER.value.lower():
             from .vmware_live_sync import VMWareLiveSync
@@ -669,6 +672,11 @@ class LiveSyncVMPair:
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
                 self._latest_replication_job = self._properties['VMReplInfoProperties'][1]['propertyValue']
+                try:
+                    int(self._latest_replication_job)
+                except Exception:
+                    self._latest_replication_job = self._properties['VMReplInfoProperties'][0]['propertyValue']
+
             else:
                 raise SDKException('Response', '102')
         else:

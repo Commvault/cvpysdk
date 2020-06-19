@@ -42,7 +42,11 @@ ReplicationMonitor:
 
     point_in_time_failover()                        -- Call PointInTimeFailover operation
 
-    reverse_replication()                           -- Call ReverseReplication operation
+    reverse_replication()                           -- Schedule and call ReverseReplication operation
+
+    schedule_reverse_replication()                  -- Schedule ReverseReplication
+
+    force_reverse_replication()                     -- Call ReverseReplication operation
 
     validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id
 
@@ -50,6 +54,8 @@ ReplicationMonitor:
 
     ##### internal methods #####
     _get_replication_monitor()                      -- Gets replication monitor
+
+    _get_snapshot_list()                            -- Gets snapshot list for the destination client
 
     ##### properties #####
     _replication_Ids()                              -- Returns replication Ids list
@@ -234,18 +240,46 @@ class ReplicationMonitor(object):
         return self._dr_operation.undo_failover()
 
     def reverse_replication(self):
-        """Performs Reverse Replication operation.
+        """Schedules and calls Reverse Replication
 
             Args:
 
             Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
 
             Raises:
                 SDKException:
                     if proper inputs are not provided
         """
         return self._dr_operation.reverse_replication()
+
+    def schedule_reverse_replication(self):
+        """Schedules Reverse Replication.
+
+            Args:
+
+            Returns:
+                (TaskId) - TaskId of the scheduling reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        return self._dr_operation.schedule_reverse_replication()
+
+    def force_reverse_replication(self):
+        """Performs one reverse replication operation.
+
+            Args:
+
+            Returns:
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        return self._dr_operation.force_reverse_replication()
 
     def revert_failover(self):
         """Performs Revert Failover operation.
@@ -273,7 +307,16 @@ class ReplicationMonitor(object):
                 SDKException:
                     if proper inputs are not provided
         """
-        return self._dr_operation.point_in_time_failover()
+        snapshot_list = self._get_snapshot_list()
+
+        if len(snapshot_list) == 0:
+            raise SDKException("ReplicationMonitor", "101",
+                               "No snapshot is found.")
+
+        # fetch the first snapshot to run
+        return self._dr_operation.point_in_time_failover(
+            snapshot_list[0]["timestamp"],
+            self._replication_monitor_options['replicationIds'][0])
 
     def validate_dr_orchestration_job(self, jobId):
         """ Validates DR orchestration job of jobId
@@ -318,3 +361,28 @@ class ReplicationMonitor(object):
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_snapshot_list(self):
+        """ Gets snapshot list for the destination client
+
+            Args:
+
+            Returns:
+                list of dict: list of snapshot information
+        """
+        vm_name = self.replication_monitor_options.get("vmName", "")
+        vm = None
+
+        # parses vm information from the replication monitor
+        if not vm_name:
+            vm = self.replication_monitor[0]
+        else:
+            for _vm in self.replication_monitor:
+                if str(_vm.get("sourceName")).lower() == str(vm_name).lower():
+                    vm = _vm
+                    break
+
+        # we only need the information about destination guid
+        destination_guid = vm["destinationGuid"]
+
+        return self._dr_operation.get_snapshot_list(destination_guid)

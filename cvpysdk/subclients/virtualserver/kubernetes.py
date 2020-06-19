@@ -108,6 +108,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             vcenter_client=None,
             esx_host=None,
             datastore=None,
+            datacenter=None,
             overwrite=True,
             power_on=True,
             copy_precedence=0,
@@ -210,7 +211,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             vcenter_client=vcenter_client,
             datastore=datastore,
             esx_host=esx_host,
-            datacenter="restoretest",
+            datacenter=datacenter,
             esx_server=None,
             unconditional_overwrite=overwrite,
             power_on=power_on,
@@ -416,7 +417,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         if restore_option.get('resourcePoolPath'):
             restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']
         if restore_option.get('datacenter'):
-            restore_option['datacenter'] = vs_metadata.get('dataCenter', '')
+            restore_option['datacenter'] = restore_option.get('datacenter')
         if restore_option.get('terminationProtected'):
             restore_option['terminationProtected'] = vs_metadata.get('terminationProtected', '')
         if restore_option.get('iamRole'):
@@ -559,7 +560,7 @@ class ApplicationGroups(Subclients):
 
     def __init__(self, class_object):
 
-        super(ApplicationGroups,self).__init__(class_object)
+        super(ApplicationGroups, self).__init__(class_object)
 
     def create_application_group(self,
                                  content,
@@ -589,7 +590,7 @@ class ApplicationGroups(Subclients):
                 list_strguid = element.split(':')
                 mylist.append((list_strguid[1]).replace('"', ''))
 
-        plan_id = int(self._commcell_object.plans[str(plan_name)])
+        plan_id = int(self._commcell_object.plans[str(plan_name.lower())])
 
         app_create_json = {
             "subClientProperties": {

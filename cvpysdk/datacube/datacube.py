@@ -38,6 +38,8 @@ Datacube:
 
     refresh()                   --  refresh the datasources associated with the Datacube Engine
 
+    refresh_engine()            --  refresh the index server associated with datacube
+
 """
 
 from __future__ import absolute_import
@@ -77,7 +79,7 @@ class Datacube(object):
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._ANALYTICS_ENGINES = self._services['GET_ANALYTICS_ENGINES']
+        self._ANALYTICS_ENGINES = self._services['GET_ALL_INDEX_SERVERS']
         self._ALL_DATASOURCES = self._services['GET_ALL_DATASOURCES']
         self._GET_JDBC_DRIVERS = None
 
@@ -112,10 +114,7 @@ class Datacube(object):
         """Gets the list all the analytics engines associated with the datacube.
 
             Returns:
-                dict    -   consists of all clients in the commcell
-                    {
-                        "listOfCIServer": []    # array of analytics engines
-                    }
+                list    -   array consisting details of all analytics engines
 
             Raises:
                 SDKException:
@@ -127,12 +126,10 @@ class Datacube(object):
         flag, response = self._cvpysdk_object.make_request('GET', self._ANALYTICS_ENGINES)
 
         if flag:
-            if response.json() and 'listOfCIServer' in response.json():
+            if 'listOfCIServer' in response.json():
                 return response.json()['listOfCIServer']
-            else:
-                raise SDKException('Datacube', '103')
-        else:
-            self._response_not_success(response)
+            return []
+        self._response_not_success(response)
 
     @property
     def analytics_engines(self):
@@ -192,3 +189,7 @@ class Datacube(object):
     def refresh(self):
         """Refresh the datasources associated to the Datacube Engine."""
         self._datasources = None
+
+    def refresh_engine(self):
+        """Refresh the Index server associated to the Datacube."""
+        self._analytics_engines = self._get_analytics_engines()

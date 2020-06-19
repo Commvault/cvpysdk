@@ -67,6 +67,8 @@ Datasource:
 
     _get_datasource_properties()        --  get the properties of this data source
 
+    get_datasource_properties()         --  get the properties of this data source
+
     get_crawl_history()                 --  get the crawl history of the data source.
 
     get_datasource_schema()             --  returns information about the schema of a data source
@@ -86,6 +88,19 @@ Datasource:
     share()                              -- Share the datasource with user or usergroup
 
     delete_datasource()                  -- deletes the datasource associated with this
+
+DataSource Attributes
+----------------------
+
+    **computed_core_name**              --  Data source core name in index server
+
+    **datasource_id**                   --  data source id
+
+    **datasource_name**                 --  name of the data source
+
+    **data_source_type**                --  data source type value
+
+    **properties**						--	returns the properties of the data source
 
 """
 
@@ -147,6 +162,19 @@ class Datasources(object):
             self._datacube_object._commcell_object.commserv_name
         )
 
+    def get_datasource_properties(self, data_source_name):
+        """Returns the properties of datasources.
+
+            Args:
+
+                data_source_name    (str)       -- Name of the data source
+
+            Returns:
+                dict - dictionary consisting of the properties of  datasources
+
+        """
+        return self._datasources[data_source_name]
+
     @staticmethod
     def _get_datasources_from_collections(collections):
         """Extracts all the datasources, and their details from the list of collections given,
@@ -184,8 +212,13 @@ class Datasources(object):
         """
         _datasources = {}
         for collection in collections:
+            core_name = None
+            if 'computedCoreName' in collection:
+                core_name = collection['computedCoreName']
             for datasource in collection['datasources']:
                 datasource_dict = {}
+                if core_name:
+                    datasource_dict['computedCoreName'] = core_name
                 datasource_dict['data_source_id'] = datasource['datasourceId']
                 datasource_dict['data_source_name'] = datasource['datasourceName']
                 datasource_dict['data_source_type'] = SEDS_TYPE_DICT[
@@ -301,7 +334,7 @@ class Datasources(object):
             Args:
                 datasource_name (str)   --  name of the datasource to add to the datacube
 
-                analytics_engine (str)  --  name of the analytics engine to be associated with this
+                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
                                                 datacube.
 
                 datasource_type (str)  --  type of datasource to add
@@ -346,7 +379,7 @@ class Datasources(object):
 
         engine_index = None
         for engine in self._datacube_object.analytics_engines:
-            if engine["clientName"] == analytics_engine:
+            if engine["clientName"] == analytics_engine or engine['engineName'] == analytics_engine:
                 engine_index = self._datacube_object.analytics_engines.index(engine)
 
         if engine_index is None:
@@ -454,7 +487,7 @@ class Datasource(object):
                 object  -   instance of the Datasource class
         """
         self._datacube_object = datacube_object
-        self._datasource_name = datasource_name.lower()
+        self._datasource_name = datasource_name
         self._commcell_object = self._datacube_object._commcell_object
 
         if datasource_id is not None:
@@ -493,6 +526,9 @@ class Datasource(object):
 
         self.handlers = None
         self._handlers_obj = None
+        self._computed_core_name = None
+        self._data_source_type = None
+        self._properties = None
         self.refresh()
 
     def __repr__(self):
@@ -526,7 +562,11 @@ class Datasource(object):
                     if response is not success
 
         """
-        return True
+        data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
+        if 'computedCoreName' in data_source_dict:
+            self._computed_core_name = data_source_dict['computedCoreName']
+        self._data_source_type = data_source_dict['data_source_type']
+        return data_source_dict
 
     def start_job(self):
         """Starts the crawl job for the datasource
@@ -651,9 +691,24 @@ class Datasource(object):
         return self._datasource_id
 
     @property
+    def properties(self):
+        """Returns all the data source properties"""
+        return self._properties
+
+    @property
     def datasource_name(self):
         """Returns the value of the data source name attribute."""
         return self._datasource_name
+
+    @property
+    def computed_core_name(self):
+        """Returns the value of the computedcorename attribute."""
+        return self._computed_core_name
+
+    @property
+    def data_source_type(self):
+        """Returns the value of the data source type attribute."""
+        return self._data_source_type
 
     def get_datasource_schema(self):
         """returns information about the schema of a data source.

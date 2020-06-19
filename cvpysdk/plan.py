@@ -71,8 +71,6 @@ Plan
 
     _update_plan_props()        -- method to update plan properties
 
-    _get_associated_entities()  -- method to get list of entities associated to a plan
-
     derive_and_add()            -- add new plan by deriving from the parent Plan object
 
     plan_name                   --  returns the name of the plan
@@ -102,8 +100,6 @@ Plan Attributes
     **schedule_policies**       --  returns the schedule policy of the plan
 
     **subclient_policy**        --  returns the subclient policy of the plan
-
-    **associated_entities**     --  returns all the backup entties associted with the plan
 """
 
 from __future__ import unicode_literals
@@ -474,7 +470,7 @@ class Plans(object):
             request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
                 "storagePolicyId": storage_pool_id
             }
-        if plan_sub_type is "Server" and 'database' in request_json['plan']:
+        if plan_sub_type == "Server" and 'database' in request_json['plan']:
             request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
                 'useGlobalDedupStore'] = 1
             request_json['plan']['database']['storageLog']['copy'][0].pop(
@@ -647,7 +643,6 @@ class Plan(object):
         self._override_entities = None
         self._parent_plan_id = None
         self._addons = []
-        self._associated_entities = {}
         self.refresh()
 
     def __repr__(self):
@@ -746,8 +741,6 @@ class Plan(object):
 
                 if 'parent' in self._plan_properties['summary']:
                     self._parent_plan_id = self._plan_properties['summary']['parent']['planId']
-
-                self._get_associated_entities()
 
                 return self._plan_properties
             else:
@@ -1048,31 +1041,6 @@ class Plan(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_associated_entities(self):
-        """Gets all the backup entities associated with the plan.
-
-            Returns:
-                dict - dictionary containing list of entities that are
-                       associated with the plan.
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-        """
-        request_url = self._services['ASSOCIATED_ENTITIES'] % (self._plan_id)
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', request_url
-        )
-
-        if flag:
-            if response.json() and 'entities' in response.json():
-                self._associated_entities = response.json()['entities']
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
     @property
     def plan_id(self):
         """Treats the plan id as a read-only attribute."""
@@ -1193,11 +1161,6 @@ class Plan(object):
     def subclient_policy(self):
         """Treats the plan subclient policy as a read-only attribute"""
         return self._child_policies['subclientPolicyIds']
-
-    @property
-    def associated_entities(self):
-        """getter for the backup entities associated with the plan"""
-        return self._associated_entities
 
     def refresh(self):
         """Refresh the properties of the Plan."""

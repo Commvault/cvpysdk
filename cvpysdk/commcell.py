@@ -67,11 +67,9 @@ Commcell:
 
     download_software()         --  triggers the Download Software job with the given options
 
-    get_remote_cache_path()     --  returns remote cache path
+    sync_remote_cache()         --  syncs remote cache
 
-    configure_remotecache()     --  configures client as remote cache
-
-    configure_packages_to_sync()    --  configures packages to sync for the remote cache
+    get_remote_cache()     		--  returns the instance of the RemoteCache class
 
     push_servicepack_and_hotfixes() --  triggers installation of service pack and hotfixes
 
@@ -100,6 +98,17 @@ Commcell:
 
     get_eligible_service_commcells()             -- gets the eligible service commcells to redirect
 
+    get_default_plan()                  -- Get the default plans associed with the commcell
+
+    get_security_associations()         -- Get the security associations associated with the commcell
+
+    get_password_encryption_config()    -- Get the Password encryption configuration for the commcell
+
+    get_email_settings()                -- Get the SMTP settings for the commcell
+
+    get_commcell_properties()           -- Get the general, privacy and other properties of commcell
+
+    get_commcell_organization_properties()     -- Get the organization properties of commcell
 
 Commcell instance Attributes
 ============================
@@ -384,6 +393,8 @@ class Commcell(object):
                     default: None
 
 
+            **Note** If certificate path is provided, force_https is set to True
+
             Returns:
                 object  -   instance of this class
 
@@ -397,6 +408,9 @@ class Commcell(object):
         web_service = [
             r'https://{0}/webconsole/api/'.format(webconsole_hostname)
         ]
+
+        if certificate_path:
+            force_https = True
 
         if force_https is False:
             web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
@@ -423,7 +437,8 @@ class Commcell(object):
                 if self._cvpysdk_object._is_valid_service():
                     break
             except (RequestsConnectionError, SSLError, Timeout):
-                continue
+                if force_https:
+                    raise
         else:
             raise SDKException('Commcell', '101')
 
@@ -475,6 +490,7 @@ class Commcell(object):
         self._id = None
         self._clients = None
         self._commserv_cache = None
+        self._remote_cache = None
         self._media_agents = None
         self._workflows = None
         self._disaster_recovery = None
@@ -567,6 +583,7 @@ class Commcell(object):
         """Removes all the attributes associated with the instance of this class."""
         del self._clients
         del self._commserv_cache
+        del self._remote_cache
         del self._media_agents
         del self._workflows
         del self._alerts
@@ -639,12 +656,29 @@ class Commcell(object):
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
                     self._commserv_version = response.json()['currentSPVersion']
-                    self._version_info = response.json().get('csVersionInfo')
+                    version_info = response.json().get('csVersionInfo')
                     self._id = response.json()['commcell']['commCellId']
 
                     self._commserv_timezone = re.search(
                         r'\(.*', response.json()['timeZone']
                     ).group()
+
+                    # set commcell version (E.g. 11.21.0)
+                    version_replace_strings = {
+                        '.0 SP': '.',
+                        ' SP': '.',
+                        ' HPK': '.',
+                        '+': '',
+                        '-': '',
+                        'a': '.1',
+                        'b': '.2'
+                    }
+
+                    for key, value in version_replace_strings.items():
+                        version_info = version_info.replace(key, value)
+
+                    self._version_info = version_info + '.0'*(3 - len(version_info.split('.')))
+
                 except KeyError as error:
                     raise SDKException('Commcell', '103', 'Key does not exist: {0}'.format(error))
             else:
@@ -716,8 +750,8 @@ class Commcell(object):
         import time
         now = datetime.datetime.now()
         then = now - datetime.timedelta(days=days)
-        start_dt = int(time.mktime(then.timetuple()))
-        end_dt = int(time.mktime(now.timetuple()))
+        start_dt = time.mktime(then.timetuple())
+        end_dt = time.mktime(now.timetuple())
         return start_dt, end_dt
 
     @property
@@ -855,7 +889,7 @@ class Commcell(object):
     def version(self):
         """Returns the complete version info of the commserv
 
-            Example: 11 SP19.1
+            Example: 11.19.1
 
         """
         return self._version_info
@@ -1482,6 +1516,7 @@ class Commcell(object):
         """Refresh the properties of the Commcell."""
         self._clients = None
         self._commserv_cache = None
+        self._remote_cache = None
         self._media_agents = None
         self._workflows = None
         self._alerts = None
@@ -1520,6 +1555,15 @@ class Commcell(object):
         self._index_servers = None
         self._hac_clusters = None
         self._index_pools = None
+
+    def get_remote_cache(self, client_name):
+        """Returns the instance of the RemoteCache  class."""
+        try:
+            self._remote_cache = RemoteCache(self, client_name)
+            return self._remote_cache
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     def run_data_aging(
             self,
@@ -1738,6 +1782,32 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def sync_remote_cache(self, client_list=None):
+        """Syncs remote cache
+
+            Args:
+
+                client_list (list) --  list of client names.
+                Default is None. By default all remote cache clients are synced
+
+            Returns:
+                object - instance of the Job class for sync job
+
+            Raises:
+                SDKException:
+                    if sync job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another sync job is running with the given client
+
+        """
+        download = Download(self)
+        return download.sync_remote_cache(
+            client_list=client_list)
+
     def download_software(self,
                           options=None,
                           os_list=None,
@@ -1811,81 +1881,6 @@ class Commcell(object):
             service_pack=service_pack
         )
 
-    def get_remote_cache_path(self, client_name):
-        """
-        Returns remote cache path
-
-        Args:
-            client_name (str) -- Client name
-
-        Returns:
-                remote cache path (str)
-
-        Raises:
-            exception if qoperation fails
-
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.get_remote_cache_path()
-
-    def configure_remotecache(self, cache_path, client_name):
-        """
-        Configures client as remote cache
-
-        Args:
-            cache_path (str)  -- Remote cache path
-
-            client_name (str) -- Client name
-
-        Raises:
-            exception if qoperation fails
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.configure_remotecache(cache_path)
-
-    def configure_packages_to_sync(self, client_name, win_os=None, win_package_list=None, unix_os=None,
-                                   unix_package_list=None):
-        """
-        Configures packages to sync for the remote cache
-
-        Args:
-            client_name (str) 	 	-- name of the client
-            win_os 		(list)	 	-- list of windows oses to sync
-            win_package_list  (list)-- list of windows packages to sync
-            unix_os (list) 		  	-- list of unix oses to sync
-            unix_package_list (list)-- list of unix packages to sync
-
-        Raises:
-            SDKException:
-            - Failed to execute the api
-
-            - Response is incorrect
-
-            - Incorrect input
-
-        Usage:
-            commcell_obj.configure_packages_to_sync()
-
-            win_os = ["WINDOWS_32", "WINDOWS_64"]
-            unix_os = ["UNIX_LINUX64", "UNIX_AIX"]
-            win_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-            unix_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-
-            OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for
-            providing input to the configure_packages_to_sync method, it can be imported by
-
-                >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
-                    from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
-                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
-
-        """
-        remote_cache = RemoteCache(self, client_name)
-        return remote_cache.configure_packages_to_sync(
-            win_os=win_os,
-            win_package_list=win_package_list,
-            unix_os=unix_os,
-            unix_package_list=unix_package_list)
-
     def push_servicepack_and_hotfix(
             self,
             client_computers=None,
@@ -1953,7 +1948,8 @@ class Commcell(object):
             windows_features=None,
             unix_features=None,
             username=None,
-            password=None):
+            password=None,
+            install_path=None):
         """
         Installs the selected features in the selected clients
         Args:
@@ -1978,6 +1974,10 @@ class Commcell(object):
             password    (str)               -- base64 encoded password
 
                 default : None
+
+            install_path (str)              -- Install to a specified path on the client
+
+                 default : None
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -2017,7 +2017,8 @@ class Commcell(object):
             windows_features=windows_features,
             unix_features=unix_features,
             username=username,
-            password=password)
+            password=password,
+            install_path=install_path)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell
@@ -2126,6 +2127,194 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def get_commcell_properties(self):
+        """ Get Commcell properties
+        Returns: (dict)
+            "hostName": String,
+            "enableSharedLaptopUsage": Boolean,
+            "enableTwoFactorAuthentication": Boolean,
+            "networkErrorRetryCount": Number,
+            "useUPNForEmail": Boolean,
+            "flags": Number,
+            "description": String,
+            "networkErrorRetryFreq": Number,
+            "autoClientOwnerAssignmentType": Number,
+            "networkErrorRetryFlag": Boolean,
+            "allowUsersToEnablePasskey": Boolean,
+            "autoClientOwnerAssignmentValue": String,
+            "enablePrivacy": Boolean,
+            "twoFactorAuthenticationInfo": {
+                "mode": Number
+            }
+        """
+        url = self._services['SET_COMMCELL_PROPERTIES']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                return response.get("commCellInfo").get("generalInfo")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_commcell_organization_properties(self):
+        """
+            Get organization properties for the commcell
+        return:
+            dict of organization properties of commcell
+        """
+        url = self._services['ORGANIZATION'] % '0'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                passkey_details = response.get('organizationInfo').get('organizationProperties')
+                return passkey_details
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_email_settings(self):
+        """
+            Get Email Server (SMTP) setup for commcell
+        return: (dict) Email server settings for commcell
+        """
+        url = self._services['EMAIL_SERVER']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                return response
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_password_encryption_config(self):
+        """ Get the password encryption config for commcell
+        returns: (dict)
+            "keyFilePath": String,
+            "keyProviderName": String,
+            "isKeyMovedToFile": Boolean
+        """
+        pass__enc_config = {}
+
+        url = self._services['PASSWORD_ENCRYPTION_CONFIG']
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                for key, value in response.items():
+                    pass__enc_config.update({key: value})
+                return pass__enc_config
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_security_associations(self):
+        """ Get the security associations for commcell
+            Returns: (dict)
+                    {
+                    'master': [
+                                ['Array Management'],
+                                ['Create Role', 'Edit Role', 'Delete Role'],
+                                ['Master']
+                            ],
+                    'User2': [
+                                ['View']
+                            ]
+                    }
+         """
+        security_associations = {}
+        value_list = {}
+        url = self._services['SECURITY_ASSOCIATION'] + '/1/2'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
+                for list_item in security_list:
+                    name = list_item.get('userOrGroup')[0].get('userGroupName') or \
+                           list_item.get('userOrGroup')[0].get('userName') or \
+                           list_item.get('userOrGroup')[0].get('providerDomainName') + '\\' + \
+                           list_item.get('userOrGroup')[0].get('externalGroupName')
+                    value = []
+                    if list_item.get('properties').get('role'):
+                        value.append(list_item.get('properties').get('role').get('roleName'))
+                    elif list_item.get('properties').get('categoryPermission'):
+                        for sub_list_item in list_item.get('properties').get('categoryPermission').get(
+                                'categoriesPermissionList'):
+                            value.append(sub_list_item.get('permissionName'))
+                    if name in value_list:
+                        value_list[name].append(value)
+                        value_list[name].sort()
+                    else:
+                        value_list[name] = [value]
+                    security_associations.update({name: value_list[name]})
+                return security_associations
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_default_plan(self):
+        """Executes the request on the server to get Default Plan at commcell level.
+           This is independent of the organization, as id is 0.
+           returns: (list of dictionaries)
+                 [
+                 { "subtype": 'File system plan', "plan": { "planName": "Gold plan", "planId": 2 } }
+                ]
+         """
+        default_plan_details = []
+        plan_sub_type = {
+            16777223: 'DLO plan',
+            33554437: 'Server plan',
+            33554439: 'Laptop plan',
+            33579013: 'Database plan',
+            67108869: 'Snap plan',
+            50331655: 'File system plan',
+            83886085: 'VSA system plan',
+            83918853: 'VSA Replication plan',
+            100859907: 'ExchangeUser plan',
+            100794372: 'ExchangeJournal plan',
+            117506053: 'DataClassification plan',
+            1: 'Ediscovery plan'
+        }
+        url = self._services['ORGANIZATION'] % '0' + '/defaultplan'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                plan_details = response.get('organizationInfo').get('organizationProperties')
+                if "defaultPlans" in plan_details:
+                    plan_list = plan_details.get('defaultPlans')
+                    for default_plan in plan_list:
+                        default_plan_details.append({"subtype": plan_sub_type.get(default_plan.get('subtype')),
+                                                     "plan": {
+                                                         "planName": default_plan.get('plan').get('planName'),
+                                                         "planId": default_plan.get('plan').get('planId')}
+                                                     })
+                return default_plan_details
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def set_default_plan(self, plan_name):
         """Executes the request on the server to set Default Plan at commcell level.
             This is independent of the organization, as id is 0.
@@ -2206,7 +2395,7 @@ class Commcell(object):
                     if response is not success
 
         """
-        from urllib.parse import urlencode
+        from urllib.parse import (urlencode, quote)
 
         headers = self._headers.copy()
         headers['Content-type'] = 'application/x-www-form-urlencoded'
@@ -2219,7 +2408,7 @@ class Commcell(object):
             payload['inputRequestXML'] = input_xml
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXEC_QCOMMAND'], urlencode(payload), headers=headers
+            'POST', self._services['EXEC_QCOMMAND'], urlencode(payload, quote_via=quote), headers=headers
         )
 
         if flag:

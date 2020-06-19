@@ -1400,6 +1400,7 @@ class Schedule:
         self._alert_type = None
         self._sub_task_option = None
         self._automatic_pattern = {}
+        self.virtualServerRstOptions = None
         self.refresh()
 
     @property
@@ -1467,6 +1468,11 @@ class Schedule:
 
                         if 'options' in subtask:
                             self._task_options = subtask['options']
+                            if 'restoreOptions' in self._task_options:
+                                if 'virtualServerRstOption' in self._task_options['restoreOptions']:
+                                    self.virtualServerRstOptions = self._task_options['restoreOptions'][
+                                        'virtualServerRstOption']
+
                             if 'commonOpts' in self._task_options:
                                 if 'automaticSchedulePattern' in self._task_options["commonOpts"]:
                                     self._automatic_pattern = self._task_options[

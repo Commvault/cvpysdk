@@ -29,7 +29,7 @@
 """
 
 from __future__ import unicode_literals
-from cvpysdk.subclients.fssubclient import FileSystemSubclient
+from ..subclients.fssubclient import FileSystemSubclient
 from ..exception import SDKException
 
 
@@ -54,10 +54,11 @@ class BigDataAppsSubclient(FileSystemSubclient):
             object              (obj)   --  Object associated with the Bigdatapps subclient
 
         """
-        from cvpysdk.subclients.splunksubclient import SplunkSubclient
-
+        from ..subclients.splunksubclient import SplunkSubclient
+        from ..subclients.index_server_subclient import IndexServerSubclient
         cluster_types = {
-            16: SplunkSubclient
+            16: SplunkSubclient,
+            6: IndexServerSubclient
         }
 
         bigdata_apps_cluster_type = backupset_object._instance_object.properties. \
@@ -107,6 +108,6 @@ class BigDataAppsSubclient(FileSystemSubclient):
 
         if output[0]:
             return
-        else:
-            o_str = 'Failed to update properties of subclient\nError: "{0}"'
-            raise SDKException('Subclient', '102', o_str.format(output[2]))
+
+        o_str = 'Failed to update properties of subclient\nError: "{0}"'
+        raise SDKException('Subclient', '102', o_str.format(output[2]))

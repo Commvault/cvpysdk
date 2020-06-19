@@ -88,6 +88,11 @@ IndexServer
 
     update_role()                       --  to update the roles assigned to cloud
 
+    hard_commit                         --  do hard commit on specified index server solr core
+
+    get_all_cores                       --  gets all the cores in index server
+
+
 IndexServer Attributes
 ----------------------
 
@@ -120,6 +125,7 @@ IndexServer Attributes
 
     **index_server_client_id**          --  returns the index server client id
 
+    **role_display_name**               --  display name of roles
 
 _Roles
 ======
@@ -219,10 +225,26 @@ class IndexServers(object):
             if response.json() and 'listOfCIServer' in response.json():
                 for item in response.json()['listOfCIServer']:
                     if item['cloudID'] in self._all_index_servers:
-                        self._all_index_servers[item['cloudID']]['version'].append(
-                            item['version'])
+                        # Add only unique roles to list
+                        if item['version'] not in self._all_index_servers[item['cloudID']]['version']:
+                            self._all_index_servers[item['cloudID']]['version'].append(item['version'])
+                        # check whether we have populated node details earlier. if not, add it to
+                        # exisitng respective fields
+                        if item['clientName'] not in self._all_index_servers[item['cloudID']]['clientName']:
+
+                            self._all_index_servers[item['cloudID']]['clientId'].append(item['clientId'])
+                            self._all_index_servers[item['cloudID']]['clientName'].append(item['clientName'])
+                            self._all_index_servers[item['cloudID']]['hostName'].append(item['hostName'])
+                            self._all_index_servers[item['cloudID']]['cIServerURL'].append(item['cIServerURL'])
+                            self._all_index_servers[item['cloudID']]['basePort'].append(item['basePort'])
+
                     else:
                         item['version'] = [item['version']]
+                        item['clientId'] = [item['clientId']]
+                        item['clientName'] = [item['clientName']]
+                        item['hostName'] = [item['hostName']]
+                        item['cIServerURL'] = [item['cIServerURL']]
+                        item['basePort'] = [item['basePort']]
                         self._all_index_servers[item['cloudID']] = item
             else:
                 self._all_index_servers = {}
@@ -460,6 +482,8 @@ class IndexServers(object):
                 error_string = response.json()['genericResp']['errorMessage']
                 if error_code == 0:
                     self.refresh()
+                    self._commcell_object.clients.refresh()
+                    self._commcell_object.datacube.refresh_engine()
                 else:
                     o_str = 'Failed to create Index Server. Error: "{0}"'.format(
                         error_string)
@@ -497,6 +521,8 @@ class IndexServers(object):
             if response.json() and 'genericResp' in response.json() \
                     and 'errorCode' not in response.json()['genericResp']:
                 self.refresh()
+                self._commcell_object.clients.refresh()
+                self._commcell_object.datacube.refresh_engine()
                 return
             if response.json() and 'genericResp' in response.json():
                 raise SDKException(
@@ -555,6 +581,7 @@ class IndexServer(object):
 
     def refresh(self):
         """Refresh the index server properties"""
+        self._commcell_obj.index_servers.refresh()
         self._get_properties()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
@@ -648,6 +675,86 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
+    def hard_commit(self, core_name):
+        """do hard commit for the given core name on index server
+
+                    Args:
+
+                        core_name               (str)  --  name of the solr core
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        """
+        if not isinstance(core_name, basestring):
+            raise SDKException('IndexServers', '101')
+        if self.is_cloud:
+            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+        baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commit=true"
+        flag, response = self._cvpysdk_object.make_request("GET", baseurl)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', "Hard commit returned error")
+            if 'responseHeader' in response.json():
+                commitstatus = str(response.json()['responseHeader']['status'])
+                if int(commitstatus) != 0:
+                    raise SDKException('IndexServers', '104', "Hard commit returned bad status")
+                return
+        raise SDKException('IndexServers', '104', "Something went wrong with hard commit")
+
+    def get_all_cores(self, client_name=None):
+        """gets all cores & core details from index server
+
+                Args:
+                    client_name     (str)       --  name of the client node
+                        ***Applicable only for solr cloud mode***
+
+                Returns:
+                    (list,dict)     -- list containing core names
+                                    -- dict containing details about cores
+
+                Raises:
+
+                    SDKException:
+
+                        if input data is not valid
+
+                        if client name is not passed for index server cloud
+
+                        if response is not success
+
+                        if response is empty
+
+        """
+        server_url = self.server_url[0]
+        if self.is_cloud:
+            if client_name is None:
+                raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
+            if client_name not in self.client_name:
+                raise SDKException('IndexServers', '104', 'client name not found in this index server cloud')
+            server_url = self.server_url[self.client_name.index(client_name)]
+        core_names = []
+        baseurl = f"{server_url}/solr/admin/cores"
+        flag, response = self._cvpysdk_object.make_request("GET", baseurl)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', "Unable to get core names from index server")
+            if 'status' in response.json():
+                for core in response.json()['status']:
+                    core_names.append(core)
+                return core_names, response.json()['status']
+        raise SDKException('IndexServers', '104', "Something went wrong while getting core names")
+
     @property
     def is_cloud(self):
         return self.server_type == 5
@@ -701,6 +808,17 @@ class IndexServer(object):
     def roles(self):
         """Returns the roles of index server"""
         return self._properties[IndexServerConstants.ROLES]
+
+    @property
+    def role_display_name(self):
+        """Returns the roles display name of index server"""
+        role_disp_name = []
+        for role_version in self.roles:
+            for role in self.roles_data:
+                if role_version == role['roleVersion']:
+                    role_disp_name.append(role['roleName'])
+                    break
+        return role_disp_name
 
     @property
     def cloud_id(self):

@@ -155,7 +155,7 @@ class BackupJobSummary(Report):
                 "task": {
                     "ownerId": 1,
                     "taskType": 1,
-                    "ownerName": "admin",
+                    "ownerName": commcell_object.commcell_username,
                     "sequenceNumber": 0,
                     "initiatedFrom": 1,
                     "taskFlags": {
