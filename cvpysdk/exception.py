@@ -186,7 +186,9 @@ EXCEPTION_DICT = {
         '108': 'Failed to run the DDB move job',
         '109': 'Failed to run the DDB verification job',
         '110': 'Input data is not correct',
-        "111": 'Failed to update copy property'
+        "111": 'Failed to update copy property',
+        "112": 'Failed to run DDB Reconstruction job',
+        "113": 'Failed to run DDB space reclaimation job'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',

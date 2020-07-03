@@ -515,6 +515,8 @@ class StoragePools:
                         # initialize the storage pool again
                         # so the storage pool object has all the storage pools
                         self.refresh()
+                        # as part of storage pool we might delete library so initialize the libraries again
+                        self._commcell_object.disk_libraries.refresh()
                 else:
                     response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)

@@ -68,7 +68,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
     'INSTANCE': '{0}Instance/%s',
 
-    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&propertyLevel=20',
+    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
@@ -92,6 +92,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
+    'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
@@ -211,6 +212,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
     'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
+    'ASSOCIATED_ENTITIES': '{0}V2/Plan/%s/AssociatedEntities',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -231,7 +233,7 @@ SERVICES_DICT_TEMPLATE = {
     'PASSWORD_ENCRYPTION_CONFIG': '{0}/Commcell/PasswordEncryptionConfig',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&deep=true&hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",

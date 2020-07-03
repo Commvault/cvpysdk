@@ -1079,6 +1079,8 @@ class Backupset(object):
                     self._plan = self._commcell_object.plans.get(
                         self._properties["planEntity"]["planName"]
                     )
+                else:
+                    self._plan = None
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1780,14 +1782,21 @@ class Backupset(object):
     def plan(self, value):
         """Associates the plan to the backupset
 
+            Args:
+                value   (object)    --  the Plan object which is to be associated
+                                        with the backupset
+                
+                value   (str)       --  name of the plan which is to be associated
+                                        with the backupset
+
+                value   (None)      --  set value to None to remove plan associations
+
             Raises:
                 SDKException:
 
-                    if input value is not an instance of Plan class
-
                     if plan does not exist
 
-                    if plan associateion fails
+                    if plan association fails
 
                     if plan is not eligible to be associated
         """
@@ -1796,6 +1805,10 @@ class Backupset(object):
             plan_obj = value
         elif isinstance(value, basestring):
             plan_obj = self._commcell_object.plans.get(value)
+        elif value is None:
+            plan_obj = {
+                'planName': None
+            }
         else:
             raise SDKException('Backupset', '102', 'Input value is not of supported type')
 
@@ -1805,7 +1818,7 @@ class Backupset(object):
             'appId': int(self._agent_object.agent_id),
             'backupsetId': int(self.backupset_id)
         }
-        if plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
+        if value is not None and plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
             request_json = {
                 'backupsetProperties': {
                     'planEntity': {
@@ -1824,8 +1837,25 @@ class Backupset(object):
 
             if response[0]:
                 return
-            o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
-            raise SDKException('Backupset', '102', o_str.format(response[2]))
+            else:
+                o_str = 'Failed to asspciate plan to the backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(response[2]))
+        elif value is None:
+            request_json = {
+                'backupsetProperties': {
+                    'removePlanAssociation': True
+                }
+            }
+
+            response = self._process_update_reponse(
+                request_json
+            )
+
+            if response[0]:
+                return
+            else:
+                o_str = 'Failed to dissociate plan from backupset\nError: "{0}"'
+                raise SDKException('Backupset', '102', o_str.format(response[2]))
         else:
             raise SDKException(
                 'Backupset',

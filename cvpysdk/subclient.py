@@ -196,19 +196,27 @@ class Subclients(object):
         self._agent_object = None
         self._instance_object = None
         self._backupset_object = None
+        self._url_param = ''
 
         if isinstance(class_object, Agent):
             self._agent_object = class_object
+            self._url_param += self._agent_object.agent_id
 
         elif isinstance(class_object, Instance):
             self._instance_object = class_object
             self._agent_object = self._instance_object._agent_object
+            self._url_param += '{0}&instanceId={1}'.format(
+                self._agent_object.agent_id, self._instance_object.instance_id
+            )
 
         elif isinstance(class_object, Backupset):
             self._backupset_object = class_object
             self._instance_object = class_object._instance_object
             self._agent_object = self._instance_object._agent_object
-
+            self._url_param += self._agent_object.agent_id
+            self._url_param += '&backupsetId={0}'.format(
+                self._backupset_object.backupset_id
+            )
         else:
             raise SDKException('Subclient', '115')
 
@@ -220,7 +228,8 @@ class Subclients(object):
         self._update_response_ = self._commcell_object._update_response_
 
         self._SUBCLIENTS = self._services['GET_ALL_SUBCLIENTS'] % (
-            self._client_object.client_id)
+            self._client_object.client_id, self._url_param
+        )
 
         self._ADD_SUBCLIENT = self._services['ADD_SUBCLIENT']
 
@@ -1287,6 +1296,9 @@ class Subclient(object):
 
                 if 'proxyClient' in self._subclient_properties:
                     self._proxyClient = self._subclient_properties['proxyClient']
+
+                if 'planEntity' in self._subclient_properties:
+                    self._planEntity = self._subclient_properties['planEntity']
 
             else:
                 raise SDKException('Response', '102')
@@ -2414,7 +2426,8 @@ c
                     if response is not success
         """
         self._instance_object._restore_association = self._subClientEntity
-        if 'proxy_client' in fs_options:
+
+        if fs_options and 'proxy_client' in fs_options:
             proxy_client = fs_options['proxy_client']
 
         return self._instance_object._restore_out_of_place(
@@ -2750,3 +2763,63 @@ c
                     "enableDeduplication": enable_dedupe[0],
                 }
             )
+
+    @property
+    def plan(self):
+        """Returns the name of the plan associated with the subclient.
+           Returns None if no plan is associated
+        """
+
+        if 'planEntity' in self._subclient_properties:
+            planEntity = self._subclient_properties['planEntity']
+
+            if bool(planEntity):
+                return planEntity['planName']
+            else:
+                return None
+        else:
+            raise SDKException('Subclient', '112')
+    
+    @plan.setter
+    def plan(self, value):
+        """Associates a plan to the subclient.
+
+            Args:
+                value   (object)    --  the Plan object which is to be associated
+                                        with the subclient
+
+                value   (str)       --  name of the plan to be associated
+
+                value   (None)      --  set value to None to remove plan associations
+
+            Raises:
+                SDKException:
+                    if the type of input is incorrect
+
+                    if the plan association is unsuccessful
+        """
+        from .plan import Plan
+        if isinstance(value, Plan):
+            if self._commcell_object.plans.has_plan(value.plan_name):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value.plan_name
+                    }
+                })
+            else:
+                raise SDKException('Subclient','102', 'Plan does not exist')
+        elif isinstance(value, basestring):
+            if self._commcell_object.plans.has_plan(value):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value
+                    }
+                })
+            else:
+                raise SDKException('Subclient','102', 'Plan does not exist')
+        elif value is None:
+            self.update_properties({
+                'removePlanAssociation': True
+            })
+        else:
+            raise SDKException('Subclient', '101')

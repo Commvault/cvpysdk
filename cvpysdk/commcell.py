@@ -259,6 +259,9 @@ Commcell instance Attributes
 
     **index_pools**             --  Returns an instance of the IndexPools class
 
+    **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class
+    to interact wtih deduplication enines available on the commcell
+
 """
 
 from __future__ import absolute_import
@@ -323,6 +326,7 @@ from .job import JobManagement
 from .index_server import IndexServers
 from .hac_clusters import HACClusters
 from .index_pools import IndexPools
+from .deduplication_engines import DeduplicationEngines
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -533,6 +537,7 @@ class Commcell(object):
         self._index_servers = None
         self._hac_clusters = None
         self._index_pools = None
+        self._deduplication_engines = None
         self.refresh()
 
         del self._password
@@ -626,6 +631,7 @@ class Commcell(object):
         del self._index_servers
         del self._hac_clusters
         del self._index_pools
+        del self._deduplication_engines
         del self
 
     def _get_commserv_details(self):
@@ -750,8 +756,8 @@ class Commcell(object):
         import time
         now = datetime.datetime.now()
         then = now - datetime.timedelta(days=days)
-        start_dt = time.mktime(then.timetuple())
-        end_dt = time.mktime(now.timetuple())
+        start_dt = int(time.mktime(then.timetuple()))
+        end_dt = int(time.mktime(now.timetuple()))
         return start_dt, end_dt
 
     @property
@@ -1050,6 +1056,16 @@ class Commcell(object):
                 self._policies = Policies(self)
 
             return self._policies
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def deduplication_engines(self):
+        """Returns the instance of the Deduplicationengines class."""
+        try:
+            if self._deduplication_engines is None:
+                self._deduplication_engines = DeduplicationEngines(self)
+            return self._deduplication_engines
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -1555,6 +1571,7 @@ class Commcell(object):
         self._index_servers = None
         self._hac_clusters = None
         self._index_pools = None
+        self._deduplication_engines = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""

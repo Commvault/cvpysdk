@@ -92,6 +92,10 @@ IndexServer
 
     get_all_cores                       --  gets all the cores in index server
 
+    _create_solr_query()                 -- Create solr search query based on inputs provided
+
+    execute_solr_query()                 -- Creates solr url based on input and executes it on solr on given core
+
 
 IndexServer Attributes
 ----------------------
@@ -754,6 +758,148 @@ class IndexServer(object):
                     core_names.append(core)
                 return core_names, response.json()['status']
         raise SDKException('IndexServers', '104', "Something went wrong while getting core names")
+
+    def _create_solr_query(self, select_dict=None, attr_list=None, op_params=None):
+        """Method to create the solr query based on the params
+            Args:
+                select_dict     (dictionary)     --  Dictionary containing search criteria and value
+                                                     Acts as 'q' field in solr query
+
+                attr_list       (set)            --  Column names to be returned in results.
+                                                     Acts as 'fl' in solr query
+
+                op_params       (dictionary)     --  Other params and values for solr query
+                                                        (Ex: start, rows)
+
+            Returns:
+                The solr url based on params
+
+            Raises:
+                SDKException:
+
+                        if failed to form solr query
+        """
+        try:
+            search_query = f'q='
+            simple_search = 0
+            if select_dict:
+                for key, value in select_dict.items():
+                    if isinstance(key, tuple):
+                        if isinstance(value, list):
+                            search_query += f'({key[0]}:{str(value[0])}'
+                            for val in value[1:]:
+                                search_query += f' OR {key[0]}:{str(val)}'
+                        else:
+                            search_query += f'({key[0]}:{value}'
+                        for key_val in key[1:]:
+                            if isinstance(value, list):
+                                search_query += f' OR {key_val}:{str(value[0])}'
+                                for val in value[1:]:
+                                    search_query += f' OR {key_val}:{str(val)}'
+                            else:
+                                search_query += f' OR {key_val}:{value}'
+                        search_query += ') AND '
+                    elif isinstance(value, list):
+                        search_query += f'({key}:{str(value[0])}'
+                        for val in value[1:]:
+                            search_query += f' OR {key}:{str(val)}'
+                        search_query += ") AND "
+                    elif key == "keyword":
+                        search_query += "(" + value + ")"
+                        simple_search = 1
+                        break
+                    else:
+                        search_query = search_query + f'{key}:{str(value)} AND '
+                if simple_search == 0:
+                    search_query = search_query[:-5]
+            else:
+                search_query += "*:*"
+
+            field_query = ""
+            if attr_list:
+                field_query = "&fl="
+                for item in attr_list:
+                    field_query += f'{str(item)},'
+                field_query = field_query[:-1]
+
+            ex_query = ""
+            if not op_params:
+                op_params = {'wt': "json"}
+            else:
+                op_params['wt'] = "json"
+            for key, value in op_params.items():
+                if value is None:
+                    ex_query += f'&{key}'
+                else:
+                    ex_query += f'&{key}={str(value)}'
+            final_url = f'{search_query}{field_query}{ex_query}'
+            return final_url
+        except Exception as excp:
+            raise SDKException('IndexServers', '104', f"Something went wrong while creating solr query - {excp}")
+
+    def execute_solr_query(
+            self,
+            core_name,
+            solr_client=None,
+            select_dict=None,
+            attr_list=None,
+            op_params=None):
+        """Creates solr url based on input and executes it on solr on given core/collection
+            Args:
+
+                core_name               (str)           --  Core name/collection name where we want to query
+
+                solr_client             (str)           --  Index Server client name to execute solr query
+                                                                Default : None (picks first client on index server)
+
+                select_dict             (dictionary)    --  Dictionary containing search criteria and
+                                                            value. Acts as 'q' field in solr query
+
+                        Example :
+
+                            1. General Criteria to filter results              -   {"jid": 1024, "datatype": 2,clid: 2}
+                            2. Keyword Searches on solr                        -   {'keyword': 'SearchKeyword'}
+                            3. For multiple value searches on single field     -   {'cvowner': ['xxx','yyy']}
+                            4. For single value searches on multiple fields    -   {('cvowner','cvreaddisp') : 'xxx'}
+
+                attr_list               (set)           --  Column names to be returned in results.
+                                                                Acts as 'fl' in solr query
+
+                        Example (For Exchange Mailbox IDA, below fields are there in solr) :
+                                    {
+                                     'msgclass',
+                                     'ccsmtp',
+                                     'fmsmtp',
+                                     'folder'
+                                   }
+
+                op_params               (dictionary)    --  Other params and values for solr query. Do not
+                                                            mention 'wt' param as it is always json
+
+                                                            Example : {"rows": 0}
+
+            Returns:
+                content of the response
+
+            Raises:
+                SDKException:
+
+                        if unable to send request
+
+                        if response is not success
+        """
+        solr_url = f"solr/{core_name}/select?{self._create_solr_query(select_dict, attr_list, op_params)}"
+        if solr_client is None:
+            solr_url = f"{self.server_url[0]}/{solr_url}"
+        else:
+            if solr_client not in self.client_name:
+                raise SDKException('IndexServers', '104', 'client name not found in this index server')
+            server_url = self.server_url[self.client_name.index(solr_client)]
+            solr_url = f"{server_url}/{solr_url}"
+        flag, response = self._cvpysdk_object.make_request("GET", solr_url)
+        if flag and response.json():
+            return response.json()
+        raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
     @property
     def is_cloud(self):

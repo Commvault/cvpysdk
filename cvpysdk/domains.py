@@ -302,7 +302,9 @@ class Domains(object):
             password,
             company_id="",
             ad_proxy_list=None,
-            enable_sso=True):
+            enable_sso=True,
+            type_of_server="active directory",
+            **kwargs):
         """Adds a new domain to the commcell.
 
             Args:
@@ -316,13 +318,28 @@ class Domains(object):
 
                 company_id      (int)   --  company id for which the domain needs to be added for
 
-                adProxyList     (list)  --  list of client objects to be used as proxy.
+                ad_proxy_list     (list)  --  list of client objects to be used as proxy.
 
                     default: None
 
                     if no proxy required
 
                 enable_sso      (bool)  --  enable sso for domain
+
+                type_of_server  (str)   --  Type of server to be registered
+                    values:
+                    "active directory"
+                    "apple directory"
+                    "oracle ldap"
+                    "open ldap"
+                    "ldap server"
+
+                **kwargs            --      required parameters for LDAP Server registration
+
+                    group_filter    (str)   --  group filter for ldap server
+                    user_filter     (str)   --  user filter for ldap server
+                    unique_identifier   (str)   --  unique identifier for ldap server
+                    base_dn              (str)  --  base dn for ldap server
 
             Returns:
                 dict    -   properties of domain
@@ -334,6 +351,11 @@ class Domains(object):
                     if no domain exists with the given name
 
         """
+        service_type_mapping = {"active directory": 2, "apple directory": 8, "oracle ldap": 9, "open ldap": 10,
+                                "ldap server": 14}
+        service_type = service_type_mapping.get(type_of_server.lower())
+        if not service_type:
+            raise SDKException('Domain', "102", "please pass valid server type")
         if not (isinstance(domain_name, basestring) and
                 isinstance(netbios_name, basestring) and
                 isinstance(user_name, basestring) and
@@ -358,7 +380,7 @@ class Domains(object):
         domain_create_request = {
             "operation": 1,
             "provider": {
-                "serviceType": 2,
+                "serviceType": service_type,
                 "flags": 1,
                 "bPassword": b64encode(password.encode()).decode(),
                 "login": user_name,
@@ -377,6 +399,42 @@ class Domains(object):
                 }
             }
         }
+
+        if kwargs:
+            custom_provider = {
+                    "providerTypeId": 0,
+                    "attributes": [
+                        {
+                            "attrId": 6,
+                            "attributeName": "User group filter",
+                            "staticAttributeString": "(objectClass=group)",
+                            "customAttributeString": kwargs.get('group_filter', ''),
+                            "attrTypeFlags": 1
+                        },
+                        {
+                            "attrId": 7,
+                            "attributeName": "User filter",
+                            "staticAttributeString": "(&(objectCategory=User)(sAMAccountName=*))",
+                            "customAttributeString": kwargs.get('user_filter', ''),
+                            "attrTypeFlags": 1
+                        },
+                        {
+                          "attrId": 9,
+                          "attributeName": "Unique identifier",
+                          "staticAttributeString": "sAMAccountName",
+                          "customAttributeString": kwargs.get('unique_identifier', ''),
+                          "attrTypeFlags": 1
+                        },
+                        {
+                          "attrId": 10,
+                          "attributeName": "base DN",
+                          "staticAttributeString": "baseDN",
+                          "customAttributeString": kwargs.get('base_dn', ''),
+                          "attrTypeFlags": 1
+                        }
+                    ]
+                }
+            domain_create_request["provider"]["customProvider"] = custom_provider
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._DOMAIN_CONTROLER, domain_create_request

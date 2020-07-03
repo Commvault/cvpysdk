@@ -928,14 +928,14 @@ class VirtualMachinePolicy(object):
             vm_policy_id=None
     ):
         """Decides which instance object needs to be created"""
-        if vm_policy_type_id == 4:  # for 'Live Mount'
+        if vm_policy_type_id == 4 or vm_policy_type_id == 2:  # for 'Live Mount'
             return object.__new__(LiveMountPolicy)
         # TODO: future support for 'Clone From Template'
         elif vm_policy_type_id == 0:
             return object.__new__(VirtualMachinePolicy)
         # TODO: future support for 'Restore From Backup'
-        elif vm_policy_type_id == 13:
-            pass
+        else:
+            return
 
     def __init__(
             self,
@@ -1461,7 +1461,7 @@ class LiveMountPolicy(VirtualMachinePolicy):
             'advancedProperties': {
                 'networkCards': [
                     {
-                        'label': ''
+                        'label': live_mount_options.get('network_name', '')
                     }
                 ]
             },
@@ -1601,8 +1601,8 @@ class LiveMountPolicy(VirtualMachinePolicy):
             raise SDKException('Virtual Machine', '102', err_msg)
         else:
             # check if vm to be live mounted is backed up
-            self._validate_live_mount(client_vm_name)
-
+            #self._validate_live_mount(client_vm_name)
+            
             # default options if nothing is passed
             if not live_mount_options:
                 live_mount_options = {}

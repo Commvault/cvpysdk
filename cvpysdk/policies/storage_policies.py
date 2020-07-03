@@ -63,6 +63,8 @@ StoragePolicy:
 
     _get_storage_policy_properties()        --  returns the properties of this storage policy
 
+    _get_storage_policy_advanced_properties()--  returns the advanced properties of this storage policy
+
     _initialize_storage_policy_properties() --  initializes storage policy properties
 
     has_copy()                              --  checks if copy with given name exists
@@ -883,7 +885,11 @@ class StoragePolicy(object):
         self._STORAGE_POLICY = self._commcell_object._services['GET_STORAGE_POLICY'] % (
             self.storage_policy_id
         )
+        self._STORAGE_POLICY_ADVANCED = self._commcell_object._services['GET_STORAGE_POLICY_ADVANCED'] % (
+            self.storage_policy_id
+        )
         self._storage_policy_properties = None
+        self._storage_policy_advanced_properties = None
         self._copies = {}
         self.refresh()
 
@@ -897,6 +903,31 @@ class StoragePolicy(object):
 
         storage_policies = StoragePolicies(self._commcell_object)
         return storage_policies.get(self.storage_policy_name).storage_policy_id
+
+    def _get_storage_policy_advanced_properties(self):
+        """Gets the advanced storage policy properties of this storage policy.
+
+            Returns:
+                dict - dictionary consisting of the advanced properties of this storage policy
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._STORAGE_POLICY_ADVANCED
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _get_storage_policy_properties(self):
         """Gets the storage policy properties of this storage policy.
@@ -1824,6 +1855,16 @@ class StoragePolicy(object):
         return self._storage_policy_properties
 
     @property
+    def storage_policy_advanced_properties(self):
+        """Returns the  storage policy advanced properties
+
+            dict - consists of storage policy advanced properties
+        """
+        if self._storage_policy_advanced_properties is None:
+            self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
+        return self._storage_policy_advanced_properties
+
+    @property
     def library_name(self):
         """Treats the library name as a read-only attribute."""
         primary_copy = self._storage_policy_properties.get('copy')
@@ -1989,6 +2030,7 @@ class StoragePolicy(object):
     def refresh(self):
         """Refresh the properties of the StoragePolicy."""
         self._initialize_storage_policy_properties()
+        self._storage_policy_advanced_properties = None
 
     def seal_ddb(self, copy_name):
         """

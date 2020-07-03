@@ -1030,7 +1030,8 @@ class DiskLibraries(object):
 
         return self._libraries and library_name.lower() in self._libraries
 
-    def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0):
+    def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0,
+            saved_credential_name=""):
         """Adds a new Disk Library to the Commcell.
 
             Args:
@@ -1048,6 +1049,9 @@ class DiskLibraries(object):
 
                 servertype   (int)        -- provide cloud library server type
                     default 0, value 59 for HPstore
+
+                saved_credential_name   (str)   --  name of the saved credential
+                    default: ""
 
             Returns:
                 object - instance of the DiskLibrary class, if created successfully
@@ -1091,13 +1095,20 @@ class DiskLibraries(object):
                 "mountPath": mount_path,
                 "loginName": username,
                 "password": b64encode(password.encode()).decode(),
-                "opType": 1
+                "opType": 1,
+                "savedCredential":{
+                    "credentialName": saved_credential_name
+                }
             }
         }
 
         if servertype > 0:
             request_json["library"]["serverType"] = servertype
             request_json["library"]["isCloud"] = 1
+
+            if saved_credential_name:
+                request_json["library"]["password"] = b64encode("XXXXX".encode()).decode()
+
             if servertype == 59:
                 request_json["library"]["HybridCloudOption"] = {
                     "enableHybridCloud": "2", "diskLibrary": {"_type_": "9"}}

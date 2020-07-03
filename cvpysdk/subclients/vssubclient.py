@@ -206,6 +206,7 @@ class VirtualServerSubclient(Subclient):
             '2': 'Virtual Disk Name/Pattern',
             '3': 'Virtual Device Node',
             '4': 'Repository',
+            '5': 'Disk Label',
             '6': 'Disk Type',
             '9': 'Disk Tag Name/Value'
         }
