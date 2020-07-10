@@ -538,6 +538,7 @@ class Commcell(object):
         self._hac_clusters = None
         self._index_pools = None
         self._deduplication_engines = None
+        self._redirect_cc_idp = None
         self.refresh()
 
         del self._password
@@ -1413,6 +1414,17 @@ class Commcell(object):
             return self._job_management
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def commcells_for_user(self):
+        """returns the list of accessible commcells to logged in user
+
+        list - contains the list of accessible commcells
+            ['cc1','cc2']
+        """
+        if self._redirect_cc_idp is None:
+            self._redirect_cc_idp = self._commcells_for_user()
+        return self._redirect_cc_idp
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -2557,12 +2569,24 @@ class Commcell(object):
             commcell_name,
             registered_for_routing=False,
             admin_username=None,
-            admin_password=None):
+            admin_password=None,
+            register_for_idp=None):
         """Registers a commcell
 
         Args:
 
-            commcell_name   (str)   -- name of the commcell
+            commcell_name   (str)           -- name of the commcell
+
+            registered_for_routing (bool)   -- True - if we want to register for Routing
+                                               False - if we dont want to register for Routing
+
+            admin_username   (str)          -- username of the user who has administrative
+                                                rights on a commcell
+
+            admin_password  (str)           -- password of the user specified
+
+            register_for_idp (bool)         -- True - if we want to register for Identity provider
+                                                False - if we dont want to register for Identity provider
 
         Raises:
 
@@ -2574,13 +2598,13 @@ class Commcell(object):
 
         """
         commcell_name = commcell_name.lower()
-        if (registered_for_routing):
-            registered_for_routing = 1
-        else:
-            registered_for_routing = 0
+        registered_for_routing = 1 if registered_for_routing else 0
+        register_for_idp = 1 if register_for_idp else 0
+
         xml_to_execute = """
         <EVGui_CN2CellRegReq>
-            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{3}">
+            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{3}"
+            isGlobalIDPCommcell="{4}">
                 <commCell commCellName="{3}" />
             </commcell>
         </EVGui_CN2CellRegReq>
@@ -2588,7 +2612,8 @@ class Commcell(object):
             registered_for_routing,
             admin_password,
             admin_username,
-            commcell_name
+            commcell_name,
+            register_for_idp
         )
 
         flag, response = self._cvpysdk_object.make_request(
@@ -2708,6 +2733,39 @@ class Commcell(object):
                         continue
                     service_commcell_list.append(ser_comm['commcellName'])
                 return service_commcell_list
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _commcells_for_user(self):
+        """returns the list of accessible commcells to logged in user
+
+        Returns:
+            list - consists list of accessible commcells
+
+                ['S1', 'S2']
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['MULTI_COMMCELL_DROP_DOWN']
+        )
+
+        if flag:
+            if response.json() and 'AvailableRedirects' in response.json():
+                redirect_cc_list = []
+                for ser_comm in response.json()['AvailableRedirects']:
+                    if ser_comm.get('commcellName', False):
+                        continue
+                    redirect_cc_list.append(ser_comm['commcellName'])
+                return redirect_cc_list
             else:
                 raise SDKException('Response', '102')
 

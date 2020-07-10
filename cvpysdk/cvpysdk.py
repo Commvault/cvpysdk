@@ -156,7 +156,7 @@ class CVPySDK(object):
                 "username": self._commcell_object._user,
                 "password": self._commcell_object._password,
                 "deviceId": self._commcell_object.device_id,
-                "clientType": 16,
+                "clientType": 30,
             }
 
             flag, response = self.make_request(
