@@ -478,8 +478,7 @@ class ArrayManagement(object):
         request_json.update(update_dict)
 
         if config_data is not None:
-            x = json.loads(config_data)
-            for m_config, value in x.items():
+            for m_config, value in config_data.items():
                 for config in request_json['configList']['configList']:
                     if config['masterConfigId'] == int(m_config):
                         if isinstance(value, dict):
@@ -513,8 +512,7 @@ class ArrayManagement(object):
                                 config['isOverridden'] = True
 
         if array_access_node is not None:
-            z = json.loads(array_access_node)
-            for access_node, mode in z.items():
+            for access_node, mode in array_access_node.items():
                 client_id = int(self._commcell_object.clients.get(access_node).client_id)
                 if mode == "add":
                     if "selectedMAs" in request_json:

@@ -155,7 +155,7 @@ class BackupJobSummary(Report):
                 "task": {
                     "ownerId": 1,
                     "taskType": 1,
-                    "ownerName": "admin",
+                    "ownerName": commcell_object.commcell_username,
                     "sequenceNumber": 0,
                     "initiatedFrom": 1,
                     "taskFlags": {
@@ -278,12 +278,52 @@ class BackupJobSummary(Report):
                                             "failureReason": True,
                                             "IncludeMediaDeletedJobs": False,
                                             "drive": False
-                                        }
+                                },
+                                "jobOptions": {
+                                    "numberOfMostFreqErrors": 0,
+                                    "sizeUnit": 0,
+                                    "isThroughputInMB": False,
+                                    "isCommserveTimeZone": True,
+                                    "retentionType": {
+                                        "basicRetention": False,
+                                        "manualRetention": False,
+                                        "extendedRetention": False,
+                                        "retentionAll": False
                                     },
-                                    "timeRangeOption": {
-                                        "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-                                        "toTimeValue": "24",
-                                        "type": 13
+                                    "backupTypes": {
+                                        "all": True,
+                                        "syntheticFull": True,
+                                        "automatedSystemRecovery": False,
+                                        "incremental": True,
+                                        "full": True,
+                                        "differential": True
+                                    },
+                                    "jobStatus": {
+                                        "all": True
+                                    },
+                                    "increaseInDataSize": {
+                                        "value": 10,
+                                        "selected": False
+                                    },
+                                    "decreaseInDataSize": {
+                                        "value": 10,
+                                        "selected": False
+                                        }
+                                }
+                                    },
+                            "agentList": [
+                                {
+                                    "_type_": 4,
+                                    "flags": {
+                                        "include": True
+                                    }
+                                }
+                            ],
+                            "timeRangeOption": {
+                                "type": 13,
+                                "_type_": 54,
+                                "TimeZoneID": 42,
+                                "toTime": 86400
                                     }
                                 }
                             }

@@ -42,9 +42,15 @@ DROrchestrationOperations:
 
     point_in_time_failover()                        -- Call PointInTimeFailover operation
 
-    reverse_replication()                           -- Call ReverseReplication operation
+    reverse_replication()                           -- Schedule and call ReverseReplication operation
+
+    schedule_reverse_replication()                  -- Schedule ReverseReplication
+
+    force_reverse_replication()                     -- Call ReverseReplication operation
 
     validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id
+
+    get_snapshot_list(guid)                         -- Retrieves snapshot lists from the specified guid
 
 
     ##### internal methods #####
@@ -83,6 +89,8 @@ from __future__ import unicode_literals
 
 from past.builtins import basestring
 from ..exception import SDKException
+
+from .dr_orchestration_job_phase import DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT
 
 
 class DROrchestrationOperations(object):
@@ -126,52 +134,7 @@ class DROrchestrationOperations(object):
         Raises:
         """
         if not self._dr_orchestration_job_phase:
-            _dr_orchestration_job_phase = {
-                "0": "Script Execution",
-                "1": "Power On",
-                "2": "Power Off",
-                "3": "Reboot",
-                "4": "Guest Tools Status Check",
-                "5": "Create Network Switch",
-                "6": "Delete Network Switch",
-                "7": "Replication",
-                "8": "Backup",
-                "9": "Configure Network Switch",
-                "10": "Port Configuration",
-                "11": "IP Masquerading",
-                "12": "Static IP Mapping",
-                "13": "Intialization",
-                "14": "Waiting on IP Assignment",
-                "15": "Disable Sync",
-                "16": "Enable Sync",
-                "17": "Create Snapshot",
-                "18": "Delete Snapshot",
-                "19": "Revert Snapshot",
-                "20": "Disable Network Adapter",
-                "21": "Auxiliary Copy",
-                "22": "Post Operation",
-                "23": "Backup Copy",
-                "24": "Shutdown",
-                "25": "Storage Operation",
-                "26": "Finalize",
-                "27": "DR Approval",
-                "28": "Delete VM",
-                "29": "Create VM",
-                "30": "Get VM Information",
-                "31": "Create DR VM",
-                "32": "Post VM Failover",
-                "33": "Mount Snap Primary",
-                "34": "DR VM Snap Mount",
-                "35": "Break Volume Relationship",
-                "36": "Resync Volume Relationship",
-                "37": "DR VM Snap Unmount",
-                "38": "DR Test VM Snap Mount",
-                "39": "DR Test VM Snap Unmount",
-                "40": "Delete DR VM",
-                "41": "Post VM Failover",
-                "42": "Clone VM",
-                "43": "Refresh VM"
-            }
+            _dr_orchestration_job_phase = DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT
 
             self._dr_orchestration_job_phase = _dr_orchestration_job_phase
         return self._dr_orchestration_job_phase
@@ -372,12 +335,27 @@ class DROrchestrationOperations(object):
         return self._call_dr_orchestration_task(dr_orchestration_json)
 
     def reverse_replication(self):
-        """Performs Reverse Replication operation.
+        """Schedules and calls Reverse Replication
 
             Args:
 
             Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        self.schedule_reverse_replication()
+        return self.force_reverse_replication()
+
+    def schedule_reverse_replication(self):
+        """Schedules Reverse Replication.
+
+            Args:
+
+            Returns:
+                (TaskId) - TaskId of the scheduling reverse replication job triggered
 
             Raises:
                 SDKException:
@@ -387,12 +365,41 @@ class DROrchestrationOperations(object):
             raise SDKException('DROrchestrationOperations', '101')
 
         self.dr_orchestration_options["DROrchestrationType"] = "9"
-        dr_orchestration_json = self._construct_reverse_replication_json()
+        dr_orchestration_json = self._json_dr_orchestration
 
         if not dr_orchestration_json:
             raise SDKException('DROrchestrationOperations', '101')
 
         return self._call_reverse_replication_task(dr_orchestration_json)
+
+    def force_reverse_replication(self):
+        """Performs one reverse replication operation.
+
+            Args:
+
+            Returns:
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        if not isinstance(self.dr_orchestration_options, dict):
+            raise SDKException('DROrchestrationOperations', '101')
+
+        self.dr_orchestration_options["DROrchestrationType"] = "9"
+        dr_orchestration_json = self._construct_dr_orchestration_operation_json()
+
+        # We need to have this option in the request because "powerOnVM" is True by default.
+        # If it is not set, both src and dst VMs will be booted up.
+        dr_orchestration_json["taskInfo"]["subTasks"][0]["options"][
+            "adminOpts"]["drOrchestrationOption"]["advancedOptions"].update(
+                {"powerOnVM": False})
+
+        if not dr_orchestration_json:
+            raise SDKException('DROrchestrationOperations', '101')
+
+        return self._call_dr_orchestration_task(dr_orchestration_json)
 
     def revert_failover(self):
         """Performs Revert Failover operation.
@@ -417,7 +424,7 @@ class DROrchestrationOperations(object):
 
         return self._call_dr_orchestration_task(dr_orchestration_json)
 
-    def point_in_time_failover(self):
+    def point_in_time_failover(self, timestamp, replication_id):
         """Performs Point in time Failover operation.
 
             Args:
@@ -437,6 +444,12 @@ class DROrchestrationOperations(object):
 
         if not dr_orchestration_json:
             raise SDKException('DROrchestrationOperations', '101')
+
+        dr_orchestration_json["taskInfo"]["subTasks"][0]["options"][
+            "adminOpts"]["drOrchestrationOption"]["replicationInfo"][
+                "configOption"] = [
+                    {"pointInTime": int(timestamp),
+                     "replicationId": int(replication_id)}]
 
         return self._call_dr_orchestration_task(dr_orchestration_json)
 
@@ -493,6 +506,45 @@ class DROrchestrationOperations(object):
                         'DROrchestrationOperations', '102', o_str)
 
         return True
+
+    def get_snapshot_list(self, guid: str, timestamp_filter: bool = True):
+        """ Gets snapshot list
+
+            Args:
+                guid (str): GUID of the spcified VM
+
+                timestamp_filter (bool): whether to only return snapshots with timestamps
+
+            Returns:
+                list of dict: list of snapshot information
+        """
+        vm_browse_req = "{0}VMBrowse/{1}?instanceId=6&snapshots=true".format(
+            self._commcell_object._web_service, guid)
+        (flag, response) = self._commcell_object._cvpysdk_object.make_request(
+            method='GET', url=vm_browse_req)
+
+        # only fetches snapshot info from the response
+        if flag:
+            if response.json():
+                snapshots = response.json()["scList"][0]["snapshots"]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if timestamp_filter:
+            # we only need snapshots with timestamps
+            snapshots = list(
+                filter(lambda s: "__GX_Recovery_Point_" in s["name"], snapshots))
+
+            # adds integer timestamps to the list
+            for s in snapshots:
+                timestamp = s["name"].split("_")[-1]
+                s["timestamp"] = int(timestamp)
+
+        return snapshots
 
 
 #################### private functions #####################

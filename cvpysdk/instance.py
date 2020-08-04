@@ -72,6 +72,8 @@ Instances:
     new cloud storage instance
 
     refresh()                       --  refresh the instances associated with the agent
+    
+    add_mysql_instance()            --  Method to add new mysql Instance
 
 
 Instance:
@@ -928,15 +930,32 @@ class Instances(object):
             Get Cluster Type from Default Instance to assign it to the New Instance.
             Atleast one instance should be present in the client.
         """
+        cluster_properties = {}
         flag, response = self._cvpysdk_object.make_request('GET', self._INSTANCES)
         if flag:
             if response.json() and "instanceProperties" in response.json():
-                clusterProperties = response.json()["instanceProperties"][0]
-                clusterType = clusterProperties["distributedClusterInstance"]["clusterType"]
+                cluster_properties = response.json()["instanceProperties"][0]
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+        cluster_type = cluster_properties.get('distributedClusterInstance', {}).get('clusterType')
+        cluster_config = {}
+        uxfs_config = cluster_properties.get(
+            'distributedClusterInstance', {}).get('clusterConfig', {}).get('uxfsConfig')
+        hadoop_config = cluster_properties.get(
+            'distributedClusterInstance', {}).get('clusterConfig', {}).get('hadoopConfig')
+        if uxfs_config is not None:
+            uxfs_config['coordinatorNode'] = {"clientName": distributed_options.get('MasterNode', '')}
+            cluster_config['uxfsConfig'] = uxfs_config
+        if hadoop_config is not None:
+            hadoop_config['coordinatorNode'] = {"clientName": distributed_options.get('MasterNode', '')}
+            hbase_config = hadoop_config.get('hadoopApps', {}).get('appConfigs', [{}])[0].get('hBaseConfig')
+            if hbase_config is not None:
+                hadoop_config["hadoopApps"]["appConfigs"][0]['hBaseConfig']["hbaseClientNode"] = {
+                    "clientName": distributed_options.get('MasterNode', '')}
+            cluster_config['hadoopConfig'] = hadoop_config
 
         request_json = {
             "instanceProperties": {
@@ -947,17 +966,11 @@ class Instances(object):
                     "instanceName": distributed_options["instanceName"],
                 },
                 "distributedClusterInstance": {
-                    "clusterType": clusterType,
+                    "clusterType": cluster_type,
                     "instance": {
                         "instanceName": distributed_options["instanceName"]
                     },
-                    "clusterConfig": {
-                        "uxfsConfig": {
-                            "coordinatorNode": {
-                                "clientName": distributed_options["MasterNode"]
-                            }
-                        }
-                    },
+                    "clusterConfig": cluster_config,
                     "dataAccessNodes": {
                         "dataAccessNodes": distributed_options["dataAccessNodes"]
                     }
@@ -1516,6 +1529,97 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
+    
+    def add_mysql_instance(self, instance_name, database_options):
+        """Adds new mysql Instance to given Client
+            Args:
+				instance_name       (str)   --  instance_name
+              mysql_options       (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       database_options = {
+                            'enable_auto_discovery': True,
+                            'storage_policy': 'sai-sp',
+                            'port': 'hotsname:port',
+                            'mysql_user_name': 'mysqlusername'
+                            'mysql_password': 'password',
+                            'version': '5.7',
+                            'binary_directory': "",
+                            'config_file': "",
+                            'log_data_directory': "",
+                            'data_directory': "",
+                            'description': "Automation created instance"
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in mysql options
+
+                    if mysql instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+        if None in database_options.values():
+            raise SDKException(
+                'Instance',
+                '102',
+                "One of the mysql parameter is None so cannot proceed with instance creation")
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                database_options["storage_policy"]):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    database_options["storage_policy"])
+            )
+        password = b64encode(database_options["mysql_password"].encode()).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "description": "Automation created instance",
+                "instance": {
+                    "clientName": self._agent_object._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": "MySQL",
+                    "applicationId": 104,
+                    "_type_": 0
+                },
+                "mySqlInstance": {
+                    "BinaryDirectory": database_options.get("binary_directory", ""),
+                    "ConfigFile": database_options.get("config_file", ""),
+                    "EnableAutoDiscovery": database_options.get("enable_auto_discovery", True),
+                    "LogDataDirectory": database_options.get("log_data_directory", ""),
+                    "dataDirectory": database_options.get("data_directory", ""),
+                    "port": database_options.get("port", "3306"),
+                    "version": database_options.get("version", "5.7"),
+                    "sslCAFile": database_options.get("sslca_file_path", ""),
+                    "SAUser": {
+                        "password": password,
+                        "userName": database_options.get("mysql_user_name", "mysql")
+                    },
+                    "mysqlStorageDevice": {
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": database_options.get("storage_policy", "")
+                        },
+                        "proxySettings": {
+                            "isProxyEnabled": True,
+                            "isUseSSL": True,
+                            "runBackupOnProxy": True
+                        }
+                    }
+                }
+            }
+        }
+        self._process_add_response(request_json)
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
@@ -1559,6 +1663,9 @@ class Instance(object):
 
         self._properties = None
         self._restore_association = None
+
+        # Restore json instance var
+        self._commonopts_restore_json = {}
 
         self.backupsets = None
         self.subclients = None
@@ -1891,6 +1998,7 @@ class Instance(object):
         self._restore_fileoption_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
+        self._restore_common_opts_json(restore_option)
 
         if not restore_option.get('index_free_restore', False):
             if restore_option.get("paths") == []:
@@ -1911,7 +2019,8 @@ class Instance(object):
                             "fileOption": self._fileoption_restore_json,
                             "sharePointRstOption": self._restore_sharepoint_json,
                             "volumeRstOption": self._volume_restore_json
-                        }
+                        },
+                        "commonOpts": self._commonopts_restore_json
                     }
                 }]
             }
@@ -1991,7 +2100,8 @@ class Instance(object):
             fs_options=None,
             schedule_pattern=None,
             proxy_client=None,
-            restore_jobs=[]
+            restore_jobs=[],
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the same location.
 
@@ -2043,6 +2153,12 @@ class Instance(object):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -2076,7 +2192,8 @@ class Instance(object):
             restore_option=fs_options,
             schedule_pattern=schedule_pattern,
             proxy_client=proxy_client,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
         return self._process_restore_response(request_json)
@@ -2094,7 +2211,8 @@ class Instance(object):
             fs_options=None,
             schedule_pattern=None,
             proxy_client=None,
-            restore_jobs=[]
+            restore_jobs=[],
+            advanced_options=None,
     ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
@@ -2155,6 +2273,11 @@ class Instance(object):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -2211,7 +2334,8 @@ class Instance(object):
             restore_option=fs_options,
             schedule_pattern=schedule_pattern,
             proxy_client=proxy_client,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
         return self._process_restore_response(request_json)
@@ -2513,6 +2637,26 @@ class Instance(object):
                 'clientName': value.get("iscsi_server")
             }
 
+    def _restore_common_opts_json(self, value):
+        """ Method to set commonOpts for restore
+
+        Args:
+             value  (dict)  -- restore options dictionary
+
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        options = value.get("advanced_options")
+
+        if not options:
+            return
+
+        # taskInfo -> subTasks -> options -> commonOpts
+        self._commonopts_restore_json = {
+            "jobDescription": options.get("job_description", "")
+        }
+
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
         if not isinstance(value, dict):
@@ -2570,9 +2714,23 @@ class Instance(object):
                     "clientName": value.get("proxy_client", "")
                 }
             }
+            if value.get('destination_path'):
+                destination_path = value.get("destination_path", "")
+                self._destination_restore_json["destPath"] = [destination_path] if destination_path != "" else []
+
             if self._destination_restore_json["inPlace"]:
                 self._destination_restore_json["destPath"] = [""]
 
+        # For Index server restore, we need to set proxy client & in-place flag
+        elif value.get("proxy_client") is not None and \
+                (self._agent_object.agent_name).upper() == "BIG DATA APPS" and \
+                self.name.upper() == "DYNAMICINDEXINSTANCE":
+            self._destination_restore_json = {
+                "inPlace": value.get("in_place", True),
+                "destClient": {
+                    "clientName": value.get("proxy_client", "")
+                }
+            }
         else:
             # removed clientId from destClient as VSA Restores fail with it
             self._destination_restore_json = {
@@ -2590,6 +2748,10 @@ class Instance(object):
             self._destination_restore_json["destinationInstance"] = {
                 "instanceName": value.get('destination_instance', self.instance_name)
             }
+            if value.get('destination_instance_id') is not None:
+                self._destination_restore_json["destinationInstance"]["instanceId"] = int(
+                    value.get('destination_instance_id')
+                    )
 
             self._destination_restore_json["noOfStreams"] = value.get('no_of_streams', 2)
 

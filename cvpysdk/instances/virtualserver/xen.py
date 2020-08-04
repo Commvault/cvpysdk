@@ -18,9 +18,9 @@
 
 """File for operating on a Virtual Server Fusion Compute Instance.
 
-FusionComputeInstance is the only class defined in this file.
+XenInstance is the only class defined in this file.
 
-FusionComputeInstance: Derived class from VirtualServer  Base class, representing a
+XenInstance: Derived class from VirtualServer  Base class, representing a
                            Fusion Compute instance, and to perform operations on that instance
 
 HyperVInstance:
@@ -44,7 +44,7 @@ HyperVInstance:
 from ..vsinstance import VirtualServerInstance
 
 
-class FusionComputeInstance(VirtualServerInstance):
+class Xen(VirtualServerInstance):
     """Class for representing an Hyper-V of the Virtual Server agent."""
 
     def __init__(self, agent, instance_name, instance_id=None):
@@ -57,8 +57,8 @@ class FusionComputeInstance(VirtualServerInstance):
                                                                                 instance id
 
         """
-        super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
-        self._vendor_id = 14
+        super(Xen, self).__init__(agent, instance_name, instance_id)
+        self._vendor_id = 3
         self._server_name = None
 
     def _get_instance_properties(self):
@@ -71,8 +71,8 @@ class FusionComputeInstance(VirtualServerInstance):
                 if response is not success
         """
 
-        super(FusionComputeInstance, self)._get_instance_properties()
-        # waiting for praveen form
+        super(Xen, self)._get_instance_properties()
+        self._server_name = self._instance.get('clientName', '')
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
@@ -97,5 +97,12 @@ class FusionComputeInstance(VirtualServerInstance):
 
     @property
     def server_host_name(self):
-        """return the Fusion compute VRM  associated with the PseudoClient"""
+        """getter for the domain name in the vmware vendor json"""
+        # Till support for instace is provied, enter server name as list and return eg: return ['2.3.4.5']
+        return None
+
+
+    @property
+    def server_name(self):
+        """getter for the domain name in the vmware vendor json"""
         return self._server_name

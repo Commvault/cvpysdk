@@ -515,6 +515,8 @@ class StoragePools:
                         # initialize the storage pool again
                         # so the storage pool object has all the storage pools
                         self.refresh()
+                        # as part of storage pool we might delete library so initialize the libraries again
+                        self._commcell_object.disk_libraries.refresh()
                 else:
                     response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
@@ -664,11 +666,127 @@ class StoragePool(object):
         
         if flag:
             if response.json():
-                error_code = response.json()['error']['errorCode']
+                error_code = response.json()['errorCode']
 
                 if int(error_code) != 0:
-                    error_message = response.json()['error']['errorMessage']
+                    error_message = response.json()['errorMessage']
                     o_str = 'Failed to add nodes to storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def hyperscale_reconfigure_storage_pool(self, storage_pool_name):
+        """
+        Reconfigures storage pool, for any failure during creation and expansion
+
+        args:
+          storage_pool_name (string) -- Name of the storage pools to reconfigure
+        Raises:
+                SDKException:
+                    if reconfigure fails
+        """
+        if not isinstance(storage_pool_name, basestring):
+            raise SDKException('Storage', '101')
+
+
+        request_json = {
+
+            "scaleoutOperationType": 4,
+            "StoragePolicy":
+                {
+                    "storagePolicyName": "{0}".format(storage_pool_name),
+                    "storagePolicyId": int("{0}".format(self.storage_pool_id))
+
+                }
+            }
+
+        self._edit_storage_pool_api = self._commcell_object._services[
+            'EDIT_STORAGE_POOL']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._edit_storage_pool_api, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if int(error_code) != 0:
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to reconfigure storage pool\nError: "{0}"'
+
+                    raise SDKException('StoragePool', '102', o_str.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def hyperscale_replace_disk(self, disk_id, media_agent, storage_pool_name):
+        """
+              Replace disk action, over a media agent which is part of storage pool
+               args:
+                    disk_id (int) --> disk id for the disk to replace
+                    media_agent (string/object) --> media agent name/ object
+                    storage_pool_name (string) --> Name of the storage pools for replacemnet of disk
+               Raises:
+                       SDKException:
+                           if replace fails
+               """
+        if isinstance(disk_id, basestring):
+            disk_id = int(disk_id)
+        elif not isinstance(disk_id, int):
+            raise SDKException('Storage', '101')
+
+        media_agent_obj = None
+        if isinstance(media_agent, basestring):
+            media_agent_obj = self._commcell_object.media_agents.get(media_agent)
+        elif isinstance(media_agent, MediaAgent):
+            media_agent_obj = media_agent
+        else:
+            raise SDKException('Storage', '103')
+
+        if not isinstance(storage_pool_name, basestring):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+
+            "driveId": int("{0}".format(disk_id)),
+            "operationType": 1,
+            "mediaAgent": {
+                "_type_": 11,
+                "mediaAgentId": int("{0}".format(media_agent_obj.media_agent_id)),
+                "mediaAgentName": "{0}".format(media_agent_obj.media_agent_name)
+            },
+            "scaleoutStoragePool": {
+                "_type_": 160,
+                "storagePoolId": int("{0}".format(self.storage_pool_id)),
+                "storagePoolName": "{0}".format(self.storage_pool_name)
+            }
+        }
+
+        self._replace_disk_storage_pool_api = self._commcell_object._services[
+            'REPLACE_DISK_STORAGE_POOL']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._replace_disk_storage_pool_api, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if int(error_code) != 0:
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Failed to replace disk\nError: "{0}"'
 
                     raise SDKException('StoragePool', '102', o_str.format(error_message))
             else:

@@ -61,6 +61,8 @@ FSBackupset:
 
     create_granular_replica_copy()      --   Triggers  Granular replication permanent mount
 
+    get_browse_volume_guid()             --   It returns browse volume guid
+
 """
 
 from __future__ import unicode_literals
@@ -86,7 +88,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None
+            restore_jobs=None,
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the same location.
 
@@ -127,6 +130,11 @@ class FSBackupset(Backupset):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -144,7 +152,7 @@ class FSBackupset(Backupset):
         self._instance_object._restore_association = self._backupset_association
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -156,7 +164,8 @@ class FSBackupset(Backupset):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
     def restore_out_of_place(
@@ -170,7 +179,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None
+            restore_jobs=None,
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
@@ -227,6 +237,11 @@ class FSBackupset(Backupset):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -254,7 +269,7 @@ class FSBackupset(Backupset):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -268,7 +283,8 @@ class FSBackupset(Backupset):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
     def find_all_versions(self, *args, **kwargs):
@@ -874,8 +890,8 @@ class FSBackupset(Backupset):
         }
         request_json['taskInfo']['subTasks'][0]['subTask'] = subtask_json
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'] = common_options
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][
-            0] = restore_options.get('onetouch_server_directory', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'] = (
+            [restore_options.get('onetouch_server_directory', '')])
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'destClient']['clientName'] = restore_options.get('onetouch_server', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
@@ -1053,8 +1069,8 @@ class FSBackupset(Backupset):
             raise SDKException('Backupset', '105')
 
 
-
-    def create_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, **replication_options):
+    def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
+                            srcguid, dstguid, **replication_options):
 
         """"setter for live  blklvl Replication replica copy...
 
@@ -1067,13 +1083,14 @@ class FSBackupset(Backupset):
 
             blrid           (int) -- Blr pair id
 
+            srcguid         (str) -- Browse guid of source
+
+            dstguid          (str) -- Browse guid of destination volume
+
             **replication_options (dict) -- object instance
 
 
         """
-
-
-
         srcvol = replication_options.get('srcvol')
         restorepath = replication_options.get('RestorePath')
         replicacopyjson = {
@@ -1120,8 +1137,8 @@ class FSBackupset(Backupset):
                                                     {
                                                         "mountPath": restorepath,
                                                         "srcPath": srcvol,
-                                                        "srcGuid": dstguid,
-                                                        "dstGuid": srcguid
+                                                        "srcGuid": srcguid,
+                                                        "dstGuid": dstguid
                                                     }
                                                 ]
                                             }
@@ -1138,7 +1155,8 @@ class FSBackupset(Backupset):
             }
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._services['RESTORE'], replicacopyjson)
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['RESTORE'],
+                                                           replicacopyjson)
         if flag:
             if response.json():
                 if "jobIds" in response.json():
@@ -1161,28 +1179,31 @@ class FSBackupset(Backupset):
 
 
     def delete_replication_pair(self, blrid):
-
         """"Delete replication pair
-
         Args:
             blrid   (int)  --  blocklevel replication id.
-
-
         """
-
         flag, response = self._cvpysdk_object.make_request('DELETE', self._services['DELETE_BLR_PAIR']%blrid)
 
         if response.status_code != 200 and flag == False:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def create_fsblr_replication_pair(self, srcclientid, destclientid, rpstoreid=None, replicationtype=None,
-                                      **replication_options):
+    def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
+                                      rpstoreid=None, replicationtype=None, **replication_options):
         """"Create granular replication pair  json
 
         Args:
             srcclientid   (int)  --  Source client id.
 
-            destclientid    (dict)  -- Destintion client id .
+            destclientid   (dict)  -- Destintion client id .
+
+            srcguid        (str) -- Browse guid of source
+
+            dstguid        (str) -- Browse guid of destination volume
+
+            rpstoreid      (str) -- Rp store id for replication
+
+            replicationtype (str) -- Replication pair  type to create
 
             **replication_options (dict) -- object instance
 
@@ -1207,9 +1228,9 @@ class FSBackupset(Backupset):
             "srcEndPointType": 2,
             "srcDestVolumeMap": [
                 {
-                    "sourceVolumeGUID": "55053f38-2de9-429c-945a-bb8827911c11",
+                    "sourceVolumeGUID": srcguid,
                     "destVolume": destvol,
-                    "destVolumeGUID": "3758a646-7b30-411b-88ea-12f6b957dfd1",
+                    "destVolumeGUID": destguid,
                     "sourceVolume": srcvol
                 }
             ],
@@ -1227,8 +1248,15 @@ class FSBackupset(Backupset):
             }
         }
         flag, response = self._cvpysdk_object.make_request('POST', self._services['CREATE_BLR_PAIR'], granularjson)
-        if response.status_code != 200 and flag == False:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if flag:
+            if response and response.json():
+                if response.json().get('errorCode', 0) != 0:
+                    raise SDKException('Response', '101', self._update_response_(response.text))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
 
 
@@ -1245,7 +1273,11 @@ class FSBackupset(Backupset):
 
             blrid           (int) -- Blr pair id
 
+            srcguid         (str) -- source volume guid
+
             dstguid         (str) -- Destination relication guid
+
+            restoreguid     (str) -- RP store guid
 
             timestamp        (int) -- Replication point timestamp
 
@@ -1257,7 +1289,7 @@ class FSBackupset(Backupset):
         import re
 
         flag, response = self._cvpysdk_object.make_request('GET', self._services['GRANULAR_BLR_POINTS']
-                                                           %(destclientid, scid, dstguid))
+                                                           %(destclientid, scid, srcguid))
         replicapoints = response.content
         temp = replicapoints.split(b"},")
         list_rp = temp[len(temp) - 1]
@@ -1314,8 +1346,8 @@ class FSBackupset(Backupset):
                                                     {
                                                         "mountPath": restorepath,
                                                         "srcPath": srcvol,
-                                                        "srcGuid": restoreguid,
-                                                        "dstGuid": srcguid
+                                                        "srcGuid": dstguid,
+                                                        "dstGuid": restoreguid
                                                     }
                                                 ],
                                                 "rp": {
@@ -1339,10 +1371,7 @@ class FSBackupset(Backupset):
             }
         }
 
-
-
         flag, response = self._cvpysdk_object.make_request('POST', self._services['RESTORE'], replicacopyjson)
-
 
         if flag:
             if response.json():
@@ -1363,3 +1392,26 @@ class FSBackupset(Backupset):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+    def get_browse_volume_guid(self):
+
+        """"to get browse volume guids for client
+            Returns:
+                vguids (json) : Returns volume guids and properties
+
+        """
+        client_id= self._client_object.client_id
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['BROWSE_MOUNT_POINTS']
+                                                           %(client_id))
+        if flag:
+            if response and response.json():
+                vguids = response.json()
+                if response.json().get('errorCode', 0) != 0:
+                    raise SDKException('Response', '101', self._update_response_(response.text))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+        return vguids

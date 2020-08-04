@@ -92,14 +92,24 @@ OracleInstance:
     dbid()                              --  Getter for getting DBID of database
 
     restore()                           --  Performs restore on the instance
+    
+    _restore_db_dump_option_json()       --  setter for the oracle dbdump Restore option in restore JSON
+    
+    _restore_oracle_option_json()       --  setter for the oracle Restore option in restore JSON
+    
+    _restore_json()                     --  returns the JSON request to pass to the API as per
+    the options selected by the user
+    
+    restore_in_place()                  --  restore for oracle logical dump
 
 """
 from __future__ import unicode_literals
-
+from past.builtins import basestring
+from base64 import b64encode
 import json
-
 from ..exception import SDKException
 from .dbinstance import DatabaseInstance
+
 
 
 class OracleInstance(DatabaseInstance):
@@ -120,6 +130,8 @@ class OracleInstance(DatabaseInstance):
         super(OracleInstance, self).__init__(
             agent_object, instance_name, instance_id)
         self._LIVE_SYNC = self._commcell_object._services['LIVE_SYNC']
+        self._dbDump_restore_json = None
+        self._oracle_restore_json = None
 
     def restore_to_disk(self,
                         destination_client,
@@ -1047,3 +1059,149 @@ class OracleInstance(DatabaseInstance):
                                                     common_options=common_options,
                                                     oracle_options=oracle_options)
             return self._process_restore_response(options)
+            
+    
+
+    def _restore_db_dump_option_json(self,value):
+        """setter for the oracle dbdump Restore option in restore JSON
+            Args:
+                value   (dict)  --  Dictionary of options need to be set for restore
+        """
+        if not isinstance(value,dict):
+            raise SDKException('Instance','101')
+            
+        self._db_dump_restore_json = {
+            "importToDatabase": True,
+            "parallelism": 2,
+            "restorePath": value.get("destination_path", ""),
+            "overwriteTable": False,
+            "enabled": True,
+            "connectDetails": {
+                "password": b64encode(value.get("db_password", "").encode()).decode(),
+                "domainName": (self._properties.get("oracleInstance", {}).
+                    get("sqlConnect", {}).get("domainName", "")),
+                "userName": (self._properties.get("oracleInstance", {}).
+                    get("sqlConnect", {}).get("userName", ""))
+            }
+        }
+
+
+    def _restore_oracle_option_json(self, value):
+        """setter for the oracle Restore option in restore JSON
+        Args:
+                value   (dict)  --  Dictionary of options need to be set for restore
+        """
+        if not isinstance(value,dict):
+            raise SDKException('Instance','101')
+            
+        self._oracle_restore_json = {
+            "validate": False,
+            "noCatalog": False,
+            "duplicateToName": "",
+            "cloneEnv": False,
+            "restoreControlFile": False,
+            "duplicate": False,
+            "tableViewRestore": False,
+            "osID": 2,
+            "partialRestore": False,
+            "restoreStream": 2,
+            "restoreSPFile": False,
+            "recover": True,
+            "recoverFrom": 4,
+            "archiveLog": False,
+            "restoreData": True,
+            "restoreFrom": 0,
+            "timeZone": {
+                "TimeZoneName": "(UTC) Coordinated Universal Time"
+            },
+            "recoverTime": {},
+            "sourcePaths": [
+                "//**"
+            ],
+            "restoreTime": {}
+        }
+        
+    def _restore_json(self, **kwargs):
+        """Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                kwargs   (dict)  --  Dictionary of options need to be set for restore
+
+            Returns:
+                dict             -- JSON request to pass to the API
+
+        """
+        rest_json = super(OracleInstance, self)._restore_json(**kwargs)
+        restore_option = {}
+        if kwargs.get("restore_option"):
+            restore_option = kwargs["restore_option"]
+            for key in kwargs:
+                if not key == "restore_option":
+                    restore_option[key] = kwargs[key]
+        else:
+            restore_option.update(kwargs)
+
+        self._restore_db_dump_option_json(restore_option)
+        self._restore_oracle_option_json(restore_option)
+        rest_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["dbDumpOptions"] = self._db_dump_restore_json
+        rest_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["oracleOpt"] = self._oracle_restore_json
+
+        return rest_json
+
+    def restore_in_place(
+            self,
+            db_password,
+            path,
+            dest_client_name,
+            dest_instance_name,
+            dest_path=None):
+        """Restores the oracle logical dump data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                
+                db_password             (str)  -- password for oracle database
+                
+                path                    (list)  --  list of database/databases to be restored
+
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination postgres instance name of
+                destination client
+
+                dest_path        (str)   --  destinath path for restore
+
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not (isinstance(path, list) and
+                isinstance(db_password, basestring)):
+            raise SDKException('Instance', '101')
+        if not path:
+            raise SDKException('Instance','103')
+        
+
+        request_json = self._restore_json(
+            db_password=db_password,
+            paths=path,
+            destination_client=dest_client_name,
+            destination_instance=dest_instance_name,
+            destination_path=dest_path)
+
+        return self._process_restore_response(request_json)

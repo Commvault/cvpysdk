@@ -186,7 +186,9 @@ EXCEPTION_DICT = {
         '108': 'Failed to run the DDB move job',
         '109': 'Failed to run the DDB verification job',
         '110': 'Input data is not correct',
-        "111": 'Failed to update copy property'
+        "111": 'Failed to update copy property',
+        "112": 'Failed to run DDB Reconstruction job',
+        "113": 'Failed to run DDB space reclaimation job'
     },
     'Schedules': {
         '101': 'Invalid Class object passed as argument to the Schedules class',
@@ -411,6 +413,10 @@ EXCEPTION_DICT = {
         '102': 'Index Server not found',
         '103': 'Invalid role name',
         '104': '',
+        '105': 'Unsupported backup level specified. Please check',
+        '106': 'Storage policy is not associated with subclient. Please associate',
+        '107': 'Backup is not enabled for client/subclient',
+        '108': 'Client name not specified for solr cloud restore'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',

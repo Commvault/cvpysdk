@@ -43,6 +43,8 @@ OracleSubclient:
     backup()                            --  Performs backup database
 
     restore()                           --  Performs restore databases
+    
+    restore_in_place()                  --  Performs restore for oracle logical dump
 
     backup_archive_log()                --  Getter ans Setter for enaling/disabling
                                             archive log mode
@@ -522,3 +524,47 @@ class OracleSubclient(DatabaseSubclient):
         return self._backupset_object._instance_object.restore(files, destination_client,
                                                                common_options, browse_option,
                                                                oracle_options, tag)
+
+    def restore_in_place(
+            self,
+            db_password=None,
+            database_list=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            destination_path=None):
+        """
+        Method to restore the logical dump 
+
+            Args:
+                
+                db_password             (str)  -- password for oracle database
+                                    
+                database_list           (List) -- List of databases
+
+                dest_client_name        (str)  -- Destination Client name
+
+                dest_instance_name      (str)  -- Destination Instance name
+
+                destination_path        (str)   --  destination path for restore
+
+                    default: None
+
+            Returns:
+                object -- Job containing restore details
+
+        """
+        instance_object = self._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
+
+        instance_object._restore_association = self._subclient_properties["subClientEntity"]
+        
+        return instance_object.restore_in_place(
+            db_password,
+            database_list,
+            dest_client_name,
+            dest_instance_name,
+            dest_path=destination_path)
