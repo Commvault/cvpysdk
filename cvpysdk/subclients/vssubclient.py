@@ -951,8 +951,9 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
             }
-        if "securityGroups" in value and value["securityGroups"] is not None:
-            self._advanced_option_restore_json["securityGroups"] = [{"groupName": value["securityGroups"]}]
+        if self._instance_object.instance_name == 'openstack':
+            if "securityGroups" in value and value["securityGroups"] is not None:
+                self._advanced_option_restore_json["securityGroups"] = [{"groupName": value["securityGroups"]}]
         if "destComputerName" in value and value["destComputerName"] is not None:
             self._advanced_option_restore_json["destComputerName"] = value["destComputerName"]
         if "destComputerUserName" in value and value["destComputerUserName"] is not None:
@@ -2146,9 +2147,12 @@ class VirtualServerSubclient(Subclient):
             if "datastore" in restore_option:
                 ds = restore_option["datastore"]
             new_name_prefix = restore_option.get("disk_name_prefix")
-            new_name = data["name"].replace("/", "_").replace(" ", "_")
-            new_name = "del_" + new_name if new_name_prefix is None \
-                else new_name_prefix + "_" + new_name
+            if self._instance_object.instance_name != 'openstack':
+                new_name = data["name"].replace("/", "_").replace(" ", "_")
+                new_name = "del_" + new_name  if new_name_prefix is None \
+                    else new_name_prefix + "_" + new_name
+            else:
+                new_name = data["name"]
             _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             vm_disks.append(_disk_dict)
         if not vm_disks:
