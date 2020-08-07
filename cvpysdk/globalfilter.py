@@ -278,7 +278,7 @@ class GlobalFilter(object):
 
                     if response is not success
         """
-        self._update("DELETE", [])
+        self._update("OVERWRITE", [""])
 
     def refresh(self):
         """Refresh the properties of the GlobalFilter."""

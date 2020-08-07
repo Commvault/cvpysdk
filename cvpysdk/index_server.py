@@ -88,6 +88,15 @@ IndexServer
 
     update_role()                       --  to update the roles assigned to cloud
 
+    hard_commit                         --  do hard commit on specified index server solr core
+
+    get_all_cores                       --  gets all the cores in index server
+
+    _create_solr_query()                 -- Create solr search query based on inputs provided
+
+    execute_solr_query()                 -- Creates solr url based on input and executes it on solr on given core
+
+
 IndexServer Attributes
 ----------------------
 
@@ -120,6 +129,7 @@ IndexServer Attributes
 
     **index_server_client_id**          --  returns the index server client id
 
+    **role_display_name**               --  display name of roles
 
 _Roles
 ======
@@ -219,10 +229,26 @@ class IndexServers(object):
             if response.json() and 'listOfCIServer' in response.json():
                 for item in response.json()['listOfCIServer']:
                     if item['cloudID'] in self._all_index_servers:
-                        self._all_index_servers[item['cloudID']]['version'].append(
-                            item['version'])
+                        # Add only unique roles to list
+                        if item['version'] not in self._all_index_servers[item['cloudID']]['version']:
+                            self._all_index_servers[item['cloudID']]['version'].append(item['version'])
+                        # check whether we have populated node details earlier. if not, add it to
+                        # exisitng respective fields
+                        if item['clientName'] not in self._all_index_servers[item['cloudID']]['clientName']:
+
+                            self._all_index_servers[item['cloudID']]['clientId'].append(item['clientId'])
+                            self._all_index_servers[item['cloudID']]['clientName'].append(item['clientName'])
+                            self._all_index_servers[item['cloudID']]['hostName'].append(item['hostName'])
+                            self._all_index_servers[item['cloudID']]['cIServerURL'].append(item['cIServerURL'])
+                            self._all_index_servers[item['cloudID']]['basePort'].append(item['basePort'])
+
                     else:
                         item['version'] = [item['version']]
+                        item['clientId'] = [item['clientId']]
+                        item['clientName'] = [item['clientName']]
+                        item['hostName'] = [item['hostName']]
+                        item['cIServerURL'] = [item['cIServerURL']]
+                        item['basePort'] = [item['basePort']]
                         self._all_index_servers[item['cloudID']] = item
             else:
                 self._all_index_servers = {}
@@ -460,6 +486,8 @@ class IndexServers(object):
                 error_string = response.json()['genericResp']['errorMessage']
                 if error_code == 0:
                     self.refresh()
+                    self._commcell_object.clients.refresh()
+                    self._commcell_object.datacube.refresh_engine()
                 else:
                     o_str = 'Failed to create Index Server. Error: "{0}"'.format(
                         error_string)
@@ -497,6 +525,8 @@ class IndexServers(object):
             if response.json() and 'genericResp' in response.json() \
                     and 'errorCode' not in response.json()['genericResp']:
                 self.refresh()
+                self._commcell_object.clients.refresh()
+                self._commcell_object.datacube.refresh_engine()
                 return
             if response.json() and 'genericResp' in response.json():
                 raise SDKException(
@@ -555,6 +585,7 @@ class IndexServer(object):
 
     def refresh(self):
         """Refresh the index server properties"""
+        self._commcell_obj.index_servers.refresh()
         self._get_properties()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
@@ -648,6 +679,228 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
+    def hard_commit(self, core_name):
+        """do hard commit for the given core name on index server
+
+                    Args:
+
+                        core_name               (str)  --  name of the solr core
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        """
+        if not isinstance(core_name, basestring):
+            raise SDKException('IndexServers', '101')
+        if self.is_cloud:
+            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+        baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commit=true"
+        flag, response = self._cvpysdk_object.make_request("GET", baseurl)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', "Hard commit returned error")
+            if 'responseHeader' in response.json():
+                commitstatus = str(response.json()['responseHeader']['status'])
+                if int(commitstatus) != 0:
+                    raise SDKException('IndexServers', '104', "Hard commit returned bad status")
+                return
+        raise SDKException('IndexServers', '104', "Something went wrong with hard commit")
+
+    def get_all_cores(self, client_name=None):
+        """gets all cores & core details from index server
+
+                Args:
+                    client_name     (str)       --  name of the client node
+                        ***Applicable only for solr cloud mode***
+
+                Returns:
+                    (list,dict)     -- list containing core names
+                                    -- dict containing details about cores
+
+                Raises:
+
+                    SDKException:
+
+                        if input data is not valid
+
+                        if client name is not passed for index server cloud
+
+                        if response is not success
+
+                        if response is empty
+
+        """
+        server_url = self.server_url[0]
+        if self.is_cloud:
+            if client_name is None:
+                raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
+            if client_name not in self.client_name:
+                raise SDKException('IndexServers', '104', 'client name not found in this index server cloud')
+            server_url = self.server_url[self.client_name.index(client_name)]
+        core_names = []
+        baseurl = f"{server_url}/solr/admin/cores"
+        flag, response = self._cvpysdk_object.make_request("GET", baseurl)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', "Unable to get core names from index server")
+            if 'status' in response.json():
+                for core in response.json()['status']:
+                    core_names.append(core)
+                return core_names, response.json()['status']
+        raise SDKException('IndexServers', '104', "Something went wrong while getting core names")
+
+    def _create_solr_query(self, select_dict=None, attr_list=None, op_params=None):
+        """Method to create the solr query based on the params
+            Args:
+                select_dict     (dictionary)     --  Dictionary containing search criteria and value
+                                                     Acts as 'q' field in solr query
+
+                attr_list       (set)            --  Column names to be returned in results.
+                                                     Acts as 'fl' in solr query
+
+                op_params       (dictionary)     --  Other params and values for solr query
+                                                        (Ex: start, rows)
+
+            Returns:
+                The solr url based on params
+
+            Raises:
+                SDKException:
+
+                        if failed to form solr query
+        """
+        try:
+            search_query = f'q='
+            simple_search = 0
+            if select_dict:
+                for key, value in select_dict.items():
+                    if isinstance(key, tuple):
+                        if isinstance(value, list):
+                            search_query += f'({key[0]}:{str(value[0])}'
+                            for val in value[1:]:
+                                search_query += f' OR {key[0]}:{str(val)}'
+                        else:
+                            search_query += f'({key[0]}:{value}'
+                        for key_val in key[1:]:
+                            if isinstance(value, list):
+                                search_query += f' OR {key_val}:{str(value[0])}'
+                                for val in value[1:]:
+                                    search_query += f' OR {key_val}:{str(val)}'
+                            else:
+                                search_query += f' OR {key_val}:{value}'
+                        search_query += ') AND '
+                    elif isinstance(value, list):
+                        search_query += f'({key}:{str(value[0])}'
+                        for val in value[1:]:
+                            search_query += f' OR {key}:{str(val)}'
+                        search_query += ") AND "
+                    elif key == "keyword":
+                        search_query += "(" + value + ")"
+                        simple_search = 1
+                        break
+                    else:
+                        search_query = search_query + f'{key}:{str(value)} AND '
+                if simple_search == 0:
+                    search_query = search_query[:-5]
+            else:
+                search_query += "*:*"
+
+            field_query = ""
+            if attr_list:
+                field_query = "&fl="
+                for item in attr_list:
+                    field_query += f'{str(item)},'
+                field_query = field_query[:-1]
+
+            ex_query = ""
+            if not op_params:
+                op_params = {'wt': "json"}
+            else:
+                op_params['wt'] = "json"
+            for key, value in op_params.items():
+                if value is None:
+                    ex_query += f'&{key}'
+                else:
+                    ex_query += f'&{key}={str(value)}'
+            final_url = f'{search_query}{field_query}{ex_query}'
+            return final_url
+        except Exception as excp:
+            raise SDKException('IndexServers', '104', f"Something went wrong while creating solr query - {excp}")
+
+    def execute_solr_query(
+            self,
+            core_name,
+            solr_client=None,
+            select_dict=None,
+            attr_list=None,
+            op_params=None):
+        """Creates solr url based on input and executes it on solr on given core/collection
+            Args:
+
+                core_name               (str)           --  Core name/collection name where we want to query
+
+                solr_client             (str)           --  Index Server client name to execute solr query
+                                                                Default : None (picks first client on index server)
+
+                select_dict             (dictionary)    --  Dictionary containing search criteria and
+                                                            value. Acts as 'q' field in solr query
+
+                        Example :
+
+                            1. General Criteria to filter results              -   {"jid": 1024, "datatype": 2,clid: 2}
+                            2. Keyword Searches on solr                        -   {'keyword': 'SearchKeyword'}
+                            3. For multiple value searches on single field     -   {'cvowner': ['xxx','yyy']}
+                            4. For single value searches on multiple fields    -   {('cvowner','cvreaddisp') : 'xxx'}
+
+                attr_list               (set)           --  Column names to be returned in results.
+                                                                Acts as 'fl' in solr query
+
+                        Example (For Exchange Mailbox IDA, below fields are there in solr) :
+                                    {
+                                     'msgclass',
+                                     'ccsmtp',
+                                     'fmsmtp',
+                                     'folder'
+                                   }
+
+                op_params               (dictionary)    --  Other params and values for solr query. Do not
+                                                            mention 'wt' param as it is always json
+
+                                                            Example : {"rows": 0}
+
+            Returns:
+                content of the response
+
+            Raises:
+                SDKException:
+
+                        if unable to send request
+
+                        if response is not success
+        """
+        solr_url = f"solr/{core_name}/select?{self._create_solr_query(select_dict, attr_list, op_params)}"
+        if solr_client is None:
+            solr_url = f"{self.server_url[0]}/{solr_url}"
+        else:
+            if solr_client not in self.client_name:
+                raise SDKException('IndexServers', '104', 'client name not found in this index server')
+            server_url = self.server_url[self.client_name.index(solr_client)]
+            solr_url = f"{server_url}/{solr_url}"
+        flag, response = self._cvpysdk_object.make_request("GET", solr_url)
+        if flag and response.json():
+            return response.json()
+        raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
+
     @property
     def is_cloud(self):
         return self.server_type == 5
@@ -701,6 +954,17 @@ class IndexServer(object):
     def roles(self):
         """Returns the roles of index server"""
         return self._properties[IndexServerConstants.ROLES]
+
+    @property
+    def role_display_name(self):
+        """Returns the roles display name of index server"""
+        role_disp_name = []
+        for role_version in self.roles:
+            for role in self.roles_data:
+                if role_version == role['roleVersion']:
+                    role_disp_name.append(role['roleName'])
+                    break
+        return role_disp_name
 
     @property
     def cloud_id(self):

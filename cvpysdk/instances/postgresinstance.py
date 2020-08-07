@@ -457,4 +457,8 @@ class PostgreSQLInstance(Instance):
             request_json['taskInfo']['subTasks'][0]['options'][
                 'restoreOptions']['destination']["noOfStreams"] = no_of_streams
 
+        if restore_to_disk:
+            request_json['taskInfo']['subTasks'][0]['options'][
+                'restoreOptions']['destination']["destPath"] = [destination_path]
+
         return self._process_restore_response(request_json)

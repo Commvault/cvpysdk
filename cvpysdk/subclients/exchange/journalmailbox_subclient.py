@@ -37,7 +37,7 @@ from past.builtins import basestring
 
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
-
+import time
 
 class JournalMailboxSubclient(ExchangeSubclient):
     """Derived class from ExchangeSubclient Base class.
@@ -69,8 +69,14 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _get_discover_journal_users(self):
+    def _get_discover_journal_users(self, use_without_refresh_url=False, retry_attempts=0):
         """Gets the discovered users from the Subclient .
+
+            Args:
+                use_without_refresh_url (boolean)   -   discovery without refresh cache
+
+                retry_attempts(int)                 - retry for discovery
+
 
             Returns:
                 list    -   list of discovered users associated with the subclient
@@ -79,16 +85,32 @@ class JournalMailboxSubclient(ExchangeSubclient):
         self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
             int(self._backupset_object.backupset_id), 'Journal Mailbox')
 
+        if use_without_refresh_url:
+            self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
+                int(self._backupset_object.backupset_id), 'Journal Mailbox'
+            )
+
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._DISCOVERY)
 
         if flag:
-            discover_content = response.json()
-            if 'discoverInfo' in discover_content.keys():
+            if response and response.json():
+                discover_content = response.json()
+                if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
+                    time.sleep(10) # the results might take some time depending on domains
+                    if retry_attempts > 10:
+                        raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
-                if 'mailBoxes' in discover_content['discoverInfo']:
-                    self._discover_journal_users = discover_content['discoverInfo']['mailBoxes']
+                    return self._get_discover_journal_users(use_without_refresh_url=True ,
+                                                            retry_attempts=retry_attempts + 1)
 
-            return self._discover_journal_users
+                if 'discoverInfo' in discover_content.keys():
+
+                    if 'mailBoxes' in discover_content['discoverInfo']:
+                        self._discover_journal_users = discover_content['discoverInfo']['mailBoxes']
+
+                        return self._discover_journal_users
+            else:
+                raise SDKException('Response', '102')
 
         else:
             response_string = self._commcell_object._update_response_(response.text)

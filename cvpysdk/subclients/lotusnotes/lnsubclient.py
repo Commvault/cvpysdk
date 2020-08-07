@@ -210,6 +210,7 @@ class LNSubclient(Subclient):
             copy_precedence=copy_precedence,
             from_time=from_time,
             to_time=to_time,
+            in_place=False,
             **kwargs)
 
         return self._process_restore_response(request_json)

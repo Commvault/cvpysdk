@@ -55,5 +55,16 @@ SEDS_TYPE_DICT = {
     22: 'nfs',
     23: 'cloudoracle',
     24: 'systemdefault',
-    25: 'downloadcenteraudit'
+    25: 'downloadcenteraudit',
+    26: 'onedrive',
+    27: 'sharepoint',
+    28: 'email',
+    29: 'dbanalysis',
+    30: 'cloudpaas',
+    31: 'googledrive',
+    32: 'gmail',
+    33: 'activedirectory',
+    34: 'onedriveindex',
+    35: 'multinodefederated',
+    36: 'fsindex'
 }

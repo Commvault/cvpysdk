@@ -27,6 +27,8 @@ CommServeCache
     __init__(commcell_object)             --  initialize commcell_object of CommServeCache class
     associated with the commcell
 
+    get_request_xml()                     --  returns request xml for cache and remote cache related operations
+
     get_cs_cache_path()                   --  returns CS cache path
 
     delete_cache()                        --  deletes CS cache
@@ -44,7 +46,12 @@ RemoteCache
     configure_remote_cache()              --  Configures client as remote cache
 
     configure_packages_to_sync()          --  Configures packages to sync for the remote cache
+
+    assoc_entity_to_remote_cache()        --  Associates entity to the Remote Cache
+
+    delete_remote_cache_contents()        --  deletes remote cache contents
 """
+from xml.etree import ElementTree as ET
 from ..exception import SDKException
 from .deploymentconstants import UnixDownloadFeatures
 from .deploymentconstants import WindowsDownloadFeatures
@@ -66,6 +73,20 @@ class CommServeCache(object):
         """
 
         self.commcell_object = commcell_object
+        self.request_xml = CommServeCache.get_request_xml()
+
+    @staticmethod
+    def get_request_xml():
+        """Returns request xml for cache and remote cache related operations"""
+        return """<EVGui_SetUpdateAgentInfoReq>
+                <uaInfo deletePackageCache="" deleteUpdateCache="" swAgentOpType=""
+                uaOpCode="0" uaPackageCacheStatus="0"
+                 uaUpdateCacheStatus="0" >
+                <uaName id="2" name=""/>
+                <client _type_="3"/>
+                </uaInfo>
+                </EVGui_SetUpdateAgentInfoReq>
+                """
 
     def get_cs_cache_path(self):
         """
@@ -105,19 +126,13 @@ class CommServeCache(object):
 
             - Response is incorrect
         """
+        root = ET.fromstring(self.request_xml)
+        uaInfo = root.find(".//uaInfo")
+        uaInfo.set('deletePackageCache', "1")
+        uaInfo.set("deleteUpdateCache", "1")
+        uaInfo.set("swAgentOpType", "1")
 
-        request_xml = """<EVGui_SetUpdateAgentInfoReq>
-            <uaInfo deletePackageCache="1" deleteUpdateCache="1" swAgentOpType="1"
-            uaOpCode="0" uaPackageCacheStatus="0"
-             uaUpdateCacheStatus="0" >
-            <uaName id="2" name=""/>
-            <client _type_="3"/>
-            </uaInfo>
-            </EVGui_SetUpdateAgentInfoReq>
-            """
-
-        response = self.commcell_object.qoperation_execute(request_xml)
-
+        response = self.commcell_object.qoperation_execute(ET.tostring(root))
         if response.get('errorCode') != 0:
             error_message = "Failed with error: [{0}]".format(
                 response.get('errorMessage')
@@ -139,18 +154,13 @@ class CommServeCache(object):
             - Response is incorrect
         """
 
-        request_xml = """<EVGui_SetUpdateAgentInfoReq>
-            <uaInfo defaultShareName="" deletePackageCache="0" deleteUpdateCache="0" swAgentOpType="4"
-            uaPackageCacheStatus="0" uaUpdateCacheStatus="0">
-            <uaName id="2" name=""/>
-            <client _type_="3"/>
-            </uaInfo>
-            <uaList/>
-            </EVGui_SetUpdateAgentInfoReq>
-            """
+        root = ET.fromstring(self.request_xml)
+        uaInfo = root.find(".//uaInfo")
+        uaInfo.set('deletePackageCache', "0")
+        uaInfo.set("deleteUpdateCache", "0")
+        uaInfo.set("swAgentOpType", "4")
 
-        response = self.commcell_object.qoperation_execute(request_xml)
-
+        response = self.commcell_object.qoperation_execute(ET.tostring(root))
         if response.get('errorCode') != 0:
             error_message = "Failed with error: [{0}]".format(
                 response.get('errorMessage')
@@ -178,6 +188,9 @@ class RemoteCache(object):
         """
         self.commcell = commcell
         self.client_object = self.commcell.clients.get(client_name)
+        self.request_xml = CommServeCache.get_request_xml()
+        self._cvpysdk_object = commcell._cvpysdk_object
+        self._services = commcell._services
 
     def get_remote_cache_path(self):
         """
@@ -197,9 +210,9 @@ class RemoteCache(object):
         response = self.commcell.qoperation_execute(request_xml)
         if response:
             try:
-                for clients in response["qualifiedClients"]:
-                    if clients['clientName']['name'] == self.client_object.client_name:
-                        remote_cache_path = clients["cachePath"]
+                for clients in response["uaInfo"]:
+                    if clients['client']['clientName'] == self.client_object.client_name:
+                        remote_cache_path = clients["uaCachePath"]
                         break
                 return remote_cache_path
             except Exception:
@@ -220,18 +233,16 @@ class RemoteCache(object):
 
             - Response is incorrect
         """
+        root = ET.fromstring(self.request_xml)
+        uaInfo = root.find(".//uaInfo")
+        uaInfo.set('uaCachePath', cache_path)
+        uaInfo.set('uaOpCode', "5")
+        uaInfo.attrib.pop("uaPackageCacheStatus")
+        uaInfo.attrib.pop('uaUpdateCacheStatus')
+        root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
+        root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
 
-        request_xml = """
-             <EVGui_SetUpdateAgentInfoReq>
-             <uaInfo uaCachePath="%s" uaOpCode="5">
-             <uaName id="%s" name="%s"/>
-             <client _type_="3"/>
-             </uaInfo>
-             <uaList/>
-             </EVGui_SetUpdateAgentInfoReq>
-             """ % (cache_path, self.client_object.client_id, self.client_object.client_name)
-
-        response = self.commcell.qoperation_execute(request_xml)
+        response = self.commcell.qoperation_execute(ET.tostring(root))
         if response.get('errorCode') != 0:
             error_message = "Failed with error: [{0}]".format(
                 response.get('errorMessage')
@@ -277,17 +288,19 @@ class RemoteCache(object):
                     from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
 
         """
-        win_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in win_os]
-        unix_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in unix_os]
-        win_packages = [eval(f"WindowsDownloadFeatures.{packages}.value") for packages in win_package_list]
-        unix_packages = [eval(f"UnixDownloadFeatures.{packages}.value") for packages in unix_package_list]
+        if win_os:
+            win_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in win_os]
+            win_packages = [eval(f"WindowsDownloadFeatures.{packages}.value") for packages in win_package_list]
+        if unix_os:
+            unix_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in unix_os]
+            unix_packages = [eval(f"UnixDownloadFeatures.{packages}.value") for packages in unix_package_list]
 
-        if not win_os_id and not unix_os_id:
+        if not win_os and not unix_os:
             qscript = f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncAll'''
-        elif not unix_os_id:
+        elif not unix_os:
             qscript = (f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom '''
                        f'''-si {",".join(map(str, win_os_id))} -si {",".join(map(str, win_packages))}''')
-        elif not win_os_id:
+        elif not win_os:
             qscript = (f'''-sn QS_GranularConfigRemoteCache -si '{self.client_object.client_name}' -si SyncCustom '''
                        f'''-si {",".join(map(str, unix_os_id))} -si {",".join(map(str, unix_packages))}''')
         else:
@@ -307,3 +320,109 @@ class RemoteCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(
                     response['CVGui_GenericResp']['@errorCode'],
                     error_message))
+
+    def delete_remote_cache_contents(self):
+        """
+        Delete remote cache contents
+
+        Raises:
+            SDKException:
+            - Failed to execute the api
+
+            - Response is incorrect
+        """
+        root = ET.fromstring(self.request_xml)
+        uaInfo = root.find(".//uaInfo")
+        uaInfo.set('deletePackageCache', "1")
+        uaInfo.set("deleteUpdateCache", "1")
+        uaInfo.set("swAgentOpType", "1")
+        root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
+        root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
+
+        response = self.commcell.qoperation_execute(ET.tostring(root))
+        if response.get('errorCode') != 0:
+            error_message = "Failed with error: [{0}]".format(
+                response.get('errorMessage')
+            )
+            raise SDKException(
+                'Response',
+                '101',
+                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+            )
+
+    def assoc_entity_to_remote_cache(self, client_name=None, client_group_name=None):
+        """
+            Points/Associates entity to the Remote Cache Client
+
+                Args:
+                    client_name (str)  -- The client which has to be pointed to Remote Cache
+
+                    client_group_name (str)  -- The client_group which has to be pointed to Remote Cache
+
+                Raises:
+                    SDKException:
+                    - Failed to execute the api
+
+                    - Response is incorrect
+        """
+
+        if client_name is None and client_group_name is None:
+            raise Exception("No clients or client groups to associate; Please provide a valid name")
+
+        if client_name and client_name in self.commcell.clients.all_clients:
+            entity_obj = self.commcell.clients.get(client_name)
+            entity_id = entity_obj.client_id
+            entity_name = entity_obj.client_name
+            entity_type ="0"
+
+        elif client_group_name in self.commcell.client_groups.all_clientgroups:
+            entity_obj = self.commcell.client_groups.get(client_group_name)
+            entity_id = entity_obj.clientgroup_id
+            entity_name = entity_obj.clientgroup_name
+            entity_type = "1"
+
+        else:
+            raise Exception("{0} does not exist".format(client_name if client_name else client_group_name))
+
+        request_json = {
+                "EVGui_SetUpdateAgentInfoReq" :{
+                "uaInfo": {
+                    "uaCachePath": self.get_remote_cache_path(),
+                    "uaOpCode": "5",
+                    "uaName": {
+                        "id": self.client_object.client_id,
+                        "name": self.client_object.client_name
+                    }
+                },
+                "uaList": {
+                    "addedList": {
+                        "id": entity_id,
+                        "name": entity_name
+                    }
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.ok:
+                if response.json():
+                    if response.json().get('errorCode') != 0:
+                        error_code = response.json().get('errorCode')
+                        error_message = "Failed with error: [{0}]".format(
+                            response.json().get('errorMessage')
+                        )
+                        raise SDKException(
+                            'Response',
+                            '101',
+                            'Error Code:"{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')

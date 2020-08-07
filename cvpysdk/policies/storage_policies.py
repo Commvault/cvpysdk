@@ -63,6 +63,8 @@ StoragePolicy:
 
     _get_storage_policy_properties()        --  returns the properties of this storage policy
 
+    _get_storage_policy_advanced_properties()--  returns the advanced properties of this storage policy
+
     _initialize_storage_policy_properties() --  initializes storage policy properties
 
     has_copy()                              --  checks if copy with given name exists
@@ -86,6 +88,8 @@ StoragePolicy:
     Catalog Options
 
     run_backup_copy()                       --  Runs the backup copy job from Commcell
+
+    modify_dynamic_stream_allocation()      --  modifies dsa property of storage policy
 
     run_snapshot_cataloging()               --  Runs the deferred catalog job from Commcell
 
@@ -137,6 +141,16 @@ StoragePolicyCopy:
     _get_copy_properties()	                --	Gets the storage policy copy properties
 
     _set_copy_properties()	                --	sets the properties of this storage policy copy
+
+    set_copy_software_compression()         --  Sets the copy software compression setting
+
+    is_parallel_copy()                      --  Gets the parallel copy setting on storage policy copy
+
+    set_parallel_copy()                     --  Sets the parallel copy setting on storage policy copy
+
+    is_inline_copy()                        --  Gets the inline copy setting on storage policy copy
+
+    set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
 
     delete_job()                            --  delete a job from storage policy copy node
 
@@ -871,7 +885,11 @@ class StoragePolicy(object):
         self._STORAGE_POLICY = self._commcell_object._services['GET_STORAGE_POLICY'] % (
             self.storage_policy_id
         )
+        self._STORAGE_POLICY_ADVANCED = self._commcell_object._services['GET_STORAGE_POLICY_ADVANCED'] % (
+            self.storage_policy_id
+        )
         self._storage_policy_properties = None
+        self._storage_policy_advanced_properties = None
         self._copies = {}
         self.refresh()
 
@@ -885,6 +903,31 @@ class StoragePolicy(object):
 
         storage_policies = StoragePolicies(self._commcell_object)
         return storage_policies.get(self.storage_policy_name).storage_policy_id
+
+    def _get_storage_policy_advanced_properties(self):
+        """Gets the advanced storage policy properties of this storage policy.
+
+            Returns:
+                dict - dictionary consisting of the advanced properties of this storage policy
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._STORAGE_POLICY_ADVANCED
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _get_storage_policy_properties(self):
         """Gets the storage policy properties of this storage policy.
@@ -956,14 +999,15 @@ class StoragePolicy(object):
 
     def create_secondary_copy(self,
                               copy_name,
-                              library_name,
-                              media_agent_name,
+                              library_name=None,
+                              media_agent_name=None,
                               drive_pool=None,
                               spare_pool=None,
                               tape_library_id=None,
                               drive_pool_id=None,
                               spare_pool_id=None,
-                              snap_copy=False):
+                              snap_copy=False,
+                              global_policy=None):
         """Creates Synchronous copy for this storage policy
 
             Args:
@@ -975,6 +1019,8 @@ class StoragePolicy(object):
 
                 snap_copy           (bool)  --  boolean on whether copy should be a snap copy
                 default: False
+
+                global_policy       (str)   --  name of the global policy to be assigned
 
             Raises:
                 SDKException:
@@ -988,53 +1034,99 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
-            raise SDKException('Storage', '101')
+        if global_policy is not None:
+            if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+                raise SDKException('Storage', '101')
 
-        if self.has_copy(copy_name):
-            err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
-            raise SDKException('Storage', '102', err_msg)
+            if self.has_copy(copy_name):
+                err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+                raise SDKException('Storage', '102', err_msg)
 
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
+            if not self._commcell_object.storage_policies.has_policy(global_policy):
+                err_msg = f'No Global Storage Policy "{global_policy}" exists.'
+                raise SDKException('Storage', '102')
 
-        snap_copy = int(snap_copy)
+            global_policy = self._commcell_object.storage_policies.get(global_policy)
 
-        if drive_pool is not None:
-            request_xml = """
-                        <App_CreateStoragePolicyCopyReq copyName="{0}">
-                            <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{11}" numberOfStreamsToCombine="1">
-                                <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                                <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                                <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
-                                <drivePool drivePoolId = "{7}" drivePoolName = "{8}"  libraryName = "{4}" />
-                                <spareMediaGroup spareMediaGroupId = "{9}" spareMediaGroupName = "{10}" libraryName = "{4}" />
-                                <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
-                            </storagePolicyCopyInfo>
-                        </App_CreateStoragePolicyCopyReq>
-                        """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
-                                   tape_library_id, library_name, media_agent_id, media_agent_name,
-                                   drive_pool_id, drive_pool, spare_pool_id, spare_pool, snap_copy)
+            global_policy_copy = global_policy.get_copy(list(global_policy.copies.keys())[0])
+
+            is_global_dedupe_policy = global_policy_copy._dedupe_flags.get('enableDeduplication', 0)
+
+            request = {
+                       "copyName": copy_name,
+                       "storagePolicyCopyInfo": {
+                          "copyType": 0,
+                          "isDefault": 0,
+                          "isMirrorCopy": 0,
+                          "isSnapCopy": 0,
+                          "numberOfStreamsToCombine": 1,
+                          "StoragePolicyCopy": {
+                             "_type_": 18,
+                             "storagePolicyName": self.storage_policy_name
+                          },
+                          "retentionRules": {
+                             "retainArchiverDataForDays": -1,
+                             "retainBackupDataForCycles": 1,
+                             "retainBackupDataForDays": 30
+                          },
+                          "dedupeFlags": {
+                              "enableDeduplication": is_global_dedupe_policy,
+                              "useGlobalDedupStore": is_global_dedupe_policy
+                          },
+                           "useGlobalPolicy":{
+                               "storagePolicyName": global_policy.name
+                           }
+                       }
+                    }
 
         else:
-            library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-            request_xml = """
-            <App_CreateStoragePolicyCopyReq copyName="{0}">
-                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{7}" numberOfStreamsToCombine="1">
-                    <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
-                    <library _type_="9" libraryId="{3}" libraryName="{4}" />
-                    <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
-                    <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
-                </storagePolicyCopyInfo>
-            </App_CreateStoragePolicyCopyReq>
-            """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
-                       library_id, library_name, media_agent_id, media_agent_name, snap_copy)
+            if not (isinstance(copy_name, basestring) and
+                    isinstance(library_name, basestring) and
+                    isinstance(media_agent_name, basestring)):
+                raise SDKException('Storage', '101')
+
+            if self.has_copy(copy_name):
+                err_msg = 'Storage Policy copy "{0}" already exists.'.format(copy_name)
+                raise SDKException('Storage', '102', err_msg)
+
+            media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()]['id']
+
+            snap_copy = int(snap_copy)
+
+            if drive_pool is not None:
+                    request = """
+                            <App_CreateStoragePolicyCopyReq copyName="{0}">
+                                <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{11}" numberOfStreamsToCombine="1">
+                                    <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                                    <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                                    <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                                    <drivePool drivePoolId = "{7}" drivePoolName = "{8}"  libraryName = "{4}" />
+                                    <spareMediaGroup spareMediaGroupId = "{9}" spareMediaGroupName = "{10}" libraryName = "{4}" />
+                                    <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+                                </storagePolicyCopyInfo>
+                            </App_CreateStoragePolicyCopyReq>
+                            """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
+                                       tape_library_id, library_name, media_agent_id, media_agent_name,
+                                       drive_pool_id, drive_pool, spare_pool_id, spare_pool, snap_copy)
+
+            else:
+                library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
+                request = """
+                <App_CreateStoragePolicyCopyReq copyName="{0}">
+                    <storagePolicyCopyInfo copyType="0" isDefault="0" isMirrorCopy="0" isSnapCopy="{7}" numberOfStreamsToCombine="1">
+                        <StoragePolicyCopy _type_="18" storagePolicyId="{1}" storagePolicyName="{2}" />
+                        <library _type_="9" libraryId="{3}" libraryName="{4}" />
+                        <mediaAgent _type_="11" mediaAgentId="{5}" mediaAgentName="{6}" />
+                        <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="1" retainBackupDataForDays="30" />
+                    </storagePolicyCopyInfo>
+                </App_CreateStoragePolicyCopyReq>
+                """.format(copy_name, self.storage_policy_id, self.storage_policy_name,
+                           library_id, library_name, media_agent_id, media_agent_name, snap_copy)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', create_copy_service, request_xml
+            'POST', create_copy_service, request
         )
 
         self.refresh()
@@ -1656,6 +1748,25 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def modify_dynamic_stream_allocation(self, enable=True):
+        """
+        Modifies the DSA option for the Storage Policy
+            Args:
+
+                    enable      (bool)  --   False - Disable DSA
+                                             True - Enable DSA
+        """
+        request_xml = '''<App_UpdateStoragePolicyReq>
+                       <StoragePolicy>
+                           <storagePolicyName>{0}</storagePolicyName>
+                       </StoragePolicy>
+                       <flag>
+                           <distributeDataEvenlyAmongStreams>{1}</distributeDataEvenlyAmongStreams>
+                       </flag>
+                       </App_UpdateStoragePolicyReq>
+                       '''.format(self.storage_policy_name, int(enable))
+        self._commcell_object.qoperation_execute(request_xml)
+
     def run_snapshot_cataloging(self):
         """
         Runs the deferred catalog job from Commcell for the given storage policy
@@ -1742,6 +1853,16 @@ class StoragePolicy(object):
             dict - consists of storage policy properties
         """
         return self._storage_policy_properties
+
+    @property
+    def storage_policy_advanced_properties(self):
+        """Returns the  storage policy advanced properties
+
+            dict - consists of storage policy advanced properties
+        """
+        if self._storage_policy_advanced_properties is None:
+            self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
+        return self._storage_policy_advanced_properties
 
     @property
     def library_name(self):
@@ -1909,6 +2030,7 @@ class StoragePolicy(object):
     def refresh(self):
         """Refresh the properties of the StoragePolicy."""
         self._initialize_storage_policy_properties()
+        self._storage_policy_advanced_properties = None
 
     def seal_ddb(self, copy_name):
         """
@@ -2655,6 +2777,33 @@ class StoragePolicyCopy(object):
         self._set_copy_properties()
 
     @property
+    def copy_software_compression(self):
+        """Treats the copy software compression setting as a read-only attribute."""
+        return 'compressionOnClients' in self._extended_flags
+
+    def set_copy_software_compression(self, value):
+        """Sets the copy software compression setting as the value provided as input.
+            Args:
+                value    (bool) --  software compression value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update compression values on copy
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        if value is False:
+            if 'compressionOnClients' in self._extended_flags:
+                self._extended_flags['compressionOnClients'] = 0
+
+        self._extended_flags['compressionOnClients'] = int(value)
+        self._set_copy_properties()
+
+    @property
     def copy_dedupe_dash_full(self):
         """Treats the copy deduplication setting as a read-only attribute."""
         return 'enableDASHFull' in self._dedupe_flags
@@ -2994,6 +3143,52 @@ class StoragePolicyCopy(object):
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 0
         if managed_disk_space_value:
             self._retention_rules['retentionFlags']['enableManagedDiskSpace'] = 1
+        self._set_copy_properties()
+
+    @property
+    def is_parallel_copy(self):
+        """Treats the parallel copy setting as a read-only attribute."""
+        return 'enableParallelCopy' in self._copy_flags
+
+    def set_parallel_copy(self, value):
+        """ Sets the parallel copy on storage policy copy as the value provided as input.
+            Args:
+                value    (bool) --  parallel copy on storage policy copy value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update parallel copy on storage policy copy
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._copy_flags['enableParallelCopy'] = int(value)
+
+        self._set_copy_properties()
+
+    @property
+    def is_inline_copy(self):
+        """Treats the inline copy setting as a read-only attribute."""
+        return 'inlineAuxCopy' in self._copy_flags
+
+    def set_inline_copy(self, value):
+        """ Sets the inline copy on storage policy copy as the value provided as input.
+            Args:
+                value    (bool) --  inline copy on storage policy copy value to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update inline copy on storage policy copy
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._copy_flags['inlineAuxCopy'] = int(value)
+
         self._set_copy_properties()
 
     def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):

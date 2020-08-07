@@ -84,6 +84,8 @@ Schedule:
 
     _get_schedule_properties                        -- get all schedule properties
 
+    is_disabled                                     -- Get the schedule status whether its disabled
+
     schedule_freq_type                              -- gets the schedule frequence type
 
     one_time                                        -- gets the one time schedule pattern dict
@@ -1400,6 +1402,8 @@ class Schedule:
         self._alert_type = None
         self._sub_task_option = None
         self._automatic_pattern = {}
+        self.virtualServerRstOptions = None
+        self._schedule_disabled = None
         self.refresh()
 
     @property
@@ -1451,6 +1455,9 @@ class Schedule:
                 if 'task' in _task_info:
                     self._task_json = _task_info['task']
 
+                    # Get status of schedule enabled/disabled
+                    self._schedule_disabled = self._task_json.get('taskFlags', {}).get('disabled')
+
                 for subtask in _task_info['subTasks']:
                     self._sub_task_option = subtask['subTask']
                     if self._sub_task_option['subTaskId'] == self.schedule_id:
@@ -1467,6 +1474,11 @@ class Schedule:
 
                         if 'options' in subtask:
                             self._task_options = subtask['options']
+                            if 'restoreOptions' in self._task_options:
+                                if 'virtualServerRstOption' in self._task_options['restoreOptions']:
+                                    self.virtualServerRstOptions = self._task_options['restoreOptions'][
+                                        'virtualServerRstOption']
+
                             if 'commonOpts' in self._task_options:
                                 if 'automaticSchedulePattern' in self._task_options["commonOpts"]:
                                     self._automatic_pattern = self._task_options[
@@ -1484,6 +1496,15 @@ class Schedule:
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_disabled(self):
+        """
+        Get the schedule status
+        Returns:
+             (Bool):True if the schedule is disabled otherwise returns False
+        """
+        return self._schedule_disabled
 
     @property
     def schedule_freq_type(self):
