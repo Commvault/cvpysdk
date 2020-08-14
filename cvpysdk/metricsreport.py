@@ -246,16 +246,18 @@ class _Metrics(object):
     def enable_all_services(self):
         """enables All Service"""
         for index, service in enumerate(self._service_list):
-            self._service_list[index]['enabled'] = self._enable_service
-            service_name = service['service']['name']
-            self.services[service_name] = self._enable_service
+            if service['service']['name'] != 'Post Upgrade Check':
+                self._service_list[index]['enabled'] = self._enable_service
+                service_name = service['service']['name']
+                self.services[service_name] = self._enable_service
 
     def disable_all_services(self):
         """disables All Service"""
         for index, service in enumerate(self._service_list):
-            self._service_list[index]['enabled'] = self._disable_service
-            service_name = service['service']['name']
-            self.services[service_name] = self._disable_service
+            if service['service']['name'] != 'Post Upgrade Check':
+                self._service_list[index]['enabled'] = self._disable_service
+                service_name = service['service']['name']
+                self.services[service_name] = self._disable_service
 
     def set_upload_freq(self, days=1):
         """
