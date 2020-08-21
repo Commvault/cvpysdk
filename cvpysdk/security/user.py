@@ -98,7 +98,9 @@ User
 
     update_user_password()              --  Updates new passwords of user
 
+    user_guid()                         --  returns user GUID
 
+    age_password_days()                 --  returns age password days for user
 
 """
 
@@ -106,7 +108,6 @@ from base64 import b64encode
 from past.builtins import basestring
 from .security_association import SecurityAssociation
 from ..exception import SDKException
-
 
 
 class Users(object):
@@ -795,6 +796,36 @@ class User(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def user_guid(self):
+        """
+        returns user guid
+        """
+        return self._properties.get('userEntity', {}).get('userGUID')
+
+    @property
+    def age_password_days(self):
+        """
+        returns age password days
+        """
+        return self._properties.get('agePasswordDays')
+
+    @age_password_days.setter
+    def age_password_days(self, days):
+        """
+        sets the age password days
+
+        Args:
+            days    (int) -- number of days password needs to be required
+        """
+        if isinstance(days, int):
+            props_dict = {
+                "agePasswordDays": days
+            }
+            self._update_user_props(props_dict)
+        else:
+            raise SDKException('User', '101')
+
     def update_user_password(self, new_password, logged_in_user_password):
         """updates new passwords of user
 
@@ -815,7 +846,6 @@ class User(object):
         }
         self._update_user_props(props_dict)
 
-
     def add_usergroups(self, usergroups_list):
         """UPDATE the specified usergroups to this commcell user
 
@@ -823,7 +853,6 @@ class User(object):
                 usergroups_list     (list)  --     list of usergroups to be added
         """
         self._update_usergroup_request('UPDATE', usergroups_list)
-
 
     def remove_usergroups(self, usergroups_list):
         """DELETE the specified usergroups to this commcell user
