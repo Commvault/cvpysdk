@@ -331,10 +331,7 @@ class Users(object):
             raise SDKException('User', '101')
 
         if self.has_user(username):
-            raise SDKException(
-                'User', '102', "User {0} already exists on this commcell.".format(
-                    username)
-            )
+            raise SDKException('User', '103', 'User: {0}'.format(username))
 
         if password is not None:
             password = b64encode(password.encode()).decode()
@@ -509,8 +506,8 @@ class Users(object):
                 raise SDKException('Response', '102')
 
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response' , '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def service_commcell_users_space(self):
