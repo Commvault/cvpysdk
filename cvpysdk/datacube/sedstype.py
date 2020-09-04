@@ -66,5 +66,6 @@ SEDS_TYPE_DICT = {
     33: 'activedirectory',
     34: 'onedriveindex',
     35: 'multinodefederated',
-    36: 'fsindex'
+    36: 'fsindex',
+    37: 'dynamic365'
 }
