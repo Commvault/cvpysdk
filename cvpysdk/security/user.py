@@ -567,7 +567,9 @@ class User(object):
         self._description = None
         self._associated_usergroups = None
         self._properties = None
+        self._tfa_status = None
         self._get_user_properties()
+        self._get_tfa_status()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -871,6 +873,7 @@ class User(object):
     def refresh(self):
         """Refresh the properties of the User."""
         self._get_user_properties()
+        self._get_tfa_status()
 
     def update_security_associations(self, entity_dictionary, request_type):
         """handles three way associations (role-user-entities)
@@ -951,15 +954,49 @@ class User(object):
         if self._commcell_object.users.has_user(self.user_name):
             get_otp = self._commcell_object._services['OTP'] % (self.user_id)
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'GET', get_otp
-            )
-            if flag:
-                if response.json():
-                    if 'value' in response.json():
-                        return response.json()['value']
-                else:
-                    raise SDKException('Response', '102')
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', get_otp
+        )
+        if flag:
+            if response.json():
+                if 'value' in response.json():
+                    return response.json()['value']
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_tfa_status(self):
+        """
+        Gets the status of two factor authentication for this user
+        """
+        url = self._commcell_object._services['TFA_STATUS_OF_USER'] % self._user_name
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', url=url
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json().get('errorCode') != 0:
+                    raise SDKException('User',
+                                       '102',
+                                       "Failed to get two factor authentication "
+                                       "status. error={0}".format(response.json().get('errorMessage')))
+            if response.json() and 'twoFactorInfo' in response.json():
+                info = response.json().get('twoFactorInfo')
+                self._tfa_status = info.get('isTwoFactorAuthenticationEnabled', False)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        """
+        Returns the status of two factor authentication for this user
+
+        bool    --  tfa status
+        """
+        return self._tfa_status

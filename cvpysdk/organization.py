@@ -114,6 +114,10 @@ Organization
 
     remove_service_commcell_associations()-- Removes the orgainization association on service commcell
 
+    enable_tfa()                --      Enable tfa option for the organization
+
+    disable_tfa()               --      Disable tfa option for the organization
+
 Organization Attributes
 -----------------------
 
@@ -157,6 +161,10 @@ Organization Attributes
 
          **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+         **is_tfa_enabled**          -- returns the status of tfa for the organization.
+
+         **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
+
 """
 
 import re
@@ -167,6 +175,7 @@ from .exception import SDKException
 
 from .security.user import User
 from .security.usergroup import UserGroup
+from .security.two_factor_authentication import TwoFactorAuthentication
 
 
 class Organizations:
@@ -595,6 +604,7 @@ class Organization:
         self._operator_role = None
         self._plan_details = None
         self._server_count = None
+        self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
 
     def __repr__(self):
@@ -946,6 +956,7 @@ class Organization:
         self._contacts = {}
         self._plans = {}
         self._properties = self._get_properties()
+        self._tfa_obj.refresh()
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code Generation for the Organization.
@@ -1338,3 +1349,34 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        """returns the status of two factor authentication (True/False)"""
+        return self._tfa_obj.is_tfa_enabled
+
+    @property
+    def tfa_enabled_user_groups(self):
+        """returns the list of user group names for which tfa is enabled. only for group inclusion tfa"""
+        return self._tfa_obj.tfa_enabled_user_groups
+
+    def enable_tfa(self, user_groups=None):
+        """
+        Enables two factor authentication for the oganization.
+
+        Args:
+             user_groups    (list)          --      list of user group names for which tfa needs to be enabled.
+
+        Returns:
+            None
+        """
+        self._tfa_obj.enable_tfa(user_groups=user_groups)
+
+    def disable_tfa(self):
+        """
+        Disables two factor authentication for the organization
+
+        Returns:
+            None
+        """
+        self._tfa_obj.disable_tfa()

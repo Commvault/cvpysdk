@@ -112,6 +112,10 @@ Commcell:
 
     add_service_commcell_associations()    -- adds an association for an entity on a service commcell
 
+    enable_tfa()                           --   Enables two factor authentication on this commcell
+
+    disable_tfa()                          --  Disables two factor authentication on this commcell
+
 Commcell instance Attributes
 ============================
 
@@ -264,6 +268,12 @@ Commcell instance Attributes
     **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class
     to interact wtih deduplication enines available on the commcell
 
+    **two_factor_authentication**   --  Returns an instance of the TwoFactorAuthentication class.
+
+    **is_tfa_enabled**              --  Returns the status of tfa on this commcell.
+
+    **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.
+    only for user group inclusion tfa.
 """
 
 from __future__ import absolute_import
@@ -300,6 +310,7 @@ from .plan import Plans
 from .job import JobController
 from .security.user import Users, User
 from .security.role import Roles
+from .security.two_factor_authentication import TwoFactorAuthentication
 from .credential_manager import Credentials
 from .download_center import DownloadCenter
 from .organization import Organizations, Organization
@@ -558,6 +569,7 @@ class Commcell(object):
         self._index_pools = None
         self._deduplication_engines = None
         self._redirect_cc_idp = None
+        self._tfa = None
         self.refresh()
 
         del self._password
@@ -654,6 +666,7 @@ class Commcell(object):
         del self._deduplication_engines
         del self._is_service_commcell
         del self._master_saml_token
+        del self._tfa
         del self
 
     def _get_commserv_details(self):
@@ -1605,6 +1618,7 @@ class Commcell(object):
         self._hac_clusters = None
         self._index_pools = None
         self._deduplication_engines = None
+        self._tfa = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""
@@ -2924,3 +2938,59 @@ class Commcell(object):
         """Returns the saml token of master commcell."""
 
         return self._master_saml_token
+
+    @property
+    def two_factor_authentication(self):
+        """Returns the instance of the TwoFactorAuthentication class"""
+        try:
+            if self._tfa is None:
+                self._tfa = TwoFactorAuthentication(self)
+            return self._tfa
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def is_tfa_enabled(self):
+        """
+        Returns the status of two factor authentication for this commcell
+
+            bool    --  status of tfa.
+        """
+        return self.two_factor_authentication.is_tfa_enabled
+
+    @property
+    def tfa_enabled_user_groups(self):
+        """
+        Returns the list of user group names for which two factor authentication is enabled.
+         only for user group inclusion tfa.
+            eg:-
+            [
+                {
+                "userGroupId": 1,
+                "userGroupName": "dummy"
+                }
+            ]
+        """
+        return self.two_factor_authentication.tfa_enabled_user_groups
+
+    def enable_tfa(self, user_groups=None):
+        """
+        Enables two factor authentication option on this commcell.
+
+        Args:
+            user_groups     (list)  --  user group names for which tfa needs to be enabled.
+
+        Returns:
+            None
+        """
+        self.two_factor_authentication.enable_tfa(user_groups=user_groups)
+
+    def disable_tfa(self):
+        """
+        Disables two factor authentication on this commcell.
+
+        Returns:
+            None
+        """
+        self.two_factor_authentication.disable_tfa()
+

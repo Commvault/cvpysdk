@@ -48,6 +48,14 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
 
+    'TFA': '{0}Commcell/Properties/TwoFactorAuth',
+    'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
+    'TFA_DISABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Disable',
+    'ORG_TFA': '{0}Organization/%s/TwoFactorAuth',
+    'ORG_TFA_ENABLE': '{0}Organization/%s/TwoFactorAuth/Action/Enable',
+    'ORG_TFA_DISABLE': '{0}Organization/%s/TwoFactorAuth/Action/Disable',
+    'TFA_STATUS_OF_USER': '{0}Security/TwoFactorAuth/Status?username=%s',
+
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
     'CLIENT': '{0}Client/%s',
