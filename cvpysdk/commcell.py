@@ -2013,7 +2013,10 @@ class Commcell(object):
             unix_features=None,
             username=None,
             password=None,
-            install_path=None):
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None):
         """
         Installs the selected features in the selected clients
         Args:
@@ -2043,6 +2046,18 @@ class Commcell(object):
 
                  default : None
 
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
+
+                 default : None
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -2069,7 +2084,11 @@ class Commcell(object):
                                 windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
                                 unix_features=None,
                                 username='username',
-                                password='password')
+                                password='password',
+                                install_path='/opt/commvault',
+                                log_file_loc='/var/log',
+                                client_group_name=[My_Servers],
+                                storage_policy_name='My_Storage_Policy')
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -2082,7 +2101,10 @@ class Commcell(object):
             unix_features=unix_features,
             username=username,
             password=password,
-            install_path=install_path)
+            install_path=install_path,
+            log_file_loc=log_file_loc,
+            client_group_name=client_group_name,
+            storage_policy_name=storage_policy_name)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell

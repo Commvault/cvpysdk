@@ -341,7 +341,10 @@ class Install(object):
             unix_features=None,
             username=None,
             password=None,
-            install_path=None):
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None):
         """
         Installs the features selected on the given machines
         Args:
@@ -368,6 +371,18 @@ class Install(object):
                 default : None
 
             install_path (str)              -- Install to a specified path on the client
+
+                 default : None
+
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
 
                  default : None
 
@@ -398,7 +413,10 @@ class Install(object):
                                 unix_features=None,
                                 username='username',
                                 password='password',
-                                install_path='C:\\Temp)
+                                install_path='/opt/commvault',
+                                log_file_loc='/var/log',
+                                client_group_name=[My_Servers],
+                                storage_policy_name='My_Storage_Policy')
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -493,7 +511,10 @@ class Install(object):
                                                 "overrideSoftwareCache": False,
                                                 "components": {
                                                     "commonInfo": {
-                                                        "globalFilters": 2
+                                                        "globalFilters": 2,
+                                                        "storagePolicyToUse": {
+                                                            "storagePolicyName": storage_policy_name
+                                                        }
                                                     },
                                                     "fileSystem": {
                                                         "configureForLaptopBackups": False
@@ -501,10 +522,16 @@ class Install(object):
                                                     "componentInfo": install_options,
                                                 },
                                                 "clientInfo": {
+                                                    "clientGroups": [{
+                                                        "clientGroupName": client_group_name
+                                                    }],
                                                     "client": {
                                                         "evmgrcPort": 0,
                                                         "cvdPort": 0,
                                                         "installDirectory": install_path if install_path else ""
+                                                    },
+                                                    "clientProps": {
+                                                        "logFilesLocation": log_file_loc
                                                     }
                                                 }
                                             }
