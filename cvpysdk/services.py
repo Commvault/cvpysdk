@@ -68,7 +68,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
     'INSTANCE': '{0}Instance/%s',
 
-    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&propertyLevel=20',
+    'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
@@ -92,6 +92,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
+    'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
@@ -105,7 +106,8 @@ SERVICES_DICT_TEMPLATE = {
     'ALERT': '{0}AlertRule/%s',
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
-    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s'
+                           '&vmUuid=%s',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
 
@@ -228,8 +230,10 @@ SERVICES_DICT_TEMPLATE = {
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
+    'PASSWORD_ENCRYPTION_CONFIG': '{0}/Commcell/PasswordEncryptionConfig',
+
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?hiddenpolicies=true',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&deep=true&hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
@@ -272,6 +276,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_STORAGE_POOL': '{0}StoragePool?Action=create',
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
+    'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -291,10 +296,12 @@ SERVICES_DICT_TEMPLATE = {
     'RPSTORE': '{0}Replications/RPStore',
 
     'CREATE_PSEUDO_CLIENT':'{0}pseudoClient',
+    'CREATE_NAS_CLIENT':'{0}NASClient',
     'GET_OFFICE_365_ENTITIES':'{0}Office365/entities',
     'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UpdateUserPolicyAssociation',
+    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY' : '{0}Office365/MoveJobResultsDirectory',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -302,8 +309,11 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
+    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
+
+    'CREATE_NUTANIX_CLIENT': '{0}Client/Nutanix',
 
     'GET_EVENTS': '{0}Events',
     'GET_EVENT': '{0}Events/%s',
@@ -328,6 +338,7 @@ SERVICES_DICT_TEMPLATE = {
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
 
+    'GET_NETWORK_SUMMARY' :'{0}/FirewallSummary/%s',
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
@@ -347,7 +358,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
     'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
-    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s',
+    'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
@@ -369,6 +380,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
+	'GET_SWAGGER': '{0}swagger/V3/swagger.json'
 }
 
 

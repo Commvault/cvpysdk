@@ -103,7 +103,7 @@ Plan Attributes
 
     **subclient_policy**        --  returns the subclient policy of the plan
 
-    **associated_entities**     --  returns all the backup entties associted with the plan
+    **associated_entities**     --  returns all the backup entities associated with the plan
 """
 
 from __future__ import unicode_literals
@@ -474,7 +474,7 @@ class Plans(object):
             request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
                 "storagePolicyId": storage_pool_id
             }
-        if plan_sub_type is "Server" and 'database' in request_json['plan']:
+        if plan_sub_type == "Server" and 'database' in request_json['plan']:
             request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
                 'useGlobalDedupStore'] = 1
             request_json['plan']['database']['storageLog']['copy'][0].pop(

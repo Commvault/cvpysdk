@@ -86,7 +86,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None
+            restore_jobs=None,
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the same location.
 
@@ -127,6 +128,11 @@ class FSBackupset(Backupset):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -144,7 +150,7 @@ class FSBackupset(Backupset):
         self._instance_object._restore_association = self._backupset_association
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -156,7 +162,8 @@ class FSBackupset(Backupset):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
     def restore_out_of_place(
@@ -170,7 +177,8 @@ class FSBackupset(Backupset):
             from_time=None,
             to_time=None,
             fs_options=None,
-            restore_jobs=None
+            restore_jobs=None,
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
@@ -227,6 +235,11 @@ class FSBackupset(Backupset):
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -254,7 +267,7 @@ class FSBackupset(Backupset):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -268,7 +281,8 @@ class FSBackupset(Backupset):
             from_time=from_time,
             to_time=to_time,
             fs_options=fs_options,
-            restore_jobs=restore_jobs
+            restore_jobs=restore_jobs,
+            advanced_options=advanced_options
         )
 
     def find_all_versions(self, *args, **kwargs):
@@ -874,8 +888,8 @@ class FSBackupset(Backupset):
         }
         request_json['taskInfo']['subTasks'][0]['subTask'] = subtask_json
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'] = common_options
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][
-            0] = restore_options.get('onetouch_server_directory', None)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'] = (
+            [restore_options.get('onetouch_server_directory', '')])
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'][
             'destClient']['clientName'] = restore_options.get('onetouch_server', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][

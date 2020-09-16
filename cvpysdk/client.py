@@ -77,6 +77,8 @@ Clients
     add_kubernetes_client()               --  adds a new Kubernetes Virtualization Client to the
                                               Commcell
 
+    add_nas_client()                      --  adds a new NAS Client
+
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
@@ -88,6 +90,14 @@ Clients
     add_salesforce_client()               --  adds a new salesforce client
 
     add_azure_client()                    --  adds a new azure cloud client
+
+    add_amazon_client()                    --  adds a new amazon cloud client
+
+    add_google_client()                    --  adds a new google cloud client
+
+    add_alicloud_client()                    --  adds a new alibaba cloud client
+
+    add_nutanix_files_client()                  --  adds a new nutanix files client
 
     get(client_name)                      --  returns the Client class object of the input client
     name
@@ -110,7 +120,7 @@ Clients Attributes
 
     **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
-    
+
     **office365_clients** -- returns the dictioanry consisting of all the office 365 clients that are
     associated with the commcell
 
@@ -183,7 +193,7 @@ Client
 
     add_user_association()       --  adds the user associations on this client
 
-	add_client_owner()			 --  adds users to owner list of this client
+    add_client_owner()           --  adds users to owner list of this client
 
     refresh()                    --  refresh the properties of the client
 
@@ -199,13 +209,22 @@ Client
 
     push_servicepack_and_hotfixes() -- triggers installation of service pack and hotfixes
 
+    repair_software()            -- triggers Repair software on the client machine
+
     get_dag_member_servers()     --  Gets the member servers of an Exchange DAG client.
 
     create_pseudo_client()       --  Creates a pseudo client
 
     set_job_start_time()         -- sets the job start time at client level
 
-    uninstall_software()		 --	Uninstalls all the packages of the client
+    uninstall_software()         -- Uninstalls all the packages of the client
+
+    get_network_summary()        -- Gets the network summary of the client
+
+    change_exchange_job_results_directory()
+                                --  Move the Job Results Directory for an
+                                    Exchange Online Environment
+
 
 
 Client Attributes
@@ -345,6 +364,8 @@ class Clients(object):
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
+        self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -452,7 +473,7 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
     def _get_office_365_clients(self):
         """REST API call to get all office365 clients in the commcell
 
@@ -914,7 +935,6 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-
     def add_kubernetes_client(
             self,
             client_name,
@@ -1016,6 +1036,116 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_nas_client(self,
+                    ndmp_server_clientname,
+                    ndmp_server_hostname,
+                    username,
+                    password
+                    ):
+
+        """
+        Adds new NAS client with NDMP and NetworkShare iDA
+
+        Args:
+            ndmp_server_clientname    (str)   --  new NAS client name
+
+            ndmp_server_hostname      (str)   --  HostName for new NAS client
+
+            username                (str)   --  NDMP user name
+
+            password                (str)   --  NDMP password
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new NAS client
+
+        Raises:
+            SDKException:
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+        password = b64encode(password.encode()).decode()
+        request_json = {
+            "nasTurboFSCreateReq": {
+                "turboNASproperties": {
+                    "osType": 3
+                }
+            },
+            "detectNDMPSrvReq": {
+                "listenPort": 10000,
+                "ndmpServerDetails": {
+                    "ndmpServerHostName": ndmp_server_hostname,
+                    "ndmpServerClientName": ndmp_server_clientname,
+                    "ndmpCredentials": {
+                        "userName": username,
+                        "password": password
+                    }
+                },
+                "detectMediaAgent": {
+                    "mediaAgentId": 0,
+                    "mediaAgentName": ""
+                }
+            },
+            "createPseudoClientReq": {
+                "clientInfo": {
+                    "clientType": 2,
+                    "nasClientProperties": {
+                        "listenPort": 10000,
+                        "ndmpServerDetails": {
+                            "ndmpServerHostName": ndmp_server_hostname,
+                            "ndmpServerClientName": ndmp_server_clientname,
+                            "ndmpCredentials": {
+                                "userName": username,
+                                "password": password
+                            }
+                        },
+                        "detectMediaAgent": {
+                            "mediaAgentId": 0,
+                            "mediaAgentName": ""
+                        }
+                    }
+                },
+                "entity": {
+                    "hostName": ndmp_server_hostname,
+                    "clientName": ndmp_server_clientname,
+                    "clientId": 0
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+           'POST', self._ADD_NAS_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+
+                    if error_code != 0:
+                        error_message = response.json()['errorMessage']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_message)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(ndmp_server_clientname)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_vmware_client(
             self,
@@ -1974,6 +2104,318 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_amazon_client(self, client_name, access_node, amazon_options):
+        """
+            Method to add new amazon cloud client
+            Args:
+                client_name     (str)   -- amazon client name
+                access_node     (str)   -- cloud access node name
+                amazon_options   (dict)  -- dictionary for Amazon details:
+                                            Example:
+                                               amazon_options = {
+                                                    "accessKey": amazon_options.get("accessKey"),
+                                                    "secretkey": amazon_options.get("secretkey")
+                                                }
+            Returns:
+                object  -   instance of the Client class for this new client
+            Raises:
+                SDKException:
+                    if None value in amazon options
+
+                    if pseudo client with same name already exists
+
+        """
+
+        if None in amazon_options.values():
+            raise SDKException(
+                'Client',
+                '102',
+                "One of the amazon parameters is none so cannot proceed with pseudo client creation")
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+
+        # encodes the plain text password using base64 encoding
+        secretkey = b64encode(amazon_options.get("secretkey").encode()).decode()
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 4,
+                        "amazonInstanceInfo": {
+                            "accessKey": amazon_options.get("accessKey"),
+                            "secretkey": secretkey,
+                            "regionEndPoints": amazon_options.get("regionEndPoints", "default"),
+                            "useIamRole": False,
+                            "enableAdminAccount": False
+                        },
+                        "associatedClients": {
+                            "memberServers": [
+                                {
+                                    "client": {
+                                        "clientName": access_node
+                                    }
+                                }
+                            ]
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": "default"
+                        }
+                    },
+                    "appTypes": [
+                        {
+                            "appName": "Virtual Server"
+                        }
+                    ]
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        self._process_add_response(request_json)
+
+    def add_google_client(self, client_name, access_node, google_options):
+        """
+            Method to add new google cloud client
+            Args:
+                client_name     (str)   -- google client name
+                access_node     (str)   -- cloud access node name
+                google_options   (dict)  -- dictionary for google details:
+                                            Example:
+                                               google_options = {
+                                                    "serviceAccountId": google_options.get("serviceAccountId"),
+                                                    "userName": google_options.get("userName"),
+                                                    "password": google_options.get("password")
+                                                }
+            Returns:
+                object  -   instance of the Client class for this new client
+            Raises:
+                SDKException:
+                    if None value in google options
+
+                    if pseudo client with same name already exists
+
+        """
+
+        if None in google_options.values():
+            raise SDKException(
+                'Client',
+                '102',
+                "One of the google parameters is none so cannot proceed with pseudo client creation")
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+
+        # encodes the plain text password using base64 encoding
+        password = b64encode(google_options.get("password").encode()).decode()
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 16,
+                        "googleCloud": {
+                            "credentials":{
+                                "userName": google_options.get("userName"),
+                                "password": password},
+                            "serviceAccountId": google_options.get("serviceAccountId"),
+                            "serverName": client_name
+                        },
+                        "associatedClients": {
+                            "memberServers": [
+                                {
+                                    "client": {
+                                        "clientName": access_node
+                                    }
+                                }
+                            ]
+                        },
+                    },
+                    "appTypes": [
+                        {
+                            "appName": "Virtual Server"
+                        }
+                    ]
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        self._process_add_response(request_json)
+
+    def add_alicloud_client(self, client_name, access_node, alicloud_options):
+        """
+            Method to add new alicloud cloud client
+            Args:
+                client_name     (str)   -- alicloud client name
+                access_node     (str)   -- cloud access node name
+                alicloud_options   (dict)  -- dictionary for alicloud details:
+                                            Example:
+                                               alicloud_options = {
+                                                    "accessKey": alicloud_options.get("accessKey"),
+                                                    "secretkey": alicloud_options.get("secretkey")
+                                                }
+            Returns:
+                object  -   instance of the Client class for this new client
+            Raises:
+                SDKException:
+                    if None value in alicloud options
+
+                    if pseudo client with same name already exists
+
+        """
+
+        if None in alicloud_options.values():
+            raise SDKException(
+                'Client',
+                '102',
+                "One of the alicloud parameters is none so cannot proceed with pseudo client creation")
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+
+        # encodes the plain text password using base64 encoding
+        secretkey = b64encode(alicloud_options.get("secretkey").encode()).decode()
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 18,
+                        "aliBabaCloud": {
+                            "accessKey": alicloud_options.get("accessKey"),
+                            "secretkey": secretkey
+                        },
+                        "associatedClients": {
+                            "memberServers": [
+                                {
+                                    "client": {
+                                        "clientName": access_node
+                                    }
+                                }
+                            ]
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": client_name
+                        }
+                    },
+                    "appTypes": [
+                        {
+                            "appName": "Virtual Server"
+                        }
+                    ]
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        self._process_add_response(request_json)
+
+    def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
+        """
+            Method to add new Nutanix Files client
+
+            Args:
+                client_name     (str)   --  Nutanix files client name
+                array_name      (str)   --  FQDN of the Nutanix array(File Server)
+                                            to be associated with client
+                cifs_option     (bool)  --  option for adding Windows File System agent in
+                                            the created client i.e for adding CIFS agent
+                nfs_option      (bool)  --  option for adding Linux File System agent in
+                                            the created client  i.e for adding NFS agent
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if nfs_option and cifs_option both are false
+
+                    if pseudo client with same name already exists
+        """
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+        if (nfs_option == cifs_option == False):
+            raise SDKException(
+                'Client',
+                '102',
+                "nfs_option and cifs_option both cannot be false")
+
+        request_json = {
+                        "createPseudoClientRequest": {
+                            "clientInfo": {
+                                "fileServerInfo": {
+                                    "arrayName": array_name,
+                                    "arrayId": 0
+                                    },
+                                "clientAppType":2,
+                                "clientType": 18,
+                                },
+                            "entity": {
+                                "clientName": client_name
+                                }
+                            }
+                        }
+
+        if(nfs_option != cifs_option):
+            additional_json = {}
+            if(nfs_option):
+                additional_json['osType'] = 'CLIENT_PLATFORM_OSTYPE_UNIX'
+            else:
+                additional_json['osType'] = 'CLIENT_PLATFORM_OSTYPE_WINDOWS'
+            request_json["createPseudoClientRequest"]['clientInfo']['nonNDMPClientProperties'] = additional_json
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_NUTANIX_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def get(self, name):
         """Returns a client object if client name or host name or ID matches the client attribute
             We check if specified name matches any of the existing client names else
@@ -2102,6 +2544,7 @@ class Clients(object):
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._office_365_clients = None
+
 
 class Client(object):
     """Class for performing client operations for a specific client."""
@@ -2634,9 +3077,13 @@ class Client(object):
                     operations_dict[operation]['exception_message'].format(service_name, output)
                 )
         elif 'unix' in self.os_info.lower():
+            commvault = r'/usr/bin/commvault'
+            if 'darwin' in self.os_info.lower():
+                commvault = r'/usr/local/bin/commvault'
+
             if self.instance:
-                command = 'commvault -instance {0} {1}'.format(
-                    self.instance, operations_dict[operation]['unix_command']
+                command = '{0} -instance {1} {2}'.format(
+                    commvault, self.instance, operations_dict[operation]['unix_command']
                 )
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
@@ -3733,6 +4180,8 @@ class Client(object):
 
                     default:    None
 
+                    Example:    GxVssProv(Instance001)
+
             Returns:
                 None    -   if the service was started successfully
 
@@ -3754,6 +4203,8 @@ class Client(object):
 
                     default:    None
 
+                    Example:    GxVssProv(Instance001)
+
             Returns:
                 None    -   if the service was stopped successfully
 
@@ -3774,6 +4225,8 @@ class Client(object):
                     operation is executed on all services
 
                     default:    None
+
+                    Example:    GxVssProv(Instance001)
 
             Returns:
                 None    -   if the service was restarted successfully
@@ -3830,6 +4283,101 @@ class Client(object):
                 time.sleep(5)
 
             raise SDKException('Client', '107')
+
+    def get_network_summary(self):
+        """Gets the network summary for the client
+
+        Returns:
+             str    -   Network Summary
+
+        Raises:
+            SDKException:
+                    if response is not successful
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_NETWORK_SUMMARY'].replace('%s',
+                                                                                                                self.client_id))
+        if flag:
+            if "No Network Config found" in response.text:
+                return ""
+            return response.text
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def change_exchange_job_results_directory(
+            self, new_directory_path, username=None, password=None):
+        """
+                Change the Job Result Directory of an Exchange Online Client
+
+                Arguments:
+                    new_directory   (str)   -- The new JR directory
+                        Example:
+                            C:\ JR
+                            or
+                            <UNC-PATH>
+
+
+                    username    (str)   --
+                        username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                    password    (str)   --
+                        Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+                Raises
+                    SDKException   (object)
+                        Error in moving the job results directory
+        """
+        if self.client_type != 25:
+            raise SDKException(
+                'Client', '109',
+                ' Method is application for an Exchange Mailbox Client only')
+
+        if new_directory_path.startswith(r'\\') and (
+                username is None or password is None):
+            raise SDKException(
+                'Client', '101',
+                'For a network share path, pass the credentials also')
+
+        prop_dict = {
+            "clientId": int(self.client_id),
+            "appType": 137,
+            "jobResultDirectory": new_directory_path
+        }
+        if username is not None:
+            import base64
+            password = base64.b64encode(password.encode()).decode()
+            prop_dict["directoryAdmin"] = {
+                "serviceType": 3,
+                "userAccount": {
+                    "userName": username,
+                    "password": password
+                }
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['OFFICE365_MOVE_JOB_RESULT_DIRECTORY'], prop_dict
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code == 0:
+                    return
+                elif 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Failed to move the job results directory' \
+                            '\nError: "{0}"'.format(error_message)
+                    raise SDKException(
+                        'Response', '101',
+                        'Unable to move the job result directory' + o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                'Unable to move the job result directory')
 
     def push_network_config(self):
         """Performs a push network configuration on the client
@@ -4045,7 +4593,7 @@ class Client(object):
         client_props = self._properties['clientProps']
         if enc_setting is not None:
             client_props['encryptionSettings'] = enc_setting
-            if enc_setting is "ON_CLIENT":
+            if enc_setting == "ON_CLIENT":
                 if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
                     raise SDKException('Client', '101')
                 client_props['CipherType'] = key
@@ -4451,6 +4999,47 @@ class Client(object):
             client_computers=[self.client_name],
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance
+        )
+
+    def repair_software(
+            self,
+            username=None,
+            password=None,
+            reboot_client=False):
+        """triggers Repair software on the client machine
+
+        Args:
+             username    (str)               -- username of the machine to re-install features on
+
+                default : None
+
+            password    (str)               -- base64 encoded password
+
+                default : None
+
+            reboot_client (bool)            -- boolean to specify whether to reboot the client
+            or not
+
+                default: False
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                if install job failed
+
+                if response is empty
+
+                if response is not success
+
+        """
+        install = Install(self._commcell_object)
+        return install.repair_software(
+            client=self.client_name,
+            username=username,
+            password=password,
+            reboot_client=reboot_client
         )
 
     def get_dag_member_servers(self):

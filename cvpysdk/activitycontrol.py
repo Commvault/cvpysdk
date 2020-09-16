@@ -230,7 +230,6 @@ class ActivityControl(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    @property
     def is_enabled(self, activity_type):
         """Returns True/False based on the enabled flag and also sets
                      other relevant properties for a given activity type.

@@ -106,7 +106,11 @@ FailoverGroup:
 
     point_in_time_failover()                        -- Call PointInTimeFailover operation
 
-    reverse_replication()                           -- Call ReverseReplication operation
+    reverse_replication()                           -- Schedule and call ReverseReplication operation
+
+    schedule_reverse_replication()                  -- Schedule ReverseReplication
+
+    force_reverse_replication()                     -- Call ReverseReplication operation
 
     validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id
 
@@ -876,18 +880,46 @@ class FailoverGroup(object):
         return self._dr_operation.undo_failover()
 
     def reverse_replication(self):
-        """Performs Reverse Replication operation.
+        """Schedules and calls Reverse Replication
 
             Args:
 
             Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
 
             Raises:
                 SDKException:
                     if proper inputs are not provided
         """
         return self._dr_operation.reverse_replication()
+
+    def schedule_reverse_replication(self):
+        """Schedules Reverse Replication.
+
+            Args:
+
+            Returns:
+                (TaskId) - TaskId of the scheduling reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        return self._dr_operation.schedule_reverse_replication()
+
+    def force_reverse_replication(self):
+        """Performs one reverse replication operation.
+
+            Args:
+
+            Returns:
+                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
+
+            Raises:
+                SDKException:
+                    if proper inputs are not provided
+        """
+        return self._dr_operation.force_reverse_replication()
 
     def revert_failover(self):
         """Performs Revert Failover operation.
@@ -915,7 +947,16 @@ class FailoverGroup(object):
                 SDKException:
                     if proper inputs are not provided
         """
-        return self._dr_operation.point_in_time_failover()
+        snapshot_list = self._get_snapshot_list()
+
+        if len(snapshot_list) == 0:
+            raise SDKException("Failover Group", "101",
+                               "No snapshot is found.")
+
+        # fetch the first snapshot to run
+        return self._dr_operation.point_in_time_failover(
+            snapshot_list[0]["timestamp"],
+            self.failover_group_options["replicationIds"][0])
 
     def validate_dr_orchestration_job(self, jobId):
         """ Validates DR orchestration job of jobId
@@ -978,3 +1019,33 @@ class FailoverGroup(object):
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_snapshot_list(self):
+        """ Gets snapshot list for the destination client
+
+            Args:
+
+            Returns:
+                list of dict: list of snapshot information
+        """
+        # Gets DR client list to fetch the dest GUID
+        entity_id = self.failover_group_properties['clientList'][0]["clientId"]
+        client_list_req = self._commcell_object._services["DR_GROUP_MACHINES"] % (
+            entity_id)
+
+        (flag, response) = self._commcell_object._cvpysdk_object.make_request(
+            method='GET', url=client_list_req)
+        if flag:
+            res_json = response.json()
+            if res_json and 'client' in res_json and len(
+                    res_json['client']) > 0 and 'destClient' in res_json['client'][
+                    0] and 'GUID' in res_json['client'][0]['destClient']:
+                destination_guid = res_json['client'][0]['destClient']['GUID']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return self._dr_operation.get_snapshot_list(destination_guid)

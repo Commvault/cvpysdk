@@ -33,8 +33,8 @@ nutanixinstance:            Derived class from VirtualServer
                                              overwritten to get nutanix AHV
                                             Specific instance properties as well
 
-	_get_instance_properties_json()		 --  get the all instance related
-											 properties of this subclient.
+    _get_instance_properties_json()		 --  get the all instance related
+                                                properties of this subclient.
 
 """
 
@@ -42,8 +42,8 @@ from ..vsinstance import VirtualServerInstance
 from ...exception import SDKException
 from ...instance import Instance
 
-class nutanixinstance(VirtualServerInstance):
 
+class nutanixinstance(VirtualServerInstance):
     """Class for representing Nutanix AHV instance of the Virtual Server agent"""
 
     def __init__(self, agent, name, iid):
@@ -84,7 +84,7 @@ class nutanixinstance(VirtualServerInstance):
 
         if 'virtualServerInstance' in self._properties:
             _member_servers = self._properties["virtualServerInstance"] \
-                                                ["associatedClients"]["memberServers"]
+                ["associatedClients"]["memberServers"]
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
@@ -98,7 +98,7 @@ class nutanixinstance(VirtualServerInstance):
 
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -106,11 +106,10 @@ class nutanixinstance(VirtualServerInstance):
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
-                    }
-                       }
-               }
+                }
+            }
+        }
         return instance_json
-
 
     @property
     def server_host_name(self):

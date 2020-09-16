@@ -89,8 +89,8 @@ FileSystemSubclient Instance Attributes:
 
     **global_filter_status**              --  returns the status whther to include global filters
 
-    **save_while_active_option**          --  enable or disable SAVACT option for ibmi subclients.
-    
+    **enable_synclib**                    --  enable or disable SAVACT option for ibmi subclients.
+
     **software_compression**              --  The software compression setting's value for the subclient.
 
     **use_vss**                           --  The Use VSS setting's value for the subclient.
@@ -122,6 +122,25 @@ FileSystemSubclient Instance Attributes:
     **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters
 
     **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
+
+    **backup_spool_file_data**            --  Gets the value of spool file data on ibmi option for IBMi subclient
+
+    **backup_queue_data**                 --  Gets the value of queue data data on ibmi option for IBMi subclient.
+
+    **backup_private_authorities**        --  Gets the value of private authorities on ibmi option for IBMi subclient.
+
+    **target_release**                    --  Gets the value of target and release on ibmi option for IBMi subclient.
+
+    **save_access_path**                  --  Gets the value of save access path on ibmi option for IBMi subclient.
+
+    **update_history**                    --  Updates the update history property value on ibmi subclient.
+
+    **ibmi_compression**                  --  Gets the value of IBMi compression property on
+                                                ibmi option for IBMi subclient.
+
+    **save_while_active_option**          --  Set the save while active options for an IBMi subclient.
+
+
 
 	**pre_post_commands**				  --  Sets the pre/post commands for the subclient.
 
@@ -1235,7 +1254,7 @@ class FileSystemSubclient(Subclient):
         )
 
     @property
-    def save_while_active_option(self):
+    def enable_synclib(self):
         """
         Return the save while active options for an IBMi subclient.
 
@@ -1250,8 +1269,8 @@ class FileSystemSubclient(Subclient):
             'activeWaitTime': self._fsSubClientProp['activeWaitTime']
         }
 
-    @save_while_active_option.setter
-    def save_while_active_option(self, synclib_config):
+    @enable_synclib.setter
+    def enable_synclib(self, synclib_config):
         """
         Updates the save while active backup property for an IBMi subclient.
 
@@ -1279,10 +1298,12 @@ class FileSystemSubclient(Subclient):
 
                 if value is invalid
         """
+        update_properties = self.properties
         if isinstance(synclib_config, dict):
-            self._set_subclient_properties("_fs_subclient_prop", synclib_config)
+            update_properties['fsSubClientProp'] = synclib_config
         else:
-            raise SDKException('Subclient', '102', "The parameter should be dictionary")
+            raise SDKException('Subclient', '102', 'The parameter should be a dictionary.')
+        self.update_properties(update_properties)
 
     @property
     def software_compression(self):
@@ -1571,7 +1592,9 @@ class FileSystemSubclient(Subclient):
             to_time=None,
             fs_options=None,
             schedule_pattern=None,
-            proxy_client=None):
+            proxy_client=None,
+            advanced_options=None
+    ):
         """Restores the files/folders specified in the input paths list to the same location.
 
             Args:
@@ -1616,6 +1639,12 @@ class FileSystemSubclient(Subclient):
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -1633,7 +1662,7 @@ class FileSystemSubclient(Subclient):
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -1646,7 +1675,8 @@ class FileSystemSubclient(Subclient):
             to_time=to_time,
             fs_options=fs_options,
             schedule_pattern=schedule_pattern,
-            proxy_client=proxy_client
+            proxy_client=proxy_client,
+            advanced_options=advanced_options
         )
 
     def restore_out_of_place(
@@ -1660,7 +1690,8 @@ class FileSystemSubclient(Subclient):
             from_time=None,
             to_time=None,
             fs_options=None,
-            schedule_pattern=None
+            schedule_pattern=None,
+            advanced_options=None
     ):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
@@ -1742,6 +1773,11 @@ class FileSystemSubclient(Subclient):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                advanced_options    (dict)  -- Advanced restore options
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1769,7 +1805,7 @@ class FileSystemSubclient(Subclient):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps'))))))
+            fs_options['destination_appTypeId'] = int(client.agents.all_agents.get('file system', client.agents.all_agents.get('windows file system', client.agents.all_agents.get('linux file system', client.agents.all_agents.get('big data apps', client.agents.all_agents.get('cloud apps', 0))))))
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
@@ -1817,7 +1853,8 @@ class FileSystemSubclient(Subclient):
                 from_time=from_time,
                 to_time=to_time,
                 fs_options=fs_options,
-                schedule_pattern=schedule_pattern
+                schedule_pattern=schedule_pattern,
+                advanced_options=advanced_options
             )
 
     @property
@@ -1840,11 +1877,12 @@ class FileSystemSubclient(Subclient):
 
             value   (bool)  -- To enable or disbale catalog acl
         """
-
+        update_properties = self.properties
         if isinstance(value, bool):
-            self._set_subclient_properties("_fsSubClientProp['catalogACL']", value)
+            update_properties['fsSubClientProp']['catalogACL'] = value
         else:
-            raise SDKException('Subclient', '102', 'argument value should be boolean')
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
 
     @property
     def index_server(self):
@@ -1998,11 +2036,12 @@ class FileSystemSubclient(Subclient):
                     if parameters are not valid
         """
         self.onetouch_option = True
+        update_properties = self.properties
         if isinstance(dr_config, dict):
-            dr_config = {'ibmiSubclientprop':dr_config}
-            self._set_subclient_properties("_fs_subclient_prop", dr_config)
+            update_properties['fsSubClientProp']['ibmiSubclientprop']= dr_config
         else:
-            raise SDKException('Subclient', '101', "The parameter should be dictionary")
+            raise SDKException('Subclient', '102', 'The parameter should be a dictionary.')
+        self.update_properties(update_properties)
 
     @property
     def backup_savf_file_data(self):
@@ -2027,7 +2066,222 @@ class FileSystemSubclient(Subclient):
             Raises:
                 None
         """
-        self._set_subclient_properties("_fsSubClientProp['backupSaveFileData']", value)
+        update_properties = self.properties
+        if isinstance(value, bool):
+            update_properties['fsSubClientProp']['backupSaveFileData'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def backup_spool_file_data(self):
+        """Gets the value of spool file data on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if spool file data on IBMi is disabled on the subclient
+
+                True    -   if spool file data on IBMi is enabled on the subclient
+        """
+        return bool(self._fsSubClientProp.get('backupSpooledFileData'))
+
+    @backup_spool_file_data.setter
+    def backup_spool_file_data(self, value):
+        """Updates the generate signature property value on ibmi subclient.
+
+            Args:
+                value   (bool)  --  To enable or disable spool file data backup.
+        """
+        update_properties = self.properties
+        if isinstance(value, bool):
+            update_properties['fsSubClientProp']['backupSpooledFileData'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def backup_queue_data(self):
+        """Gets the value of queue data data on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if queue data on IBMi is disabled on the subclient
+
+                True    -   if queue data on IBMi is enabled on the subclient
+        """
+        return bool(self._fsSubClientProp.get('backupQueueData'))
+
+    @backup_queue_data.setter
+    def backup_queue_data(self, value):
+        """Updates the queue data property value on ibmi subclient.
+
+            Args:
+                value   (bool)  --  To enable or disable queue data backup.
+        """
+        update_properties = self.properties
+        if isinstance(value, bool):
+            update_properties['fsSubClientProp']['backupQueueData'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def backup_private_authorities(self):
+        """Gets the value of private authorities on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if PVTAUT on IBMi is disabled on the subclient
+
+                True    -   if PVTAUT on IBMi is enabled on the subclient
+        """
+        return bool(self._fsSubClientProp.get('backupPrivateAuthority'))
+
+    @backup_private_authorities.setter
+    def backup_private_authorities(self, value):
+        """Updates the private authorities property value on ibmi subclient.
+
+            Args:
+                value   (bool)  --  To enable or disable private authorities backup.
+        """
+        update_properties = self.properties
+        if isinstance(value, bool):
+            update_properties['fsSubClientProp']['backupPrivateAuthority'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def target_release(self):
+        """Gets the value of target and release on ibmi option for IBMi subclient.
+
+            Returns:
+                (str)   -   Return the target and release string value
+        """
+        return bool(self._fsSubClientProp.get('targetReleaseForBackupData'))
+
+    @target_release.setter
+    def target_release(self, value):
+        """Updates the private authorities property value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set target and release for  backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['targetReleaseForBackupData'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def save_access_path(self):
+        """Gets the value of save access path on ibmi option for IBMi subclient.
+
+            Returns:
+                (str)   -   Return the save access path string value
+        """
+        return bool(self._fsSubClientProp.get('saveAccessPath'))
+
+    @save_access_path.setter
+    def save_access_path(self, value):
+        """Updates the save access path property value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set access path value for  backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['saveAccessPath'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def update_history(self):
+        """Gets the value of update history property on ibmi option for IBMi subclient.
+
+            Returns:
+                (str)   -   Return the string value of update history property
+        """
+        return bool(self._fsSubClientProp.get('updateHistory'))
+
+    @update_history.setter
+    def update_history(self, value):
+        """Updates the update history property value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set update history value for  backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['updateHistory'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def ibmi_compression(self):
+        """Gets the value of IBMi compression property on ibmi option for IBMi subclient.
+
+            Returns:
+                (str)   -   Return the string value of IBMi compression property
+        """
+        return bool(self._fsSubClientProp.get('ibmiCompression'))
+
+    @ibmi_compression.setter
+    def ibmi_compression(self, value):
+        """Updates the IBMi compression property value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set IBMi compression value for  backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['ibmiCompression'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def save_while_active_option(self):
+        """
+        Return the save while active options for an IBMi subclient.
+
+        Returns:
+             (dict) --  Dictionary of save while active options
+        """
+        return {
+            'saveWhileActiveOpt': self._fsSubClientProp['saveWhileActiveOpt'],
+            'activeWaitTime': self._fsSubClientProp['activeWaitTime']
+        }
+
+    @save_while_active_option.setter
+    def save_while_active_option(self, swa_config):
+        """
+        Updates the save while active backup property for an IBMi subclient.
+
+            Args:
+                swa_config      (dict)  -- Dictionary of synclib config options
+
+                    options                 --
+
+                        saveWhileActiveOpt      (str)   --  Value of save while active option.
+
+                        activeWaitTime          (int)   --  Amount of time to wait for check point.
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to update the property of the subclient
+
+                if value is invalid
+        """
+        update_properties = self.properties
+        if isinstance(swa_config, dict):
+            update_properties['fsSubClientProp'] = swa_config
+        else:
+            raise SDKException('Subclient', '102', 'SWA should be a dictionary.')
+        self.update_properties(update_properties)
 
     @property
     def pre_post_commands(self):
@@ -2105,4 +2359,31 @@ class FileSystemSubclient(Subclient):
             access_nodes.append({"clientName": access_node})
 
         update_properties["fsSubClientProp"]["backupConfiguration"] = {"backupDataAccessNodes": access_nodes}
+        self.update_properties(update_properties)
+
+    @property
+    def network_share_auto_mount(self):
+        """
+        Returns the value of enableNetworkShareAutoMount, if true, the content will be auto-mounted during backup and
+        auto-mounted during in-place restores.
+        """
+        return self._fsSubClientProp['enableNetworkShareAutoMount']
+
+    @network_share_auto_mount.setter
+    def network_share_auto_mount(self, value):
+        """
+        Sets the value for enableNetworkShareAutoMount, needs to set to true if content is specified
+        in the file_server:/path format.
+
+            Args:
+                value   (bool)  --  Enables or disables the property by setting True or False respectively.
+
+        """
+        update_properties = self.properties
+
+        if isinstance(value, bool):
+            update_properties["fsSubClientProp"]['enableNetworkShareAutoMount'] = value
+        else:
+            raise SDKException('Subclient', '101')
+
         self.update_properties(update_properties)

@@ -9,7 +9,7 @@ CVPySDK uses REST APIs to perform CommCell operations.
 Requirements
 ------------
 
-- Python 3 or above
+- Python 3 and above
 - `requests <https://pypi.python.org/pypi/requests/>`_ Python package
 - `future <https://pypi.python.org/pypi/future>`_ Python package
 - `xmltodict <https://pypi.python.org/pypi/xmltodict>`_ Python package
@@ -24,7 +24,7 @@ CVPySDK can be installed directly from PyPI using pip:
     >>> pip install cvpysdk
 
 
-CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`_
+CVPySDK is available on GitHub `here <https://github.com/CommvaultEngg/cvpysdk>`_
 
 It can also be installed from source.
 
@@ -160,7 +160,7 @@ Subclient operations are currently supported for the following Agents:
 Documentation
 -------------
 
-To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/>`_
+To get started, please see the `full documentation for this library <https://commvaultengg.github.io/cvpysdk/>`_
 
 
 Contribution Guidelines
@@ -206,7 +206,7 @@ chat rooms, and mailing lists is expected to follow the
 
 License
 -------
-**CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/Commvault/cvpysdk/master/LICENSE.txt>`_
+**CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/CommvaultEngg/cvpysdk/master/LICENSE.txt>`_
 
 
 About Commvault

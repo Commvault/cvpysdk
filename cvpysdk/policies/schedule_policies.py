@@ -189,18 +189,21 @@ class SchedulePolicies:
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._POLICY)
 
         if flag:
-            if response.json() and 'taskDetail' in response.json():
-                policies = response.json()['taskDetail']
-                policies_dict = {}
+            if response and response.json():
+                if response.json() and 'taskDetail' in response.json():
+                    policies = response.json()['taskDetail']
+                    policies_dict = {}
 
-                for policy in policies:
-                    temp_name = policy['task']['taskName'].lower()
-                    temp_id = str(policy['task']['taskId']).lower()
-                    policies_dict[temp_name] = temp_id
+                    for policy in policies:
+                        temp_name = policy['task']['taskName'].lower()
+                        temp_id = str(policy['task']['taskId']).lower()
+                        policies_dict[temp_name] = temp_id
 
-                return policies_dict
+                    return policies_dict
+                else:
+                    raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

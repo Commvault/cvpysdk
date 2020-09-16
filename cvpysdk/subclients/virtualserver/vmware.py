@@ -237,6 +237,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 network           (basestring)    --  Network of the detination vm
 
+                restore_option      (dict)     --  complete dictionary with all advanced options
+                    default: {}
+
 
 
             Returns:
@@ -269,8 +272,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, basestring) or
+                    isinstance(restored_vm_name, basestring)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
@@ -383,11 +386,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\" + vm_ids[vm_name])
 
-        if not disk_name:   # if disk names are not provided, restore all vmdk disks
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:   # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
                 each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
                 if each_disk_path not in disk_list:
@@ -441,6 +444,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                             media_agent=None,
                             snap_proxy=None,
                             disk_name=None):
+
         """Attaches the Disks to the provided vm
 
             Args:
@@ -461,11 +465,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                          be performed
 
                 media_agent                 (str)   -- MA needs to use for disk browse
-                    default :Storage policy MA
+                                                        default :Storage policy MA
 
                 snap_proxy                   (str)   -- proxy need to be used for disk
                                                     restores from snap
-                    default :proxy in instance or subclient
+                                                   default :proxy in instance or subclient
 
                 disk_name                    (str)  --  Prefix of the disk name to be attached
                                                         defaul: None
@@ -504,11 +508,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\" + vm_ids[vm_name])
 
-        if not disk_name:   # if disk names are not provided, restore all vmdk disks
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:   # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
                 each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
                 if each_disk_path not in disk_list:
@@ -559,51 +563,51 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option=None):
 
         """
-                        This converts the VMware to AzureRM
-                        Args:
-                                vm_to_restore          (list):     provide the VM names to restore
+            This converts the VMware to AzureRM
+            Args:
+                vm_to_restore          (list):     provide the VM names to restore
 
-                                azure_client    (basestring):      name of the AzureRM client
-                                                                   where the VM should be
-                                                                   restored.
+                azure_client    (basestring):      name of the AzureRM client
+                                                   where the VM should be
+                                                   restored.
 
-                                resource_group   (basestring):      destination Resource group
-                                                                    in the AzureRM
+                resource_group   (basestring):      destination Resource group
+                                                    in the AzureRM
 
-                                storage_account  (basestring):    storage account where the
-                                                                  restored VM should be located
-                                                                  in AzureRM
+                storage_account  (basestring):    storage account where the
+                                                  restored VM should be located
+                                                  in AzureRM
 
-                                overwrite              (bool):    overwrite the existing VM
-                                                                  default: True
+                overwrite              (bool):    overwrite the existing VM
+                                                  default: True
 
-                                power_on               (bool):    power on the  restored VM
-                                                                  default: True
+                power_on               (bool):    power on the  restored VM
+                                                  default: True
 
-                                instance_size    (basestring):    Instance Size of restored VM
+                instance_size    (basestring):    Instance Size of restored VM
 
-                                public_ip              (bool):    If True, creates the Public IP of
-                                                                  restored VM
+                public_ip              (bool):    If True, creates the Public IP of
+                                                  restored VM
 
-                                restore_as_managed     (bool):    If True, restore as Managed VM in Azure
+                restore_as_managed     (bool):    If True, restore as Managed VM in Azure
 
-                                copy_precedence         (int):    copy precedence value
-                                                                  default: 0
+                copy_precedence         (int):    copy precedence value
+                                                  default: 0
 
-                                proxy_client      (basestring):   destination proxy client
+                proxy_client      (basestring):   destination proxy client
 
-                            Returns:
-                                object - instance of the Job class for this restore job
+            Returns:
+                object - instance of the Job class for this restore job
 
-                            Raises:
-                                SDKException:
-                                    if inputs are not of correct type as per definition
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
 
-                                    if failed to initialize job
+                    if failed to initialize job
 
-                                    if response is empty
+                    if response is empty
 
-                                    if response is not success
+                    if response is not success
 
         """
 
@@ -639,6 +643,113 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_hyperv(
+            self,
+            hyperv_client,
+            vm_to_restore=None,
+            hyperv_server=None,
+            destination_path=True,
+            esx_host=None,
+            overwrite=True,
+            power_on=True,
+            proxy_client=None,
+            register_to_failover=None,
+            network=None,
+            subnet=None,
+            copy_precedence=0,
+            restore_option=None,
+            drive=None):
+
+        """
+            This converts the VMware to hyperv
+            Args:
+                    vm_to_restore          (list):     provide the VM names to restore
+
+                    hyperv_client    (basestring):      name of the hyperv client
+                                                       where the VM should be
+                                                       restored.
+
+                    hyperv_server   (basestring):      HyperV server
+
+                    destination_path  (basestring):    path of the destinaion vm
+
+                    overwrite              (bool):    overwrite the existing VM
+                                                      default: True
+
+                    power_on               (bool):    power on the  restored VM
+                                                      default: True
+
+                    resister_to_failover (basestring): failover register
+
+                    network           (basestring):   network of the vm
+
+                    copy_precedence         (int):    copy precedence value
+                                                      default: 0
+
+                    proxy_client      (basestring):   destination proxy client
+
+                Returns:
+                    object - instance of the Job class for this restore job
+
+                Raises:
+                    SDKException:
+                        if inputs are not of correct type as per definition
+
+                        if failed to initialize job
+
+                        if response is empty
+
+                        if response is not success
+
+        """
+
+        if restore_option is None:
+            restore_option = {}
+
+        # check mandatory input parameters are correct
+        if not (isinstance(hyperv_client, basestring)):
+            raise SDKException('Subclient', '101')
+
+        subclient = self._set_vm_conversion_defaults(hyperv_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        if proxy_client is None:
+            proxy_client = instance.server_host_name[0]
+
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=hyperv_client,
+            destination_path=destination_path,
+            esx_host=esx_host,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            register_to_failover=register_to_failover,
+            network=network,
+            subnet=subnet,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name
+        )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['nics'] = [{'name': 'Network adapter 1',
+                                                                                 'networkName': network
+                                                                                 }]
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['DestinationPath'] = destination_path
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['Datastore'] = ''
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'][0][
+            'DestinationPath'] = drive + destination_path
+
         return self._process_restore_response(request_json)
 
     def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
@@ -706,6 +817,121 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 restore_option["rpstore_name"] = rpstore.rpstore_name
                 restore_option["rpstore_id"] = rpstore.rpstore_id
 
-            response = self._commcell_object.execute_qcommand("qoperation execute", self._prepare_blr_xml(restore_option))
+            response = self._commcell_object.execute_qcommand("qoperation execute",
+                                                              self._prepare_blr_xml(restore_option))
             if response.json() != {'errorMessage': '', 'errorCode': 0}:
                 raise SDKException("Subclient", 102, response.json()["errorMessage"])
+
+    def full_vm_conversion_googlecloud(
+            self,
+            google_cloud_client,
+            vm_to_restore=None,
+            esx_host=None,
+            vmSize=None,
+            nics=None,
+            datacenter=None,
+            projectId=None,
+            overwrite=True,
+            power_on=True,
+            proxy_client=None,
+            vcenter_client=None,
+            esx_server=None,
+            copy_precedence=0,
+            restore_option=None):
+
+        """
+                        This converts the VMware to Google Cloud
+                        Args:
+                                vm_to_restore          (list):     provide the VM names to restore
+
+                                google_cloud_client    (basestring):      name of the Google Cloud client
+                                                                   where the VM should be
+                                                                   restored.
+
+                                esx_host               (basestring): Zone of the restored VM in Google Cloud
+
+                                vmSize                 (basestring): vmSize of the restoed VM
+
+                                overwrite              (bool):    overwrite the existing VM
+                                                                  default: True
+
+                                power_on               (bool):    power on the  restored VM
+                                                                  default: True
+
+                                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                                      should be restored.
+
+                                copy_precedence         (int):    copy precedence value
+                                                                  default: 0
+
+                                proxy_client      (basestring):   destination proxy client
+
+                                esx_server        (basestring):    Name of the destination virtualization Client
+
+                                nics              (basestring):   Network Configurations of the VM
+
+                                datacenter        (basestring):   Project ID of the restored VM
+
+                                projectId         (basestring):   project ID where the new VM has to be created
+
+                            Returns:
+                                object - instance of the Job class for this restore job
+
+                            Raises:
+                                SDKException:
+                                    if inputs are not of correct type as per definition
+
+                                    if failed to initialize job
+
+                                    if response is empty
+
+                                    if response is not success
+
+        """
+
+        if restore_option is None:
+            restore_option = {}
+
+        # check mandatory input parameters are correct
+        if not isinstance(google_cloud_client, basestring):
+            raise SDKException('Subclient', '101')
+
+        subclient = self._set_vm_conversion_defaults(google_cloud_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        if proxy_client is None:
+            proxy_client = instance.server_host_name[0]
+
+        if vm_to_restore is None:
+            vm_to_restore = self._set_vm_to_restore(vm_to_restore)
+
+        self._set_restore_inputs(
+            restore_option,
+            vm_to_restore=vm_to_restore,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            vcenter_client=vcenter_client,
+            vmSize=vmSize,
+            nics=nics,
+            datacenter=datacenter,
+            createPublicIP=False,
+            projectId=projectId,
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
+            volume_level_restore=1,
+            client_name=proxy_client,
+            in_place=False,
+            copy_precedence=copy_precedence
+        )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['projectId'] = projectId
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['newName'] = vm_to_restore[0].lower().replace("_",
+                                                                                                                   "")
+        disk_new_names = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks']
+        for each in range(0, len(disk_new_names)):
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+                'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'][each]['newName'] = ""
+        return self._process_restore_response(request_json)

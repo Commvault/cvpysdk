@@ -200,7 +200,7 @@ class IdentityManagementApps(object):
         """
         if self._apps:
             for app in self._apps:
-                if self._apps[app]['appType'] is 4:
+                if self._apps[app]['appType'] == 4:
                     return self.get(app)
 
     @property
@@ -218,7 +218,7 @@ class IdentityManagementApps(object):
         commcell_apps = []
         if self._apps:
             for app in self._apps:
-                if self._apps[app]['appType'] is 3:
+                if self._apps[app]['appType'] == 3:
                     commcell_apps.append(self.get(app))
             return commcell_apps
 
@@ -269,7 +269,7 @@ class IdentityManagementApps(object):
         )
         if flag:
             if response.json() and 'error' in response.json():
-                if response.json()['error']['errorCode'] is 0:
+                if response.json()['error']['errorCode'] == 0:
                     self.refresh()
                 else:
                     raise SDKException(
@@ -318,7 +318,7 @@ class IdentityManagementApps(object):
 
         if flag:
             if response.json() and 'error' in response.json():
-                if response.json()['error']['errorCode'] is 0:
+                if response.json()['error']['errorCode'] == 0:
                     self.refresh()
                     return self.get_local_identity_app
                 else:
@@ -423,7 +423,7 @@ class IdentityManagementApps(object):
 
         if flag:
             if response.json() and 'error' in response.json():
-                if response.json()['error']['errorCode'] is 0:
+                if response.json()['error']['errorCode'] == 0:
                     self.refresh()
                     return self.get_commcell_identity_apps
                 else:

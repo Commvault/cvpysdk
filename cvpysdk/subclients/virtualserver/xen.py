@@ -16,17 +16,17 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""File for operating on a Virtual Server Googlecloud Subclient.
+"""File for operating on a Virtual Server FusionCompute Subclient.
 
-GooglecloudVirtualServerSubclient is the only class defined in this file.
+XenSubclient is the only class defined in this file.
 
-GooglecloudVirtualServerSubclient: Derived class from VirtualServerSubClient  Base class,
-                                   representing a FusionCompute Subclient, and
-                                   to perform operations on that Subclient
+XenSubclient: Derived class from VirtualServerSubClient  Base class,
+                            representing a FusionCompute Subclient, and
+                            to perform operations on that Subclient
 
-GooglecloudVirtualServerSubclient:
+XenSubclient:
 
-    __init__(,backupset_object, subclient_name, subclient_id)--  initialize object of googlecloud
+    __init__(,backupset_object, subclient_name, subclient_id)--  initialize object of FusionCompute
                                                                              subclient object
                                                                                  associated with
                                                                         the VirtualServer subclient
@@ -38,14 +38,14 @@ GooglecloudVirtualServerSubclient:
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
 """
-
+from past.builtins import basestring
+from cvpysdk.exception import SDKException
 from ..vssubclient import VirtualServerSubclient
-from ...exception import SDKException
 
 
-class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
+class Xen(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a Google cloud virtual server subclient,
+       This represents a Fusion Compute virtual server subclient,
        and can perform restore operations on only that subclient.
 
     """
@@ -56,10 +56,9 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                                          backupset class, subclient name, subclient id
 
         """
-        super(GooglecloudVirtualServerSubclient, self).__init__(
+        super(Xen, self).__init__(
             backupset_object, subclient_name, subclient_id)
         self.diskExtension = ["none"]
-
 
     def full_vm_restore_in_place(
             self,
@@ -82,11 +81,12 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 power_on            (bool)     --  power on the  restored VM
                                                    default: True
 
-                copy_precedence     (int)      --  copy precedence value
-                                                   default: 0
 
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -122,39 +122,53 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     def full_vm_restore_out_of_place(
             self,
             vm_to_restore=None,
+            destination_client=None,
             proxy_client=None,
             new_name=None,
-            zone=None,
-            machine_type=None,
+            xen_server=None,
+            storage=None,
             overwrite=True,
             power_on=True,
-            public_ip=False,
-            copy_precedence=0,
-            project_id=None,
-            restore_option=None):
-
-        """Restores the FULL Virtual machine specified  in the input  list to the client,
-            at the specified destination location.
-
+            copy_precedence=0):
+        """Restores the FULL Virtual machine specified in the input list
+            to the provided vcenter client along with the ESX and the datastores.
+            If the provided client name is none then it restores the Full Virtual
+            Machine to the source client and corresponding ESX and datastore.
 
             Args:
-                vm_to_restore     (list):       provide the VM name to restore
-                                                default: None
+                vm_to_restore     (list)  --  provide the VM name to restore
+                                              default: None
 
-                proxy_client     (str):         proxy client to be used for restore
-                                                default: proxy added in subclient
+                destination_client    (basestring) -- name of the Pseudo client
+                                                  where the VM should be
+                                                    restored.
 
-                new_name         (str):         new name to be given to the
-                                                restored VM
+                new_name          (basestring) -- new name to be given to the
+                                                    restored VM
 
-                overwrite         (bool):        overwrite the existing VM
-                                                 default: True
+                xen_server          (basestring) -- destination cluster or  host
+                                                    restores to the source VM
+                                                    esx if this value is not
+                                                    specified
 
-                power_on          (bool):        power on the  restored VM
+                storage         (basestring) -- datastore where the
+                                                  restored VM should be located
+                                                  restores to the source VM
+                                                  datastore if this value is
+                                                  not specified
+
+                overwrite         (bool)       -- overwrite the existing VM
+                                                  default: True
+
+                power_on          (bool)       -- power on the  restored VM
                                                   default: True
 
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
+
+                proxy_client     (basestring)  --  proxy client to be used for restore
+                                                        default: proxy added in subclient
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -176,12 +190,10 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            restore_option['restore_new_name'] = new_name
-
-        if bool(restore_option):
-            if not (isinstance(overwrite, bool) and
-                    isinstance(power_on, bool)):
+            if not(isinstance(vm_to_restore, basestring) or
+                   isinstance(new_name, basestring)):
                 raise SDKException('Subclient', '101')
+            restore_option['restore_new_name'] = new_name
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -192,12 +204,10 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             client_name=proxy_client,
-            esx_host=zone,
-            vm_size=machine_type,
-            datacenter=zone,
+            vcenter_client=destination_client,
+            esx_host=xen_server,
+            datastore=storage,
             in_place=False,
-            createPublicIP=public_ip,
-            project_id=project_id,
             restore_new_name=new_name
         )
 
