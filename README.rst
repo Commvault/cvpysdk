@@ -160,7 +160,7 @@ Subclient operations are currently supported for the following Agents:
 Documentation
 -------------
 
-To get started, please see the `full documentation for this library <https://commvaultengg.github.io/cvpysdk/>`_
+To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/>`_
 
 
 Contribution Guidelines
