@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../index.html">Module code</a> &raquo;</li>
         
@@ -194,7 +197,9 @@
 <span class="sd">    has_subclient()             --  checks if a subclient exists with the given name or not</span>
 
 <span class="sd">    add()                       --  adds a new subclient to the backupset</span>
-
+<span class="sd">    </span>
+<span class="sd">    add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump</span>
+<span class="sd">    </span>
 <span class="sd">    add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset</span>
 
 <span class="sd">    get(subclient_name)         --  returns the subclient object of the input subclient name</span>
@@ -295,21 +300,20 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
-
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="kn">import</span> <span class="n">install_aliases</span>
-
-<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">JobController</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobController</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -317,7 +321,7 @@
 <div class="viewcode-block" id="Subclients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients">[docs]</a><span class="k">class</span> <span class="nc">Subclients</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the subclients associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Subclients object for the given backupset.</span>
 
 <span class="sd">            Args:</span>
@@ -331,26 +335,34 @@
 <span class="sd">                    if class object is not an instance of Agent / Instance / Backupset</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
-        <span class="kn">from</span> <span class="nn">.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
-        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="kn">import</span> <span class="n">Backupset</span>
+        <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
+        <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
+        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupset</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Agent</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="n">class_object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Instance</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">class_object</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&amp;instanceId=</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span>
+            <span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">class_object</span><span class="p">,</span> <span class="n">Backupset</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="n">class_object</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">class_object</span><span class="o">.</span><span class="n">_instance_object</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_agent_object</span>
-
+            <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span> <span class="o">+=</span> <span class="s1">&#39;&amp;backupsetId=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_id</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;115&#39;</span><span class="p">)</span>
 
@@ -362,36 +374,37 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_SUBCLIENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_SUBCLIENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_url_param</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ADD_SUBCLIENT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;ADD_SUBCLIENT&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="kn">from</span> <span class="nn">.subclients.fssubclient</span> <span class="kn">import</span> <span class="n">FileSystemSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.bigdataappssubclient</span> <span class="kn">import</span> <span class="n">BigDataAppsSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.vssubclient</span> <span class="kn">import</span> <span class="n">VirtualServerSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.casubclient</span> <span class="kn">import</span> <span class="n">CloudAppsSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.sqlsubclient</span> <span class="kn">import</span> <span class="n">SQLServerSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.nassubclient</span> <span class="kn">import</span> <span class="n">NASSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.hanasubclient</span> <span class="kn">import</span> <span class="n">SAPHANASubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.oraclesubclient</span> <span class="kn">import</span> <span class="n">OracleSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndbsubclient</span> <span class="kn">import</span> <span class="n">LNDbSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndocsubclient</span> <span class="kn">import</span> <span class="n">LNDocSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndmsubclient</span> <span class="kn">import</span> <span class="n">LNDmSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.sybasesubclient</span> <span class="kn">import</span> <span class="n">SybaseSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.saporaclesubclient</span> <span class="kn">import</span> <span class="n">SAPOracleSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.exchsubclient</span> <span class="kn">import</span> <span class="n">ExchangeSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.mysqlsubclient</span> <span class="kn">import</span> <span class="n">MYSQLSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.exchange.exchange_database_subclient</span> <span class="kn">import</span> <span class="n">ExchangeDatabaseSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.postgressubclient</span> <span class="kn">import</span> <span class="n">PostgresSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.informixsubclient</span> <span class="kn">import</span> <span class="n">InformixSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.adsubclient</span> <span class="kn">import</span> <span class="n">ADSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.sharepointsubclient</span> <span class="kn">import</span> <span class="n">SharepointSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.vminstancesubclient</span> <span class="kn">import</span> <span class="n">VMInstanceSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.db2subclient</span> <span class="kn">import</span> <span class="n">DB2Subclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.casesubclient</span> <span class="kn">import</span> <span class="n">CaseSubclient</span>
-        <span class="kn">from</span> <span class="nn">.subclients.aadsubclient</span> <span class="kn">import</span> <span class="n">AzureAdSubclient</span>															 
+        <span class="kn">from</span> <span class="nn">.subclients.fssubclient</span> <span class="k">import</span> <span class="n">FileSystemSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.bigdataappssubclient</span> <span class="k">import</span> <span class="n">BigDataAppsSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.casubclient</span> <span class="k">import</span> <span class="n">CloudAppsSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.sqlsubclient</span> <span class="k">import</span> <span class="n">SQLServerSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.nassubclient</span> <span class="k">import</span> <span class="n">NASSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.hanasubclient</span> <span class="k">import</span> <span class="n">SAPHANASubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.oraclesubclient</span> <span class="k">import</span> <span class="n">OracleSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndbsubclient</span> <span class="k">import</span> <span class="n">LNDbSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndocsubclient</span> <span class="k">import</span> <span class="n">LNDocSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.lotusnotes.lndmsubclient</span> <span class="k">import</span> <span class="n">LNDmSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.sybasesubclient</span> <span class="k">import</span> <span class="n">SybaseSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.saporaclesubclient</span> <span class="k">import</span> <span class="n">SAPOracleSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.exchsubclient</span> <span class="k">import</span> <span class="n">ExchangeSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.mysqlsubclient</span> <span class="k">import</span> <span class="n">MYSQLSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.exchange.exchange_database_subclient</span> <span class="k">import</span> <span class="n">ExchangeDatabaseSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.postgressubclient</span> <span class="k">import</span> <span class="n">PostgresSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.informixsubclient</span> <span class="k">import</span> <span class="n">InformixSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.adsubclient</span> <span class="k">import</span> <span class="n">ADSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.sharepointsubclient</span> <span class="k">import</span> <span class="n">SharepointSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.vminstancesubclient</span> <span class="k">import</span> <span class="n">VMInstanceSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.db2subclient</span> <span class="k">import</span> <span class="n">DB2Subclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.casesubclient</span> <span class="k">import</span> <span class="n">CaseSubclient</span>
+        <span class="kn">from</span> <span class="nn">.subclients.aadsubclient</span> <span class="k">import</span> <span class="n">AzureAdSubclient</span>															 
 
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;BigDataAppsSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BigDataAppsSubclient</span>
         <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;FileSystemSubclient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FileSystemSubclient</span>
@@ -464,7 +477,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all subclients of the backupset.</span>
 
 <span class="sd">            Returns:</span>
@@ -487,7 +500,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Subclients class.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">o_str</span> <span class="o">=</span> <span class="p">(</span>
@@ -510,11 +523,11 @@
 
         <span class="k">return</span> <span class="n">o_str</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the subclients associated to the Agent for the selected Client.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the subclient for the given subclient ID or</span>
 <span class="sd">            the details of the subclient for given subclient Name.</span>
 
@@ -605,7 +618,7 @@
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_default_subclient</span> <span class="o">=</span> <span class="n">temp_name</span>
 
                     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="o">==</span> <span class="n">instance</span> <span class="ow">and</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span> <span class="ow">in</span> <span class="n">instance</span> <span class="ow">and</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span> <span class="ow">in</span> <span class="n">agent</span><span class="p">):</span>
                             <span class="n">temp_name</span> <span class="o">=</span> <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">][</span><span class="s1">&#39;subclientName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span>
                             <span class="p">)</span>
@@ -891,6 +904,157 @@
             <span class="p">}</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Subclients.add_oracle_logical_dump_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_oracle_logical_dump_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_oracle_logical_dump_subclient</span><span class="p">(</span>
+                                 <span class="bp">self</span><span class="p">,</span>
+                                 <span class="n">subclient_name</span><span class="p">,</span>
+                                 <span class="n">storage_policy</span><span class="p">,</span>
+                                 <span class="n">dump_dir</span><span class="p">,</span>
+                                 <span class="n">user_name</span><span class="p">,</span>
+                                 <span class="n">domain_name</span><span class="p">,</span>
+                                 <span class="n">password</span><span class="p">,</span>
+                                 <span class="n">full_mode</span><span class="p">,</span>
+                                 <span class="n">schema_value</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to add subclient for oracle logical dump.</span>
+<span class="sd">        This method add two type of subclient full mode</span>
+<span class="sd">        and schema mode. For full mode full_mode should be</span>
+<span class="sd">        true and schema_value should be none and for schema</span>
+<span class="sd">        mode full_mode should be false and schema_value should</span>
+<span class="sd">        be list of values.Rest of thing should be same for both.</span>
+<span class="sd">        Args:</span>
+<span class="sd">              subclient_name     (Str)  --  subclient name for logical dump</span>
+<span class="sd">              </span>
+<span class="sd">              storage_policy     (Str)  --  Storage policy for subclient</span>
+<span class="sd">              </span>
+<span class="sd">              dump_dir            (Str)  --  dump directory for subclient</span>
+<span class="sd">              </span>
+<span class="sd">              user_name           (Str)  --  username for oracle database</span>
+<span class="sd">              </span>
+<span class="sd">              domain_name         (Str)  --  domainname for oracle database</span>
+<span class="sd">              </span>
+<span class="sd">              password           (Str)  --  password for oracle database</span>
+<span class="sd">                                            (should be in encrypted and decrypted form)</span>
+<span class="sd">                                            </span>
+<span class="sd">              full_mode           (bool) --  if ture then subclient for full mode otherwise schema mode</span>
+<span class="sd">              </span>
+<span class="sd">              schema_value        (list) --  schema value for schema mode subclient</span>
+<span class="sd">              </span>
+<span class="sd">                   default: None</span>
+<span class="sd">        Return:</span>
+<span class="sd">                object  -   instance of the Subclient class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if subclient name argument is not of type string</span>
+
+<span class="sd">                    if storage policy argument is not of type string</span>
+<span class="sd">                    </span>
+<span class="sd">                    if subclient name already present</span>
+<span class="sd">                    </span>
+<span class="sd">                    if storage policy does not exist</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_name</span><span class="p">,</span><span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">full_mode</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">full_mode</span> <span class="o">==</span> <span class="kc">False</span> <span class="ow">and</span> <span class="ow">not</span> 
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span><span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;defaultBackupSet&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span>
+                <span class="n">storage_policy</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">storage_policy</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                        <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                        <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                        <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span>
+                        <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;oracleSubclientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;archiveDelete&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;useSQLConntect&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;dbSubclientType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="s2">&quot;mergeIncImageCopies&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;selectiveOnlineFull&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;protectBackupRecoveryArea&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;selectArchiveLogDestForBackup&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;backupSPFile&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;backupControlFile&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;backupArchiveLog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;snapCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;useSeparateProxyForSnapToTape&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;checkProxyForSQLIntegrity&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;snapToTapeProxyToUseSource&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;isSnapBackupEnabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;IsOracleSposDriverEnabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s2">&quot;isRMANEnableForTapeMovement&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;dbDumpConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;fullMode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;database&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;dumpDir&quot;</span><span class="p">:</span> <span class="n">dump_dir</span><span class="p">,</span>
+                            <span class="s2">&quot;parallelism&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                            <span class="s2">&quot;overrideInstanceUser&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;sqlConnect&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+                                <span class="s2">&quot;domainName&quot;</span><span class="p">:</span> <span class="n">domain_name</span><span class="p">,</span>
+                                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">user_name</span>
+                            <span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;deDuplicationOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">full_mode</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;subClientProperties&quot;</span><span class="p">][</span><span class="s2">&quot;commonProperties&quot;</span><span class="p">][</span><span class="s2">&quot;dbDumpConfig&quot;</span><span class="p">][</span><span class="s2">&quot;fullMode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;subClientProperties&quot;</span><span class="p">][</span><span class="s2">&quot;commonProperties&quot;</span><span class="p">][</span><span class="s2">&quot;dbDumpConfig&quot;</span><span class="p">][</span><span class="s2">&quot;schema&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">schema_value</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclients.add_virtual_server_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_virtual_server_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_virtual_server_subclient</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -972,11 +1136,12 @@
         <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">:</span>
             <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;equalsOrNotEquals&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
-                <span class="s2">&quot;allOrAnyChildren&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-            <span class="p">})</span>
+                    <span class="s2">&quot;equalsOrNotEquals&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;displayName&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                    <span class="s2">&quot;allOrAnyChildren&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                <span class="p">})</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1017,10 +1182,10 @@
                     <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">))</span>
                 <span class="p">)</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;subClientProperties&#39;</span><span class="p">][</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">][</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">)</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
+                        <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storage_policy&#39;</span><span class="p">)</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Plan or Storage policy should be given as input&#39;</span><span class="p">)</span>
 
@@ -1155,7 +1320,7 @@
 <div class="viewcode-block" id="Subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclient">[docs]</a><span class="k">class</span> <span class="nc">Subclient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class consisting of all the common properties and operations for a Subclient&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Subclient object.</span>
 
 <span class="sd">            Args:</span>
@@ -1226,7 +1391,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the persistent attributes&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
@@ -1235,7 +1400,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Subclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Subclient class instance for Subclient: &quot;</span><span class="si">{0}</span><span class="s1">&quot; of Backupset: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -1535,9 +1700,7 @@
             <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;commonOpts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advance_job_option_dict</span>
 
         <span class="k">if</span> <span class="n">schedule_pattern</span><span class="p">:</span>
-            <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">(</span>
-                <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
+            <span class="n">request_json</span> <span class="o">=</span> <span class="n">SchedulePattern</span><span class="p">()</span><span class="o">.</span><span class="n">create_schedule</span><span class="p">(</span><span class="n">request_json</span><span class="p">,</span> <span class="n">schedule_pattern</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">request_json</span>
 
@@ -1618,7 +1781,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">subclient_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the SubclientGUID&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subClientEntity&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subclientGUID&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subClientEntity&#39;</span> <span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subclientGUID&#39;</span><span class="p">)</span>
 
     <span class="nd">@display_name</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">display_name</span><span class="p">):</span>
@@ -2231,8 +2394,9 @@
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the same location.</span>
 
 <span class="sd">            Args:</span>
@@ -2258,16 +2422,12 @@
 <span class="sd">                    default: None</span>
 
 <span class="sd">                fs_options      (dict)          -- dictionary that includes all advanced options</span>
-
 <span class="sd">                    options:</span>
-
 <span class="sd">                        all_versions        : if set to True restores all the versions of the</span>
 <span class="sd">                                                specified file</span>
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
-
 <span class="sd">                        validate_only       : To validate data backed up for restore</span>
 
-<span class="sd">                        no_of_streams   (int)          -- Number of streams to be used for restore</span>
 
 <span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
 
@@ -2280,6 +2440,12 @@
 <span class="sd">                                                                    doc for the types of Jsons</span>
 
 <span class="sd">                proxy_client    (str)          -- Proxy client used during FS under NAS operations</span>
+
+<span class="sd">                advanced_options    (dict)  -- Advanced restore options</span>
+
+<span class="sd">                    Options:</span>
+
+<span class="sd">                        job_description (str)   --  Restore job description</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -2307,6 +2473,7 @@
             <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="n">advanced_options</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.restore_out_of_place"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclient.restore_out_of_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_out_of_place</span><span class="p">(</span>
@@ -2321,8 +2488,8 @@
             <span class="n">to_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destionation location.</span>
 
@@ -2355,28 +2522,18 @@
 <span class="sd">                    default: None</span>
 
 <span class="sd">                fs_options      (dict)          -- dictionary that includes all advanced options</span>
-
 <span class="sd">                    options:</span>
-
 <span class="sd">                        preserve_level      : preserve level option to set in restore</span>
-
 <span class="sd">                        proxy_client        : proxy that needed to be used for restore</span>
-
 <span class="sd">                        impersonate_user    : Impersonate user options for restore</span>
-
 <span class="sd">                        impersonate_password: Impersonate password option for restore</span>
 <span class="sd">                                                in base64 encoded form</span>
-
 <span class="sd">                        all_versions        : if set to True restores all the versions of the</span>
 <span class="sd">                                                specified file</span>
-
 <span class="sd">                        versions            : list of version numbers to be backed up</span>
-
 <span class="sd">                        media_agent         : Media Agent need to be used for Browse and restore</span>
-
 <span class="sd">                        validate_only       : To validate data backed up for restore</span>
 
-<span class="sd">                        no_of_streams   (int)       -- Number of streams to be used for restore</span>
 
 <span class="sd">                schedule_pattern (dict) -- scheduling options to be included for the task</span>
 
@@ -2389,6 +2546,12 @@
 <span class="sd">                                                                    doc for the types of Jsons</span>
 
 <span class="sd">                proxy_client    (str)          -- Proxy client used during FS under NAS operations</span>
+
+<span class="sd">                advanced_options    (dict)  -- Advanced restore options</span>
+
+<span class="sd">                    Options:</span>
+
+<span class="sd">                        job_description (str)   --  Restore job description</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -2410,6 +2573,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subClientEntity</span>
 
+        <span class="k">if</span> <span class="n">fs_options</span> <span class="ow">and</span> <span class="s1">&#39;proxy_client&#39;</span> <span class="ow">in</span> <span class="n">fs_options</span><span class="p">:</span>
+            <span class="n">proxy_client</span> <span class="o">=</span> <span class="n">fs_options</span><span class="p">[</span><span class="s1">&#39;proxy_client&#39;</span><span class="p">]</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">_restore_out_of_place</span><span class="p">(</span>
             <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
             <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
@@ -2421,7 +2587,8 @@
             <span class="n">to_time</span><span class="o">=</span><span class="n">to_time</span><span class="p">,</span>
             <span class="n">fs_options</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">,</span>
-            <span class="n">proxy_client</span><span class="o">=</span><span class="n">proxy_client</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="n">advanced_options</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Subclient.set_backup_nodes"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclient.set_backup_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">set_backup_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_access_nodes</span><span class="p">):</span>
@@ -2777,7 +2944,7 @@
 
 <span class="sd">                    if the plan association is unsuccessful</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plan</span>
+        <span class="kn">from</span> <span class="nn">.plan</span> <span class="k">import</span> <span class="n">Plan</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Plan</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">plan_name</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">({</span>
@@ -2814,11 +2981,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -2829,7 +3004,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

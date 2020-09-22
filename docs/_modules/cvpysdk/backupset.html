@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../index.html">Module code</a> &raquo;</li>
         
@@ -271,25 +274,25 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.subclient</span> <span class="kn">import</span> <span class="n">Subclients</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Backupsets"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets">[docs]</a><span class="k">class</span> <span class="nc">Backupsets</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the backupsets associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Backupsets class.</span>
 
 <span class="sd">            Args:</span>
@@ -303,8 +306,8 @@
 <span class="sd">                    if class object is not an instance of the Agent / Instance class</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
-        <span class="kn">from</span> <span class="nn">.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
+        <span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agent</span>
+        <span class="kn">from</span> <span class="nn">.instance</span> <span class="k">import</span> <span class="n">Instance</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -326,16 +329,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_BACKUPSETS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_ALL_BACKUPSETS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">.backupsets.fsbackupset</span> <span class="kn">import</span> <span class="n">FSBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.nasbackupset</span> <span class="kn">import</span> <span class="n">NASBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.hanabackupset</span> <span class="kn">import</span> <span class="n">HANABackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.cabackupset</span> <span class="kn">import</span> <span class="n">CloudAppsBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.postgresbackupset</span> <span class="kn">import</span> <span class="n">PostgresBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.adbackupset</span> <span class="kn">import</span> <span class="n">ADBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.db2backupset</span> <span class="kn">import</span> <span class="n">DB2Backupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.vsbackupset</span> <span class="kn">import</span> <span class="n">VSBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.aadbackupset</span> <span class="kn">import</span> <span class="n">AzureAdBackupset</span>
-        <span class="kn">from</span> <span class="nn">.backupsets.sharepointbackupset</span> <span class="kn">import</span> <span class="n">SharepointBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.fsbackupset</span> <span class="k">import</span> <span class="n">FSBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.nasbackupset</span> <span class="k">import</span> <span class="n">NASBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.hanabackupset</span> <span class="k">import</span> <span class="n">HANABackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.cabackupset</span> <span class="k">import</span> <span class="n">CloudAppsBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.postgresbackupset</span> <span class="k">import</span> <span class="n">PostgresBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.adbackupset</span> <span class="k">import</span> <span class="n">ADBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.db2backupset</span> <span class="k">import</span> <span class="n">DB2Backupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.vsbackupset</span> <span class="k">import</span> <span class="n">VSBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.aadbackupset</span> <span class="k">import</span> <span class="n">AzureAdBackupset</span>
+        <span class="kn">from</span> <span class="nn">.backupsets.sharepointbackupset</span> <span class="k">import</span> <span class="n">SharepointBackupset</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupsets_dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;file system&#39;</span><span class="p">:</span> <span class="n">FSBackupset</span><span class="p">,</span>
@@ -358,7 +361,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_backup_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all backupsets of the agent of a client.</span>
 
 <span class="sd">            Returns:</span>
@@ -380,15 +383,15 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Backupsets class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Backupsets class instance for Agent: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the backupsets for the selected Agent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the backupset for the given backupset ID or</span>
 <span class="sd">            the details of the backupset for given backupset Name.</span>
 
@@ -592,6 +595,8 @@
 
 <span class="sd">                    plan_name       (str)   -- name of the plan to associate to the backupset</span>
 
+<span class="sd">                    is_nas_turbo_backupset  (bool)    --  True for NAS based client.</span>
+
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Backupset class, if created successfully</span>
@@ -641,6 +646,10 @@
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_nas_turbo_type&#39;</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;backupSetInfo&quot;</span><span class="p">][</span><span class="s2">&quot;commonBackupSet&quot;</span><span class="p">][</span><span class="s2">&quot;isNasTurboBackupSet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_nas_turbo_type&#39;</span><span class="p">,</span>
+                                                                                                 <span class="kc">False</span><span class="p">)</span>
 
         <span class="n">agent_settings</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;db2&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -707,14 +716,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
 
-
-
-<div class="viewcode-block" id="Backupsets.add_archiveset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets.add_archiveset">[docs]</a>    <span class="k">def</span> <span class="nf">add_archiveset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveset_name</span><span class="p">):</span>
+<div class="viewcode-block" id="Backupsets.add_archiveset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupsets.add_archiveset">[docs]</a>    <span class="k">def</span> <span class="nf">add_archiveset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archiveset_name</span><span class="p">,</span> <span class="n">is_nas_turbo_backupset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        Adds a new archiveset to the agent. It is just a backupset but is mainly used for archive only items</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            archiveset_name     (str) -- name of new archiveset to add</span>
+
+<span class="sd">            is_nas_turbo_backupset  (bool) -- True for NAS based client.</span>
+<span class="sd">                default -   False</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
 <span class="sd">        object - instance of the Backupset class, if created successfully</span>
@@ -741,11 +751,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;archiveset_name&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Archiveset &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">archiveset_name</span><span class="p">))</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;29&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="s2">&quot;Archiveset is not applicable to this application type.&quot;</span><span class="p">)</span>
+
+
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;backupSetInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;useContentFromPlan&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                 <span class="s2">&quot;planEntity&quot;</span><span class="p">:</span> <span class="p">{},</span>
                 <span class="s2">&quot;commonBackupSet&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;isNasTurboBackupSet&quot;</span><span class="p">:</span> <span class="n">is_nas_turbo_backupset</span><span class="p">,</span>
                     <span class="s2">&quot;isArchivingEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                     <span class="s2">&quot;isDefaultBackupSet&quot;</span><span class="p">:</span> <span class="kc">False</span>
                 <span class="p">},</span>
@@ -1051,7 +1067,7 @@
 <div class="viewcode-block" id="Backupset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset">[docs]</a><span class="k">class</span> <span class="nc">Backupset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing backupset operations for a specific backupset.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">backupset_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">,</span> <span class="n">backupset_name</span><span class="p">,</span> <span class="n">backupset_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the backupset object.</span>
 
 <span class="sd">            Args:</span>
@@ -1136,6 +1152,7 @@
             <span class="s1">&#39;job_id&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s1">&#39;commcell_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span><span class="p">,</span>
             <span class="s1">&#39;include_aged_data&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;include_meta_data&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
             <span class="s1">&#39;include_hidden&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s1">&#39;include_running_jobs&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s1">&#39;vs_volume_browse&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -1145,7 +1162,7 @@
             <span class="s1">&#39;_raw_response&#39;</span><span class="p">:</span> <span class="kc">False</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the persistent attributes&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_methods</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
@@ -1154,7 +1171,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Backupset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Backupset class instance for Backupset: &quot;</span><span class="si">{0}</span><span class="s1">&quot; &#39;</span>
                                  <span class="s1">&#39;for Instance: &quot;</span><span class="si">{1}</span><span class="s1">&quot; of Agent: &quot;</span><span class="si">{2}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
@@ -1215,22 +1232,36 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">_run_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">return_list</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Triggers incremental backup job for the given subclient,</span>
-<span class="sd">            and appends its Job object to the list.</span>
+    <span class="k">def</span> <span class="nf">_run_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">return_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Triggers backup job for the given subclient, and appends its Job object to the list.</span>
+<span class="sd">            Backup job is started only when backup activity is enabled and storage policy is set for it.</span>
 
-<span class="sd">            The SDKExcpetion class instance is appended to the list,</span>
+<span class="sd">            The SDKException class instance is appended to the list,</span>
 <span class="sd">            if any exception is raised while running the backup job for the Subclient.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                subclient_name (str)   --  name of the subclient to trigger the backup for</span>
 
 <span class="sd">                return_list    (list)  --  list to append the job object to</span>
+
+<span class="sd">            Kwargs:</span>
+<span class="sd">                All arguments used by subclient.backup() can be used here. Commonly used arguments are</span>
+
+<span class="sd">                backup_level   (str)   --  The type of backup to run</span>
+
+<span class="sd">                advanced_options   (dict)  --  advanced backup options to be included while</span>
+<span class="sd">                                    making the request</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span><span class="o">.</span><span class="n">backup</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">job</span><span class="p">:</span>
+            <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">subclient</span><span class="o">.</span><span class="n">is_backup_enabled</span> <span class="ow">and</span> <span class="n">subclient</span><span class="o">.</span><span class="n">storage_policy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">job</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">backup</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Staggering the next backup job to be started</span>
         <span class="k">except</span> <span class="n">SDKException</span> <span class="k">as</span> <span class="n">excp</span><span class="p">:</span>
             <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">excp</span><span class="p">)</span>
 
@@ -1498,7 +1529,7 @@
 
                     <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;queries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;whereClause&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_dict</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;job_id&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;job_id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;advOptions&#39;</span><span class="p">][</span><span class="s1">&#39;advConfig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;browseAdvancedConfigBrowseByJob&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;commcellId&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;commcell_id&#39;</span><span class="p">],</span>
@@ -1508,6 +1539,9 @@
 
         <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;include_aged_data&#39;</span><span class="p">]:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;includeAgedData&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;include_meta_data&#39;</span><span class="p">]:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;includeMetadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;include_hidden&#39;</span><span class="p">]:</span>
             <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;includeHidden&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1710,11 +1744,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">_do_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_do_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">retry</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs a browse operation with the given options.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            options     (dict)  --  dictionary of browse options</span>
+
+<span class="sd">            retry       (int)   --  Number of times to retry for browse</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            list - List of only the file, folder paths from the browse response</span>
@@ -1729,6 +1765,14 @@
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BROWSE</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
 
+        <span class="n">attempt</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">attempt</span> <span class="o">&lt;=</span> <span class="n">retry</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="o">==</span> <span class="p">{}:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
+                <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_BROWSE</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">attempt</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Backupset.update_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.update_properties">[docs]</a>    <span class="k">def</span> <span class="nf">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">):</span>
@@ -1902,7 +1946,7 @@
 
 <span class="sd">                    if plan is not eligible to be associated</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plan</span>
+        <span class="kn">from</span> <span class="nn">.plan</span> <span class="k">import</span> <span class="n">Plan</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Plan</span><span class="p">):</span>
             <span class="n">plan_obj</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
@@ -1986,10 +2030,21 @@
             <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Failed to set this as the Default Backup Set</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
-<div class="viewcode-block" id="Backupset.backup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Runs Incremental backup job for all subclients in this backupset.</span>
+<div class="viewcode-block" id="Backupset.backup"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.backup">[docs]</a>    <span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs backup job for all subclients in this backupset.</span>
 
-<span class="sd">            Runs Full Backup job for a subclient, if no job had been ran earlier for it.</span>
+<span class="sd">            kwargs:</span>
+<span class="sd">                Please refer subclient.backup() for all the supported arguments. Commonly used arguments are,</span>
+
+<span class="sd">                backup_level        (str)   --  level of backup the user wish to run</span>
+<span class="sd">                        Full / Incremental / Differential / Synthetic_full</span>
+<span class="sd">                    default: Incremental</span>
+
+<span class="sd">                advanced_options   (dict)  --  advanced backup options to be included while</span>
+<span class="sd">                                                    making the request</span>
+
+<span class="sd">                common_backup_options      (dict)  --  advanced job options to be included while</span>
+<span class="sd">                                                        making request</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list    -   list consisting of the job objects for the backup jobs started for</span>
@@ -2002,7 +2057,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">subclient</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">:</span>
                 <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
-                    <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_backup</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">return_list</span><span class="p">)</span>
+                    <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_backup</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">return_list</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span>
                 <span class="p">)</span>
                 <span class="n">thread_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
                 <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
@@ -2192,11 +2247,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -2207,7 +2270,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

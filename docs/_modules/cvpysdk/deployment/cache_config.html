@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.deployment.cache_config &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.deployment.cache_config &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -170,6 +173,8 @@
 <span class="sd">    __init__(commcell_object)             --  initialize commcell_object of CommServeCache class</span>
 <span class="sd">    associated with the commcell</span>
 
+<span class="sd">    get_request_xml()                     --  returns request xml for cache and remote cache related operations</span>
+
 <span class="sd">    get_cs_cache_path()                   --  returns CS cache path</span>
 
 <span class="sd">    delete_cache()                        --  deletes CS cache</span>
@@ -187,17 +192,22 @@
 <span class="sd">    configure_remote_cache()              --  Configures client as remote cache</span>
 
 <span class="sd">    configure_packages_to_sync()          --  Configures packages to sync for the remote cache</span>
+
+<span class="sd">    assoc_entity_to_remote_cache()        --  Associates entity to the Remote Cache</span>
+
+<span class="sd">    delete_remote_cache_contents()        --  deletes remote cache contents</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="kn">import</span> <span class="n">UnixDownloadFeatures</span>
-<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="kn">import</span> <span class="n">WindowsDownloadFeatures</span>
-<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="kn">import</span> <span class="n">OSNameIDMapping</span>
+<span class="kn">from</span> <span class="nn">xml.etree</span> <span class="k">import</span> <span class="n">ElementTree</span> <span class="k">as</span> <span class="n">ET</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="k">import</span> <span class="n">UnixDownloadFeatures</span>
+<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="k">import</span> <span class="n">WindowsDownloadFeatures</span>
+<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="k">import</span> <span class="n">OSNameIDMapping</span>
 
 
 <div class="viewcode-block" id="CommServeCache"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.CommServeCache">[docs]</a><span class="k">class</span> <span class="nc">CommServeCache</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;class for downloading software packages&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize commcell_object of the Download class.</span>
 
 <span class="sd">            Args:</span>
@@ -209,6 +219,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span> <span class="o">=</span> <span class="n">CommServeCache</span><span class="o">.</span><span class="n">get_request_xml</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CommServeCache.get_request_xml"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.CommServeCache.get_request_xml">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_request_xml</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;Returns request xml for cache and remote cache related operations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;&lt;EVGui_SetUpdateAgentInfoReq&gt;</span>
+<span class="s2">                &lt;uaInfo deletePackageCache=&quot;&quot; deleteUpdateCache=&quot;&quot; swAgentOpType=&quot;&quot;</span>
+<span class="s2">                uaOpCode=&quot;0&quot; uaPackageCacheStatus=&quot;0&quot;</span>
+<span class="s2">                 uaUpdateCacheStatus=&quot;0&quot; &gt;</span>
+<span class="s2">                &lt;uaName id=&quot;2&quot; name=&quot;&quot;/&gt;</span>
+<span class="s2">                &lt;client _type_=&quot;3&quot;/&gt;</span>
+<span class="s2">                &lt;/uaInfo&gt;</span>
+<span class="s2">                &lt;/EVGui_SetUpdateAgentInfoReq&gt;</span>
+<span class="s2">                &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="CommServeCache.get_cs_cache_path"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.CommServeCache.get_cs_cache_path">[docs]</a>    <span class="k">def</span> <span class="nf">get_cs_cache_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -248,19 +272,13 @@
 
 <span class="sd">            - Response is incorrect</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span><span class="p">)</span>
+        <span class="n">uaInfo</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.//uaInfo&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;deletePackageCache&#39;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;deleteUpdateCache&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;swAgentOpType&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
 
-        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">            &lt;uaInfo deletePackageCache=&quot;1&quot; deleteUpdateCache=&quot;1&quot; swAgentOpType=&quot;1&quot;</span>
-<span class="s2">            uaOpCode=&quot;0&quot; uaPackageCacheStatus=&quot;0&quot;</span>
-<span class="s2">             uaUpdateCacheStatus=&quot;0&quot; &gt;</span>
-<span class="s2">            &lt;uaName id=&quot;2&quot; name=&quot;&quot;/&gt;</span>
-<span class="s2">            &lt;client _type_=&quot;3&quot;/&gt;</span>
-<span class="s2">            &lt;/uaInfo&gt;</span>
-<span class="s2">            &lt;/EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_xml</span><span class="p">)</span>
-
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed with error: [</span><span class="si">{0}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
@@ -282,18 +300,13 @@
 <span class="sd">            - Response is incorrect</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">            &lt;uaInfo defaultShareName=&quot;&quot; deletePackageCache=&quot;0&quot; deleteUpdateCache=&quot;0&quot; swAgentOpType=&quot;4&quot;</span>
-<span class="s2">            uaPackageCacheStatus=&quot;0&quot; uaUpdateCacheStatus=&quot;0&quot;&gt;</span>
-<span class="s2">            &lt;uaName id=&quot;2&quot; name=&quot;&quot;/&gt;</span>
-<span class="s2">            &lt;client _type_=&quot;3&quot;/&gt;</span>
-<span class="s2">            &lt;/uaInfo&gt;</span>
-<span class="s2">            &lt;uaList/&gt;</span>
-<span class="s2">            &lt;/EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span><span class="p">)</span>
+        <span class="n">uaInfo</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.//uaInfo&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;deletePackageCache&#39;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;deleteUpdateCache&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;swAgentOpType&quot;</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">)</span>
 
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_xml</span><span class="p">)</span>
-
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed with error: [</span><span class="si">{0}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
@@ -308,7 +321,7 @@
 <div class="viewcode-block" id="RemoteCache"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.RemoteCache">[docs]</a><span class="k">class</span> <span class="nc">RemoteCache</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;class for downloading software packages&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize commcell_object of the Download class.</span>
 
 <span class="sd">            Args:</span>
@@ -321,6 +334,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span> <span class="o">=</span> <span class="n">CommServeCache</span><span class="o">.</span><span class="n">get_request_xml</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell</span><span class="o">.</span><span class="n">_services</span>
 
 <div class="viewcode-block" id="RemoteCache.get_remote_cache_path"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.RemoteCache.get_remote_cache_path">[docs]</a>    <span class="k">def</span> <span class="nf">get_remote_cache_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -340,9 +356,9 @@
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_xml</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">clients</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;qualifiedClients&quot;</span><span class="p">]:</span>
-                    <span class="k">if</span> <span class="n">clients</span><span class="p">[</span><span class="s1">&#39;clientName&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">:</span>
-                        <span class="n">remote_cache_path</span> <span class="o">=</span> <span class="n">clients</span><span class="p">[</span><span class="s2">&quot;cachePath&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">clients</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;uaInfo&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">clients</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">][</span><span class="s1">&#39;clientName&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">:</span>
+                        <span class="n">remote_cache_path</span> <span class="o">=</span> <span class="n">clients</span><span class="p">[</span><span class="s2">&quot;uaCachePath&quot;</span><span class="p">]</span>
                         <span class="k">break</span>
                 <span class="k">return</span> <span class="n">remote_cache_path</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -363,18 +379,16 @@
 
 <span class="sd">            - Response is incorrect</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span><span class="p">)</span>
+        <span class="n">uaInfo</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.//uaInfo&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;uaCachePath&#39;</span><span class="p">,</span> <span class="n">cache_path</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;uaOpCode&#39;</span><span class="p">,</span> <span class="s2">&quot;5&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;uaPackageCacheStatus&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;uaUpdateCacheStatus&#39;</span><span class="p">)</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;./uaInfo/uaName&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;./uaInfo/uaName&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
 
-        <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">             &lt;EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">             &lt;uaInfo uaCachePath=&quot;</span><span class="si">%s</span><span class="s2">&quot; uaOpCode=&quot;5&quot;&gt;</span>
-<span class="s2">             &lt;uaName id=&quot;</span><span class="si">%s</span><span class="s2">&quot; name=&quot;</span><span class="si">%s</span><span class="s2">&quot;/&gt;</span>
-<span class="s2">             &lt;client _type_=&quot;3&quot;/&gt;</span>
-<span class="s2">             &lt;/uaInfo&gt;</span>
-<span class="s2">             &lt;uaList/&gt;</span>
-<span class="s2">             &lt;/EVGui_SetUpdateAgentInfoReq&gt;</span>
-<span class="s2">             &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
-
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_xml</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed with error: [</span><span class="si">{0}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
@@ -420,23 +434,25 @@
 <span class="sd">                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">win_os_id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OSNameIDMapping.</span><span class="si">{</span><span class="n">each</span><span class="si">}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">win_os</span><span class="p">]</span>
-        <span class="n">unix_os_id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OSNameIDMapping.</span><span class="si">{</span><span class="n">each</span><span class="si">}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">unix_os</span><span class="p">]</span>
-        <span class="n">win_packages</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WindowsDownloadFeatures.</span><span class="si">{</span><span class="n">packages</span><span class="si">}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">packages</span> <span class="ow">in</span> <span class="n">win_package_list</span><span class="p">]</span>
-        <span class="n">unix_packages</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UnixDownloadFeatures.</span><span class="si">{</span><span class="n">packages</span><span class="si">}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">packages</span> <span class="ow">in</span> <span class="n">unix_package_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">win_os</span><span class="p">:</span>
+            <span class="n">win_os_id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;OSNameIDMapping.</span><span class="si">{each}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">win_os</span><span class="p">]</span>
+            <span class="n">win_packages</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;WindowsDownloadFeatures.</span><span class="si">{packages}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">packages</span> <span class="ow">in</span> <span class="n">win_package_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">unix_os</span><span class="p">:</span>
+            <span class="n">unix_os_id</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;OSNameIDMapping.</span><span class="si">{each}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">unix_os</span><span class="p">]</span>
+            <span class="n">unix_packages</span> <span class="o">=</span> <span class="p">[</span><span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;UnixDownloadFeatures.</span><span class="si">{packages}</span><span class="s2">.value&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">packages</span> <span class="ow">in</span> <span class="n">unix_package_list</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">win_os_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">unix_os_id</span><span class="p">:</span>
-            <span class="n">qscript</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="si">}</span><span class="s1">&#39; -si SyncAll&#39;&#39;&#39;</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="n">unix_os_id</span><span class="p">:</span>
-            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="si">}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
-                       <span class="sa">f</span><span class="s1">&#39;&#39;&#39;-si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">win_os_id</span><span class="p">))</span><span class="si">}</span><span class="s1"> -si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">win_packages</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="n">win_os_id</span><span class="p">:</span>
-            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="si">}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
-                       <span class="sa">f</span><span class="s1">&#39;&#39;&#39;-si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">unix_os_id</span><span class="p">))</span><span class="si">}</span><span class="s1"> -si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">unix_packages</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">win_os</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">unix_os</span><span class="p">:</span>
+            <span class="n">qscript</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{self.client_object.client_name}</span><span class="s1">&#39; -si SyncAll&#39;&#39;&#39;</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">unix_os</span><span class="p">:</span>
+            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{self.client_object.client_name}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
+                       <span class="n">f</span><span class="s1">&#39;&#39;&#39;-si {&quot;,&quot;.join(map(str, win_os_id))} -si {&quot;,&quot;.join(map(str, win_packages))}&#39;&#39;&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">win_os</span><span class="p">:</span>
+            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{self.client_object.client_name}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
+                       <span class="n">f</span><span class="s1">&#39;&#39;&#39;-si {&quot;,&quot;.join(map(str, unix_os_id))} -si {&quot;,&quot;.join(map(str, unix_packages))}&#39;&#39;&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="si">}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
-                       <span class="sa">f</span><span class="s1">&#39;&#39;&#39;-si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">win_os_id</span><span class="p">))</span><span class="si">}</span><span class="s1"> -si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">win_packages</span><span class="p">))</span><span class="si">}</span><span class="s1"> &#39;&#39;&#39;</span>
-                       <span class="sa">f</span><span class="s1">&#39;&#39;&#39;-si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">unix_os_id</span><span class="p">))</span><span class="si">}</span><span class="s1"> -si </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">unix_packages</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
+            <span class="n">qscript</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;&#39;&#39;-sn QS_GranularConfigRemoteCache -si &#39;</span><span class="si">{self.client_object.client_name}</span><span class="s1">&#39; -si SyncCustom &#39;&#39;&#39;</span>
+                       <span class="n">f</span><span class="s1">&#39;&#39;&#39;-si {&quot;,&quot;.join(map(str, win_os_id))} -si {&quot;,&quot;.join(map(str, win_packages))} &#39;&#39;&#39;</span>
+                       <span class="n">f</span><span class="s1">&#39;&#39;&#39;-si {&quot;,&quot;.join(map(str, unix_os_id))} -si {&quot;,&quot;.join(map(str, unix_packages))}&#39;&#39;&#39;</span><span class="p">)</span>
 
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">_qoperation_execscript</span><span class="p">(</span><span class="n">qscript</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CVGui_GenericResp&#39;</span><span class="p">):</span>
@@ -449,7 +465,113 @@
                 <span class="s1">&#39;101&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;Error Code:&quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Error Message: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="n">response</span><span class="p">[</span><span class="s1">&#39;CVGui_GenericResp&#39;</span><span class="p">][</span><span class="s1">&#39;@errorCode&#39;</span><span class="p">],</span>
-                    <span class="n">error_message</span><span class="p">))</span></div></div>
+                    <span class="n">error_message</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="RemoteCache.delete_remote_cache_contents"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.RemoteCache.delete_remote_cache_contents">[docs]</a>    <span class="k">def</span> <span class="nf">delete_remote_cache_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete remote cache contents</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">            - Failed to execute the api</span>
+
+<span class="sd">            - Response is incorrect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_xml</span><span class="p">)</span>
+        <span class="n">uaInfo</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.//uaInfo&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;deletePackageCache&#39;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;deleteUpdateCache&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">uaInfo</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;swAgentOpType&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;./uaInfo/uaName&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+        <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;./uaInfo/uaName&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed with error: [</span><span class="si">{0}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Error Code:&quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Error Message: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">),</span> <span class="n">error_message</span><span class="p">)</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="RemoteCache.assoc_entity_to_remote_cache"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.cache_config.RemoteCache.assoc_entity_to_remote_cache">[docs]</a>    <span class="k">def</span> <span class="nf">assoc_entity_to_remote_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Points/Associates entity to the Remote Cache Client</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    client_name (str)  -- The client which has to be pointed to Remote Cache</span>
+
+<span class="sd">                    client_group_name (str)  -- The client_group which has to be pointed to Remote Cache</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                    SDKException:</span>
+<span class="sd">                    - Failed to execute the api</span>
+
+<span class="sd">                    - Response is incorrect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">client_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">client_group_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No clients or client groups to associate; Please provide a valid name&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client_name</span> <span class="ow">and</span> <span class="n">client_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">all_clients</span><span class="p">:</span>
+            <span class="n">entity_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_name</span><span class="p">)</span>
+            <span class="n">entity_id</span> <span class="o">=</span> <span class="n">entity_obj</span><span class="o">.</span><span class="n">client_id</span>
+            <span class="n">entity_name</span> <span class="o">=</span> <span class="n">entity_obj</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="n">entity_type</span> <span class="o">=</span><span class="s2">&quot;0&quot;</span>
+
+        <span class="k">elif</span> <span class="n">client_group_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">all_clientgroups</span><span class="p">:</span>
+            <span class="n">entity_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">client_group_name</span><span class="p">)</span>
+            <span class="n">entity_id</span> <span class="o">=</span> <span class="n">entity_obj</span><span class="o">.</span><span class="n">clientgroup_id</span>
+            <span class="n">entity_name</span> <span class="o">=</span> <span class="n">entity_obj</span><span class="o">.</span><span class="n">clientgroup_name</span>
+            <span class="n">entity_type</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_name</span> <span class="k">if</span> <span class="n">client_name</span> <span class="k">else</span> <span class="n">client_group_name</span><span class="p">))</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;EVGui_SetUpdateAgentInfoReq&quot;</span> <span class="p">:{</span>
+                <span class="s2">&quot;uaInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;uaCachePath&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_remote_cache_path</span><span class="p">(),</span>
+                    <span class="s2">&quot;uaOpCode&quot;</span><span class="p">:</span> <span class="s2">&quot;5&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;uaName&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_object</span><span class="o">.</span><span class="n">client_name</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;uaList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;addedList&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">entity_name</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span>
+                        <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed with error: [</span><span class="si">{0}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                            <span class="s1">&#39;Response&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;101&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;Error Code:&quot;</span><span class="si">{0}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Error Message: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_code</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -462,11 +584,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -477,7 +607,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../index.html">Module code</a> &raquo;</li>
         
@@ -215,6 +218,8 @@
 <span class="sd">    new cloud storage instance</span>
 
 <span class="sd">    refresh()                       --  refresh the instances associated with the agent</span>
+<span class="sd">    </span>
+<span class="sd">    add_mysql_instance()            --  Method to add new mysql Instance</span>
 
 
 <span class="sd">Instance:</span>
@@ -280,25 +285,25 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.subclient</span> <span class="kn">import</span> <span class="n">Subclients</span>
-<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">AppIDAType</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span><span class="p">,</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">AppIDAType</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span><span class="p">,</span> <span class="n">Schedules</span>
 
 
 <div class="viewcode-block" id="Instances"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances">[docs]</a><span class="k">class</span> <span class="nc">Instances</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the instances associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Instances class.</span>
 
 <span class="sd">            Args:</span>
@@ -326,24 +331,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_vs_instance_type_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-        <span class="kn">from</span> <span class="nn">.instances.vsinstance</span> <span class="kn">import</span> <span class="n">VirtualServerInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.cainstance</span> <span class="kn">import</span> <span class="n">CloudAppsInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.bigdataappsinstance</span> <span class="kn">import</span> <span class="n">BigDataAppsInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sqlinstance</span> <span class="kn">import</span> <span class="n">SQLServerInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.hanainstance</span> <span class="kn">import</span> <span class="n">SAPHANAInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.oracleinstance</span> <span class="kn">import</span> <span class="n">OracleInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sybaseinstance</span> <span class="kn">import</span> <span class="n">SybaseInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.saporacleinstance</span> <span class="kn">import</span> <span class="n">SAPOracleInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.mysqlinstance</span> <span class="kn">import</span> <span class="n">MYSQLInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndbinstance</span> <span class="kn">import</span> <span class="n">LNDBInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndocinstance</span> <span class="kn">import</span> <span class="n">LNDOCInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndminstance</span> <span class="kn">import</span> <span class="n">LNDMInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.postgresinstance</span> <span class="kn">import</span> <span class="n">PostgreSQLInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.informixinstance</span> <span class="kn">import</span> <span class="n">InformixInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.vminstance</span> <span class="kn">import</span> <span class="n">VMInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.db2instance</span> <span class="kn">import</span> <span class="n">DB2Instance</span>
-        <span class="kn">from</span> <span class="nn">.instances.aadinstance</span> <span class="kn">import</span> <span class="n">AzureAdInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sharepointinstance</span> <span class="kn">import</span> <span class="n">SharepointInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.vsinstance</span> <span class="k">import</span> <span class="n">VirtualServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.cainstance</span> <span class="k">import</span> <span class="n">CloudAppsInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.bigdataappsinstance</span> <span class="k">import</span> <span class="n">BigDataAppsInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sqlinstance</span> <span class="k">import</span> <span class="n">SQLServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.hanainstance</span> <span class="k">import</span> <span class="n">SAPHANAInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.oracleinstance</span> <span class="k">import</span> <span class="n">OracleInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sybaseinstance</span> <span class="k">import</span> <span class="n">SybaseInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.saporacleinstance</span> <span class="k">import</span> <span class="n">SAPOracleInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.mysqlinstance</span> <span class="k">import</span> <span class="n">MYSQLInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndbinstance</span> <span class="k">import</span> <span class="n">LNDBInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndocinstance</span> <span class="k">import</span> <span class="n">LNDOCInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndminstance</span> <span class="k">import</span> <span class="n">LNDMInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.postgresinstance</span> <span class="k">import</span> <span class="n">PostgreSQLInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.informixinstance</span> <span class="k">import</span> <span class="n">InformixInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.vminstance</span> <span class="k">import</span> <span class="n">VMInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.db2instance</span> <span class="k">import</span> <span class="n">DB2Instance</span>
+        <span class="kn">from</span> <span class="nn">.instances.aadinstance</span> <span class="k">import</span> <span class="n">AzureAdInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sharepointinstance</span> <span class="k">import</span> <span class="n">SharepointInstance</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
@@ -367,7 +372,7 @@
             <span class="s1">&#39;sharepoint server&#39;</span><span class="p">:</span> <span class="n">SharepointInstance</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all instances of the agent of a client.</span>
 
 <span class="sd">            Returns:</span>
@@ -388,15 +393,15 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Instances class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Instances class instance for Agent: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the instances associated to the Agent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_instances</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the instance for the given instance ID or</span>
 <span class="sd">            the details of the instance for given instance Name.</span>
 
@@ -1071,15 +1076,32 @@
 <span class="sd">            Get Cluster Type from Default Instance to assign it to the New Instance.</span>
 <span class="sd">            Atleast one instance should be present in the client.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cluster_properties</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INSTANCES</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;instanceProperties&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="n">clusterProperties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;instanceProperties&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">clusterType</span> <span class="o">=</span> <span class="n">clusterProperties</span><span class="p">[</span><span class="s2">&quot;distributedClusterInstance&quot;</span><span class="p">][</span><span class="s2">&quot;clusterType&quot;</span><span class="p">]</span>
+                <span class="n">cluster_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;instanceProperties&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+
+        <span class="n">cluster_type</span> <span class="o">=</span> <span class="n">cluster_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;distributedClusterInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clusterType&#39;</span><span class="p">)</span>
+        <span class="n">cluster_config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">uxfs_config</span> <span class="o">=</span> <span class="n">cluster_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;distributedClusterInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clusterConfig&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uxfsConfig&#39;</span><span class="p">)</span>
+        <span class="n">hadoop_config</span> <span class="o">=</span> <span class="n">cluster_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;distributedClusterInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clusterConfig&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hadoopConfig&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">uxfs_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">uxfs_config</span><span class="p">[</span><span class="s1">&#39;coordinatorNode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MasterNode&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)}</span>
+            <span class="n">cluster_config</span><span class="p">[</span><span class="s1">&#39;uxfsConfig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uxfs_config</span>
+        <span class="k">if</span> <span class="n">hadoop_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hadoop_config</span><span class="p">[</span><span class="s1">&#39;coordinatorNode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MasterNode&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)}</span>
+            <span class="n">hbase_config</span> <span class="o">=</span> <span class="n">hadoop_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hadoopApps&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;appConfigs&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hBaseConfig&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">hbase_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">hadoop_config</span><span class="p">[</span><span class="s2">&quot;hadoopApps&quot;</span><span class="p">][</span><span class="s2">&quot;appConfigs&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;hBaseConfig&#39;</span><span class="p">][</span><span class="s2">&quot;hbaseClientNode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MasterNode&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)}</span>
+            <span class="n">cluster_config</span><span class="p">[</span><span class="s1">&#39;hadoopConfig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hadoop_config</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1090,17 +1112,11 @@
                     <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="p">[</span><span class="s2">&quot;instanceName&quot;</span><span class="p">],</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;distributedClusterInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;clusterType&quot;</span><span class="p">:</span> <span class="n">clusterType</span><span class="p">,</span>
+                    <span class="s2">&quot;clusterType&quot;</span><span class="p">:</span> <span class="n">cluster_type</span><span class="p">,</span>
                     <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="p">[</span><span class="s2">&quot;instanceName&quot;</span><span class="p">]</span>
                     <span class="p">},</span>
-                    <span class="s2">&quot;clusterConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;uxfsConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;coordinatorNode&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="p">[</span><span class="s2">&quot;MasterNode&quot;</span><span class="p">]</span>
-                            <span class="p">}</span>
-                        <span class="p">}</span>
-                    <span class="p">},</span>
+                    <span class="s2">&quot;clusterConfig&quot;</span><span class="p">:</span> <span class="n">cluster_config</span><span class="p">,</span>
                     <span class="s2">&quot;dataAccessNodes&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">&quot;dataAccessNodes&quot;</span><span class="p">:</span> <span class="n">distributed_options</span><span class="p">[</span><span class="s2">&quot;dataAccessNodes&quot;</span><span class="p">]</span>
                     <span class="p">}</span>
@@ -1659,6 +1675,97 @@
                 <span class="p">},</span>
                 <span class="s2">&quot;generalCloudProperties&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_general_properties_json</span>
             <span class="p">}</span>
+    
+<div class="viewcode-block" id="Instances.add_mysql_instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances.add_mysql_instance">[docs]</a>    <span class="k">def</span> <span class="nf">add_mysql_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">database_options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds new mysql Instance to given Client</span>
+<span class="sd">            Args:</span>
+<span class="sd">				instance_name       (str)   --  instance_name</span>
+<span class="sd">              mysql_options       (dict)  --  dict of keyword arguments as follows:</span>
+<span class="sd">                    Example:</span>
+<span class="sd">                       database_options = {</span>
+<span class="sd">                            &#39;enable_auto_discovery&#39;: True,</span>
+<span class="sd">                            &#39;storage_policy&#39;: &#39;sai-sp&#39;,</span>
+<span class="sd">                            &#39;port&#39;: &#39;hotsname:port&#39;,</span>
+<span class="sd">                            &#39;mysql_user_name&#39;: &#39;mysqlusername&#39;</span>
+<span class="sd">                            &#39;mysql_password&#39;: &#39;password&#39;,</span>
+<span class="sd">                            &#39;version&#39;: &#39;5.7&#39;,</span>
+<span class="sd">                            &#39;binary_directory&#39;: &quot;&quot;,</span>
+<span class="sd">                            &#39;config_file&#39;: &quot;&quot;,</span>
+<span class="sd">                            &#39;log_data_directory&#39;: &quot;&quot;,</span>
+<span class="sd">                            &#39;data_directory&#39;: &quot;&quot;,</span>
+<span class="sd">                            &#39;description&#39;: &quot;Automation created instance&quot;</span>
+<span class="sd">                        }</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Instance class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if None value in mysql options</span>
+
+<span class="sd">                    if mysql instance with same name already exists</span>
+
+<span class="sd">                    if given storage policy does not exists in commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">database_options</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;One of the mysql parameter is None so cannot proceed with instance creation&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_instance</span><span class="p">(</span><span class="n">instance_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Instance &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">instance_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span>
+                <span class="n">database_options</span><span class="p">[</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">database_options</span><span class="p">[</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">database_options</span><span class="p">[</span><span class="s2">&quot;mysql_password&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Automation created instance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="s2">&quot;MySQL&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="mi">104</span><span class="p">,</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;mySqlInstance&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;BinaryDirectory&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;binary_directory&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;ConfigFile&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;config_file&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;EnableAutoDiscovery&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_auto_discovery&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                    <span class="s2">&quot;LogDataDirectory&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_data_directory&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;dataDirectory&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_directory&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;port&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;port&quot;</span><span class="p">,</span> <span class="s2">&quot;3306&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;5.7&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;sslCAFile&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sslca_file_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;SAUser&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+                        <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mysql_user_name&quot;</span><span class="p">,</span> <span class="s2">&quot;mysql&quot;</span><span class="p">)</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;mysqlStorageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;commandLineStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">database_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_policy&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;proxySettings&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;isProxyEnabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;isUseSSL&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;runBackupOnProxy&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Instances.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the instances associated with the Agent of the selected Client.&quot;&quot;&quot;</span>
@@ -1668,7 +1775,7 @@
 <div class="viewcode-block" id="Instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instance">[docs]</a><span class="k">class</span> <span class="nc">Instance</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing instance operations for a specific instance.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the instance object.</span>
 
 <span class="sd">            Args:</span>
@@ -1703,6 +1810,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Restore json instance var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commonopts_restore_json</span> <span class="o">=</span> <span class="p">{}</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
@@ -1716,7 +1826,7 @@
         <span class="n">instances</span> <span class="o">=</span> <span class="n">Instances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span><span class="o">.</span><span class="n">instance_id</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Instance class instance for Instance: &quot;</span><span class="si">{0}</span><span class="s1">&quot; of Agent: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -2034,6 +2144,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_fileoption_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_restore_volume_rst_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_restore_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_common_opts_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;index_free_restore&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;paths&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="p">[]:</span>
@@ -2054,7 +2165,8 @@
                             <span class="s2">&quot;fileOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fileoption_restore_json</span><span class="p">,</span>
                             <span class="s2">&quot;sharePointRstOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_sharepoint_json</span><span class="p">,</span>
                             <span class="s2">&quot;volumeRstOption&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_volume_restore_json</span>
-                        <span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;commonOpts&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commonopts_restore_json</span>
                     <span class="p">}</span>
                 <span class="p">}]</span>
             <span class="p">}</span>
@@ -2134,7 +2246,8 @@
             <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">restore_jobs</span><span class="o">=</span><span class="p">[]</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the same location.</span>
 
@@ -2186,6 +2299,12 @@
 
 <span class="sd">                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore</span>
 
+<span class="sd">                advanced_options    (dict)  -- Advanced restore options</span>
+
+<span class="sd">                    Options:</span>
+
+<span class="sd">                        job_description (str)   --  Restore job description</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
 <span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
@@ -2219,7 +2338,8 @@
             <span class="n">restore_option</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
-            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="n">advanced_options</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
@@ -2237,7 +2357,8 @@
             <span class="n">fs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">restore_jobs</span><span class="o">=</span><span class="p">[]</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Restores the files/folders specified in the input paths list to the input client,</span>
 <span class="sd">            at the specified destionation location.</span>
@@ -2298,6 +2419,11 @@
 
 <span class="sd">                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore</span>
 
+<span class="sd">                advanced_options    (dict)  -- Advanced restore options</span>
+
+<span class="sd">                    Options:</span>
+
+<span class="sd">                        job_description (str)   --  Restore job description</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -2318,7 +2444,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Client</span>
+        <span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
@@ -2354,7 +2480,8 @@
             <span class="n">restore_option</span><span class="o">=</span><span class="n">fs_options</span><span class="p">,</span>
             <span class="n">schedule_pattern</span><span class="o">=</span><span class="n">schedule_pattern</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
-            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span>
+            <span class="n">restore_jobs</span><span class="o">=</span><span class="n">restore_jobs</span><span class="p">,</span>
+            <span class="n">advanced_options</span><span class="o">=</span><span class="n">advanced_options</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
@@ -2656,6 +2783,26 @@
                 <span class="s1">&#39;clientName&#39;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;iscsi_server&quot;</span><span class="p">)</span>
             <span class="p">}</span>
 
+    <span class="k">def</span> <span class="nf">_restore_common_opts_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Method to set commonOpts for restore</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">             value  (dict)  -- restore options dictionary</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;advanced_options&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># taskInfo -&gt; subTasks -&gt; options -&gt; commonOpts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commonopts_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;jobDescription&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+
     <span class="k">def</span> <span class="nf">_restore_common_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for  the Common options of in restore JSON&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -2713,9 +2860,23 @@
                     <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;proxy_client&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
                 <span class="p">}</span>
             <span class="p">}</span>
+            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_path&#39;</span><span class="p">):</span>
+                <span class="n">destination_path</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">destination_path</span><span class="p">]</span> <span class="k">if</span> <span class="n">destination_path</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="k">else</span> <span class="p">[]</span>
+
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;inPlace&quot;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destPath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
 
+        <span class="c1"># For Index server restore, we need to set proxy client &amp; in-place flag</span>
+        <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;proxy_client&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;BIG DATA APPS&quot;</span> <span class="ow">and</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;DYNAMICINDEXINSTANCE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;in_place&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;proxy_client&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># removed clientId from destClient as VSA Restores fail with it</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="p">{</span>
@@ -2733,6 +2894,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destinationInstance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span>
             <span class="p">}</span>
+            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance_id&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;destinationInstance&quot;</span><span class="p">][</span><span class="s2">&quot;instanceId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                    <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;destination_instance_id&#39;</span><span class="p">)</span>
+                    <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span><span class="p">[</span><span class="s2">&quot;noOfStreams&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_of_streams&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
@@ -2835,7 +3000,7 @@
 
 <div class="viewcode-block" id="Instance.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instance.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Instance.&quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="kn">import</span> <span class="n">Backupsets</span>
+        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span> <span class="o">=</span> <span class="n">Backupsets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -2852,11 +3017,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -2867,7 +3040,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.oraclesubclient &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.subclients.oraclesubclient &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -186,6 +189,8 @@
 <span class="sd">    backup()                            --  Performs backup database</span>
 
 <span class="sd">    restore()                           --  Performs restore databases</span>
+<span class="sd">    </span>
+<span class="sd">    restore_in_place()                  --  Performs restore for oracle logical dump</span>
 
 <span class="sd">    backup_archive_log()                --  Getter ans Setter for enaling/disabling</span>
 <span class="sd">                                            archive log mode</span>
@@ -201,10 +206,10 @@
 <span class="sd">    is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="kn">import</span> <span class="n">DatabaseSubclient</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..constants</span> <span class="kn">import</span> <span class="n">InstanceBackupType</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="k">import</span> <span class="n">DatabaseSubclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..constants</span> <span class="k">import</span> <span class="n">InstanceBackupType</span>
 
 
 <div class="viewcode-block" id="OracleSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient">[docs]</a><span class="k">class</span> <span class="nc">OracleSubclient</span><span class="p">(</span><span class="n">DatabaseSubclient</span><span class="p">):</span>
@@ -213,7 +218,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructor for the class</span>
 
@@ -664,7 +669,51 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">destination_client</span><span class="p">,</span>
                                                                <span class="n">common_options</span><span class="p">,</span> <span class="n">browse_option</span><span class="p">,</span>
-                                                               <span class="n">oracle_options</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span></div></div>
+                                                               <span class="n">oracle_options</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OracleSubclient.restore_in_place"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.oraclesubclient.OracleSubclient.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">db_password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">database_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to restore the logical dump </span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                </span>
+<span class="sd">                db_password             (str)  -- password for oracle database</span>
+<span class="sd">                                    </span>
+<span class="sd">                database_list           (List) -- List of databases</span>
+
+<span class="sd">                dest_client_name        (str)  -- Destination Client name</span>
+
+<span class="sd">                dest_instance_name      (str)  -- Destination Instance name</span>
+
+<span class="sd">                destination_path        (str)   --  destination path for restore</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object -- Job containing restore details</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span>
+        <span class="k">if</span> <span class="n">dest_client_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_client_name</span> <span class="o">=</span> <span class="n">instance_object</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+
+        <span class="k">if</span> <span class="n">dest_instance_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dest_instance_name</span> <span class="o">=</span> <span class="n">instance_object</span><span class="o">.</span><span class="n">instance_name</span>
+
+        <span class="n">instance_object</span><span class="o">.</span><span class="n">_restore_association</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s2">&quot;subClientEntity&quot;</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">instance_object</span><span class="o">.</span><span class="n">restore_in_place</span><span class="p">(</span>
+            <span class="n">db_password</span><span class="p">,</span>
+            <span class="n">database_list</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="p">,</span>
+            <span class="n">dest_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -677,11 +726,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -692,7 +749,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

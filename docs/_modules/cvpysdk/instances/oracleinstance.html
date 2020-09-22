@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.oracleinstance &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.instances.oracleinstance &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -235,14 +238,24 @@
 <span class="sd">    dbid()                              --  Getter for getting DBID of database</span>
 
 <span class="sd">    restore()                           --  Performs restore on the instance</span>
+<span class="sd">    </span>
+<span class="sd">    _restore_db_dump_option_json()       --  setter for the oracle dbdump Restore option in restore JSON</span>
+<span class="sd">    </span>
+<span class="sd">    _restore_oracle_option_json()       --  setter for the oracle Restore option in restore JSON</span>
+<span class="sd">    </span>
+<span class="sd">    _restore_json()                     --  returns the JSON request to pass to the API as per</span>
+<span class="sd">    the options selected by the user</span>
+<span class="sd">    </span>
+<span class="sd">    restore_in_place()                  --  restore for oracle logical dump</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
-
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.dbinstance</span> <span class="k">import</span> <span class="n">DatabaseInstance</span>
 
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.dbinstance</span> <span class="kn">import</span> <span class="n">DatabaseInstance</span>
 
 
 <div class="viewcode-block" id="OracleInstance"><a class="viewcode-back" href="../../../source/cvpysdk.instances.html#cvpysdk.instances.oracleinstance.OracleInstance">[docs]</a><span class="k">class</span> <span class="nc">OracleInstance</span><span class="p">(</span><span class="n">DatabaseInstance</span><span class="p">):</span>
@@ -250,7 +263,7 @@
 <span class="sd">    Class to represent a standalone Oracle Instance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructor for the class</span>
 
@@ -263,6 +276,8 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">OracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_LIVE_SYNC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;LIVE_SYNC&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dbDump_restore_json</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_restore_json</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="OracleInstance.restore_to_disk"><a class="viewcode-back" href="../../../source/cvpysdk.instances.html#cvpysdk.instances.oracleinstance.OracleInstance.restore_to_disk">[docs]</a>    <span class="k">def</span> <span class="nf">restore_to_disk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                         <span class="n">destination_client</span><span class="p">,</span>
@@ -1189,7 +1204,153 @@
                                                     <span class="n">browse_option</span><span class="o">=</span><span class="n">browse_option</span><span class="p">,</span>
                                                     <span class="n">common_options</span><span class="o">=</span><span class="n">common_options</span><span class="p">,</span>
                                                     <span class="n">oracle_options</span><span class="o">=</span><span class="n">oracle_options</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
+            
+    
+
+    <span class="k">def</span> <span class="nf">_restore_db_dump_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the oracle dbdump Restore option in restore JSON</span>
+<span class="sd">            Args:</span>
+<span class="sd">                value   (dict)  --  Dictionary of options need to be set for restore</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span><span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db_dump_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;importToDatabase&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;parallelism&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;restorePath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;overwriteTable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;connectDetails&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db_password&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+                <span class="s2">&quot;domainName&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;oracleInstance&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span>
+                    <span class="n">get</span><span class="p">(</span><span class="s2">&quot;sqlConnect&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;domainName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+                <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;oracleInstance&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span>
+                    <span class="n">get</span><span class="p">(</span><span class="s2">&quot;sqlConnect&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;userName&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+    <span class="k">def</span> <span class="nf">_restore_oracle_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the oracle Restore option in restore JSON</span>
+<span class="sd">        Args:</span>
+<span class="sd">                value   (dict)  --  Dictionary of options need to be set for restore</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span><span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;noCatalog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;duplicateToName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cloneEnv&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreControlFile&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;duplicate&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;tableViewRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;osID&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;partialRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreStream&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;restoreSPFile&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;recover&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;recoverFrom&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">&quot;archiveLog&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;restoreData&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;restoreFrom&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;timeZone&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;recoverTime&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;sourcePaths&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">&quot;//**&quot;</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;restoreTime&quot;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+        
+    <span class="k">def</span> <span class="nf">_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                kwargs   (dict)  --  Dictionary of options need to be set for restore</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict             -- JSON request to pass to the API</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rest_json</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">OracleInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;restore_option&quot;</span><span class="p">):</span>
+            <span class="n">restore_option</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;restore_option&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;restore_option&quot;</span><span class="p">:</span>
+                    <span class="n">restore_option</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">restore_option</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_db_dump_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_oracle_option_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
+        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;dbDumpOptions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_db_dump_restore_json</span>
+        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;oracleOpt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_restore_json</span>
+
+        <span class="k">return</span> <span class="n">rest_json</span>
+
+<div class="viewcode-block" id="OracleInstance.restore_in_place"><a class="viewcode-back" href="../../../source/cvpysdk.instances.html#cvpysdk.instances.oracleinstance.OracleInstance.restore_in_place">[docs]</a>    <span class="k">def</span> <span class="nf">restore_in_place</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">db_password</span><span class="p">,</span>
+            <span class="n">path</span><span class="p">,</span>
+            <span class="n">dest_client_name</span><span class="p">,</span>
+            <span class="n">dest_instance_name</span><span class="p">,</span>
+            <span class="n">dest_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restores the oracle logical dump data/log files specified in the input paths</span>
+<span class="sd">        list to the same location.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                </span>
+<span class="sd">                db_password             (str)  -- password for oracle database</span>
+<span class="sd">                </span>
+<span class="sd">                path                    (list)  --  list of database/databases to be restored</span>
+
+<span class="sd">                dest_client_name        (str)   --  destination client name where files are to be</span>
+<span class="sd">                restored</span>
+
+<span class="sd">                dest_instance_name      (str)   --  destination postgres instance name of</span>
+<span class="sd">                destination client</span>
+
+<span class="sd">                dest_path        (str)   --  destinath path for restore</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the Job class for this restore job</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if paths is not a list</span>
+
+<span class="sd">                    if failed to initialize job</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_password</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span><span class="s1">&#39;103&#39;</span><span class="p">)</span>
+        
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span>
+            <span class="n">db_password</span><span class="o">=</span><span class="n">db_password</span><span class="p">,</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">destination_client</span><span class="o">=</span><span class="n">dest_client_name</span><span class="p">,</span>
+            <span class="n">destination_instance</span><span class="o">=</span><span class="n">dest_instance_name</span><span class="p">,</span>
+            <span class="n">destination_path</span><span class="o">=</span><span class="n">dest_path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -1202,11 +1363,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1217,7 +1386,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

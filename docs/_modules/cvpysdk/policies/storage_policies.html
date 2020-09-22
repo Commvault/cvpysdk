@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -206,6 +209,8 @@
 
 <span class="sd">    _get_storage_policy_properties()        --  returns the properties of this storage policy</span>
 
+<span class="sd">    _get_storage_policy_advanced_properties()--  returns the advanced properties of this storage policy</span>
+
 <span class="sd">    _initialize_storage_policy_properties() --  initializes storage policy properties</span>
 
 <span class="sd">    has_copy()                              --  checks if copy with given name exists</span>
@@ -229,6 +234,8 @@
 <span class="sd">    Catalog Options</span>
 
 <span class="sd">    run_backup_copy()                       --  Runs the backup copy job from Commcell</span>
+
+<span class="sd">    modify_dynamic_stream_allocation()      --  modifies dsa property of storage policy</span>
 
 <span class="sd">    run_snapshot_cataloging()               --  Runs the deferred catalog job from Commcell</span>
 
@@ -281,25 +288,35 @@
 
 <span class="sd">    _set_copy_properties()	                --	sets the properties of this storage policy copy</span>
 
+<span class="sd">    set_copy_software_compression()         --  Sets the copy software compression setting</span>
+
+<span class="sd">    is_parallel_copy()                      --  Gets the parallel copy setting on storage policy copy</span>
+
+<span class="sd">    set_parallel_copy()                     --  Sets the parallel copy setting on storage policy copy</span>
+
+<span class="sd">    is_inline_copy()                        --  Gets the inline copy setting on storage policy copy</span>
+
+<span class="sd">    set_inline_copy()                       --  Sets the inline copy setting on storage policy copy</span>
+
 <span class="sd">    delete_job()                            --  delete a job from storage policy copy node</span>
 
 <span class="sd">    recopy_jobs()                           --  recopies a job on a secondary copy</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="kn">import</span> <span class="n">install_aliases</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
 
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">..job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
 
-<span class="kn">from</span> <span class="nn">..storage</span> <span class="kn">import</span> <span class="n">DiskLibrary</span>
-<span class="kn">from</span> <span class="nn">..storage</span> <span class="kn">import</span> <span class="n">MediaAgent</span>
+<span class="kn">from</span> <span class="nn">..storage</span> <span class="k">import</span> <span class="n">DiskLibrary</span>
+<span class="kn">from</span> <span class="nn">..storage</span> <span class="k">import</span> <span class="n">MediaAgent</span>
 
 <span class="n">install_aliases</span><span class="p">()</span>
 
@@ -307,7 +324,7 @@
 <div class="viewcode-block" id="StoragePolicies"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicies">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicies</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the storage policies associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the StoragePolicies class.</span>
 
 <span class="sd">            Args:</span>
@@ -322,7 +339,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_policies</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all storage policies of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -336,7 +353,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Clients class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;StoragePolicies class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -1001,7 +1018,7 @@
 <div class="viewcode-block" id="StoragePolicy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing storage policy operations for a specific storage policy&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">storage_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">storage_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Storage Policy class instance.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
@@ -1014,11 +1031,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_STORAGE_POLICY</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_STORAGE_POLICY&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_STORAGE_POLICY_ADVANCED</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_STORAGE_POLICY_ADVANCED&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_copies</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy class instance for Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">)</span>
@@ -1028,6 +1049,31 @@
 
         <span class="n">storage_policies</span> <span class="o">=</span> <span class="n">StoragePolicies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">storage_policies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">)</span><span class="o">.</span><span class="n">storage_policy_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_storage_policy_advanced_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the advanced storage policy properties of this storage policy.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                dict - dictionary consisting of the advanced properties of this storage policy</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_STORAGE_POLICY_ADVANCED</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_storage_policy_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the storage policy properties of this storage policy.</span>
@@ -1099,14 +1145,15 @@
 
 <div class="viewcode-block" id="StoragePolicy.create_secondary_copy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.create_secondary_copy">[docs]</a>    <span class="k">def</span> <span class="nf">create_secondary_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                               <span class="n">copy_name</span><span class="p">,</span>
-                              <span class="n">library_name</span><span class="p">,</span>
-                              <span class="n">media_agent_name</span><span class="p">,</span>
+                              <span class="n">library_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">media_agent_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">drive_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">spare_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">tape_library_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">drive_pool_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">spare_pool_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                              <span class="n">snap_copy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                              <span class="n">snap_copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">global_policy</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates Synchronous copy for this storage policy</span>
 
 <span class="sd">            Args:</span>
@@ -1118,6 +1165,8 @@
 
 <span class="sd">                snap_copy           (bool)  --  boolean on whether copy should be a snap copy</span>
 <span class="sd">                default: False</span>
+
+<span class="sd">                global_policy       (str)   --  name of the global policy to be assigned</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -1131,53 +1180,99 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">library_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">global_policy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">global_policy</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_copy</span><span class="p">(</span><span class="n">copy_name</span><span class="p">):</span>
-            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy copy &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_copy</span><span class="p">(</span><span class="n">copy_name</span><span class="p">):</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;Storage Policy copy &quot;</span><span class="si">{copy_name}</span><span class="s1">&quot; already exists.&#39;</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
 
-        <span class="n">media_agent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">_media_agents</span><span class="p">[</span><span class="n">media_agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span><span class="n">global_policy</span><span class="p">):</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;No Global Storage Policy &quot;</span><span class="si">{global_policy}</span><span class="s1">&quot; exists.&#39;</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
-        <span class="n">snap_copy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">snap_copy</span><span class="p">)</span>
+            <span class="n">global_policy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">global_policy</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">drive_pool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                        &lt;App_CreateStoragePolicyCopyReq copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
-<span class="s2">                            &lt;storagePolicyCopyInfo copyType=&quot;0&quot; isDefault=&quot;0&quot; isMirrorCopy=&quot;0&quot; isSnapCopy=&quot;</span><span class="si">{11}</span><span class="s2">&quot; numberOfStreamsToCombine=&quot;1&quot;&gt;</span>
-<span class="s2">                                &lt;StoragePolicyCopy _type_=&quot;18&quot; storagePolicyId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; storagePolicyName=&quot;</span><span class="si">{2}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                                &lt;library _type_=&quot;9&quot; libraryId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; libraryName=&quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                                &lt;mediaAgent _type_=&quot;11&quot; mediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{6}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                                &lt;drivePool drivePoolId = &quot;</span><span class="si">{7}</span><span class="s2">&quot; drivePoolName = &quot;</span><span class="si">{8}</span><span class="s2">&quot;  libraryName = &quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                                &lt;spareMediaGroup spareMediaGroupId = &quot;</span><span class="si">{9}</span><span class="s2">&quot; spareMediaGroupName = &quot;</span><span class="si">{10}</span><span class="s2">&quot; libraryName = &quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                                &lt;retentionRules retainArchiverDataForDays=&quot;-1&quot; retainBackupDataForCycles=&quot;1&quot; retainBackupDataForDays=&quot;30&quot; /&gt;</span>
-<span class="s2">                            &lt;/storagePolicyCopyInfo&gt;</span>
-<span class="s2">                        &lt;/App_CreateStoragePolicyCopyReq&gt;</span>
-<span class="s2">                        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
-                                   <span class="n">tape_library_id</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span>
-                                   <span class="n">drive_pool_id</span><span class="p">,</span> <span class="n">drive_pool</span><span class="p">,</span> <span class="n">spare_pool_id</span><span class="p">,</span> <span class="n">spare_pool</span><span class="p">,</span> <span class="n">snap_copy</span><span class="p">)</span>
+            <span class="n">global_policy_copy</span> <span class="o">=</span> <span class="n">global_policy</span><span class="o">.</span><span class="n">get_copy</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">global_policy</span><span class="o">.</span><span class="n">copies</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">is_global_dedupe_policy</span> <span class="o">=</span> <span class="n">global_policy_copy</span><span class="o">.</span><span class="n">_dedupe_flags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enableDeduplication&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">request</span> <span class="o">=</span> <span class="p">{</span>
+                       <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="n">copy_name</span><span class="p">,</span>
+                       <span class="s2">&quot;storagePolicyCopyInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                          <span class="s2">&quot;copyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                          <span class="s2">&quot;isDefault&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                          <span class="s2">&quot;isMirrorCopy&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                          <span class="s2">&quot;isSnapCopy&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                          <span class="s2">&quot;numberOfStreamsToCombine&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="s2">&quot;StoragePolicyCopy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                             <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+                             <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span>
+                          <span class="p">},</span>
+                          <span class="s2">&quot;retentionRules&quot;</span><span class="p">:</span> <span class="p">{</span>
+                             <span class="s2">&quot;retainArchiverDataForDays&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="s2">&quot;retainBackupDataForCycles&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                             <span class="s2">&quot;retainBackupDataForDays&quot;</span><span class="p">:</span> <span class="mi">30</span>
+                          <span class="p">},</span>
+                          <span class="s2">&quot;dedupeFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                              <span class="s2">&quot;enableDeduplication&quot;</span><span class="p">:</span> <span class="n">is_global_dedupe_policy</span><span class="p">,</span>
+                              <span class="s2">&quot;useGlobalDedupStore&quot;</span><span class="p">:</span> <span class="n">is_global_dedupe_policy</span>
+                          <span class="p">},</span>
+                           <span class="s2">&quot;useGlobalPolicy&quot;</span><span class="p">:{</span>
+                               <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">global_policy</span><span class="o">.</span><span class="n">name</span>
+                           <span class="p">}</span>
+                       <span class="p">}</span>
+                    <span class="p">}</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">library_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">disk_libraries</span><span class="o">.</span><span class="n">_libraries</span><span class="p">[</span><span class="n">library_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
-            <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            &lt;App_CreateStoragePolicyCopyReq copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
-<span class="s2">                &lt;storagePolicyCopyInfo copyType=&quot;0&quot; isDefault=&quot;0&quot; isMirrorCopy=&quot;0&quot; isSnapCopy=&quot;</span><span class="si">{7}</span><span class="s2">&quot; numberOfStreamsToCombine=&quot;1&quot;&gt;</span>
-<span class="s2">                    &lt;StoragePolicyCopy _type_=&quot;18&quot; storagePolicyId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; storagePolicyName=&quot;</span><span class="si">{2}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                    &lt;library _type_=&quot;9&quot; libraryId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; libraryName=&quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                    &lt;mediaAgent _type_=&quot;11&quot; mediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{6}</span><span class="s2">&quot; /&gt;</span>
-<span class="s2">                    &lt;retentionRules retainArchiverDataForDays=&quot;-1&quot; retainBackupDataForCycles=&quot;1&quot; retainBackupDataForDays=&quot;30&quot; /&gt;</span>
-<span class="s2">                &lt;/storagePolicyCopyInfo&gt;</span>
-<span class="s2">            &lt;/App_CreateStoragePolicyCopyReq&gt;</span>
-<span class="s2">            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
-                       <span class="n">library_id</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span> <span class="n">snap_copy</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">library_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_copy</span><span class="p">(</span><span class="n">copy_name</span><span class="p">):</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy copy &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+
+            <span class="n">media_agent_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">media_agents</span><span class="o">.</span><span class="n">_media_agents</span><span class="p">[</span><span class="n">media_agent_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+
+            <span class="n">snap_copy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">snap_copy</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">drive_pool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">request</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            &lt;App_CreateStoragePolicyCopyReq copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">                                &lt;storagePolicyCopyInfo copyType=&quot;0&quot; isDefault=&quot;0&quot; isMirrorCopy=&quot;0&quot; isSnapCopy=&quot;</span><span class="si">{11}</span><span class="s2">&quot; numberOfStreamsToCombine=&quot;1&quot;&gt;</span>
+<span class="s2">                                    &lt;StoragePolicyCopy _type_=&quot;18&quot; storagePolicyId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; storagePolicyName=&quot;</span><span class="si">{2}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;library _type_=&quot;9&quot; libraryId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; libraryName=&quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;mediaAgent _type_=&quot;11&quot; mediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{6}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;drivePool drivePoolId = &quot;</span><span class="si">{7}</span><span class="s2">&quot; drivePoolName = &quot;</span><span class="si">{8}</span><span class="s2">&quot;  libraryName = &quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;spareMediaGroup spareMediaGroupId = &quot;</span><span class="si">{9}</span><span class="s2">&quot; spareMediaGroupName = &quot;</span><span class="si">{10}</span><span class="s2">&quot; libraryName = &quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                                    &lt;retentionRules retainArchiverDataForDays=&quot;-1&quot; retainBackupDataForCycles=&quot;1&quot; retainBackupDataForDays=&quot;30&quot; /&gt;</span>
+<span class="s2">                                &lt;/storagePolicyCopyInfo&gt;</span>
+<span class="s2">                            &lt;/App_CreateStoragePolicyCopyReq&gt;</span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
+                                       <span class="n">tape_library_id</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span>
+                                       <span class="n">drive_pool_id</span><span class="p">,</span> <span class="n">drive_pool</span><span class="p">,</span> <span class="n">spare_pool_id</span><span class="p">,</span> <span class="n">spare_pool</span><span class="p">,</span> <span class="n">snap_copy</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">library_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">disk_libraries</span><span class="o">.</span><span class="n">_libraries</span><span class="p">[</span><span class="n">library_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+                <span class="n">request</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                &lt;App_CreateStoragePolicyCopyReq copyName=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">                    &lt;storagePolicyCopyInfo copyType=&quot;0&quot; isDefault=&quot;0&quot; isMirrorCopy=&quot;0&quot; isSnapCopy=&quot;</span><span class="si">{7}</span><span class="s2">&quot; numberOfStreamsToCombine=&quot;1&quot;&gt;</span>
+<span class="s2">                        &lt;StoragePolicyCopy _type_=&quot;18&quot; storagePolicyId=&quot;</span><span class="si">{1}</span><span class="s2">&quot; storagePolicyName=&quot;</span><span class="si">{2}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                        &lt;library _type_=&quot;9&quot; libraryId=&quot;</span><span class="si">{3}</span><span class="s2">&quot; libraryName=&quot;</span><span class="si">{4}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                        &lt;mediaAgent _type_=&quot;11&quot; mediaAgentId=&quot;</span><span class="si">{5}</span><span class="s2">&quot; mediaAgentName=&quot;</span><span class="si">{6}</span><span class="s2">&quot; /&gt;</span>
+<span class="s2">                        &lt;retentionRules retainArchiverDataForDays=&quot;-1&quot; retainBackupDataForCycles=&quot;1&quot; retainBackupDataForDays=&quot;30&quot; /&gt;</span>
+<span class="s2">                    &lt;/storagePolicyCopyInfo&gt;</span>
+<span class="s2">                &lt;/App_CreateStoragePolicyCopyReq&gt;</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
+                           <span class="n">library_id</span><span class="p">,</span> <span class="n">library_name</span><span class="p">,</span> <span class="n">media_agent_id</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="p">,</span> <span class="n">snap_copy</span><span class="p">)</span>
 
         <span class="n">create_copy_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_STORAGE_POLICY_COPY&#39;</span><span class="p">]</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
-            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">create_copy_service</span><span class="p">,</span> <span class="n">request_xml</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">create_copy_service</span><span class="p">,</span> <span class="n">request</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
@@ -1799,6 +1894,25 @@
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="StoragePolicy.modify_dynamic_stream_allocation"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.modify_dynamic_stream_allocation">[docs]</a>    <span class="k">def</span> <span class="nf">modify_dynamic_stream_allocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modifies the DSA option for the Storage Policy</span>
+<span class="sd">            Args:</span>
+
+<span class="sd">                    enable      (bool)  --   False - Disable DSA</span>
+<span class="sd">                                             True - Enable DSA</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&lt;App_UpdateStoragePolicyReq&gt;</span>
+<span class="s1">                       &lt;StoragePolicy&gt;</span>
+<span class="s1">                           &lt;storagePolicyName&gt;</span><span class="si">{0}</span><span class="s1">&lt;/storagePolicyName&gt;</span>
+<span class="s1">                       &lt;/StoragePolicy&gt;</span>
+<span class="s1">                       &lt;flag&gt;</span>
+<span class="s1">                           &lt;distributeDataEvenlyAmongStreams&gt;</span><span class="si">{1}</span><span class="s1">&lt;/distributeDataEvenlyAmongStreams&gt;</span>
+<span class="s1">                       &lt;/flag&gt;</span>
+<span class="s1">                       &lt;/App_UpdateStoragePolicyReq&gt;</span>
+<span class="s1">                       &#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">enable</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_xml</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="StoragePolicy.run_snapshot_cataloging"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.run_snapshot_cataloging">[docs]</a>    <span class="k">def</span> <span class="nf">run_snapshot_cataloging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Runs the deferred catalog job from Commcell for the given storage policy</span>
@@ -1885,6 +1999,16 @@
 <span class="sd">            dict - consists of storage policy properties</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_properties</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">storage_policy_advanced_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the  storage policy advanced properties</span>
+
+<span class="sd">            dict - consists of storage policy advanced properties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_policy_advanced_properties</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">library_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2051,7 +2175,8 @@
 
 <div class="viewcode-block" id="StoragePolicy.refresh"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the StoragePolicy.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_storage_policy_properties</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_storage_policy_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="StoragePolicy.seal_ddb"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.seal_ddb">[docs]</a>    <span class="k">def</span> <span class="nf">seal_ddb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2603,7 +2728,7 @@
 <div class="viewcode-block" id="StoragePolicyCopy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy">[docs]</a><span class="k">class</span> <span class="nc">StoragePolicyCopy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing storage policy copy operations for a specific storage policy copy&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">copy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">copy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Storage Policy Copy class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -2641,7 +2766,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Storage Policy Copy class instance for Storage Policy/ Copy: &quot;</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">)</span>
@@ -2796,6 +2921,33 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_retention_rules</span><span class="p">[</span><span class="s1">&#39;retainArchiverDataForDays&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">retention_values</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">copy_software_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the copy software compression setting as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;compressionOnClients&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span>
+
+<div class="viewcode-block" id="StoragePolicyCopy.set_copy_software_compression"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_copy_software_compression">[docs]</a>    <span class="k">def</span> <span class="nf">set_copy_software_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the copy software compression setting as the value provided as input.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                value    (bool) --  software compression value to be set on a copy (True/False)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update compression values on copy</span>
+
+<span class="sd">                    if the type of value input is not correct</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;compressionOnClients&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span><span class="p">[</span><span class="s1">&#39;compressionOnClients&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span><span class="p">[</span><span class="s1">&#39;compressionOnClients&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">copy_dedupe_dash_full</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -3139,6 +3291,52 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_retention_rules</span><span class="p">[</span><span class="s1">&#39;retentionFlags&#39;</span><span class="p">][</span><span class="s1">&#39;enableManagedDiskSpace&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_parallel_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the parallel copy setting as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;enableParallelCopy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_flags</span>
+
+<div class="viewcode-block" id="StoragePolicyCopy.set_parallel_copy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy">[docs]</a>    <span class="k">def</span> <span class="nf">set_parallel_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets the parallel copy on storage policy copy as the value provided as input.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                value    (bool) --  parallel copy on storage policy copy value to be set on a copy (True/False)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update parallel copy on storage policy copy</span>
+
+<span class="sd">                    if the type of value input is not correct</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_flags</span><span class="p">[</span><span class="s1">&#39;enableParallelCopy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_inline_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Treats the inline copy setting as a read-only attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;inlineAuxCopy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_flags</span>
+
+<div class="viewcode-block" id="StoragePolicyCopy.set_inline_copy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_inline_copy">[docs]</a>    <span class="k">def</span> <span class="nf">set_inline_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets the inline copy on storage policy copy as the value provided as input.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                value    (bool) --  inline copy on storage policy copy value to be set on a copy (True/False)</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if failed to update inline copy on storage policy copy</span>
+
+<span class="sd">                    if the type of value input is not correct</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_flags</span><span class="p">[</span><span class="s1">&#39;inlineAuxCopy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="StoragePolicyCopy.add_svm_association"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.add_svm_association">[docs]</a>    <span class="k">def</span> <span class="nf">add_svm_association</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src_array_id</span><span class="p">,</span> <span class="n">source_array</span><span class="p">,</span> <span class="n">tgt_array_id</span><span class="p">,</span> <span class="n">target_array</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Method to add SVM association on Replica/vault and Mirror Copy</span>
 
@@ -3232,11 +3430,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -3247,7 +3453,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

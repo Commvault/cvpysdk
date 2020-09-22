@@ -1,0 +1,1223 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cvpysdk.deduplication_engines &mdash; Developer SDK - Python 11.21 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Developer SDK - Python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>cvpysdk.deduplication_engines</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cvpysdk.deduplication_engines</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># --------------------------------------------------------------------------</span>
+<span class="c1"># Copyright Commvault Systems, Inc.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># --------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Main file for performing deduplication engine related operations on the commcell.</span>
+
+<span class="sd">This file has all the classes related to deduplication engine operations.</span>
+
+<span class="sd">DeduplicationEnigines:  Class for representing all the deduplication engines associated to the commcell.</span>
+
+<span class="sd">DeduplicationEninge:    Class for representing a single deduplication engine associated to the commcell.</span>
+
+<span class="sd">Store:  Class for representing a single deduplication store associated to the deduplication engine.</span>
+
+<span class="sd">SubStore:   Class for representing a single substore associated to the deduplication store.</span>
+
+<span class="sd">DeduplicationEngines:</span>
+<span class="sd">    __init__(commcell_object)   - Initialise the DeduplicationEngines class instance</span>
+
+
+<span class="sd">    __repr__()                  - Representation string consisting of deduplication engines.</span>
+
+<span class="sd">    __str__()                   - Representation string for the instance of the DeduplicationEngines class.</span>
+
+<span class="sd">    _get_engines()              - returns all engines properties on commcell</span>
+
+<span class="sd">    get()                       - returns list of all engines</span>
+
+<span class="sd">    has_engine()                - checkes if a engine exisits for storage policy and copy name</span>
+
+<span class="sd">    refresh()                   - refreshes all engine properties</span>
+
+<span class="sd">DeduplicationEngine:</span>
+<span class="sd">    __init__(commcell_object, storage_policy_name, copy_name)   - Initialise the DeduplicationEngine class instance</span>
+
+<span class="sd">    __repr__()                  - Representation string consisting of deduplication engine.</span>
+
+<span class="sd">    __str__()                   - Representation string for the instance of the DeduplicationEngine class.</span>
+
+<span class="sd">    _initialize_policy_and_copy_id()    - Gets deduplication engine properties</span>
+
+<span class="sd">    _get_engine_properties()    - initializes deduplication engine properties</span>
+
+<span class="sd">    _initialize_stores()        - initializes all the stores presnet in deduplication engine</span>
+
+<span class="sd">    refresh()                   - refreshes all the deduplication engine properties</span>
+
+<span class="sd">    all_stores()                - Checks if a deduplication store exists in a engine with provided storeid id.</span>
+
+<span class="sd">    has_store()                 - returns list of all stores present in deduplication engines</span>
+
+<span class="sd">    get()                       - Returns store class object for sssthe store id on deduplication engine</span>
+
+<span class="sd">Store:</span>
+<span class="sd">    __init__(commcell_object, storage_policy_name, copy_name, store_id)   - Initialise the Store class instance</span>
+
+<span class="sd">    __repr__()                  - Representation string consisting of deduplication store.</span>
+
+<span class="sd">    __str__()                   - Representation string for the instance of the Store class.</span>
+
+<span class="sd">    _initialize_store_properties()  - initializes store properties</span>
+
+<span class="sd">    _get_substores()            - gets all substores in a store along with properties</span>
+
+<span class="sd">    _initialize_substores()     - initializes all substore properties</span>
+
+<span class="sd">    refresh()                   - refreshes store properties</span>
+
+<span class="sd">    all_substores()             - returns list of all substores in a store</span>
+
+<span class="sd">    has_substore()              - checks if a substore exists in a store</span>
+
+<span class="sd">    get()                      - gets a substore class object for provided substore id</span>
+
+<span class="sd">    recover_deduplication_database()    - starts DDB Reconstruction job for store</span>
+
+<span class="sd">    run_space_reclaimation()    - starts DDB space reclaimation job for store</span>
+
+<span class="sd">    run_ddb_verification()      - starts DDB verification job for store</span>
+
+
+<span class="sd">Substore:</span>
+<span class="sd">    __init__(commcell_object, storage_policy_name, copy_name,</span>
+<span class="sd">            store_id, substore-id)   - Initialise the SubStore class instance</span>
+
+<span class="sd">    __repr__()                  - Representation string consisting of substore.</span>
+
+<span class="sd">    __str__()                   - Representation string for the instance of the SubStore class.</span>
+
+<span class="sd">    _initialize_substore_properties()   - initialize substore properties of a store</span>
+
+<span class="sd">    refresh()                   - refreshes substore properties</span>
+
+<span class="sd">    mark_for_recovery()         - marks a substore for recovery</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">future.standard_library</span> <span class="k">import</span> <span class="n">install_aliases</span>
+
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
+
+<span class="n">install_aliases</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="DeduplicationEngines"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngines">[docs]</a><span class="k">class</span> <span class="nc">DeduplicationEngines</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for getting all the deduplication engines associated with the commcell.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object of the DeduplicationEngines class.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - instance of the StoragePolicies class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engines</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of all deduplication engines of the commcell.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the deduplication associated with the commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;S. No.&#39;</span><span class="p">,</span> <span class="s1">&#39;Deduplication engine&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">engine</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_engines</span><span class="p">):</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">engine</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">engine</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the DeduplicationEngines class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;DeduplicationEngines class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_engines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        gets all the deduplication engines associated with the commcell</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            dict - consists of all the engines in the commcell</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;EVGui_DDBEnginesReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;filterOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;propertyLevel&quot;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;storagepolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;spCopy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;store&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="mi">115</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;engines&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">engines</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;engines&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">engines</span> <span class="o">==</span> <span class="p">[]:</span>
+                    <span class="k">return</span> <span class="p">{}</span>
+
+                <span class="n">engines_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="k">for</span> <span class="n">engine</span> <span class="ow">in</span> <span class="n">engines</span><span class="p">:</span>
+                    <span class="n">temp_sp_name</span> <span class="o">=</span> <span class="n">engine</span><span class="p">[</span><span class="s1">&#39;sp&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_sp_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">engine</span><span class="p">[</span><span class="s1">&#39;sp&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_copy_name</span> <span class="o">=</span> <span class="n">engine</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">temp_copy_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">engine</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">engines_dict</span><span class="p">[(</span><span class="n">temp_sp_name</span><span class="p">,</span> <span class="n">temp_copy_name</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[</span><span class="n">temp_sp_id</span><span class="p">,</span> <span class="n">temp_copy_id</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">engines_dict</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_engines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns list all the deduplication engines with storage polic and copy name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_engines</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<div class="viewcode-block" id="DeduplicationEngines.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngines.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;refreshes all the deduplication engines and their properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_engines</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DeduplicationEngines.has_engine"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngines.has_engine">[docs]</a>    <span class="k">def</span> <span class="nf">has_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a deduplication engine exists in the commcell with the input storage policy and copy name.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                storage_policy_name (str)  --  name of the storage policy</span>
+
+<span class="sd">                copy_name (str)  --  name of the storage policy copy</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                bool - boolean output whether the deduplication engine exists in the commcell or not</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the storage policy and copy name arguments are not string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engines</span> <span class="ow">and</span> <span class="p">(</span><span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">copy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engines</span></div>
+
+<div class="viewcode-block" id="DeduplicationEngines.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngines.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns eng class object for the engine on deduplication engines</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            storage_policy_name (str) - name of the storage policy</span>
+
+<span class="sd">            copy_name (str) - name of the deduplication enabled copy</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">             object - instance of engine class for a given storage policy and copy name</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if type of arguments are not string</span>
+
+<span class="sd">                if no engine exists with given storage policy and copy name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>  <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">copy_name</span> <span class="o">=</span> <span class="n">copy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_engine</span><span class="p">(</span><span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">DeduplicationEngine</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;No dedupe engine exists with name: </span><span class="si">{storage_policy_name}</span><span class="s1">/</span><span class="si">{copy_name}</span><span class="s1">&#39;</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="DeduplicationEngine"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngine">[docs]</a><span class="k">class</span> <span class="nc">DeduplicationEngine</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to get all stores associated for deduplication engine&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">storage_policy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the DeduplicationEngine class instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            commcell_object (object)    - instance of class Commcell</span>
+
+<span class="sd">            storage_policy_name (str)   - storage policy name on commcell</span>
+
+<span class="sd">            copy_name (str)             - copy name under storage policy</span>
+
+<span class="sd">            storage_policy_id (int)     - storage policy id for commcell</span>
+
+<span class="sd">            copy_id (int)               - copy id under storage policy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span> <span class="o">=</span> <span class="n">copy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">storage_policy_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">copy_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_policy_and_copy_id</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span> <span class="o">=</span> <span class="n">storage_policy_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_copy_id</span> <span class="o">=</span> <span class="n">copy_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of deduplication engine.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the stores associated with the deduplication engine</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;Store ID.&#39;</span><span class="p">,</span> <span class="s1">&#39;Store&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">store_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span><span class="p">:</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:20}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">store_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span><span class="p">[</span><span class="n">store_id</span><span class="p">][</span><span class="s1">&#39;storeName&#39;</span><span class="p">])</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the DeduplicationEngine class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;DeduplicationEngine class instance for Engine: &#39;</span><span class="si">{0}</span><span class="s2">/</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_policy_and_copy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initializes the variables for storage policy and copy id&quot;&quot;&quot;</span>
+        <span class="n">deduplication_engines</span> <span class="o">=</span> <span class="n">DeduplicationEngines</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="n">policy_and_copy_id</span> <span class="o">=</span> <span class="n">deduplication_engines</span><span class="o">.</span><span class="n">_engines</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span> <span class="o">=</span> <span class="n">policy_and_copy_id</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_id</span> <span class="o">=</span> <span class="n">policy_and_copy_id</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_engine_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets deduplication engine properties</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">             dict - engine properties for each store on deduplication engine</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;EVGui_DDBEnginesReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;filterOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;propertyLevel&quot;</span><span class="p">:</span> <span class="mi">20</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;storagepolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;spCopy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_id</span><span class="p">,</span>
+                    <span class="s2">&quot;storagePolicyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_id</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;store&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="mi">115</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_engine_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initializes deduplication engine properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_engine_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_stores</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_stores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initializes all the stores presnet in deduplication engine&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">store</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;engines&#39;</span><span class="p">):</span>
+            <span class="n">temp_sp_name</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="s1">&#39;sp&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">temp_copy_name</span> <span class="o">=</span> <span class="n">store</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">temp_sp_name</span><span class="p">,</span> <span class="n">temp_copy_name</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span><span class="p">[</span><span class="n">store</span><span class="p">[</span><span class="s1">&#39;storeId&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">store</span>
+
+<div class="viewcode-block" id="DeduplicationEngine.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngine.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;refreshes all the deduplication engine properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_engine_properties</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_stores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns list of all stores present in deduplication engines&quot;&quot;&quot;</span>
+        <span class="n">stores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">store_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span><span class="p">:</span>
+            <span class="n">stores</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">store_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span><span class="p">[</span><span class="n">store_id</span><span class="p">][</span><span class="s1">&#39;storeName&#39;</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">stores</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">storage_policy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns storage policy id associated to engine&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">copy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns copy id associated to engine&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_id</span>
+
+<div class="viewcode-block" id="DeduplicationEngine.has_store"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngine.has_store">[docs]</a>    <span class="k">def</span> <span class="nf">has_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a deduplication store exists in a engine with provided storeid id.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            store_id (int) - deduplication store id to check existance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool - boolean output whether the deduplication store exists in the engine or not</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if type of the store id argument is not int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span> <span class="ow">and</span> <span class="n">store_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stores</span></div>
+
+<div class="viewcode-block" id="DeduplicationEngine.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.DeduplicationEngine.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns store class object for the store id on deduplication engine</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            store_id (int) - id of the store on deduplication engine</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            object - instance of Store class for a given store id</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            if type of store id argument is not integer</span>
+
+<span class="sd">            if no store exists with given store id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_store</span><span class="p">(</span><span class="n">store_id</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Store</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">,</span> <span class="n">store_id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;No store exists with id: </span><span class="si">{store_id}</span><span class="s1">&#39;</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Store"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store">[docs]</a><span class="k">class</span> <span class="nc">Store</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for performing deduplication store level operations for deduplication engine&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">store_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Store class instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            commcell_object (object)    - commcell class instance</span>
+
+<span class="sd">            storage_policy_name (str)   - storage policy name in commcell</span>
+
+<span class="sd">            copy_name (str)             - copy name under storage policy</span>
+
+<span class="sd">            store_id (int)              - deduplication store id in commcell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span> <span class="o">=</span> <span class="n">copy_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span> <span class="o">=</span> <span class="n">store_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dedupe_flags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_flags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string consisting of deduplication store.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - string of all the substores associated with the deduplication store</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="si">{:^20}</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;SubStore ID.&#39;</span><span class="p">,</span> <span class="s1">&#39;SubStoreList&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">substore_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">:</span>
+            <span class="n">sub_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:^5}</span><span class="se">\t</span><span class="s1">[</span><span class="si">{}</span><span class="s1">]</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">substore_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="n">substore_id</span><span class="p">][</span><span class="s1">&#39;MediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="n">substore_id</span><span class="p">][</span><span class="s1">&#39;Path&#39;</span><span class="p">])</span>
+            <span class="n">representation_string</span> <span class="o">+=</span> <span class="n">sub_str</span>
+
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Store class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Store class instance for Deduplication Store ID: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_store_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initializes the deduplication store proerties&quot;&quot;&quot;</span>
+        <span class="n">deduplication_engine</span> <span class="o">=</span> <span class="n">DeduplicationEngine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span> <span class="o">=</span> <span class="n">deduplication_engine</span><span class="o">.</span><span class="n">_stores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="p">[</span><span class="s1">&#39;storeExtendedFlags&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dedupe_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="p">[</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="p">[</span><span class="s1">&#39;storeFlags&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_substores</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_substores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets properties of all the substores in a deduplication store</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">             dict - store properties and substore list for each substore on deduplication store</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;EVGui_SubStoreListReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;commcellId&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;storeId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_id</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_substores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;initialisez all the substores present in a deduplication store&quot;&quot;&quot;</span>
+        <span class="n">substre_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_substores</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">substore</span> <span class="ow">in</span> <span class="n">substre_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subStoreList&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="n">substore</span><span class="p">[</span><span class="s1">&#39;subStoreId&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">substore</span>
+
+<div class="viewcode-block" id="Store.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;refreshes all the deduplication store properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_store_properties</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all_substores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns list of all substores present on a deduplication store&quot;&quot;&quot;</span>
+        <span class="n">substores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">substore_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">:</span>
+            <span class="n">substores</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">substore_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="n">substore_id</span><span class="p">][</span><span class="s1">&#39;Path&#39;</span><span class="p">],</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="n">substore_id</span><span class="p">][</span><span class="s1">&#39;MediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">substores</span>
+
+<div class="viewcode-block" id="Store.has_substore"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.has_substore">[docs]</a>    <span class="k">def</span> <span class="nf">has_substore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substore_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if a substore exists in a deduplication store with provided substore id.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            substore_id (int) - substore id to check existance</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool - boolean output whether the substore exists in the store or not</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if type of the store id argument is not int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substore_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span> <span class="ow">and</span> <span class="n">substore_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span></div>
+
+<div class="viewcode-block" id="Store.get"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">substore_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns substore class object for the substore id on deduplication store</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            substore_id (int) - id of the substore on deduplication store</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">             object - instance of subStore class for a given substore id</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            if type of substore id argument is not integer</span>
+
+<span class="sd">            if no substore exists with given substore id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">substore_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_substore</span><span class="p">(</span><span class="n">substore_id</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SubStore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">,</span>
+                            <span class="n">substore_id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+            <span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;No substore exists with id: </span><span class="si">{substore_id}</span><span class="s1">&#39;</span>
+        <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">store_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the store display name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;storeName&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">store_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the store id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns deduplication store version&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ddbVersion&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the store display name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">storage_policy_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns storage policy name associated with store&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">copy_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns copy name associated with store&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">copy_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns copy id the store is associated to&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;copy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">enable_garbage_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns garbage collection property value for store&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span> <span class="o">&amp;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@enable_garbage_collection</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">enable_garbage_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;sets enable garbage collection with true or false</span>
+<span class="sd">        Args:</span>
+<span class="sd">              value (bool) -- value to enable or disable garbage collection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span> <span class="o">&amp;</span> <span class="o">~</span><span class="mi">4</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extended_flags</span> <span class="o">|</span> <span class="mi">4</span>
+
+            <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;EVGui_ParallelDedupConfigReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;processinginstructioninfo&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;SIDBStore&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;SIDBStoreId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_id</span><span class="p">,</span>
+                        <span class="s2">&quot;SIDBStoreName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_name</span><span class="p">,</span>
+                        <span class="s2">&quot;extendedFlags&quot;</span><span class="p">:</span> <span class="n">new_value</span><span class="p">,</span>
+                        <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_flags</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;appTypeGroupId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;commCellId&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;copyId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_id</span><span class="p">,</span>
+                    <span class="s2">&quot;operation&quot;</span><span class="p">:</span> <span class="mi">3</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Store.recover_deduplication_database"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.recover_deduplication_database">[docs]</a>    <span class="k">def</span> <span class="nf">recover_deduplication_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_reconstruction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scalable_resources</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        refresh store properties and start reconstruction job if at least one substore is marked for recovery</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            full_reconstruction (bool)  - to reconstruct without using previous backup (True/False)</span>
+<span class="sd">                                        Default: False</span>
+
+<span class="sd">            scalable_resources (bool)    - to run reconstruction using scalable resources</span>
+<span class="sd">                                        Default: True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             object - instance of Job class for DDB Reconstruction job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">             SDKException:</span>
+<span class="sd">                if DDB Reconstruction job failed</span>
+
+<span class="sd">                if response if empty</span>
+
+<span class="sd">                if response in not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="n">substore_list</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">substore</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_substores</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">substore</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">substore_list</span> <span class="o">+=</span> <span class="n">f</span><span class="s2">&quot;&lt;SubStoreIdList val=&#39;</span><span class="si">{substore[0]}</span><span class="s2">&#39; /&gt;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">substore_list</span><span class="p">:</span>
+            <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;No substore is eligible for recon.&#39;</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+
+        <span class="n">request_xml</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot; ?&gt;</span>
+<span class="s2">                &lt;TMMsg_CreateTaskReq&gt;</span>
+<span class="s2">                  &lt;processinginstructioninfo/&gt;</span>
+<span class="s2">                  &lt;taskInfo&gt;</span>
+<span class="s2">                    &lt;task&gt;</span>
+<span class="s2">                      &lt;taskFlags&gt;</span>
+<span class="s2">                        &lt;disabled&gt;false&lt;/disabled&gt;</span>
+<span class="s2">                      &lt;/taskFlags&gt;</span>
+<span class="s2">                      &lt;policyType&gt;DATA_PROTECTION&lt;/policyType&gt;</span>
+<span class="s2">                      &lt;taskType&gt;IMMEDIATE&lt;/taskType&gt;</span>
+<span class="s2">                      &lt;initiatedFrom&gt;COMMANDLINE&lt;/initiatedFrom&gt;</span>
+<span class="s2">                    &lt;/task&gt;</span>
+<span class="s2">                    &lt;associations&gt;</span>
+<span class="s2">                      &lt;copyName&gt;</span><span class="si">{self.copy_name}</span><span class="s2">&lt;/copyName&gt;</span>
+<span class="s2">                      &lt;storagePolicyName&gt;</span><span class="si">{self.storage_policy_name}</span><span class="s2">&lt;/storagePolicyName&gt;</span>
+<span class="s2">                    &lt;/associations&gt;</span>
+<span class="s2">                    &lt;subTasks&gt;</span>
+<span class="s2">                      &lt;subTask&gt;</span>
+<span class="s2">                        &lt;subTaskType&gt;ADMIN&lt;/subTaskType&gt;</span>
+<span class="s2">                        &lt;operationType&gt;DEDUPDBSYNC&lt;/operationType&gt;</span>
+<span class="s2">                      &lt;/subTask&gt;</span>
+<span class="s2">                      &lt;options&gt;</span>
+<span class="s2">                        &lt;adminOpts&gt;</span>
+<span class="s2">                          &lt;dedupDBSyncOption&gt;</span>
+<span class="s2">                            &lt;SIDBStoreId&gt;</span><span class="si">{self.store_id}</span><span class="s2">&lt;/SIDBStoreId&gt;</span>
+<span class="s2">                            </span><span class="si">{substore_list}</span><span class="s2"></span>
+<span class="s2">                          &lt;/dedupDBSyncOption&gt;</span>
+<span class="s2">                          &lt;reconstructDedupDBOption&gt;</span>
+<span class="s2">                            &lt;noOfStreams&gt;0&lt;/noOfStreams&gt;</span>
+<span class="s2">                            &lt;allowMaximum&gt;true&lt;/allowMaximum&gt;</span>
+<span class="s2">                            &lt;flags&gt;{int(full_reconstruction)}&lt;/flags&gt;</span>
+<span class="s2">                            &lt;mediaAgents&gt;</span>
+<span class="s2">                              &lt;mediaAgentName&gt;&lt;/mediaAgentName&gt;</span>
+<span class="s2">                            &lt;/mediaAgents&gt;</span>
+<span class="s2">                            &lt;useScallableResourceManagement&gt;{str(scalable_resources).lower()}&lt;/useScallableResourceManagement&gt;</span>
+<span class="s2">                          &lt;/reconstructDedupDBOption&gt;</span>
+<span class="s2">                        &lt;/adminOpts&gt;</span>
+<span class="s2">                      &lt;/options&gt;</span>
+<span class="s2">                      &lt;subTaskOperation&gt;OVERWRITE&lt;/subTaskOperation&gt;</span>
+<span class="s2">                    &lt;/subTasks&gt;</span>
+<span class="s2">                  &lt;/taskInfo&gt;</span>
+<span class="s2">                &lt;/TMMsg_CreateTaskReq&gt;&quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_xml</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;DDB recon job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;112&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Store.run_space_reclaimation"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.run_space_reclaimation">[docs]</a>    <span class="k">def</span> <span class="nf">run_space_reclaimation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">clean_orphan_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        runs DDB Space reclaimation job with provided level</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            level (int) - criteria for space reclaimation level (1, 2, 3, 4)</span>
+<span class="sd">                        Default: 3</span>
+
+<span class="sd">            clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)</span>
+<span class="sd">                        Default: False</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             object - instance of Job class for DDB Verification job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">             SDKException:</span>
+<span class="sd">                if invalid level is provided</span>
+
+<span class="sd">                if DDB space reclaimation job failed</span>
+
+<span class="sd">                if response if empty</span>
+
+<span class="sd">                if response in not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span> <span class="ow">and</span> <span class="n">level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">level_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="mi">20</span>
+        <span class="p">}</span>
+        <span class="n">clean_orphan_data</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">clean_orphan_data</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;TMMsg_CreateTaskReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="s2">&quot;DATA_PROTECTION&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="s2">&quot;IMMEDIATE&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="s2">&quot;COMMANDLINE&quot;</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_name</span><span class="p">,</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
+                        <span class="s2">&quot;sidbStoreName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="s2">&quot;ADMIN&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="s2">&quot;ARCHIVE_CHECK&quot;</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                                        <span class="p">},</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;archiveCheckOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;ddbVerificationLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;DDB_DEFRAGMENTATION&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;FULL&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;defragmentationPercentage&quot;</span><span class="p">:</span> <span class="n">level_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">level</span><span class="p">),</span>
+                                    <span class="s2">&quot;ocl&quot;</span><span class="p">:</span> <span class="n">clean_orphan_data</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="s2">&quot;OVERWRITE&quot;</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;DDB space reclaimation job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Store.run_ddb_verification"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.Store.run_ddb_verification">[docs]</a>    <span class="k">def</span> <span class="nf">run_ddb_verification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">incremental_verification</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quick_verification</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        runs deduplication data verification(dv2) job with verification type and dv2 option</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            incremental_verification (bool) - DV2 job type, incremental or Full (True/False)</span>
+<span class="sd">                                            Default: True (Incremental)</span>
+
+<span class="sd">            quick_verification (bool)       - DV2 job option, Quick or Complete (True/False)</span>
+<span class="sd">                                            Default: True (quick verification)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             object - instance of Job class for DDB Verification job</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">             SDKException:</span>
+<span class="sd">                if DDB Verification job failed</span>
+
+<span class="sd">                if response if empty</span>
+
+<span class="sd">                if response in not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">verification_type</span> <span class="o">=</span> <span class="s1">&#39;INCREMENTAL&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">incremental_verification</span><span class="p">:</span>
+            <span class="n">verification_type</span> <span class="o">=</span> <span class="s1">&#39;FULL&#39;</span>
+
+        <span class="n">verification_option</span> <span class="o">=</span> <span class="s1">&#39;QUICK_DDB_VERIFICATION&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quick_verification</span><span class="p">:</span>
+            <span class="n">verification_option</span> <span class="o">=</span> <span class="s1">&#39;DDB_AND_DATA_VERIFICATION&#39;</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;TMMsg_CreateTaskReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="s2">&quot;DATA_PROTECTION&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="s2">&quot;IMMEDIATE&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="s2">&quot;COMMANDLINE&quot;</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_name</span><span class="p">,</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span><span class="p">,</span>
+                        <span class="s2">&quot;sidbStoreName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="s2">&quot;ADMIN&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="s2">&quot;ARCHIVE_CHECK&quot;</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s2">&quot;allCopies&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+                                        <span class="p">},</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;archiveCheckOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;ddbVerificationLevel&quot;</span><span class="p">:</span> <span class="n">verification_option</span><span class="p">,</span>
+                                    <span class="s2">&quot;backupLevel&quot;</span><span class="p">:</span> <span class="n">verification_type</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="s2">&quot;OVERWRITE&quot;</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;EXECUTE_QCOMMAND&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;DDB verification job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;108&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SubStore"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.SubStore">[docs]</a><span class="k">class</span> <span class="nc">SubStore</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to performing substore level operations for Deduplication engine&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">storage_policy_name</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">,</span> <span class="n">store_id</span><span class="p">,</span> <span class="n">substore_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the SubStore class instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            commcell_object (object)    - commcell class instance</span>
+
+<span class="sd">            storage_policy_name (str)   - storage policy name in commcell</span>
+
+<span class="sd">            copy_name (str)             - copy name under storage policy</span>
+
+<span class="sd">            store_id (int)              - deduplication store id in commcell</span>
+
+<span class="sd">            substore_id (int)           - substore id under deduplication store</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span> <span class="o">=</span> <span class="n">storage_policy_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span> <span class="o">=</span> <span class="n">copy_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span> <span class="o">=</span> <span class="n">store_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_substore_id</span> <span class="o">=</span> <span class="n">substore_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_substore_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Representation string for the instance of the SubStore class.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;SubStore class instance for Deduplication Substore ID: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_substore_id</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_substore_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize substore properties for the substore on a deduplication store&quot;&quot;&quot;</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="n">Store</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_substore_properties</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">_substores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_substore_id</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substore_properties</span><span class="p">[</span><span class="s1">&#39;Path&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substore_properties</span><span class="p">[</span><span class="s1">&#39;MediaAgent&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SubStore.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.SubStore.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;refresh the properties of a substore&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_substore_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SubStore.mark_for_recovery"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.deduplication_engines.SubStore.mark_for_recovery">[docs]</a>    <span class="k">def</span> <span class="nf">mark_for_recovery</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;mark a substore for recovery and refresh substore properties&quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;EVGui_IdxSIDBSubStoreOpReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">media_agent</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;SIDBStoreId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_id</span><span class="p">,</span>
+                    <span class="s2">&quot;SubStoreId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">substore_id</span><span class="p">,</span>
+                    <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">qoperation_execute</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">media_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns media agent for the substore&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns path for the substore&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">store_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns store id for the substore&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">substore_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns substore id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_substore_id</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

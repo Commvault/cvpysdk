@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -167,20 +170,23 @@
 <span class="sd">    __init__(commcell_object)        --  initialize commcell_object of Install class</span>
 <span class="sd">    associated with the commcell</span>
 
+<span class="sd">    repair_software                -- triggers Repair of the software on a specified</span>
+<span class="sd">                                        client/client group</span>
+
 <span class="sd">    push_servicepack_and_hotfix()    --  installs the latest service pack in the client machine</span>
 
 <span class="sd">    install_software                 --  Installs the features selected on the machines selected</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..job</span> <span class="kn">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Install"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.install.Install">[docs]</a><span class="k">class</span> <span class="nc">Install</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;class for installing software packages&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Install class.</span>
 
 <span class="sd">            Args:</span>
@@ -194,6 +200,141 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
+
+<div class="viewcode-block" id="Install.repair_software"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.install.Install.repair_software">[docs]</a>    <span class="k">def</span> <span class="nf">repair_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">client_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;triggers Repair of the software for a specified client machine</span>
+
+<span class="sd">                Args:</span>
+<span class="sd">                    client (str)               -- Client machine to re-install service pack on</span>
+
+<span class="sd">                    client_group (str)         -- Client group to re-install service pack on</span>
+<span class="sd">                                                            (eg : &#39;Media Agent&#39;)</span>
+
+<span class="sd">                    username    (str)               -- username of the machine to re-install features on</span>
+
+<span class="sd">                        default : None</span>
+
+<span class="sd">                    password    (str)               -- base64 encoded password</span>
+
+<span class="sd">                        default : None</span>
+
+<span class="sd">                    reboot_client (bool)            -- boolean to specify whether to reboot the client</span>
+<span class="sd">                    or not</span>
+
+<span class="sd">                        default: False</span>
+
+<span class="sd">                Returns:</span>
+<span class="sd">                    object - instance of the Job class for this download job</span>
+
+<span class="sd">                Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                        if re-install job failed</span>
+
+<span class="sd">                        if response is empty</span>
+
+<span class="sd">                        if response is not success</span>
+
+<span class="sd">        **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the</span>
+<span class="sd">                  client computer will be repaired</span>
+
+<span class="sd">        **NOTE:** If machine requires reboot and reboot is not selected, machine won&#39;t be updated</span>
+
+<span class="sd">        **NOTE:** If machine requires login credentials and if not provided - client reinstallation might fail.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">client_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">client_group</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">client</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">all_clients</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">client_group</span><span class="p">:</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">client_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">all_clientgroups</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;taskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;initiatedFrom&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;policyType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;taskFlags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4020</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;clientInstallOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;installerOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;clientComposition&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                            <span class="p">{</span>
+                                                <span class="s2">&quot;packageDeliveryOption&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                                            <span class="p">}</span>
+                                        <span class="p">]</span>
+                                    <span class="p">}</span>
+                                <span class="p">},</span>
+                                <span class="s2">&quot;updateOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;installUpdateOptions&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                    <span class="s2">&quot;restartExplorerPlugin&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="s2">&quot;rebootClient&quot;</span><span class="p">:</span> <span class="n">reboot_client</span><span class="p">,</span>
+                                    <span class="s2">&quot;clientAndClientGroups&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                        <span class="p">{</span>
+                                            <span class="s2">&quot;clientGroupName&quot;</span> <span class="p">:</span> <span class="n">client_group</span><span class="p">,</span>
+                                            <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client</span>
+                                        <span class="p">}</span>
+                                    <span class="p">],</span>
+                                    <span class="s2">&quot;installUpdatesJobType&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;installType&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                                        <span class="s2">&quot;upgradeClients&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;undoUpdates&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                        <span class="s2">&quot;installUpdates&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">username</span><span class="p">:</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;adminOpts&quot;</span><span class="p">][</span><span class="s2">&quot;clientInstallOption&quot;</span><span class="p">][</span><span class="s2">&quot;clientAuthForJob&quot;</span><span class="p">]</span> \
+                <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+                    <span class="s2">&quot;userName&quot;</span><span class="p">:</span> <span class="n">username</span>
+                <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;107&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Install.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.install.Install.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -345,7 +486,8 @@
             <span class="n">windows_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">unix_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Installs the features selected on the given machines</span>
 <span class="sd">        Args:</span>
@@ -370,6 +512,10 @@
 <span class="sd">            password    (str)               -- base64 encoded password</span>
 
 <span class="sd">                default : None</span>
+
+<span class="sd">            install_path (str)              -- Install to a specified path on the client</span>
+
+<span class="sd">                 default : None</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">                object - instance of the Job class for this install_software job</span>
@@ -397,7 +543,8 @@
 <span class="sd">                                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],</span>
 <span class="sd">                                unix_features=None,</span>
 <span class="sd">                                username=&#39;username&#39;,</span>
-<span class="sd">                                password=&#39;password&#39;)</span>
+<span class="sd">                                password=&#39;password&#39;,</span>
+<span class="sd">                                install_path=&#39;C:\\Temp)</span>
 
 <span class="sd">                    **NOTE:** Either Unix or Windows clients_computers should be chosen and</span>
 <span class="sd">                    not both</span>
@@ -502,7 +649,8 @@
                                                 <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                     <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                         <span class="s2">&quot;evmgrcPort&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                                                        <span class="s2">&quot;cvdPort&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                                                        <span class="s2">&quot;cvdPort&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                                        <span class="s2">&quot;installDirectory&quot;</span><span class="p">:</span> <span class="n">install_path</span> <span class="k">if</span> <span class="n">install_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
                                                     <span class="p">}</span>
                                                 <span class="p">}</span>
                                             <span class="p">}</span>
@@ -523,6 +671,7 @@
                 <span class="p">]</span>
             <span class="p">}</span>
         <span class="p">}</span>
+
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">],</span> <span class="n">request_json</span>
         <span class="p">)</span>
@@ -551,11 +700,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -566,7 +723,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

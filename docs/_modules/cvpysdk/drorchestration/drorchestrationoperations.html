@@ -1,38 +1,39 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.drorchestration.drorchestrationoperations &mdash; Developer SDK - Python 11.20 documentation</title>
+  <title>cvpysdk.drorchestration.drorchestrationoperations &mdash; Developer SDK - Python 11.21 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> Developer SDK - Python
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> Developer SDK - Python
           
 
           
@@ -71,6 +72,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -83,6 +85,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -121,7 +124,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
@@ -185,9 +188,15 @@
 
 <span class="sd">    point_in_time_failover()                        -- Call PointInTimeFailover operation</span>
 
-<span class="sd">    reverse_replication()                           -- Call ReverseReplication operation</span>
+<span class="sd">    reverse_replication()                           -- Schedule and call ReverseReplication operation</span>
+
+<span class="sd">    schedule_reverse_replication()                  -- Schedule ReverseReplication</span>
+
+<span class="sd">    force_reverse_replication()                     -- Call ReverseReplication operation</span>
 
 <span class="sd">    validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id</span>
+
+<span class="sd">    get_snapshot_list(guid)                         -- Retrieves snapshot lists from the specified guid</span>
 
 
 <span class="sd">    ##### internal methods #####</span>
@@ -221,17 +230,19 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+
+<span class="kn">from</span> <span class="nn">.dr_orchestration_job_phase</span> <span class="k">import</span> <span class="n">DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT</span>
 
 
 <div class="viewcode-block" id="DROrchestrationOperations"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations">[docs]</a><span class="k">class</span> <span class="nc">DROrchestrationOperations</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for invoking DROrchestration operations in the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the DROrchestrationOperations.</span>
 
 <span class="sd">            Args:</span>
@@ -253,7 +264,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dr_group_Id</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;DROrchestrationOperations: instance for commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -269,52 +280,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span><span class="p">:</span>
-            <span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;0&quot;</span><span class="p">:</span> <span class="s2">&quot;Script Execution&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="s2">&quot;Power On&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="s2">&quot;Power Off&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="s2">&quot;Reboot&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;4&quot;</span><span class="p">:</span> <span class="s2">&quot;Guest Tools Status Check&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;5&quot;</span><span class="p">:</span> <span class="s2">&quot;Create Network Switch&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete Network Switch&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;7&quot;</span><span class="p">:</span> <span class="s2">&quot;Replication&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;8&quot;</span><span class="p">:</span> <span class="s2">&quot;Backup&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="s2">&quot;Configure Network Switch&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="s2">&quot;Port Configuration&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;IP Masquerading&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;12&quot;</span><span class="p">:</span> <span class="s2">&quot;Static IP Mapping&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;13&quot;</span><span class="p">:</span> <span class="s2">&quot;Intialization&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;14&quot;</span><span class="p">:</span> <span class="s2">&quot;Waiting on IP Assignment&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;15&quot;</span><span class="p">:</span> <span class="s2">&quot;Disable Sync&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;16&quot;</span><span class="p">:</span> <span class="s2">&quot;Enable Sync&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;17&quot;</span><span class="p">:</span> <span class="s2">&quot;Create Snapshot&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;18&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete Snapshot&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;19&quot;</span><span class="p">:</span> <span class="s2">&quot;Revert Snapshot&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="s2">&quot;Disable Network Adapter&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="s2">&quot;Auxiliary Copy&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;22&quot;</span><span class="p">:</span> <span class="s2">&quot;Post Operation&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;23&quot;</span><span class="p">:</span> <span class="s2">&quot;Backup Copy&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;24&quot;</span><span class="p">:</span> <span class="s2">&quot;Shutdown&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;25&quot;</span><span class="p">:</span> <span class="s2">&quot;Storage Operation&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;26&quot;</span><span class="p">:</span> <span class="s2">&quot;Finalize&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;27&quot;</span><span class="p">:</span> <span class="s2">&quot;DR Approval&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;28&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete VM&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;29&quot;</span><span class="p">:</span> <span class="s2">&quot;Create VM&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;30&quot;</span><span class="p">:</span> <span class="s2">&quot;Get VM Information&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;31&quot;</span><span class="p">:</span> <span class="s2">&quot;Create DR VM&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;32&quot;</span><span class="p">:</span> <span class="s2">&quot;Post VM Failover&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;33&quot;</span><span class="p">:</span> <span class="s2">&quot;Mount Snap Primary&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;34&quot;</span><span class="p">:</span> <span class="s2">&quot;DR VM Snap Mount&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;35&quot;</span><span class="p">:</span> <span class="s2">&quot;Break Volume Relationship&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;36&quot;</span><span class="p">:</span> <span class="s2">&quot;Resync Volume Relationship&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;37&quot;</span><span class="p">:</span> <span class="s2">&quot;DR VM Snap Unmount&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;38&quot;</span><span class="p">:</span> <span class="s2">&quot;DR Test VM Snap Mount&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;39&quot;</span><span class="p">:</span> <span class="s2">&quot;DR Test VM Snap Unmount&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;40&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete DR VM&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;41&quot;</span><span class="p">:</span> <span class="s2">&quot;Post VM Failover&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;42&quot;</span><span class="p">:</span> <span class="s2">&quot;Clone VM&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;43&quot;</span><span class="p">:</span> <span class="s2">&quot;Refresh VM&quot;</span>
-            <span class="p">}</span>
+            <span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="n">DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span> <span class="o">=</span> <span class="n">_dr_orchestration_job_phase</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_orchestration_job_phase</span>
@@ -515,12 +481,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DROrchestrationOperations.reverse_replication"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.reverse_replication">[docs]</a>    <span class="k">def</span> <span class="nf">reverse_replication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Performs Reverse Replication operation.</span>
+        <span class="sd">&quot;&quot;&quot;Schedules and calls Reverse Replication</span>
 
 <span class="sd">            Args:</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                (JobId, TaskId) - JobId and taskId of the failback job triggered</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_reverse_replication</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_reverse_replication</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.schedule_reverse_replication"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.schedule_reverse_replication">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_reverse_replication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedules Reverse Replication.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (TaskId) - TaskId of the scheduling reverse replication job triggered</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -530,12 +511,41 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;9&quot;</span>
-        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_reverse_replication_json</span><span class="p">()</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_dr_orchestration</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_reverse_replication_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.force_reverse_replication"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.force_reverse_replication">[docs]</a>    <span class="k">def</span> <span class="nf">force_reverse_replication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs one reverse replication operation.</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if proper inputs are not provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_orchestration_options</span><span class="p">[</span><span class="s2">&quot;DROrchestrationType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;9&quot;</span>
+        <span class="n">dr_orchestration_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_dr_orchestration_operation_json</span><span class="p">()</span>
+
+        <span class="c1"># We need to have this option in the request because &quot;powerOnVM&quot; is True by default.</span>
+        <span class="c1"># If it is not set, both src and dst VMs will be booted up.</span>
+        <span class="n">dr_orchestration_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;adminOpts&quot;</span><span class="p">][</span><span class="s2">&quot;drOrchestrationOption&quot;</span><span class="p">][</span><span class="s2">&quot;advancedOptions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;powerOnVM&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DROrchestrationOperations.revert_failover"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.revert_failover">[docs]</a>    <span class="k">def</span> <span class="nf">revert_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs Revert Failover operation.</span>
@@ -560,7 +570,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DROrchestrationOperations.point_in_time_failover"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.point_in_time_failover">[docs]</a>    <span class="k">def</span> <span class="nf">point_in_time_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DROrchestrationOperations.point_in_time_failover"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.point_in_time_failover">[docs]</a>    <span class="k">def</span> <span class="nf">point_in_time_failover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">replication_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs Point in time Failover operation.</span>
 
 <span class="sd">            Args:</span>
@@ -580,6 +590,12 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">dr_orchestration_json</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">dr_orchestration_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;adminOpts&quot;</span><span class="p">][</span><span class="s2">&quot;drOrchestrationOption&quot;</span><span class="p">][</span><span class="s2">&quot;replicationInfo&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;configOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;pointInTime&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">timestamp</span><span class="p">),</span>
+                     <span class="s2">&quot;replicationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">replication_id</span><span class="p">)}]</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_dr_orchestration_task</span><span class="p">(</span><span class="n">dr_orchestration_json</span><span class="p">)</span></div>
 
@@ -636,6 +652,45 @@
                         <span class="s1">&#39;DROrchestrationOperations&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="DROrchestrationOperations.get_snapshot_list"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.drorchestrationoperations.DROrchestrationOperations.get_snapshot_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_snapshot_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timestamp_filter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets snapshot list</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                guid (str): GUID of the spcified VM</span>
+
+<span class="sd">                timestamp_filter (bool): whether to only return snapshots with timestamps</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                list of dict: list of snapshot information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vm_browse_req</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">VMBrowse/</span><span class="si">{1}</span><span class="s2">?instanceId=6&amp;snapshots=true&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_web_service</span><span class="p">,</span> <span class="n">guid</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">vm_browse_req</span><span class="p">)</span>
+
+        <span class="c1"># only fetches snapshot info from the response</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">snapshots</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;scList&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;snapshots&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">timestamp_filter</span><span class="p">:</span>
+            <span class="c1"># we only need snapshots with timestamps</span>
+            <span class="n">snapshots</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s2">&quot;__GX_Recovery_Point_&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">snapshots</span><span class="p">))</span>
+
+            <span class="c1"># adds integer timestamps to the list</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">snapshots</span><span class="p">:</span>
+                <span class="n">timestamp</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">s</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">snapshots</span></div>
 
 
 <span class="c1">#################### private functions #####################</span>
@@ -992,11 +1047,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1007,7 +1070,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
