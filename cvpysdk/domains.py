@@ -50,6 +50,18 @@ Domains:
     refresh()                   --  refresh the domains associated with the commcell
 
 
+Domain:
+
+    __init__()                  --  initializes instance of the Domain class for doing
+    operations on the selected Domain
+
+    __repr__()                  --  returns the string representation of an instance of this class
+
+    _get_domain_id()            --  Gets the domain id associated with this domain
+
+    _get_domain_properties      --  get the properties of the domain
+
+
 """
 
 from __future__ import absolute_import
@@ -214,26 +226,25 @@ class Domains(object):
                 domain_name (str)  --  name of the domain
 
             Returns:
-                dict - properties of domain.
+                object of the domain
 
             Raises:
                 SDKException:
-                    if type of the domain name argument is not string
 
-                    if no domain exists with the given name
+					if domain doesn't exist with specified name
+
+					if type of the domain name argument is not string
 
         """
         if not isinstance(domain_name, basestring):
             raise SDKException('Domain', '101')
-        else:
-            domain_name = domain_name.lower()
+        if not self.has_domain(domain_name):
+            raise SDKException(
+                'Domain', '102', "Domain {0} doesn't exists on this commcell.".format(
+                    domain_name)
+            )
 
-            if self.has_domain(domain_name):
-                return self._domains[domain_name]
-            else:
-                raise SDKException(
-                    'Domain', '102', 'No domain exists with name: {0}'.format(domain_name)
-                )
+        return Domain(self._commcell_object, domain_name, self._domains[domain_name.lower()]['shortName']['id'])
 
     def delete(self, domain_name):
         """Deletes the domain from the commcell.
@@ -460,3 +471,85 @@ class Domains(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+class Domain(object):
+    """Class for representing a particular domain configured on a commcell"""
+
+    def __init__(self, commcell_object, domain_name, domain_id=None):
+        """Initialize the domain class object for specified domain
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+                domain_name         (str)     --  name of the domain
+
+                domain_id           (str)     --  id of the domain
+
+
+        """
+        self._commcell_object = commcell_object
+        self._domain_name = domain_name.lower()
+
+        if domain_id is None:
+            self._domain_id = self._get_domain_id(self._domain_name)
+        else:
+            self._domain_id = domain_id
+
+        self._domain = self._commcell_object._services['DOMAIN_PROPERTIES'] % (self._domain_id)
+        self._properties = None
+        self._get_domain_properties()
+
+    def __repr__(self):
+        """String representation of the instance of this class."""
+        representation_string = 'Domain class instance for Domain: "{0}"'
+        return representation_string.format(self.domain_name)
+
+
+    def _get_domain_id(self, domain_name):
+        """Gets the domain id associated with this domain
+
+            Args:
+                domain_name         (str)     --     name of the domain
+
+            Returns:
+                int     -     id associated to the specified user
+        """
+        domain = Domains(self._commcell_object)
+        return domain.get(domain_name).domain_id
+
+    def _get_domain_properties(self):
+        """Gets the properties of this domain
+
+            Returns (dict):
+                domain_name (str) - name of the domain
+                domain_id   (str) - domain id
+
+        """
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._domain
+        )
+
+        if flag:
+            if response.json() and 'providers' in response.json():
+                self._properties = response.json().get('providers', [{}])[0]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def refresh(self):
+        """Refresh the properties of the domain."""
+        self._get_domain_properties()
+
+    @property
+    def domain_name(self):
+        """Returns the User display name"""
+        return self._properties['shortName']['domainName']
+
+    @property
+    def domain_id(self):
+        """Returns the user name of this commcell user"""
+        return self._properties['shortName']['id']
+

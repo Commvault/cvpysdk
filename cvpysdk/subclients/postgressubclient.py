@@ -26,6 +26,8 @@ PostgresSubclient: Derived class from Subclient Base class, representing a HANA 
 PostgresSubclient:
 ==================
 
+    set_content()                        --  Adds/Updates/Deletes the postgresql subclient contents
+
     collect_object_list()                --  Sets the collect object list flag for the subclient
     as the value provided as input
 
@@ -43,7 +45,6 @@ PostgresSubclient:
     restore_postgres_server()            --  Method to restore the Postgres server
 
 
-
 PostgresSubclient instance Attributes
 =====================================
 
@@ -56,7 +57,6 @@ PostgresSubclient instance Attributes
 from __future__ import unicode_literals
 from .dbsubclient import DatabaseSubclient
 from ..exception import SDKException
-
 
 class PostgresSubclient(DatabaseSubclient):
     """Derived class from Subclient Base class, representing a file system subclient,
@@ -97,6 +97,61 @@ class PostgresSubclient(DatabaseSubclient):
                         database_list.append(database[
                             'postgreSQLContent']['databaseName'].lstrip("/"))
             return database_list
+
+    def set_content(self, database_list, operation_type="OVERWRITE"):
+        """ Adds/Updates/Deletes the postgresql subclient contents
+
+            Args:
+
+                database_list (list)  -- list of databases to be added to the subclient content
+
+                operation_type (str)  -- Content operation to be performed
+
+                    Accepted Values:
+
+                        ADD         -- Adds the database list to existing content
+
+                        OVERWRITE   -- Replaces the content with given databases
+
+                        DELETE      -- Deletes the database from the content
+
+            Raises:
+                SDKException:
+                    if database list is not a list
+
+                    if operation type is not accepted value
+
+                    if the database list is empty
+
+                    if the operation is performed on default subclient
+
+        """
+        if not isinstance(database_list, list):
+            raise SDKException('Subclient', '101')
+        if operation_type.lower() not in ['add', 'overwrite', 'delete']:
+            raise SDKException('Subclient', '102', 'Operation type not supported')
+        if not database_list:
+            raise SDKException('Subclient', '102', 'Cannot set empty content to a subclient')
+        if self.is_default_subclient:
+            raise SDKException('Subclient', '102', 'Cannot set content to the default subclient')
+        operation_map = {
+            'add'   :   2,
+            'overwrite': 1,
+            'delete':   3
+            }
+        properties = self._subclient_properties
+        content_list = []
+        for database in database_list:
+            content_dict = {
+                'postgreSQLContent':
+                    {
+                        'databaseName': f'{database}'
+                    }
+                }
+            content_list.append(content_dict)
+        properties['contentOperationType'] = operation_map[operation_type.lower()]
+        properties['content'] = content_list
+        self.update_properties(properties)
 
     @property
     def collect_object_list(self):

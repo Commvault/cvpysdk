@@ -863,7 +863,7 @@ class VirtualServerSubclient(Subclient):
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
-        vcenter_userpwd =''
+        vcenter_userpwd = ''
         if 'vmware' in self._instance_object.instance_name:
             vcenter_userpwd = self._instance_object._user_name
 
@@ -1021,12 +1021,20 @@ class VirtualServerSubclient(Subclient):
         vm_ids = {}
         vm_names = {}
 
-        for content in self.content:
-            if content['type'].lower() in ('vm', 'virtual machine'):
-                vm_ids[content['id']] = content['display_name']
-                vm_names[content['display_name']] = content['id']
-
-        return vm_ids, vm_names
+        def _assign_vm_name_id(contents, _vm_ids, _vm_names):
+            for _content in contents:
+                if _content.get('content'):
+                    _vm_ids, _vm_names = _assign_vm_name_id(_content['content'], _vm_ids, _vm_names)
+                    continue
+                if _content['type'].lower() in ('vm', 'virtual machine'):
+                    _vm_ids[_content['id']] = _content['display_name']
+                    _vm_names[_content['display_name']] = _content['id']
+                else:
+                    _vm_ids = {}
+                    _vm_names = {}
+                    break
+            return _vm_ids, _vm_names
+        return _assign_vm_name_id(self.content, vm_ids, vm_names)
 
     def _get_vm_ids_and_names_dict_from_browse(self):
         """Parses through the Browse content and get the VMs Backed up
@@ -1591,21 +1599,21 @@ class VirtualServerSubclient(Subclient):
             options = args[0]
         else:
             options = kwargs
-        vm_name=options.get('vm_name', None)
-        folder_to_restore=options.get('folder_to_restore',None)
-        destination_client=options.get('destination_client',None)
-        destination_path=options.get('destination_path',None)
-        copy_precedence=options.get('copy_precedence',0)
-        preserve_level=options.get('preserve_level',1)
-        unconditional_overwrite=options.get('unconditional_overwrite',False)
-        restore_ACL=options.get('restore_ACL',True)
-        from_date=options.get('from_date',0)
-        to_date=options.get('to_date',0)
-        show_deleted_files=options.get('show_deleted_files',False)
-        fbr_ma=options.get('fbr_ma',None)
-        browse_ma=options.get('browse_ma',"")
-        agentless=options.get('agentless',"")
-        in_place=options.get('in_place',False)
+        vm_name = options.get('vm_name', None)
+        folder_to_restore = options.get('folder_to_restore', None)
+        destination_client = options.get('destination_client', None)
+        destination_path = options.get('destination_path', None)
+        copy_precedence = options.get('copy_precedence', 0)
+        preserve_level = options.get('preserve_level', 1)
+        unconditional_overwrite = options.get('unconditional_overwrite', False)
+        restore_ACL = options.get('restore_ACL', True)
+        from_date = options.get('from_date', 0)
+        to_date = options.get('to_date', 0)
+        show_deleted_files = options.get('show_deleted_files', False)
+        fbr_ma = options.get('fbr_ma', None)
+        browse_ma = options.get('browse_ma', "")
+        agentless = options.get('agentless', "")
+        in_place = options.get('in_place', False)
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
@@ -2045,7 +2053,9 @@ class VirtualServerSubclient(Subclient):
             ds = ""
             if "datastore" in restore_option:
                 ds = restore_option["datastore"]
-            if (restore_option["in_place"]) or ("datastore" not in restore_option):
+            if restore_option[
+                "in_place"] or "datastore" not in restore_option or not restore_option.get(
+                    'datastore'):
                 if "datastore" in data["advanced_data"]["browseMetaData"]["virtualServerMetaData"]:
                     restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
                         "virtualServerMetaData"]["datastore"]
@@ -2456,10 +2466,12 @@ class VirtualServerSubclient(Subclient):
         for _each_vm_to_restore in restore_option['vm_to_restore']:
             if not restore_option["in_place"]:
                 if 'disk_type' in restore_option:
-                    restore_option['restoreAsManagedVM'] = restore_option['disk_type'][_each_vm_to_restore]
+                    restore_option['restoreAsManagedVM'] = restore_option['disk_type'][
+                        _each_vm_to_restore]
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
-                    restore_option["new_name"] = restore_option["restore_new_name"] + _each_vm_to_restore
+                    restore_option["new_name"] = restore_option[
+                                                     "restore_new_name"] + _each_vm_to_restore
                 else:
                     restore_option["new_name"] = "del" + _each_vm_to_restore
             else:
@@ -2468,10 +2480,13 @@ class VirtualServerSubclient(Subclient):
 
         # prepare json
         request_json = self._restore_json(restore_option=restore_option)
-        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"]["advancedRestoreOptions"] = self._advanced_restore_option_list
+        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
+            "advancedRestoreOptions"] = self._advanced_restore_option_list
         self._advanced_restore_option_list = []
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["virtualServerRstOption"] = self._virtualserver_option_restore_json
-        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"] = self._virtualserver_option_restore_json
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "volumeRstOption"] = self._json_restore_volumeRstOption(
             restore_option)
 
         return request_json

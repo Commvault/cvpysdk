@@ -29,6 +29,7 @@ Download
     sync_remote_cache()                   --  syncs remote cache
 
 """
+
 from ..job import Job
 from ..exception import SDKException
 from .deploymentconstants import DownloadOptions
@@ -57,7 +58,9 @@ class Download(object):
             self,
             options=None,
             os_list=None,
-            service_pack=None):
+            service_pack=None,
+            cu_number=0,
+            sync_cache=True):
         """Downloads the os packages on the commcell
 
             Args:
@@ -67,6 +70,11 @@ class Download(object):
                 os_list      (list of enum)    --  list of windows/unix packages to be downloaded
 
                 service_pack (int)             --  service pack to be downloaded
+
+                cu_number (int)                --  maintenance release number
+
+                sync_cache (bool)              --  True if download and sync
+                                                   False only download
 
             Returns:
                 object - instance of the Job class for this download job
@@ -114,7 +122,8 @@ class Download(object):
                 >>> commcell_obj.download_software(
                         options='DownloadOptions.SERVICEPACK_AND_HOTFIXES.value',
                         os_list=[DownloadPackages.UNIX_MAC.value],
-                        service_pack=13
+                        service_pack=13,
+                        cu_number=42
                         )
 
                     **NOTE:** service_pack parameter must be specified for third option
@@ -144,7 +153,7 @@ class Download(object):
                 raise SDKException('Download', '102')
 
             self.update_option = {
-                'SPName': 'SP{0}'.format(service_pack),
+                'SPName': str(service_pack),
                 'IsSPName': True,
                 'isSpDelayedDays': False,
                 'isHotfixesDownload': False
@@ -178,8 +187,9 @@ class Download(object):
                         "options": {
                             "adminOpts": {
                                 "updateOption": {
-                                    "syncUpdateCaches": True,
+                                    "syncUpdateCaches": sync_cache,
                                     "spName": self.update_option['SPName'],
+                                    "CUNumber": cu_number,
                                     "isWindows": True,
                                     "majorOnly": False,
                                     "isSpName": self.update_option['IsSPName'],

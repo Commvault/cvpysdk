@@ -50,6 +50,15 @@ class IndexServerConstants:
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
+    SOLR_PORT_META_INFO = {
+        "name": "PORTNO",
+        "value": None
+    }
+    SOLR_JVM_META_INFO = {
+        "name": "JVMMAXMEMORY",
+        "value": None
+    }
+
     UPDATE_ADD_ROLE = {
         "roleName": "",
         "operationType": OPERATION_ADD}

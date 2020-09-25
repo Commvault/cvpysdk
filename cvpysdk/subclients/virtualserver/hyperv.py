@@ -511,8 +511,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         #setting restore vms
         vm_list = None
-        if vm_to_restore:
+        if isinstance(vm_to_restore, dict):
             vm_list = list(vm_to_restore.keys())
+        elif isinstance(vm_to_restore, list):
+            vm_list = vm_to_restore
+        elif isinstance(vm_to_restore, str):
+            vm_list = [vm_to_restore]
 
 
         self._set_restore_inputs(
@@ -533,7 +537,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_instance=instance.instance_name,
             backupset_client_name=instance._agent_object._client_object.client_name,
             destination_network=destination_network,
-            destination_os_name=self._get_guest_os(destination_os_name)
+            destination_os_name=destination_os_name
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

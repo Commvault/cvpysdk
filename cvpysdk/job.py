@@ -2159,6 +2159,7 @@ class Job(object):
 
         return ('completed' in self._status.lower() or
                 'killed' in self._status.lower() or
+                'committed' in self._status.lower() or
                 'failed' in self._status.lower())
 
     @property

@@ -5241,14 +5241,28 @@ class _Readiness:
         self._status = None
         self._dict = None
 
-    def __fetch_readiness_details(self, network=True, resource=False, disabled_clients=False):
+    def __fetch_readiness_details(
+            self,
+            network=True,
+            resource=False,
+            disabled_clients=False,
+            cs_cc_network_check=False
+    ):
         """
         Performs readiness check on the client
 
             Args:
-                network (bool): Performs Network Readiness Check. Defaults to True.
-                resource (bool): Performs Resource Readiness Check. Defaults to False.
-                disabled_clients (bool): Includes backup activity disabled clients. Defaults to False.
+                network (bool)  - Performs Network Readiness Check.
+                                    Default: True
+
+                resource (bool) - Performs Resource Readiness Check.
+                                    Default: False
+
+                disabled_clients (bool) - Includes backup activity disabled clients.
+                                            Default: False
+
+                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
+                                                Default: False
 
             Raises:
                 SDKException:
@@ -5258,7 +5272,12 @@ class _Readiness:
         """
         flag, response = self.__commcell._cvpysdk_object.make_request(
             'GET',
-            self.__commcell._services['CHECK_READINESS'] % (self.__client_id, network, resource, disabled_clients)
+            self.__commcell._services['CHECK_READINESS'] % (
+                self.__client_id,
+                network,
+                resource,
+                disabled_clients,
+                cs_cc_network_check)
         )
 
         if flag:
@@ -5272,13 +5291,28 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False):
+    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False):
         """Performs readiness check on the client
 
-        Returns: connection status
+        Args:
+                network (bool)  - Performs Network Readiness Check.
+                                    Default: True
+
+                resource (bool) - Performs Resource Readiness Check.
+                                    Default: False
+
+                disabled_clients (bool) - Includes backup activity disabled clients.
+                                            Default: False
+
+                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
+                                                Default: False
+
+        Returns:
+
+            (bool)  - True if ready else False
 
         """
-        self.__fetch_readiness_details(network, resource, disabled_clients)
+        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check)
         return self._status == "Ready."
 
     def __check_reason(self):

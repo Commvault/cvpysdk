@@ -265,7 +265,8 @@ EXCEPTION_DICT = {
     },
     'User': {
         '101': 'Data type of input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'User with same name already exists'
     },
     'Role': {
         '101': 'Data type of input(s) is not valid',

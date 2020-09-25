@@ -26,6 +26,11 @@ PostgreSQLInstance: Derived class from Instance Base class, representing a postg
 PostgreSQLInstance:
 ===================
 
+    _get_instance_properties()           --     Gets the properties of this instance
+
+    _get_instance_properties_json()      --     Gets all the instance related properties of
+    PostgreSQL instance.
+
     _restore_json()                      --     returns the JSON request to pass to the API as per
     the options selected by the user
 
@@ -59,6 +64,14 @@ PostgreSQLInstance instance Attributes
     with postgres server
 
     **postgres_version**                 --  returns the postgres server version
+
+    **standby_instance_name**            --  Returns the standby instance name
+
+    **standby_instance_id**              --  Returns the standby instance id
+
+    **use_master_for_log_backup**        --  Returns True if master is used for log backup
+
+    **use_master_for_data_backup**       --  Returns True if master is used for data backup
 
 """
 
@@ -99,7 +112,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_bin_directory(self):
-        """Returns the bin directory of postgres server"""
+        """Returns the bin directory of postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance']['BinaryDirectory']:
             return self._properties['postGreSQLInstance']['BinaryDirectory']
         raise SDKException(
@@ -109,7 +126,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_lib_directory(self):
-        """Returns the lib directory of postgres server"""
+        """Returns the lib directory of postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance']['LibDirectory']:
             return self._properties['postGreSQLInstance']['LibDirectory']
         raise SDKException(
@@ -119,7 +140,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_archive_log_directory(self):
-        """Returns the archive log directory of postgres server"""
+        """Returns the archive log directory of postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance']['ArchiveLogDirectory']:
             return self._properties['postGreSQLInstance']['ArchiveLogDirectory']
         raise SDKException(
@@ -129,7 +154,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_server_user_name(self):
-        """Returns the username of postgres server"""
+        """Returns the username of postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance']['SAUser']['userName']:
             return self._properties['postGreSQLInstance']['SAUser']['userName']
         raise SDKException(
@@ -139,7 +168,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_server_port_number(self):
-        """Returns the port number associated with postgres server"""
+        """Returns the port number associated with postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance']['port']:
             return self._properties['postGreSQLInstance']['port']
         raise SDKException(
@@ -149,7 +182,11 @@ class PostgreSQLInstance(Instance):
 
     @property
     def maintenance_database(self):
-        """Returns the maintenance database associated with postgres server"""
+        """Returns the maintenance database associated with postgres server
+
+            Return Type: str
+
+        """
         if self._properties['postGreSQLInstance'].get('MaintainenceDB'):
             return self._properties['postGreSQLInstance']['MaintainenceDB']
         raise SDKException(
@@ -159,13 +196,124 @@ class PostgreSQLInstance(Instance):
 
     @property
     def postgres_version(self):
-        """Returns the postgres server version"""
+        """Returns the postgres server version
+
+            Return Type: str
+
+        """
         if self._properties.get('version'):
             return self._properties['version']
         raise SDKException(
             'Instance',
             '105',
             "Could not fetch postgres version.")
+    @property
+    def standby_instance_name(self):
+        """Returns the standby instance name
+
+            Return Type: str
+
+        """
+        if self.is_standby_enabled:
+            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance', {}).get('instanceName', {})
+        return None
+
+    @property
+    def standby_instance_id(self):
+        """Returns the standby instance id
+
+            Return Type: str
+
+        """
+        if self.is_standby_enabled:
+            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance', {}).get('instanceId', {})
+        return None
+
+    @property
+    def is_standby_enabled(self):
+        """Returns True if standby enabled. False if not
+
+            Return Type: bool
+
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('isStandbyEnabled', False)
+
+    @property
+    def use_master_for_log_backup(self):
+        """ Returns True if master is used for log backup
+
+            Return Type: bool
+
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForLogBkp', False)
+
+    @use_master_for_log_backup.setter
+    def use_master_for_log_backup(self, value):
+        """ Setter for user master for log backup standby property
+
+            Args:
+
+                value (bool)  -- True to use master for log backup
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['standbyOptions']['useMasterForLogBkp'] = value
+        self.update_properties(properties)
+
+    @property
+    def use_master_for_data_backup(self):
+        """ Returns True if master is used for data backup
+
+            Return Type: bool
+
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForDataBkp', False)
+
+    @use_master_for_data_backup.setter
+    def use_master_for_data_backup(self, value):
+        """ Setter for user master for data backup standby property
+
+            Args:
+
+                value (bool)  -- True to use master for data backup
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['standbyOptions']['useMasterForDataBkp'] = value
+        self.update_properties(properties)
+
+    def _get_instance_properties(self):
+        """Gets the properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        super(PostgreSQLInstance, self)._get_instance_properties()
+        self._postgresql_instance = self._properties['postGreSQLInstance']
+
+    def _get_instance_properties_json(self):
+        """ Gets all the instance related properties of PostgreSQL instance.
+
+           Returns:
+                dict - all instance properties put inside a dict
+
+        """
+        instance_json = {
+            "instanceProperties":
+                {
+                    "instance": self._instance,
+                    "postGreSQLInstance": self._postgresql_instance
+                }
+        }
+        return instance_json
 
     def _restore_json(self, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.

@@ -305,10 +305,11 @@ class DeduplicationEngine(object):
             Returns:
                 str - string of all the stores associated with the deduplication engine
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('Store ID.', 'Store')
+        representation_string = '{:^5}\t{:^20}\t{}\n\n'.format('Store ID.', 'Store', 'Sealed Status')
 
         for store_id in self._stores:
-            sub_str = '{:^5}\t{:20}\n'.format(store_id, self._stores[store_id]['storeName'])
+            status = 'sealed' if self._stores[store_id]['sealedTime'] else 'active'
+            sub_str = '{:^5}\t{:20}\t{}\n'.format(store_id, self._stores[store_id]['storeName'], status)
             representation_string += sub_str
 
         return representation_string.strip()
@@ -390,7 +391,8 @@ class DeduplicationEngine(object):
         """returns list of all stores present in deduplication engines"""
         stores = []
         for store_id in self._stores:
-            stores.append([store_id, self._stores[store_id]['storeName']])
+            status = 'sealed' if self._stores[store_id]['sealedTime'] else 'active'
+            stores.append([store_id, self._stores[store_id]['storeName'], status])
         return stores
 
     @property
@@ -649,7 +651,9 @@ class Store(object):
                         "SIDBStoreId": self.store_id,
                         "SIDBStoreName": self.store_name,
                         "extendedFlags": new_value,
-                        "flags": self._store_flags
+                        "flags": self._store_flags,
+                        "minObjSizeKB": 50,
+                        "oldestEligibleObjArchiveTime": -1
                     },
                     "appTypeGroupId": 0,
                     "commCellId": 2,

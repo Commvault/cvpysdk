@@ -177,6 +177,7 @@ class ContentAnalyzers(object):
             cacloud_dict['caUrl'] = cacloud.get('caUrl', "")
             cacloud_dict['cloudName'] = cacloud.get('cloudName', "")
             cacloud_dict['cloudId'] = cacloud.get('cloudId', 0)
+            cacloud_dict['clientId'] = cacloud.get('clientId', 0)
             _cacloud[cacloud['cloudName']] = cacloud_dict
         return _cacloud
 
@@ -362,6 +363,7 @@ class ContentAnalyzer(object):
         self._cloud_name = cloud_name
         self._cloud_url = None
         self._cloud_id = None
+        self._client_id = None
         if cloud_id is None:
             self._cloud_id = self._get_cloud_id(cloud_name)
         else:
@@ -396,7 +398,13 @@ class ContentAnalyzer(object):
         content_analyzers_dict = self._commcell_object.content_analyzers.get_properties(self._cloud_name)
         self._cloud_url = content_analyzers_dict['caUrl']
         self._cloud_id = content_analyzers_dict['cloudId']
+        self._client_id = content_analyzers_dict['clientId']
         return content_analyzers_dict
+
+    @property
+    def client_id(self):
+        """Returns the value of the Content analyzer client id attribute."""
+        return self._client_id
 
     @property
     def cloud_id(self):

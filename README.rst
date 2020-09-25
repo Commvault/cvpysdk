@@ -24,7 +24,7 @@ CVPySDK can be installed directly from PyPI using pip:
     >>> pip install cvpysdk
 
 
-CVPySDK is available on GitHub `here <https://github.com/CommvaultEngg/cvpysdk>`_
+CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`_
 
 It can also be installed from source.
 
@@ -206,7 +206,7 @@ chat rooms, and mailing lists is expected to follow the
 
 License
 -------
-**CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/CommvaultEngg/cvpysdk/master/LICENSE.txt>`_
+**CVPySDK** and its contents are licensed under `Commvault License <https://raw.githubusercontent.com/Commvault/cvpysdk/master/LICENSE.txt>`_
 
 
 About Commvault
