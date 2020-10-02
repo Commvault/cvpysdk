@@ -535,6 +535,9 @@ class Plans(object):
                     # initialize the plans again
                     # so that the plans object has all the plans
                     self.refresh()
+                    # with plan delete storage policy associated might be deleted
+                    # initialize storage policy again
+                    self._commcell_object.storage_policies.refresh()
 
                     return self.get(plan_name)
                 else:

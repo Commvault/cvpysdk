@@ -89,6 +89,7 @@ SERVICES_DICT_TEMPLATE = {
     'KILL_JOB': '{0}Job/%s/action/kill',
     'RESUBMIT_JOB': '{0}Job/%s/action/Resubmit',
     'ALL_JOBS': '{0}Jobs',
+    'JOB_EVENTS': '{0}Events?jobId=%s',
     'JOB_MANAGEMENT_SETTINGS': '{0}CommServ/JobManagementSetting',
 
     'ENABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Enable',
@@ -370,6 +371,9 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
     'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
+
+    'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
+    'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',

@@ -419,25 +419,27 @@ class SharepointSubclient(Subclient):
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._USER_POLICY_ASSOCIATION, request_json
         )
-
         if flag:
-            if response.json():
-                if 'pagingInfo' in response.json():
+            if response and response.json():
+                no_of_records = None
+                if 'associations' in response.json():
+                    no_of_records = response.json().get('associations', [])[0].get('pagingInfo', {}). \
+                        get('totalRecords', -1)
+                elif 'pagingInfo' in response.json():
                     no_of_records = response.json().get('pagingInfo', {}).get('totalRecords', -1)
                     if no_of_records <= 0:
                         return {}, no_of_records
-                    associations = response.json().get('associations', [])
-                    site_dict = {}
-                    if associations:
-                        for site in associations:
-                            site_url = site.get("userAccountInfo", {}).get("smtpAddress", "")
-                            user_account_info = site.get("userAccountInfo", {})
-                            site_dict[site_url] = {
-                                'userAccountInfo': user_account_info
-                            }
-                    return site_dict, no_of_records
-                raise SDKException('Response', '102')
-            raise SDKException('Response', '102')
+                associations = response.json().get('associations', [])
+                site_dict = {}
+                if associations:
+                    for site in associations:
+                        site_url = site.get("userAccountInfo", {}).get("smtpAddress", "")
+                        user_account_info = site.get("userAccountInfo", {})
+                        site_dict[site_url] = {
+                            'userAccountInfo': user_account_info
+                        }
+                return site_dict, no_of_records
+            return {}, 0
         raise SDKException('Response', '101', self._update_response_(response.text))
 
     def associate_site_collections_and_webs(self, site_user_accounts_list):

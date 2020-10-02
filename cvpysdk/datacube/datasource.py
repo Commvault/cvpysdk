@@ -102,6 +102,8 @@ DataSource Attributes
 
     **properties**						--	returns the properties of the data source
 
+    **index_server_cloud_id**           --  index server cloudid associated to this data source
+
 """
 
 from __future__ import absolute_import
@@ -213,12 +215,17 @@ class Datasources(object):
         _datasources = {}
         for collection in collections:
             core_name = None
+            cloud_id = None
             if 'computedCoreName' in collection:
                 core_name = collection['computedCoreName']
+            if 'cloudId' in collection:
+                cloud_id = collection['cloudId']
             for datasource in collection['datasources']:
                 datasource_dict = {}
                 if core_name:
                     datasource_dict['computedCoreName'] = core_name
+                if cloud_id:
+                    datasource_dict['cloudId'] = cloud_id
                 datasource_dict['data_source_id'] = datasource['datasourceId']
                 datasource_dict['data_source_name'] = datasource['datasourceName']
                 datasource_dict['data_source_type'] = SEDS_TYPE_DICT[
@@ -527,6 +534,7 @@ class Datasource(object):
         self.handlers = None
         self._handlers_obj = None
         self._computed_core_name = None
+        self._cloud_id = None
         self._data_source_type = None
         self._properties = None
         self.refresh()
@@ -565,6 +573,8 @@ class Datasource(object):
         data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
         if 'computedCoreName' in data_source_dict:
             self._computed_core_name = data_source_dict['computedCoreName']
+        if 'cloudId' in data_source_dict:
+            self._cloud_id = data_source_dict['cloudId']
         self._data_source_type = data_source_dict['data_source_type']
         return data_source_dict
 
@@ -704,6 +714,11 @@ class Datasource(object):
     def computed_core_name(self):
         """Returns the value of the computedcorename attribute."""
         return self._computed_core_name
+
+    @property
+    def index_server_cloud_id(self):
+        """Returns the value of the cloud id attribute."""
+        return self._cloud_id
 
     @property
     def data_source_type(self):

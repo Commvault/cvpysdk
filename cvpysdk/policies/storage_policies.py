@@ -114,6 +114,8 @@ StoragePolicy:
 
     run_recon()                             --  Runs non-mem DB Reconstruction job
 
+    reassociate_all_subclients()            --  Reassociates all subclients associated to Storage Policy
+
     enable_entity_extraction()              --  Enables the entity extraction for subclients associated to this policy
 
     enable_content_indexing()               --  Enables the content indexing for this storage policy
@@ -2706,6 +2708,48 @@ class StoragePolicy(object):
             if response.json():
                 return response.json()
 
+    def reassociate_all_subclients(self, dest_storage_policy_name='CV_DEFAULT'):
+        """
+        Reassociates all subclients associated to Storage Policy
+        Args:
+            dest_storage_policy_name(str):  Name of a Storage Policy to which the Subclients are to
+                                            be reassociated.
+                                            Default Value:
+                                            'CV_DEFAULT': 'Not Assigned' to any Policy.
+        Raises:
+            SDKException    :   If failed to reassociate
+        """
+        request_json = {
+            "App_ReassociateStoragePolicyReq": {
+                "forceNextBkpToFull": True,
+                "newStoragePolicy": {
+                    "storagePolicyName": dest_storage_policy_name
+                },
+                "currentStoragePolicy": {
+                    "storagePolicyName": self.storage_policy_name
+                }
+            }
+        }
+        reassociate_subclients = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', reassociate_subclients, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to Reassociate the Subclients"
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
 
 class StoragePolicyCopy(object):
     """Class for performing storage policy copy operations for a specific storage policy copy"""

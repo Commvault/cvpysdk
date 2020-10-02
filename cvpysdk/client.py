@@ -225,6 +225,9 @@ Client
                                 --  Move the Job Results Directory for an
                                     Exchange Online Environment
 
+    get_environment_details()   --  Gets environment tile details present in dashboard page
+
+    get_needs_attention_details()   -- Gets needs attention tile details from dashboard page
 
 
 Client Attributes
@@ -5229,6 +5232,73 @@ class Client(object):
             self._readiness = _Readiness(self._commcell_object, self.client_id)
         return self._readiness
 
+    def get_environment_details(self):
+        """
+        Returns a dictionary with the count of fileservers, VM, Laptop for all the service commcells
+        
+         example output:
+            {
+            'fileServerCount': {'commcell_name': count},
+            'laptopCount': {'commcell_name': count},
+            'vmCount': {'commcell_name': count}
+            }
+        """
+        self._headers = {
+            'Accept': 'application/json',
+            'CVContext': 'Comet',
+            'Authtoken': self._commcell_object._headers['Authtoken']
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_ENVIRONMENT_TILE'], headers=self._headers
+        )
+        if flag:
+            if response.json() and 'cometClientCount' in response.json():
+                main_keys = ['fileServerCount', 'laptopCount', 'vmCount']
+                environment_tile_dict = {}
+                for key in main_keys:
+                    tile = {}
+                    for tile_info in response.json()['cometClientCount']:
+                        tile[tile_info['commcell']['commCellName']] = tile_info[key]
+                    environment_tile_dict[key] = tile
+                return environment_tile_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_needs_attention_details(self):
+        """
+        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
+        
+        example output:
+            {
+            'CountOfAnomalousInfrastructureServers': {'commcell_name': count},
+            'CountOfAnomalousServers': {'commcell_name': count},
+            'CountOfAnomalousJobs': {'commcell_name': count}
+            }
+        """
+        self._headers = {
+            'Accept': 'application/json',
+            'CVContext': 'Comet',
+            'Authtoken': self._commcell_object._headers['Authtoken']
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_NEEDS_ATTENTION_TILE'], headers=self._headers
+        )
+        if flag:
+            if response.json() and 'commcellEntityRespList' in response.json():
+                needs_attention_tile_dict = {}
+                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers', 'CountOfAnomalousJobs']
+                for key in main_keys:
+                    tile = {}
+                    for tile_info in response.json()['commcellEntityRespList']:
+                        tile[tile_info['commcell']['commCellName']] = tile_info[key]
+                    needs_attention_tile_dict[key] = tile
+                return needs_attention_tile_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
 class _Readiness:
     """ Class for checking the connection details of a client """
