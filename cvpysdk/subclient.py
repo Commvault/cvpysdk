@@ -54,6 +54,8 @@ Subclients:
 
     add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
 
+    add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.
+
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
     get(subclient_name)         --  returns the subclient object of the input subclient name
@@ -907,6 +909,109 @@ class Subclients(object):
         if (full_mode == False):
             request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["fullMode"] = False
             request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["schema"] = schema_value
+
+        return self._process_add_request(request_json)
+
+    def add_postgresql_subclient(
+            self, subclient_name, storage_policy,
+            contents, no_of_streams=1, collect_object_list=False):
+        """Adds a new postgresql subclient to the backupset.
+
+            Args:
+                subclient_name          (str)   --  name of the new subclient to add
+
+                storage_policy          (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                contents                (list)  --  database list to be added as subclient content
+
+
+                no_of_streams           (int)   --  No of backup streams to be used
+
+                    default: 1
+
+                collect_object_list     (bool)  --  Boolean flag to determine if collect object
+                list needs to be enabled for subclient or not
+
+                    default: False
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if conetnts argument is not of type list
+
+                    if contents is empty list
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        """
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(storage_policy, basestring) and
+                isinstance(contents, list)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    storage_policy)
+            )
+
+        if not contents:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Content list cannot be empty'
+            )
+
+        content_list = []
+        for content in contents:
+            content_list.append({"postgreSQLContent": {"databaseName": content}})
+
+        request_json = {
+            "subClientProperties": {
+                "contentOperationType": 2,
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": subclient_name
+                },
+                "commonProperties": {
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
+                        }
+                    },
+                },
+                "postgreSQLSubclientProp": {
+                    "numberOfBackupStreams": no_of_streams,
+                    "collectObjectListDuringBackup": collect_object_list
+                },
+                "content": content_list
+            }
+        }
 
         return self._process_add_request(request_json)
 

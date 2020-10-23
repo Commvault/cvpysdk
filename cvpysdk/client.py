@@ -864,9 +864,15 @@ class Clients(object):
         """
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
-
-        return ((self.all_clients and client_name.lower() in self.all_clients) or
-                self._get_client_from_hostname(client_name) is not None)
+        if self.all_clients and client_name.lower() in self.all_clients:
+            return True
+        elif self._get_client_from_hostname(client_name) is not None:
+            return True
+        elif self.hidden_clients and client_name.lower() in self.hidden_clients:
+            return True
+        elif self._get_hidden_client_from_hostname(client_name) is not None:
+            return True
+        return False
 
     def has_hidden_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name as a hidden client.

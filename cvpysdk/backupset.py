@@ -984,7 +984,8 @@ class Backupset(object):
         self._is_on_demand_backupset = False
         self._properties = None
         self._backupset_association = {}
-        self._plan = None
+        self._plan_name = None
+        self._plan_obj = None
 
         self.subclients = None
         self.schedules = None
@@ -1076,11 +1077,9 @@ class Backupset(object):
                     self._description = self._properties["commonBackupSet"]["userDescription"]
 
                 if "planName" in self._properties["planEntity"]:
-                    self._plan = self._commcell_object.plans.get(
-                        self._properties["planEntity"]["planName"]
-                    )
+                    self._plan_name = self._properties["planEntity"]["planName"]
                 else:
-                    self._plan = None
+                    self._plan_name = None
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1711,7 +1710,13 @@ class Backupset(object):
     @property
     def plan(self):
         """Treats the backupset plan as a property of the Backupset class."""
-        return self._plan
+        if self._plan_obj is not None:
+            return self._plan_obj
+        elif self._plan_name is not None:
+            self._plan_obj = self._commcell_object.plans.get(self._plan_name)
+            return self._plan_obj
+        else:
+            return None
 
     @property
     def guid(self):
@@ -1785,7 +1790,7 @@ class Backupset(object):
             Args:
                 value   (object)    --  the Plan object which is to be associated
                                         with the backupset
-                
+
                 value   (str)       --  name of the plan which is to be associated
                                         with the backupset
 
@@ -1802,13 +1807,11 @@ class Backupset(object):
         """
         from .plan import Plan
         if isinstance(value, Plan):
-            plan_obj = value
+            self._plan_obj = value
         elif isinstance(value, basestring):
-            plan_obj = self._commcell_object.plans.get(value)
+            self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
-            plan_obj = {
-                'planName': None
-            }
+            self._plan_obj = None
         else:
             raise SDKException('Backupset', '102', 'Input value is not of supported type')
 
@@ -1818,15 +1821,15 @@ class Backupset(object):
             'appId': int(self._agent_object.agent_id),
             'backupsetId': int(self.backupset_id)
         }
-        if value is not None and plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
+        if value is not None and self._plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
             request_json = {
                 'backupsetProperties': {
                     'planEntity': {
-                        'planSubtype': int(plan_obj.subtype),
+                        'planSubtype': int(self._plan_obj.subtype),
                         '_type_': 158,
-                        'planType': int(plan_obj.plan_type),
-                        'planName': plan_obj.plan_name,
-                        'planId': int(plan_obj.plan_id)
+                        'planType': int(self._plan_obj.plan_type),
+                        'planName': self._plan_obj.plan_name,
+                        'planId': int(self._plan_obj.plan_id)
                     }
                 }
             }

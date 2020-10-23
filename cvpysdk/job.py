@@ -397,6 +397,14 @@ class JobController(object):
             if not self._commcell_object.clients.has_client(client):
                 raise SDKException('Job', '102', 'No client with name {0} exists.'.format(client))
 
+        client_list = []
+        for client in options.get('clients_list', []):
+            try:
+                _client_id = int(self._commcell_object.clients.all_clients[client.lower()]['id'])
+            except KeyError:
+                _client_id = int(self._commcell_object.clients.hidden_clients[client.lower()]['id'])
+            client_list.append({"clientId": _client_id})
+
         request_json = {
             "scope": 1,
             "category": job_list_category[options.get('category', 'ALL')],
@@ -409,11 +417,7 @@ class JobController(object):
             "jobFilter": {
                 "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
                 "showAgedJobs": options.get('show_aged_jobs', False),
-                "clientList": [
-                    {
-                        "clientId": int(self._commcell_object.clients.all_clients[client.lower()]['id'])
-                    } for client in options.get('clients_list', [])
-                ],
+                "clientList": client_list,
                 "jobTypeList": [
                     job_type for job_type in options.get('job_type_list', [])
                 ]

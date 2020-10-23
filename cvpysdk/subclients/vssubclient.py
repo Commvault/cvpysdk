@@ -921,7 +921,8 @@ class VirtualServerSubclient(Subclient):
             "nics": value.get("nics", []),
             "vmIPAddressOptions": value.get("vm_ip_address_options", []),
             "FolderPath": value.get("FolderPath", ""),
-            "resourcePoolPath": value.get("ResourcePool", "")
+            "resourcePoolPath": value.get("ResourcePool", ""),
+            "volumeType": value.get("volumeType", "Auto")
         }
 
         value_dict = {
