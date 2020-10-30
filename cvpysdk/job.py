@@ -2029,28 +2029,33 @@ class Job(object):
             "jobId": int(self.job_id)
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
+        attempts = 3
+        for _ in range(attempts):  # Retrying to ignore the transient case when job details are not found
+            flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
 
-        if flag:
-            if response.json():
-                if 'job' in response.json():
-                    return response.json()['job']
-                elif 'error' in response.json():
-                    error_code = response.json()['error']['errList'][0]['errorCode']
-                    error_message = response.json()['error']['errList'][0]['errLogMessage']
+            if flag:
+                if response.json():
+                    if 'job' in response.json():
+                        return response.json()['job']
+                    elif 'error' in response.json():
+                        error_code = response.json()['error']['errList'][0]['errorCode']
+                        error_message = response.json()['error']['errList'][0]['errLogMessage']
 
-                    raise SDKException(
-                        'Job',
-                        '105',
-                        'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
-                    )
+                        raise SDKException(
+                            'Job',
+                            '105',
+                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                    else:
+                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
                 else:
-                    raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                    time.sleep(2)
+                    continue
             else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        raise SDKException('Response', '102')
 
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
