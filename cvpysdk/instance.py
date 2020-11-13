@@ -2621,7 +2621,7 @@ class Instance(object):
                 "appName": self._agent_object.agent_name
             },
             "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                "TimeZoneName": self._commcell_object.default_timezone,
             },
             "timeRange": time_range_dict
         }

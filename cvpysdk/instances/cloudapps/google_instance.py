@@ -91,12 +91,33 @@ class GoogleInstance(CloudAppsInstance):
                 self._manage_content_automatically = onedrive_instance['manageContentAutomatically']
                 self._auto_discovery_enabled = onedrive_instance['isAutoDiscoveryEnabled']
                 self._auto_discovery_mode = onedrive_instance['autoDiscoveryMode']
-                self._client_id = onedrive_instance['clientId']
-                self._tenant = onedrive_instance['tenant']
+                if 'clientId' in onedrive_instance:
+                    self._client_id = onedrive_instance.get('clientId')
+                    self._tenant = onedrive_instance.get('tenant')
+                else:
+                    self._client_id = onedrive_instance.get(
+                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureAppId')
+                    self._tenant = onedrive_instance.get(
+                        'azureAppList', {}).get('azureApps', [{}])[0].get('azureDirectoryId')
+
+                if self._client_id is None:
+                    raise SDKException('Instance', '102', 'Azure App has not been configured')
 
             if 'generalCloudProperties' in cloud_apps_instance:
-                self._proxy_client = cloud_apps_instance[
-                    'generalCloudProperties']['proxyServers'][0]['clientName']
+                if 'proxyServers' in cloud_apps_instance['generalCloudProperties']:
+                    self._proxy_client = cloud_apps_instance.get(
+                        'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
+                else:
+                    if 'clientName' in cloud_apps_instance.get(
+                        'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
+                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
+                            'memberServers', [{}])[0].get('client', {}).get('clientName')
+                    else:
+                        self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
+                            'memberServers', [{}])[0].get('client', {}).get('clientGroupName')
+
+                if self._proxy_client is None:
+                    raise SDKException('Instance', '102', 'Access Node has not been configured')
 
     @property
     def ca_instance_type(self):

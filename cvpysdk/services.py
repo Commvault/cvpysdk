@@ -110,6 +110,7 @@ SERVICES_DICT_TEMPLATE = {
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
+    'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -155,6 +156,7 @@ SERVICES_DICT_TEMPLATE = {
     'RESTORE': '{0}CreateTask',
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
+    'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -338,7 +340,9 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE': '{0}Client/License/Release',
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
-    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
+    'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
+
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 

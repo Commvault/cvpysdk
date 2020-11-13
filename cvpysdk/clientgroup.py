@@ -978,6 +978,8 @@ class ClientGroup(object):
 
                         **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
+                        **Note** In case of linux CommServer provide time in GMT timezone
+
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -1012,7 +1014,7 @@ class ClientGroup(object):
                         "enableAfterADelay": True,
                         "enableActivityType": False,
                         "dateTime": {
-                            "TimeZoneName": kwargs.get("timezone", "(UTC) Coordinated Universal Time"),
+                            "TimeZoneName": kwargs.get("timezone", self._commcell_object.default_timezone),
                             "timeValue": enable_time
                         }
                     }]

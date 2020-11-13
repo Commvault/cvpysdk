@@ -89,7 +89,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
             core_name   (list)      -- list of solr core name which needs to be restored
 
             client      (str)       -- name of solr node client in case of solr cloud
-                    ***Applicable only for solr cloud***
+                    ***Applicable only for solr cloud or CVSolr***
 
         Returns:
 
@@ -105,30 +105,21 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
         """
         paths = []
-        if not self._index_server_obj.is_cloud:
-            if core_name is None and roles is not None:
-                paths = [f"\\{role}" for role in roles]
-            elif roles is None and core_name is not None:
-                paths = [f"\\{core}" for core in core_name]
-            else:
-                paths.append("\\")
+        if client is None:
+            client = self._index_server_obj.client_name[0]
+        if client not in self._index_server_obj.client_name:
+            raise SDKException('IndexServers', '104', 'Given client name is not part of index server cloud')
+        if core_name is None and roles is not None:
+            paths = [f"\\{role}\\{client}" for role in roles]
+        elif roles is None and core_name is not None:
+            for core in core_name:
+                core = core.replace("\\", f"\\{client}\\")
+                paths.append(f"\\{core}")
         else:
-            if client is None:
-                raise SDKException('IndexServers', '108')
-            if client not in self._index_server_obj.client_name:
-                raise SDKException('IndexServers', '104', 'Given client name is not part of index server cloud')
-            if core_name is None and roles is not None:
-                paths = [f"\\{role}\\{client}" for role in roles]
-            elif roles is None and core_name is not None:
-                for core in core_name:
-                    core = core.replace("\\", f"\\{client}\\")
-                    paths.append(f"\\{core}")
-            else:
-                for role in self.content:
-                    role = role.replace("\\\\", '')
-                    role = role.replace("%", '')
-                    paths.append(f"\\{role}\\{client}")
-
+            for role in self.content:
+                role = role.replace("\\\\", '')
+                role = role.replace("%", '')
+                paths.append(f"\\{role}\\{client}")
         return paths
 
     def do_restore_in_place(

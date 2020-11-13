@@ -146,10 +146,13 @@ FileSystemSubclient Instance Attributes:
 
 	**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
+	**impersonate_user**                  --  Impersonation information for the subclient.
+
+
 """
 
 from __future__ import unicode_literals
-
+from base64 import b64encode
 from past.builtins import basestring
 
 from ..client import Client
@@ -2387,5 +2390,34 @@ class FileSystemSubclient(Subclient):
             update_properties["fsSubClientProp"]['enableNetworkShareAutoMount'] = value
         else:
             raise SDKException('Subclient', '101')
+
+        self.update_properties(update_properties)
+
+    @property
+    def impersonate_user(self):
+        """
+        Returns the username ONLY and applicable to Windows FS subclients only.
+        """
+        return self._subclient_properties['impersonateUser']
+
+    @impersonate_user.setter
+    def impersonate_user(self, value):
+        """
+        Sets the user impersonation information for a subclient, applicable to Windows only.
+
+        Args:
+
+            value   (dict)  --  Valid keys are 'username' and 'password'
+
+                username    (str)   --  The username
+
+                password    (str)   --  The password
+        """
+
+        update_properties = self.properties
+
+        if isinstance(value, dict):
+            update_properties["impersonateUser"]["userName"] = value["username"]
+            update_properties["impersonateUser"]["password"] = b64encode(value["password"].encode()).decode()
 
         self.update_properties(update_properties)

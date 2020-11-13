@@ -58,6 +58,8 @@ Subclients:
 
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
+    add_onedrive_subclient()   --  adds a new onedrive subclient to the instance
+
     get(subclient_name)         --  returns the subclient object of the input subclient name
 
     delete(subclient_name)      --  deletes the subclient (subclient name) from the backupset
@@ -1150,6 +1152,100 @@ class Subclients(object):
 
         return self._process_add_request(request_json)
 
+    def add_onedrive_subclient(self,
+                               subclient_name,
+                               server_plan):
+
+        """Adds a new subclient to the backupset.
+
+            Args:
+                subclient_name     (str)   --  name of the new subclient to add
+
+                server_plan     (str)   --  name of the server plan to be associated
+                                                with the subclient
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if server plan argument is not of type string
+
+                    if description argument is not of type string
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+                    if server plan  donot exists with the given name
+
+                """
+
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(server_plan, basestring)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if self._backupset_object is None:
+            if self._instance_object.backupsets.has_backupset(
+                    self._instance_object.backupsets.default_backup_set):
+                self._backupset_object = self._instance_object.backupsets.get(
+                    self._instance_object.backupsets.default_backup_set)
+            else:
+                self._backupset_object = self._instance_object.backupsets.get(
+                    sorted(self._instance_object.backupsets.all_backupsets)[0]
+                )
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_id = int(server_plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        request_json = {
+            "subClientProperties": {
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetId": int(self._backupset_object.backupset_id),
+                    "instanceId": int(self._instance_object.instance_id),
+                    "clientId": int(self._client_object.client_id),
+                    "appName": self._agent_object.agent_name,
+                    "applicationId": 134,
+                    "subclientName": subclient_name
+                },
+                "planEntity": {
+                    "planId": server_plan_id
+                },
+                "cloudAppsSubClientProp": {
+                    "instanceType": 7,
+                    "oneDriveSubclient": {
+                        "enableOneNote": False,
+                        "isEnterprise": True
+                    }
+                },
+                "cloudconnectorSubclientProp": {
+                    "isAutoDiscoveryEnabled": False
+                },
+                "commonProperties": {
+                    "enableBackup": True
+                }
+            }
+        }
+
+        return self._process_add_request(request_json)
+
     def get(self, subclient_name):
         """Returns a subclient object of the specified backupset name.
 
@@ -2078,6 +2174,8 @@ c
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
 
+                **Note** In case of linux CommServer provide time in GMT timezone
+
             Raises:
                 SDKException:
                     if time value entered is less than the current time
@@ -2098,7 +2196,7 @@ c
             raise SDKException('Subclient', '109')
 
         enable_backup_at_time = {
-            "TimeZoneName": "(UTC) Coordinated Universal Time",
+            "TimeZoneName": self._commcell_object.default_timezone,
             "timeValue": enable_time
         }
 

@@ -547,7 +547,7 @@ class Agent(object):
                         "enableAfterADelay": True,
                         "enableActivityType": False,
                         "dateTime": {
-                            "TimeZoneName": "(UTC) Coordinated Universal Time",
+                            "TimeZoneName": self._commcell_object.default_timezone,
                             "timeValue": enable_time
                         }
                     }]
@@ -749,6 +749,8 @@ class Agent(object):
             Args:
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
+
+                **Note** In case of linux CommServer provide time in GMT timezone
 
             Raises:
                 SDKException:

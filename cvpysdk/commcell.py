@@ -274,6 +274,10 @@ Commcell instance Attributes
 
     **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.
     only for user group inclusion tfa.
+
+    **is_linux_commserv**           -- boolean specifying if CommServer is installed on linux cs.
+
+    **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.
 """
 
 from __future__ import absolute_import
@@ -519,6 +523,7 @@ class Commcell(object):
         self._commserv_guid = None
         self._commserv_version = None
         self._version_info = None
+        self._is_linux_commserv = None
 
         self._id = None
         self._clients = None
@@ -3007,6 +3012,19 @@ class Commcell(object):
             ]
         """
         return self.two_factor_authentication.tfa_enabled_user_groups
+
+    @property
+    def is_linux_commserv(self):
+        """Returns true if CommServer is installed on the linux cs
+        """
+        if self._is_linux_commserv is None:
+            self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
+        return self._is_linux_commserv
+
+    @property
+    def default_timezone(self):
+        """Returns the default timezone used for all the operations performed via cvpysdk"""
+        return '(GMT) Monrovia, Reykjavik' if self.is_linux_commserv else '(UTC) Coordinated Universal Time'
 
     def enable_tfa(self, user_groups=None):
         """

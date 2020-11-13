@@ -99,6 +99,8 @@ Clients
 
     add_nutanix_files_client()                  --  adds a new nutanix files client
 
+    add_onedrive_client()                 --  adds a new onedrive client
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -369,6 +371,7 @@ class Clients(object):
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
+        self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -2336,6 +2339,172 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_onedrive_client(self,
+                            client_name,
+                            instance_name,
+                            server_plan,
+                            connection_details,
+                            access_node=None,
+                            auto_discovery=False
+                            ):
+
+        """Adds a new OneDrive Client to the Commcell.
+
+            Args:
+                client_name             (str)   --  name of the new Exchange Mailbox Client
+
+                server_plan            (str)   --  name of the server plan to be associated
+                                                   with the client
+
+                connection_details   (dict)  -- dictionary for Azure App details:
+                                            Example:
+                                               connection_details = {
+                                                    "azure_directory_id": 'azure directory id',
+                                                    "application_id": 'application id',
+                                                    "application_key_value": 'application key value',
+                                                }
+
+                access_node          (str)   --  name of the access node
+
+                auto_discovery      (bool)   --  Enable/Disable (True/False)
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if access node  donot exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+                """
+
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_id = int(server_plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        application_key_value = b64encode(connection_details.get("application_key_value").encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 15,
+                "lookupPlanInfo": False,
+                "plan": {
+                    "planId": server_plan_id
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": 7,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name,
+                            "instanceName": instance_name
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 7,
+                            "oneDriveInstance": {
+                                "manageContentAutomatically": False,
+                                "createAdditionalSubclients": False,
+                                "numberofAdditionalSubclients": 0,
+                                "cloudRegion": 1,
+                                "clientSecret": application_key_value,
+                                "callbackUrl": "",
+                                "tenant": connection_details.get("azure_directory_id"),
+                                "clientId": connection_details.get("application_id"),
+                                "isAutoDiscoveryEnabled": auto_discovery,
+                                "isEnterprise": True,
+                                "serviceAccounts": {},
+                                "azureAppList": {}
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": 10,
+                                "jobResultsDir": {
+                                    "path": ""
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        end_point = self._services['STORAGE_POLICY_INFRASTRUCTUREPOOL'] % (server_plan_id)
+        flag, response = self._cvpysdk_object.make_request('GET', end_point)
+
+        cloud_props = request_json.get('clientInfo').get('cloudClonnectorProperties').get('instance').get(
+            'cloudAppsInstance')
+
+        if flag:
+            if response and response.json():
+                onedrive_prop = cloud_props.get('oneDriveInstance')
+                if 'isConfigured' in response.json():
+                    if response.json()['isConfigured']:
+                        onedrive_prop['infraStructurePoolEnabled'] = True
+                    else:
+                        onedrive_prop['infraStructurePoolEnabled'] = False
+                        if isinstance(access_node, basestring):
+                            proxy_servers = []
+                            access_node = access_node.strip().lower()
+                            if self.has_client(access_node):
+                                access_node_dict = {
+                                    "hostName": self.all_clients[access_node]['hostname'],
+                                    "clientId": int(self.all_clients[access_node]['id']),
+                                    "clientName": access_node,
+                                    "displayName": access_node,
+                                    "_type_": 3
+                                }
+                                proxy_servers.append(access_node_dict)
+                                general_cloud_props = cloud_props['generalCloudProperties']
+                                general_cloud_props["proxyServers"] = proxy_servers
+                            else:
+                                raise SDKException('Client', '101', 'Provide Valid Access Node')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_ONEDRIVE_CLIENT, request_json)
+
+        if flag:
+            if response and response.json():
+                if 'response' in response.json():
+                    error_code = response.json().get('response').get('errorCode')
+                    if error_code != 0:
+                        error_string = response.json().get('response').get('errorString')
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json().get('errorMessage')
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
         """
             Method to add new Nutanix Files client
@@ -2744,6 +2913,8 @@ class Client(object):
 
                         **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
+                        **Note** In case of linux CommServer provide time in GMT timezone
+
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -2786,7 +2957,7 @@ class Client(object):
                             "enableAfterADelay": True,
                             "enableActivityType": False,
                             "dateTime": {
-                                "TimeZoneName": kwargs.get("timezone", "(UTC) Coordinated Universal Time"),
+                                "TimeZoneName": kwargs.get("timezone", self._commcell_object.default_timezone),
                                 "timeValue": enable_time
                             }
                         }]
