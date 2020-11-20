@@ -93,7 +93,7 @@ class Report:
             format_type (FormatType): set file extension using Enum class FormatType
         """
         for each_format_type in FormatType:
-            if each_format_type.name == format_type:
+            if each_format_type.name == format_type.name:
                 self._report_extension = each_format_type.name
                 self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']\
                 ['reportOption']['commonOpt']['outputFormat']['outputType'] = \

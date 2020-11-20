@@ -2866,6 +2866,8 @@ class StoragePolicyCopy(object):
 
                 self._dedupe_flags = self._copy_properties.get('dedupeFlags')
 
+                self._media_agent = self._copy_properties.get('mediaAgent')
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -3125,6 +3127,11 @@ class StoragePolicyCopy(object):
                 raise SDKException('Response', '110')
 
         self._set_copy_properties()
+
+    @property
+    def media_agent(self):
+        """Gets the media agent name of the copy"""
+        return self._media_agent.get('mediaAgentName')
 
     def delete_job(self, job_id):
         """

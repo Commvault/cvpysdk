@@ -349,7 +349,8 @@ class Install(object):
             install_path=None,
             log_file_loc=None,
             client_group_name=None,
-            storage_policy_name=None):
+            storage_policy_name=None,
+            **kwargs):
         """
         Installs the features selected on the given machines
         Args:
@@ -391,6 +392,11 @@ class Install(object):
 
                  default : None
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict) - dictionary of install flag values
+            Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -421,7 +427,8 @@ class Install(object):
                                 install_path='C:\\Temp,
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
-                                storage_policy_name='My_Storage_Policy')
+                                storage_policy_name='My_Storage_Policy',
+                                install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -463,6 +470,8 @@ class Install(object):
             selected_client_groups = [{'clientGroupName': client_group}
                                       for client_group in client_group_name]
 
+        install_flags = kwargs.get('install_flags')
+
         request_json = {
             "taskInfo": {
                 "associations": [
@@ -499,7 +508,7 @@ class Install(object):
                                             "allowMultipleInstances": True,
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
-                                            "install32Base": False,
+                                            "install32Base": install_flags.get('install32Base', False) if install_flags else False,
                                             "disableOSFirewall": False,
                                             "stopOracleServices": False,
                                             "skipClientsOfCS": False,
@@ -507,6 +516,7 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
+                                            "preferredIPFamily": install_flags.get('preferredIPFamily', 1) if install_flags else 1,
                                             "firewallInstall": {
                                                 "enableFirewallConfig": False,
                                                 "firewallConnectionType": 0,

@@ -2034,7 +2034,8 @@ class Commcell(object):
             install_path=None,
             log_file_loc=None,
             client_group_name=None,
-            storage_policy_name=None):
+            storage_policy_name=None,
+            **kwargs):
         """
         Installs the selected features in the selected clients
         Args:
@@ -2076,6 +2077,14 @@ class Commcell(object):
 
                  default : None
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict)            -- dictionary of install flag values
+
+                default : None
+
+            Ex : install_flags = {"preferredIPfamily":2, "install32Base":True}
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -2106,7 +2115,8 @@ class Commcell(object):
                                 install_path='/opt/commvault',
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
-                                storage_policy_name='My_Storage_Policy')
+                                storage_policy_name='My_Storage_Policy',
+                                install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -2122,7 +2132,8 @@ class Commcell(object):
             install_path=install_path,
             log_file_loc=log_file_loc,
             client_group_name=client_group_name,
-            storage_policy_name=storage_policy_name)
+            storage_policy_name=storage_policy_name,
+            **kwargs)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell

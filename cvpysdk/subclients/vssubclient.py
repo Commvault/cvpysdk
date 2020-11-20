@@ -788,7 +788,7 @@ class VirtualServerSubclient(Subclient):
             Setter for nics list for advanced restore option json
         """
 
-        nics_dict_from_browse = self.get_nics_from_browse()
+        nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get('copy_precedence', 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
 
@@ -1139,7 +1139,9 @@ class VirtualServerSubclient(Subclient):
                show_deleted_files=False,
                vm_disk_browse=False,
                vm_files_browse=False,
-               operation='browse'):
+               operation='browse',
+               copy_precedence=0
+               ):
         """Gets the content of the backup for this subclient at the path
            specified.
 
@@ -1163,6 +1165,8 @@ class VirtualServerSubclient(Subclient):
                                                 default: True
 
                 operation            (str)   -- Type of operation, browser of find
+
+                copy_precedence      (int)   -- The copy precedence to do the operation from
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1190,7 +1194,8 @@ class VirtualServerSubclient(Subclient):
                 vm_path = self._parse_vm_path(vm_names, vm_path)
                 browse_content = super(VirtualServerSubclient, self).browse(
                     show_deleted_files, vm_disk_browse, True, path=vm_path,
-                    vs_file_browse=vm_files_browse, operation=operation
+                    vs_file_browse=vm_files_browse, operation=operation,
+                    copy_precedence=copy_precedence
                 )
                 vm_path_list += browse_content[0]
                 browse_content_dict.update(browse_content[1])
@@ -1251,11 +1256,13 @@ class VirtualServerSubclient(Subclient):
 
         return nic_list
 
-    def get_nics_from_browse(self):
+    def get_nics_from_browse(self, copy_precedence=0):
         """
             Browses the vm to get the nics info xml, gets the nics info using
             the parse_nics_xml method and prepares the dict for nics json
 
+            Args:
+                copy_precedence     (int)   --  The copy precedence to do browse from
 
             Returns:
                 dict:   --   dict with key as vm_name and the value as the
@@ -1263,7 +1270,7 @@ class VirtualServerSubclient(Subclient):
 
         """
 
-        path, path_dict = self.browse(vm_disk_browse=True)
+        path, path_dict = self.browse(vm_disk_browse=True, copy_precedence=copy_precedence)
 
         nics_dict = {}
         nics = ""
@@ -1274,7 +1281,7 @@ class VirtualServerSubclient(Subclient):
             if ('browseMetaData' not in result['advanced_data']) or \
                     ('virtualServerMetaData' not in result['advanced_data']['browseMetaData']) or \
                     ('nics' not in result['advanced_data']['browseMetaData']['virtualServerMetaData']):
-                path, path_dict = self.browse(vm_disk_browse=True, operation='find')
+                path, path_dict = self.browse(vm_disk_browse=True, operation='find', copy_precedence=copy_precedence)
         for vmpath in path:
             result = path_dict[vmpath]
             name = ""
@@ -1686,7 +1693,7 @@ class VirtualServerSubclient(Subclient):
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
         return self._process_restore_response(request_json)
 
-    def vm_files_browse(self, vm_path='\\', show_deleted_files=False, operation='browse'):
+    def vm_files_browse(self, vm_path='\\', show_deleted_files=False, operation='browse', copy_precedence=0):
         """Browses the Files and Folders of a Virtual Machine.
 
             Args:
@@ -1698,6 +1705,10 @@ class VirtualServerSubclient(Subclient):
                 show_deleted_files  (bool)  --  include deleted files in the
                                                 content or not
                                                 default: False
+
+                operation           (str)   --  The type of operation to perform (browse/find)
+
+                copy_precedence     (int)   --  The copy precedence to do browse from
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1714,7 +1725,7 @@ class VirtualServerSubclient(Subclient):
 
                     if response is not success
         """
-        return self.browse(vm_path, show_deleted_files, True, operation=operation)
+        return self.browse(vm_path, show_deleted_files, True, operation=operation, copy_precedence=copy_precedence)
 
     def vm_files_browse_in_time(
             self,
@@ -2003,7 +2014,8 @@ class VirtualServerSubclient(Subclient):
         # If new_name is not given, it restores the VM with same name
         # with suffix Delete.
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
-        browse_result = self.vm_files_browse()
+        copy_precedence = restore_option.get('copy_precedence', 0)
+        browse_result = self.vm_files_browse(copy_precedence=copy_precedence)
 
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
@@ -2011,7 +2023,7 @@ class VirtualServerSubclient(Subclient):
         if ('browseMetaData' not in _metadata['advanced_data']) or \
                 ('virtualServerMetaData' not in _metadata['advanced_data']['browseMetaData']) or \
                 ('nics' not in _metadata['advanced_data']['browseMetaData']['virtualServerMetaData']):
-            browse_result = self.vm_files_browse(operation='find')
+            browse_result = self.vm_files_browse(operation='find', copy_precedence=copy_precedence)
             _metadata = browse_result[1][('\\' + vm_to_restore)]
 
         vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
@@ -2048,7 +2060,7 @@ class VirtualServerSubclient(Subclient):
         # populate restore disk and datastore
         vm_disks = []
         disk_list, disk_info_dict = self.disk_level_browse(
-            "\\\\" + vm_ids[vm_to_restore])
+            "\\\\" + vm_ids[vm_to_restore], copy_precedence=copy_precedence)
 
         for disk, data in disk_info_dict.items():
             ds = ""
