@@ -2038,7 +2038,7 @@ class StoragePolicy(object):
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=0):
+                     all_copies=True, total_jobs_to_process=1000):
         """Runs the aux copy job from the commcell.
             Args:
 

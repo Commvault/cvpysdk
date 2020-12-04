@@ -153,6 +153,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             restore_option['client'] = proxy_client
 
+        if vm_to_restore:
+            vm_to_restore = [vm_to_restore]
         restore_option_copy = restore_option.copy()
 
         # set attr for all the option in restore xml from user inputs

@@ -217,6 +217,8 @@ Client
 
     create_pseudo_client()       --  Creates a pseudo client
 
+    register_decoupled_client()  --  registers decoupled client
+
     set_job_start_time()         -- sets the job start time at client level
 
     uninstall_software()         -- Uninstalls all the packages of the client
@@ -807,6 +809,61 @@ class Clients(object):
                     return self.get(client_name)
                 else:
                     o_str = 'Failed to create pseudo client. Error: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def register_decoupled_client(self, client_name, client_host_name, port_number=8400):
+        """ registers decoupled client
+
+            Args:
+                client_name (str)    --  client name
+
+                client_host_name (str)  -- client host name
+
+                port_number (int)   -- port number of the decoupled client
+
+            Returns:
+                client object for the registered client.
+
+            Raises:
+                SDKException:
+                    if client name type is incorrect
+
+                    if response is empty
+
+                    if failed to get client id from response
+
+        """
+        request_json = {
+            "App_RegisterClientRequest":
+                {
+                    "getConfigurationFromClient": True,
+                    "configFileName": "",
+                    "cvdPort": port_number,
+                    "client": {
+                        "hostName": client_host_name,
+                        "clientName": client_name,
+                        "newName": ""
+                    }
+                }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+                if error_code == 0:
+                    self.refresh()
+                    return self.get(client_name)
+                else:
+                    if response.json()['errorMessage']:
+                        o_str = 'Failed to register client. Error: "{0}"'.format(response.json()['errorMessage'])
                     raise SDKException('Client', '102', o_str)
             else:
                 raise SDKException('Response', '102')
