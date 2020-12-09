@@ -998,7 +998,7 @@ class ClientGroup(object):
                     }]
                 },
                 "clientGroup": {
-                    "newName": self.clientgroup_name
+                    "newName": self.name
                 }
             }
         }
@@ -1018,7 +1018,7 @@ class ClientGroup(object):
                     }]
                 },
                 "clientGroup": {
-                    "newName": self.clientgroup_name
+                    "newName": self.name
                 }
             }
         }
@@ -1182,7 +1182,7 @@ class ClientGroup(object):
                 raise SDKException('ClientGroup', '102', 'No valid clients were found')
 
             output = self._update(
-                clientgroup_name=self.clientgroup_name,
+                clientgroup_name=self.name,
                 clientgroup_description=self.description,
                 associated_clients=validated_clients_list,
                 operation_type=operation_type
@@ -1593,7 +1593,7 @@ class ClientGroup(object):
         """Sets the description of the clientgroup as the value provided in input."""
         if isinstance(value, basestring):
             output = self._update(
-                clientgroup_name=self.clientgroup_name,
+                clientgroup_name=self.name,
                 clientgroup_description=value,
                 associated_clients=self._associated_clients
             )
@@ -1659,7 +1659,7 @@ class ClientGroup(object):
                     if failed to remove all clients from client group
         """
         output = self._update(
-            clientgroup_name=self.clientgroup_name,
+            clientgroup_name=self.name,
             clientgroup_description=self.description,
             associated_clients=self._associated_clients,
             operation_type="CLEAR"
@@ -1754,7 +1754,7 @@ class ClientGroup(object):
         """
         install = Install(self._commcell_object)
         return install.push_servicepack_and_hotfix(
-            client_computer_groups=[self.clientgroup_name],
+            client_computer_groups=[self.name],
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance)
 
@@ -1793,7 +1793,7 @@ class ClientGroup(object):
         """
         install = Install(self._commcell_object)
         return install.repair_software(
-            client_group=self.clientgroup_name,
+            client_group=self.name,
             username=username,
             password=password,
             reboot_client=reboot_client
@@ -1824,7 +1824,7 @@ class ClientGroup(object):
             "clientGroupOperationType": 2,
             "clientGroupDetail": {
                 "clientGroup": {
-                    "clientGroupName": self.clientgroup_name
+                    "clientGroupName": self.name
                 }
             }
         }
