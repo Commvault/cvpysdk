@@ -48,6 +48,14 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
 
+    'TFA': '{0}Commcell/Properties/TwoFactorAuth',
+    'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
+    'TFA_DISABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Disable',
+    'ORG_TFA': '{0}Organization/%s/TwoFactorAuth',
+    'ORG_TFA_ENABLE': '{0}Organization/%s/TwoFactorAuth/Action/Enable',
+    'ORG_TFA_DISABLE': '{0}Organization/%s/TwoFactorAuth/Action/Disable',
+    'TFA_STATUS_OF_USER': '{0}Security/TwoFactorAuth/Status?username=%s',
+
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
     'CLIENT': '{0}Client/%s',
@@ -55,7 +63,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
-                       '&NeedXmlResp=true&includeDisabledClients=%s',
+                       '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
@@ -81,6 +89,7 @@ SERVICES_DICT_TEMPLATE = {
     'KILL_JOB': '{0}Job/%s/action/kill',
     'RESUBMIT_JOB': '{0}Job/%s/action/Resubmit',
     'ALL_JOBS': '{0}Jobs',
+    'JOB_EVENTS': '{0}Events?jobId=%s',
     'JOB_MANAGEMENT_SETTINGS': '{0}CommServ/JobManagementSetting',
 
     'ENABLE_SHARED_LAPTOP': '{0}Commcell/Properties/SharedLaptopUsage/Action/Enable',
@@ -101,13 +110,14 @@ SERVICES_DICT_TEMPLATE = {
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
+    'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
-    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s'
-                           '&vmUuid=%s',
+    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+    'BROWSE_MOUNT_POINTS': '{0}/Client/%s/Action/BrowseMountPoints',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
 
@@ -146,6 +156,7 @@ SERVICES_DICT_TEMPLATE = {
     'RESTORE': '{0}CreateTask',
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
+    'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -216,6 +227,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
+    'DOMAIN_PROPERTIES': '{0}CommCell/DomainController?domainId=%s',
 
     'DRBACKUP': '{0}/CommServ/DRBackup',
     'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
@@ -295,13 +307,14 @@ SERVICES_DICT_TEMPLATE = {
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
 
-    'CREATE_PSEUDO_CLIENT':'{0}pseudoClient',
-    'CREATE_NAS_CLIENT':'{0}NASClient',
-    'GET_OFFICE_365_ENTITIES':'{0}Office365/entities',
-    'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
-    'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
-    'UPDATE_USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UpdateUserPolicyAssociation',
-    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY' : '{0}Office365/MoveJobResultsDirectory',
+    'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
+    'CREATE_NAS_CLIENT': '{0}NASClient',
+    'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
+    'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
+    'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
+    'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
+    'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
+    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
 
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
@@ -328,7 +341,9 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE': '{0}Client/License/Release',
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
-    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
+    'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
+
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
@@ -359,6 +374,11 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
     'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
+    'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
+    'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
+
+    'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
+    'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',
 
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
@@ -380,7 +400,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
-	'GET_SWAGGER': '{0}swagger/V3/swagger.json'
+    'GET_SWAGGER': '{0}swagger/V3/swagger.json'
 }
 
 

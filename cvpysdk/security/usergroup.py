@@ -97,6 +97,12 @@ UserGroup:
 
     associations()                  --  Returns security associations present on the usergroup
 
+    is_tfa_enabled()                --  Returns status of tfa
+
+    enable_tfa()                    --  Enables tfa for this user group
+
+    disable_tfa()                   --  Disables tfa for this user group
+
 """
 
 from __future__ import absolute_import
@@ -639,6 +645,41 @@ class UserGroup(object):
     def associations(self):
         """Returns security associations present on th usergroup"""
         return self._security_associations
+
+    @property
+    def is_tfa_enabled(self):
+        """Returns two factor authentication status (True/False)"""
+        return self._properties.get('enableTwoFactorAuthentication') == 1
+
+    def enable_tfa(self):
+        """
+        enables two factor authentication on this group
+
+            Note: tfa will not get enabled for this user group if global tfa is disabled
+
+        Returns:
+             None
+        """
+        request_json = {
+            "groups": [{
+                "enableTwoFactorAuthentication": 1
+            }]
+        }
+        self._update_usergroup_props(request_json)
+
+    def disable_tfa(self):
+        """
+        disables two factor authentication for this group
+
+        Returns:
+            None
+        """
+        request_json = {
+            "groups": [{
+                "enableTwoFactorAuthentication": 0
+            }]
+        }
+        self._update_usergroup_props(request_json)
 
     def update_security_associations(self, entity_dictionary, request_type):
         """handles three way associations (role-usergroup-entities)

@@ -148,7 +148,7 @@ class Install(object):
                                     "rebootClient": reboot_client,
                                     "clientAndClientGroups": [
                                         {
-                                            "clientGroupName" : client_group,
+                                            "clientGroupName": client_group,
                                             "clientName": client
                                         }
                                     ],
@@ -197,7 +197,8 @@ class Install(object):
             all_client_computers=False,
             all_client_computer_groups=False,
             reboot_client=False,
-            run_db_maintenance=True):
+            run_db_maintenance=True,
+            maintenance_release_only=False):
         """Installs the software packages on the clients
 
         Args:
@@ -224,6 +225,9 @@ class Install(object):
             maintenance not
 
                 default: True
+
+            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
+            maintenance release of that client FR, if present in cache
 
         Returns:
             object - instance of the Job class for this download job
@@ -304,6 +308,7 @@ class Install(object):
                                     "restartExplorerPlugin": True,
                                     "rebootClient": reboot_client,
                                     "runDBMaintenance": run_db_maintenance,
+                                    "maintenanceReleaseOnly": maintenance_release_only,
                                     "clientAndClientGroups": all_clients,
                                     "installUpdatesJobType": {
                                         "upgradeClients": False,
@@ -341,7 +346,11 @@ class Install(object):
             unix_features=None,
             username=None,
             password=None,
-            install_path=None):
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None,
+            **kwargs):
         """
         Installs the features selected on the given machines
         Args:
@@ -371,6 +380,23 @@ class Install(object):
 
                  default : None
 
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
+
+                 default : None
+
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict) - dictionary of install flag values
+            Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -398,7 +424,11 @@ class Install(object):
                                 unix_features=None,
                                 username='username',
                                 password='password',
-                                install_path='C:\\Temp)
+                                install_path='C:\\Temp,
+                                log_file_loc='/var/log',
+                                client_group_name=[My_Servers],
+                                storage_policy_name='My_Storage_Policy',
+                                install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -432,6 +462,15 @@ class Install(object):
 
         else:
             raise SDKException('Install', '106')
+
+        if client_group_name:
+            client_group_name = [x.lower() for x in client_group_name]
+            if not set(client_group_name).issubset(self.commcell_object.client_groups.all_clientgroups):
+                raise SDKException('Install', '103')
+            selected_client_groups = [{'clientGroupName': client_group}
+                                      for client_group in client_group_name]
+
+        install_flags = kwargs.get('install_flags')
 
         request_json = {
             "taskInfo": {
@@ -469,7 +508,7 @@ class Install(object):
                                             "allowMultipleInstances": True,
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
-                                            "install32Base": False,
+                                            "install32Base": install_flags.get('install32Base', False) if install_flags else False,
                                             "disableOSFirewall": False,
                                             "stopOracleServices": False,
                                             "skipClientsOfCS": False,
@@ -477,6 +516,7 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
+                                            "preferredIPFamily": install_flags.get('preferredIPFamily', 1) if install_flags else 1,
                                             "firewallInstall": {
                                                 "enableFirewallConfig": False,
                                                 "firewallConnectionType": 0,
@@ -493,7 +533,10 @@ class Install(object):
                                                 "overrideSoftwareCache": False,
                                                 "components": {
                                                     "commonInfo": {
-                                                        "globalFilters": 2
+                                                        "globalFilters": 2,
+                                                        "storagePolicyToUse": {
+                                                            "storagePolicyName": storage_policy_name if storage_policy_name else ""
+                                                        }
                                                     },
                                                     "fileSystem": {
                                                         "configureForLaptopBackups": False
@@ -501,10 +544,14 @@ class Install(object):
                                                     "componentInfo": install_options,
                                                 },
                                                 "clientInfo": {
+                                                    "clientGroups": selected_client_groups if client_group_name else [],
                                                     "client": {
                                                         "evmgrcPort": 0,
                                                         "cvdPort": 0,
                                                         "installDirectory": install_path if install_path else ""
+                                                    },
+                                                    "clientProps": {
+                                                        "logFilesLocation": log_file_loc if log_file_loc else ""
                                                     }
                                                 }
                                             }

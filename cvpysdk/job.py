@@ -212,6 +212,8 @@ Job
 
     advanced_job_details()      --  Returns advanced properties for the job
 
+    get_events()                --  returns the commserv events for the job
+
 
 Job instance Attributes
 -----------------------
@@ -395,6 +397,14 @@ class JobController(object):
             if not self._commcell_object.clients.has_client(client):
                 raise SDKException('Job', '102', 'No client with name {0} exists.'.format(client))
 
+        client_list = []
+        for client in options.get('clients_list', []):
+            try:
+                _client_id = int(self._commcell_object.clients.all_clients[client.lower()]['id'])
+            except KeyError:
+                _client_id = int(self._commcell_object.clients.hidden_clients[client.lower()]['id'])
+            client_list.append({"clientId": _client_id})
+
         request_json = {
             "scope": 1,
             "category": job_list_category[options.get('category', 'ALL')],
@@ -407,11 +417,7 @@ class JobController(object):
             "jobFilter": {
                 "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
                 "showAgedJobs": options.get('show_aged_jobs', False),
-                "clientList": [
-                    {
-                        "clientId": int(self._commcell_object.clients.all_clients[client.lower()]['id'])
-                    } for client in options.get('clients_list', [])
-                ],
+                "clientList": client_list,
                 "jobTypeList": [
                     job_type for job_type in options.get('job_type_list', [])
                 ]
@@ -1918,6 +1924,7 @@ class Job(object):
         self._RESUME = self._services['RESUME_JOB'] % self.job_id
         self._KILL = self._services['KILL_JOB'] % self.job_id
         self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
+        self._JOB_EVENTS = self._services['JOB_EVENTS'] % self.job_id
 
         self._client_name = None
         self._agent_name = None
@@ -2022,28 +2029,33 @@ class Job(object):
             "jobId": int(self.job_id)
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
+        attempts = 3
+        for _ in range(attempts):  # Retrying to ignore the transient case when job details are not found
+            flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
 
-        if flag:
-            if response.json():
-                if 'job' in response.json():
-                    return response.json()['job']
-                elif 'error' in response.json():
-                    error_code = response.json()['error']['errList'][0]['errorCode']
-                    error_message = response.json()['error']['errList'][0]['errLogMessage']
+            if flag:
+                if response.json():
+                    if 'job' in response.json():
+                        return response.json()['job']
+                    elif 'error' in response.json():
+                        error_code = response.json()['error']['errList'][0]['errorCode']
+                        error_message = response.json()['error']['errList'][0]['errLogMessage']
 
-                    raise SDKException(
-                        'Job',
-                        '105',
-                        'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
-                    )
+                        raise SDKException(
+                            'Job',
+                            '105',
+                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                    else:
+                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
                 else:
-                    raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                    time.sleep(2)
+                    continue
             else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        raise SDKException('Response', '102')
 
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
@@ -2159,6 +2171,7 @@ class Job(object):
 
         return ('completed' in self._status.lower() or
                 'killed' in self._status.lower() or
+                'committed' in self._status.lower() or
                 'failed' in self._status.lower())
 
     @property
@@ -2478,6 +2491,63 @@ class Job(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_events(self):
+        """ gets the commserv events associated with this job
+
+            Args:
+
+                None
+
+            Returns:
+
+                list - list of job events
+
+                    Example : [
+                        {
+                            "severity": 3,
+                            "eventCode": "318769020",
+                            "jobId": 4547,
+                            "acknowledge": 0,
+                            "eventCodeString": "19:1916",
+                            "subsystem": "JobManager",
+                            "description": "Data Analytics operation has completed with one or more errors.",
+                            "id": 25245,
+                            "timeSource": 1600919001,
+                            "type": 0,
+                            "clientEntity": {
+                                "clientId": 2,
+                                "clientName": "xyz",
+                                "displayName": "xyz"
+                            }
+                        },
+                        {
+                            "severity": 6,
+                            "eventCode": "318767961",
+                            "jobId": 4547,
+                            "acknowledge": 0,
+                            "eventCodeString": "19:857",
+                            "subsystem": "clBackup",
+                            "description": "Failed to send some items to Index Engine",
+                            "id": 25244,
+                            "timeSource": 1600918999,
+                            "type": 0,
+                            "clientEntity": {
+                                "clientId": 33,
+                                "clientName": "xyz",
+                                "displayName": "xyz"
+                            }
+                        }
+                    ]
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._JOB_EVENTS)
+        if flag:
+            if response.json() and 'commservEvents' in response.json():
+                    return response.json()['commservEvents']
+            raise SDKException('Job', '104')
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
 
 class _ErrorRule:
     """Class for enabling, disabling, adding, getting and deleting error rules."""

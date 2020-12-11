@@ -142,12 +142,13 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 from ..exception import SDKException
 from .drorchestrationoperations import DROrchestrationOperations
+from cvpysdk.instances.vsinstance import VirtualServerInstance
 
 
 class FailoverGroups(object):
     """Class for getting all the failover groups in commcell."""
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object, instance_object: VirtualServerInstance = None):
         """Initialize object of the Failover groups.
 
             Args:
@@ -159,6 +160,7 @@ class FailoverGroups(object):
         self._commcell_object = commcell_object
         self._client_object = commcell_object.clients
         self._services = commcell_object._services
+        self._instance_object = instance_object
 
         ####### init REST API URLS #########
         self._DRGROUPS = self._commcell_object._services['DR_GROUPS']
@@ -713,7 +715,7 @@ class FailoverGroups(object):
 class FailoverGroup(object):
     """Class for performing failover operations on a specified failover group."""
 
-    def __init__(self, commcell_object, failover_group_options):
+    def __init__(self, commcell_object, failover_group_options, instance_object: VirtualServerInstance = None):
         """Initialise the FailoverGroup object.
 
             Args:
@@ -734,6 +736,7 @@ class FailoverGroup(object):
         """
         ##### local variables of these class ########
         self._commcell_object = commcell_object
+        self._instance_object = instance_object
         self._failover_group_options = failover_group_options
         self._services = commcell_object._services
         self._failover_group_properties = None
@@ -1028,6 +1031,9 @@ class FailoverGroup(object):
             Returns:
                 list of dict: list of snapshot information
         """
+        if not isinstance(self._instance_object, VirtualServerInstance):
+            raise SDKException('CVPySDK', '102', 'instance_object is not set')
+
         # Gets DR client list to fetch the dest GUID
         entity_id = self.failover_group_properties['clientList'][0]["clientId"]
         client_list_req = self._commcell_object._services["DR_GROUP_MACHINES"] % (
@@ -1048,4 +1054,4 @@ class FailoverGroup(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-        return self._dr_operation.get_snapshot_list(destination_guid)
+        return self._dr_operation.get_snapshot_list(destination_guid, int(self._instance_object.instance_id))

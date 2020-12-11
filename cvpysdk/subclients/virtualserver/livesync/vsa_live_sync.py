@@ -151,6 +151,11 @@ class VsaLiveSync:
         if instance_name == hv_type.VIRTUAL_CENTER.value.lower():
             from .vmware_live_sync import VMWareLiveSync
             return object.__new__(VMWareLiveSync)
+
+        if instance_name == hv_type.AMAZON_AWS.value.lower():
+            from .amazon_live_sync import AmazonLiveSync
+            return object.__new__(AmazonLiveSync)
+
         raise SDKException(
             'LiveSync',
             '102',

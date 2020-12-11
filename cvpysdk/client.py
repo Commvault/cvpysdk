@@ -99,6 +99,8 @@ Clients
 
     add_nutanix_files_client()                  --  adds a new nutanix files client
 
+    add_onedrive_client()                 --  adds a new onedrive client
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -215,6 +217,8 @@ Client
 
     create_pseudo_client()       --  Creates a pseudo client
 
+    register_decoupled_client()  --  registers decoupled client
+
     set_job_start_time()         -- sets the job start time at client level
 
     uninstall_software()         -- Uninstalls all the packages of the client
@@ -225,6 +229,9 @@ Client
                                 --  Move the Job Results Directory for an
                                     Exchange Online Environment
 
+    get_environment_details()   --  Gets environment tile details present in dashboard page
+
+    get_needs_attention_details()   -- Gets needs attention tile details from dashboard page
 
 
 Client Attributes
@@ -366,6 +373,7 @@ class Clients(object):
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
+        self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -807,6 +815,61 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def register_decoupled_client(self, client_name, client_host_name, port_number=8400):
+        """ registers decoupled client
+
+            Args:
+                client_name (str)    --  client name
+
+                client_host_name (str)  -- client host name
+
+                port_number (int)   -- port number of the decoupled client
+
+            Returns:
+                client object for the registered client.
+
+            Raises:
+                SDKException:
+                    if client name type is incorrect
+
+                    if response is empty
+
+                    if failed to get client id from response
+
+        """
+        request_json = {
+            "App_RegisterClientRequest":
+                {
+                    "getConfigurationFromClient": True,
+                    "configFileName": "",
+                    "cvdPort": port_number,
+                    "client": {
+                        "hostName": client_host_name,
+                        "clientName": client_name,
+                        "newName": ""
+                    }
+                }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+                if error_code == 0:
+                    self.refresh()
+                    return self.get(client_name)
+                else:
+                    if response.json()['errorMessage']:
+                        o_str = 'Failed to register client. Error: "{0}"'.format(response.json()['errorMessage'])
+                    raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     @property
     def hidden_clients(self):
         """Returns the dictionary consisting of the hidden clients and their info.
@@ -861,9 +924,15 @@ class Clients(object):
         """
         if not isinstance(client_name, basestring):
             raise SDKException('Client', '101')
-
-        return ((self.all_clients and client_name.lower() in self.all_clients) or
-                self._get_client_from_hostname(client_name) is not None)
+        if self.all_clients and client_name.lower() in self.all_clients:
+            return True
+        elif self._get_client_from_hostname(client_name) is not None:
+            return True
+        elif self.hidden_clients and client_name.lower() in self.hidden_clients:
+            return True
+        elif self._get_hidden_client_from_hostname(client_name) is not None:
+            return True
+        return False
 
     def has_hidden_client(self, client_name):
         """Checks if a client exists in the commcell with the input client name as a hidden client.
@@ -2327,6 +2396,172 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_onedrive_client(self,
+                            client_name,
+                            instance_name,
+                            server_plan,
+                            connection_details,
+                            access_node=None,
+                            auto_discovery=False
+                            ):
+
+        """Adds a new OneDrive Client to the Commcell.
+
+            Args:
+                client_name             (str)   --  name of the new Exchange Mailbox Client
+
+                server_plan            (str)   --  name of the server plan to be associated
+                                                   with the client
+
+                connection_details   (dict)  -- dictionary for Azure App details:
+                                            Example:
+                                               connection_details = {
+                                                    "azure_directory_id": 'azure directory id',
+                                                    "application_id": 'application id',
+                                                    "application_key_value": 'application key value',
+                                                }
+
+                access_node          (str)   --  name of the access node
+
+                auto_discovery      (bool)   --  Enable/Disable (True/False)
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if access node  donot exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+                """
+
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_id = int(server_plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        application_key_value = b64encode(connection_details.get("application_key_value").encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 15,
+                "lookupPlanInfo": False,
+                "plan": {
+                    "planId": server_plan_id
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": 7,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name,
+                            "instanceName": instance_name
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 7,
+                            "oneDriveInstance": {
+                                "manageContentAutomatically": False,
+                                "createAdditionalSubclients": False,
+                                "numberofAdditionalSubclients": 0,
+                                "cloudRegion": 1,
+                                "clientSecret": application_key_value,
+                                "callbackUrl": "",
+                                "tenant": connection_details.get("azure_directory_id"),
+                                "clientId": connection_details.get("application_id"),
+                                "isAutoDiscoveryEnabled": auto_discovery,
+                                "isEnterprise": True,
+                                "serviceAccounts": {},
+                                "azureAppList": {}
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": 10,
+                                "jobResultsDir": {
+                                    "path": ""
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        end_point = self._services['STORAGE_POLICY_INFRASTRUCTUREPOOL'] % (server_plan_id)
+        flag, response = self._cvpysdk_object.make_request('GET', end_point)
+
+        cloud_props = request_json.get('clientInfo').get('cloudClonnectorProperties').get('instance').get(
+            'cloudAppsInstance')
+
+        if flag:
+            if response and response.json():
+                onedrive_prop = cloud_props.get('oneDriveInstance')
+                if 'isConfigured' in response.json():
+                    if response.json()['isConfigured']:
+                        onedrive_prop['infraStructurePoolEnabled'] = True
+                    else:
+                        onedrive_prop['infraStructurePoolEnabled'] = False
+                        if isinstance(access_node, basestring):
+                            proxy_servers = []
+                            access_node = access_node.strip().lower()
+                            if self.has_client(access_node):
+                                access_node_dict = {
+                                    "hostName": self.all_clients[access_node]['hostname'],
+                                    "clientId": int(self.all_clients[access_node]['id']),
+                                    "clientName": access_node,
+                                    "displayName": access_node,
+                                    "_type_": 3
+                                }
+                                proxy_servers.append(access_node_dict)
+                                general_cloud_props = cloud_props['generalCloudProperties']
+                                general_cloud_props["proxyServers"] = proxy_servers
+                            else:
+                                raise SDKException('Client', '101', 'Provide Valid Access Node')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_ONEDRIVE_CLIENT, request_json)
+
+        if flag:
+            if response and response.json():
+                if 'response' in response.json():
+                    error_code = response.json().get('response').get('errorCode')
+                    if error_code != 0:
+                        error_string = response.json().get('response').get('errorString')
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json().get('errorMessage')
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
         """
             Method to add new Nutanix Files client
@@ -2735,6 +2970,8 @@ class Client(object):
 
                         **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
+                        **Note** In case of linux CommServer provide time in GMT timezone
+
             Returns:
                 dict - JSON request to pass to the API
         """
@@ -2777,7 +3014,7 @@ class Client(object):
                             "enableAfterADelay": True,
                             "enableActivityType": False,
                             "dateTime": {
-                                "TimeZoneName": kwargs.get("timezone", "(UTC) Coordinated Universal Time"),
+                                "TimeZoneName": kwargs.get("timezone", self._commcell_object.default_timezone),
                                 "timeValue": enable_time
                             }
                         }]
@@ -5229,6 +5466,73 @@ class Client(object):
             self._readiness = _Readiness(self._commcell_object, self.client_id)
         return self._readiness
 
+    def get_environment_details(self):
+        """
+        Returns a dictionary with the count of fileservers, VM, Laptop for all the service commcells
+        
+         example output:
+            {
+            'fileServerCount': {'commcell_name': count},
+            'laptopCount': {'commcell_name': count},
+            'vmCount': {'commcell_name': count}
+            }
+        """
+        self._headers = {
+            'Accept': 'application/json',
+            'CVContext': 'Comet',
+            'Authtoken': self._commcell_object._headers['Authtoken']
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_ENVIRONMENT_TILE'], headers=self._headers
+        )
+        if flag:
+            if response.json() and 'cometClientCount' in response.json():
+                main_keys = ['fileServerCount', 'laptopCount', 'vmCount']
+                environment_tile_dict = {}
+                for key in main_keys:
+                    tile = {}
+                    for tile_info in response.json()['cometClientCount']:
+                        tile[tile_info['commcell']['commCellName']] = tile_info[key]
+                    environment_tile_dict[key] = tile
+                return environment_tile_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_needs_attention_details(self):
+        """
+        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
+        
+        example output:
+            {
+            'CountOfAnomalousInfrastructureServers': {'commcell_name': count},
+            'CountOfAnomalousServers': {'commcell_name': count},
+            'CountOfAnomalousJobs': {'commcell_name': count}
+            }
+        """
+        self._headers = {
+            'Accept': 'application/json',
+            'CVContext': 'Comet',
+            'Authtoken': self._commcell_object._headers['Authtoken']
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['DASHBOARD_NEEDS_ATTENTION_TILE'], headers=self._headers
+        )
+        if flag:
+            if response.json() and 'commcellEntityRespList' in response.json():
+                needs_attention_tile_dict = {}
+                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers', 'CountOfAnomalousJobs']
+                for key in main_keys:
+                    tile = {}
+                    for tile_info in response.json()['commcellEntityRespList']:
+                        tile[tile_info['commcell']['commCellName']] = tile_info[key]
+                    needs_attention_tile_dict[key] = tile
+                return needs_attention_tile_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
 class _Readiness:
     """ Class for checking the connection details of a client """
@@ -5241,14 +5545,28 @@ class _Readiness:
         self._status = None
         self._dict = None
 
-    def __fetch_readiness_details(self, network=True, resource=False, disabled_clients=False):
+    def __fetch_readiness_details(
+            self,
+            network=True,
+            resource=False,
+            disabled_clients=False,
+            cs_cc_network_check=False
+    ):
         """
         Performs readiness check on the client
 
             Args:
-                network (bool): Performs Network Readiness Check. Defaults to True.
-                resource (bool): Performs Resource Readiness Check. Defaults to False.
-                disabled_clients (bool): Includes backup activity disabled clients. Defaults to False.
+                network (bool)  - Performs Network Readiness Check.
+                                    Default: True
+
+                resource (bool) - Performs Resource Readiness Check.
+                                    Default: False
+
+                disabled_clients (bool) - Includes backup activity disabled clients.
+                                            Default: False
+
+                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
+                                                Default: False
 
             Raises:
                 SDKException:
@@ -5258,7 +5576,12 @@ class _Readiness:
         """
         flag, response = self.__commcell._cvpysdk_object.make_request(
             'GET',
-            self.__commcell._services['CHECK_READINESS'] % (self.__client_id, network, resource, disabled_clients)
+            self.__commcell._services['CHECK_READINESS'] % (
+                self.__client_id,
+                network,
+                resource,
+                disabled_clients,
+                cs_cc_network_check)
         )
 
         if flag:
@@ -5272,13 +5595,28 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False):
+    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False):
         """Performs readiness check on the client
 
-        Returns: connection status
+        Args:
+                network (bool)  - Performs Network Readiness Check.
+                                    Default: True
+
+                resource (bool) - Performs Resource Readiness Check.
+                                    Default: False
+
+                disabled_clients (bool) - Includes backup activity disabled clients.
+                                            Default: False
+
+                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
+                                                Default: False
+
+        Returns:
+
+            (bool)  - True if ready else False
 
         """
-        self.__fetch_readiness_details(network, resource, disabled_clients)
+        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check)
         return self._status == "Ready."
 
     def __check_reason(self):

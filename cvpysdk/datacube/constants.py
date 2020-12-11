@@ -32,6 +32,7 @@ class IndexServerConstants:
     ROLE_DATA_ANALYTICS = "Data Analytics"
     ROLE_EXCHANGE_INDEX = "Exchange Index"
     ROLE_ONEDRIVE_INDEX = "OneDrive Index"
+    ROLE_SYSTEM_DEFAULT = "System Default"
 
     ENGINE_NAME = "engineName"
     CLOUD_ID = "cloudID"
@@ -49,6 +50,15 @@ class IndexServerConstants:
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
+
+    SOLR_PORT_META_INFO = {
+        "name": "PORTNO",
+        "value": None
+    }
+    SOLR_JVM_META_INFO = {
+        "name": "JVMMAXMEMORY",
+        "value": None
+    }
 
     UPDATE_ADD_ROLE = {
         "roleName": "",

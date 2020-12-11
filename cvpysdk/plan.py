@@ -83,6 +83,12 @@ Plan
 
     associate_user()            --  associates users to the plan
 
+    modify_schedule()           --  modifies the RPO schedules of the plan
+
+    add_storage_copy()          --  adds a storage pool as a copy to the plan
+
+    disable_full_schedule()     --  disables the full schedule of a plan
+
 Plan Attributes
 ----------------
     **plan_id**                 --  returns the id of the plan
@@ -104,6 +110,12 @@ Plan Attributes
     **subclient_policy**        --  returns the subclient policy of the plan
 
     **associated_entities**     --  returns all the backup entities associated with the plan
+
+    **operation_window**        --  returns the incremental operation window set by the plan
+
+    **full_operation_window**   --  returns the full operation window set by the plan
+
+    **associated_entities**     --  returns all the entities associated with the plan
 """
 
 from __future__ import unicode_literals
@@ -396,7 +408,7 @@ class Plans(object):
             plan_name,
             plan_sub_type,
             storage_pool_name=None,
-            sla_in_minutes=240,
+            sla_in_minutes=1440,
             override_entities=None):
         """Adds a new Plan to the CommCell.
 
@@ -418,9 +430,10 @@ class Plans(object):
 
             sla_in_minutes      (int)   --  Backup SLA in hours
 
-                default: 240
+                default: 1440
 
-            override_entities   (dict)  --  Specify the entities with respective overriding.
+            override_entities   (dict)  --  Specify the entities with respective
+                                            inheritance values.
 
                 default: None
 
@@ -430,14 +443,14 @@ class Plans(object):
                         'enforcedEntities': [256, 512, 1024]
                     }
                     - where,
-                            privateEntities are set when respective entity overriding is must
+                            privateEntities are set when respective entity overriding is required
                             enforcedEntities are set when respective entity overriding is not
                             allowed
                             left blank if overriding is optional
 
                     - entity IDs,
                             1    - Storage
-                            4    - SLA/Schedules
+                            4    - RPO/Schedules
                             256  - Windows content
                             512  - Unix content
                             1024 - Mac content
@@ -461,19 +474,38 @@ class Plans(object):
                     'Plan', '102', 'Plan "{0}" already exists'.format(plan_name)
                 )
         if not plan_sub_type == 'ExchangeUser':
-            storage_pool_id = int(self._commcell_object.storage_pools.get(
-                storage_pool_name).storage_pool_id)
+            storage_pool_obj = self._commcell_object.storage_pools.get(
+                storage_pool_name)
+            is_dedupe = True
+            if 'dedupDBDetailsList' \
+                    not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
+                is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
 
-        request_json['plan']['summary']['slaInMinutes'] = sla_in_minutes
+        request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
+        del request_json['plan']['schedule']['task']['taskName']
         if not plan_sub_type == 'ExchangeUser':
-            request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
             request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
-                "storagePolicyId": storage_pool_id
+                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
             }
+            if is_dedupe:
+                request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                    'useGlobalDedupStore'] = 1
+            else:
+                del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
+                del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                    'enableDeduplication']
+                del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                    'enableClientSideDedup']
+                del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
+                request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
+                    'useGlobalStoragePolicy': 1
+                }
+
+        # Configurations for database and snap addons
         if plan_sub_type == "Server" and 'database' in request_json['plan']:
             request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
                 'useGlobalDedupStore'] = 1
@@ -482,8 +514,34 @@ class Plans(object):
             )
             request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
                 'useGlobalPolicy'] = {
-                    "storagePolicyId": storage_pool_id
+                    "storagePolicyId": int(storage_pool_obj.storage_pool_id)
                 }
+            request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
+                'useGlobalStoragePolicy': 1
+            }
+            request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
+                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
+            }
+
+        # Enable full backup schedule
+        for subtask in request_json['plan']['schedule']['subTasks']:
+            if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
+                import copy
+                full_schedule = copy.deepcopy(subtask)
+                del copy
+                full_schedule['subTask'].update({
+                    'subTaskName': 'Full backup schedule',
+                    'flags': 4194304
+                })
+                full_schedule['pattern'].update({
+                    'freq_type': 4,
+                    'freq_interval': 1,
+                    'name': 'Full backup schedule',
+                    'active_end_time': 0
+                })
+                full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
+                request_json['plan']['schedule']['subTasks'].append(full_schedule)
+                break
 
         if isinstance(override_entities, dict):
             request_json['plan']['summary']['restrictions'] = 0
@@ -517,13 +575,11 @@ class Plans(object):
                 error_message = None
                 error_code = None
 
-                if 'errorCode' in response_value:
-                    error_code = response_value['errorCode']
+                if 'errors' in response_value:
+                    error_code = response_value['errors'][0]['status']['errorCode']
+                    error_message = response_value['errors'][0]['status']['errorMessage']
 
-                if 'errorMessage' in response_value:
-                    error_message = response_value['errorMessage']
-
-                if error_message:
+                if error_code > 1:
                     o_str = 'Failed to create new Plan\nError: "{0}"'.format(
                         error_message
                     )
@@ -535,6 +591,9 @@ class Plans(object):
                     # initialize the plans again
                     # so that the plans object has all the plans
                     self.refresh()
+                    # with plan delete storage policy associated might be deleted
+                    # initialize storage policy again
+                    self._commcell_object.storage_policies.refresh()
 
                     return self.get(plan_name)
                 else:
@@ -633,19 +692,22 @@ class Plan(object):
 
         self._properties = None
         self._sla_in_minutes = None
+        self._operation_window = None
+        self._full_operation_window = None
         self._plan_type = None
         self._subtype = None
-        self._permissions = []
+        self._security_associations = {}
         self._storage_pool = None
         self._child_policies = {
             'storagePolicy': None,
-            'schedulePolicy': None,
+            'schedulePolicy': {},
             'subclientPolicyIds': []
         }
+        self._storage_copies = {}
         self._user_group = None
         self._client_group = None
         self._override_entities = None
-        self._parent_plan_id = None
+        self._parent_plan_name = None
         self._addons = []
         self._associated_entities = {}
         self.refresh()
@@ -701,12 +763,35 @@ class Plan(object):
                 if 'storage' in self._plan_properties:
                     if 'copy' in self._plan_properties['storage']:
                         for copy in self._plan_properties['storage']['copy']:
-                            if 'useGlobalPolicy' in copy:
-                                self._storage_pool = copy['useGlobalPolicy']
-                                break
+                            self._storage_copies[copy['StoragePolicyCopy']['copyName']] = {
+                                'storagePool': copy['useGlobalPolicy']['storagePolicyName'].lower(),
+                                'retainBackupDataForDays': copy[
+                                    'retentionRules']['retainBackupDataForDays'],
+                                'isDefault': False,
+                                'isSnapCopy': False,
+                            }
+                            if 'extendedRetentionRuleOne' in copy['retentionRules']:
+                                self._storage_copies[
+                                    copy['StoragePolicyCopy']['copyName']]['extendedRetention'] = (
+                                        1,
+                                        True,
+                                        copy['retentionRules']['extendedRetentionRuleOne']['rule'],
+                                        copy['retentionRules']['extendedRetentionRuleOne']['endDays'],
+                                        copy['retentionRules']['extendedRetentionRuleOne']['graceDays']
+                                    ) 
+                            if copy['isDefault'] == 1:
+                                self._storage_copies[
+                                    copy['StoragePolicyCopy']['copyName']]['isDefault'] = True
+
+                            if copy['isSnapCopy'] == 1:
+                                self._storage_copies[
+                                    copy['StoragePolicyCopy']['copyName']]['isSnapCopy'] = True
+
                     if 'storagePolicy' in self._plan_properties['storage']:
-                        self._child_policies['storagePolicy'] = self._plan_properties['storage'][
-                            'storagePolicy']['storagePolicyName']
+                        self._commcell_object.storage_policies.refresh()
+                        self._child_policies['storagePolicy'] = self._commcell_object.storage_policies.get(
+                            self._plan_properties['storage']['storagePolicy']['storagePolicyName']
+                        )
 
                 if self._subtype == 33554439:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
@@ -720,11 +805,31 @@ class Plan(object):
                         self._user_group = self._plan_properties['autoCreatedEntities'][
                             'localUserGroup']['userGroupName']
 
-
                 if 'schedule' in self._plan_properties:
                     if 'task' in self._plan_properties['schedule']:
-                        self._child_policies['schedulePolicy'] = self._plan_properties['schedule'][
-                            'task']['taskName']
+                        self._commcell_object.schedule_policies.refresh()
+                        self._child_policies['schedulePolicy'] = {
+                            'data': self._commcell_object.policies.schedule_policies.get(
+                                self._plan_properties['schedule']['task']['taskName']
+                            )
+                        }
+                        if self._subtype == 33554437:
+                            self._child_policies['schedulePolicy'].update({
+                                'log': self._commcell_object.policies.schedule_policies.get(
+                                    self._plan_properties[
+                                        'database']['scheduleLog']['task']['taskName']
+                                )
+                            })
+
+                if self._plan_properties['operationWindow']['ruleId'] != 0:
+                    self._operation_window = self._plan_properties['operationWindow']
+                else:
+                    self._operation_window = None
+
+                if self._plan_properties['fullOperationWindow']['ruleId'] != 0:
+                    self._full_operation_window = self._plan_properties['fullOperationWindow']
+                else:
+                    self._full_operation_window = None
 
                 if 'laptop' in self._plan_properties:
                     if 'backupContent' in self._plan_properties['laptop']['content']:
@@ -745,7 +850,27 @@ class Plan(object):
                     self._override_entities = temp_dict
 
                 if 'parent' in self._plan_properties['summary']:
-                    self._parent_plan_id = self._plan_properties['summary']['parent']['planId']
+                    self._parent_plan_name = self._plan_properties['summary']['parent']['planName']
+
+                if 'securityAssociations' in self._plan_properties:
+                    for association in self._plan_properties['securityAssociations']['associations']:
+                        temp_key = None
+                        if 'externalGroupName' in association['userOrGroup'][0]:
+                            temp_key = '{0}\\{1}'.format(
+                                    association['userOrGroup'][0]['providerDomainName'],
+                                    association['userOrGroup'][0]['externalGroupName']
+                                )
+                        elif 'userGroupName' in association['userOrGroup'][0]:
+                            temp_key = association['userOrGroup'][0]['userGroupName']
+                        else:
+                            temp_key = association['userOrGroup'][0]['userName']
+                        if 'role' in association['properties']:
+                            if temp_key in self._security_associations:
+                                self._security_associations[temp_key].append(
+                                    association['properties']['role']['roleName']
+                                )
+                            else:
+                                self._security_associations[temp_key] = [association['properties']['role']['roleName']]
 
                 self._get_associated_entities()
 
@@ -828,19 +953,38 @@ class Plan(object):
             request_json['plan']['summary']['parent'] = {
                 'planId': int(self._plan_id)
             }
-            request_json['plan']['storage']['copy'][0]['dedupeFlags']['useGlobalDedupStore'] = 1
 
+            is_dedupe = True
             if storage_pool_name is not None:
-                storage_pool_id = int(self._commcell_object.storage_pools.get(
-                    storage_pool_name).storage_pool_id)
+                storage_pool_obj = self._commcell_object.storage_pools.get(
+                    storage_pool_name
+                )
+                if 'dedupDBDetailsList' \
+                        not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
+                    is_dedupe = False
+                storage_pool_id = int(storage_pool_obj.storage_pool_id)
+                if is_dedupe:
+                    request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                        'useGlobalDedupStore'] = 1
+                else:
+                    del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
+                    del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                        'enableDeduplication']
+                    del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                        'enableClientSideDedup']
+                    del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
+                    request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
+                        'useGlobalStoragePolicy': 1
+                    }
             else:
                 storage_pool_id = None
 
             if 1 in self._override_entities['enforcedEntities']:
                 if storage_pool_id is None:
-                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
-                        "storagePolicyId": self._storage_pool['storagePolicyId']
+                    request_json['plan']['storage'] = {
+                        "storagePolicyId": self.storage_policy.storage_policy_id
                     }
+                    snap_copy_id = self.storage_policy.storage_policy_id
                 else:
                     raise SDKException(
                         'Plan', '102', 'Storage is enforced by base plan, cannot be overridden')
@@ -849,6 +993,7 @@ class Plan(object):
                     request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
                         "storagePolicyId": storage_pool_id
                     }
+                    snap_copy_id = storage_pool_id
                 else:
                     raise SDKException('Plan', '102', 'Storage must be input')
             else:
@@ -856,10 +1001,12 @@ class Plan(object):
                     request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
                         "storagePolicyId": storage_pool_id
                     }
+                    snap_copy_id = storage_pool_id
                 else:
-                    request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
-                        "storagePolicyId": self._storage_pool['storagePolicyId']
+                    request_json['plan']['storage'] = {
+                        "storagePolicyId": self.storage_policy.storage_policy_id
                     }
+                    snap_copy_id = self.storage_policy.storage_policy_id
 
             if 4 in self._override_entities['enforcedEntities']:
                 if sla_in_minutes is None:
@@ -961,16 +1108,15 @@ class Plan(object):
                 request_json['plan']['laptop']['content']['definesSubclientMac'] = temp_defines_key
                 request_json['plan']['laptop']['content']['definesSubclientWin'] = temp_defines_key
 
-            if self._subtype == 33554437 and 'database' in request_json['plan']:
-                request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
-                    'useGlobalDedupStore'] = 1
-                request_json['plan']['database']['storageLog']['copy'][0].pop(
-                    'DDBPartitionInfo', None
-                )
-                request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
-                    'useGlobalPolicy'] = request_json['plan']['storage']['copy'][0][
-                        'useGlobalPolicy'
-                    ]
+            if self._subtype == 33554437 and 'snap' in self.addons and 'copy' \
+                    in request_json['plan']['storage']:
+                request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
+                    'storagePolicyId': snap_copy_id
+                }
+                request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
+                    'useGlobalStoragePolicy': 1
+                }
+
             add_plan_service = self._commcell_object.plans._PLANS
             headers = self._commcell_object._headers.copy()
             headers['LookupNames'] = 'False'
@@ -983,12 +1129,14 @@ class Plan(object):
                 if response.json():
                     response_value = response.json()
                     error_message = None
+                    error_code = None
 
-                    if 'errorMessage' in response_value:
-                        error_message = response_value['error_message']
-                        error_code = response_value['error_code']
+                    if 'errors' in response_value:
+                        error_code = response_value['errors'][0]['status']['errorCode']
+                        error_message = response_value['errors'][0]['status']['errorMessage']
 
-                    if error_message:
+                    # error_codes 0 - OK, 1 - plan without storage, 84 - restricted plan
+                    if error_code not in [0, 1, 84]:
                         o_str = 'Failed to create new Plan\nError: "{0}"'.format(
                             error_message
                         )
@@ -1015,6 +1163,156 @@ class Plan(object):
                 raise SDKException('Response', '101', response_string)
         else:
             raise SDKException('Plan', '102', 'Inheritance disabled for plan')
+
+    def modify_schedule(self, schedule_json, is_full_schedule=False):
+        """Modifies the incremental RPO schedule pattern of the plan with the given schedule json
+
+            Args:
+            schedule_json (dict) -- {
+                    pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                     pattern to be sent
+
+                                     eg: {
+                                            "freq_type": 'daily',
+                                            "active_start_time": time_in_%H/%S (str),
+                                            "repeat_days": days_to_repeat (int)
+                                         }
+
+                    options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
+
+                                    eg:  {
+                                        "maxNumberOfStreams": 0,
+                                        "useMaximumStreams": True,
+                                        "useScallableResourceManagement": True,
+                                        "totalJobsToProcess": 1000,
+                                        "allCopies": True,
+                                        "mediaAgent": {
+                                            "mediaAgentName": "<ANY MEDIAAGENT>"
+                                        }
+                                    }
+                    }
+            is_full_schedule (bool) --  Pass True if he schedule to be modified is the full backup schedule
+        """
+        if is_full_schedule:
+            try:
+                schedule_id = list(filter(
+                    lambda st: st['subTask']['flags'] == 4194304, self.schedule_policies['data']._subtasks
+                ))[0]['subTask']['subTaskId']
+            except IndexError:
+                raise IndexError('Full backup schedule not enabled')
+        else:
+            schedule_id = list(filter(
+                lambda st: st['subTask']['flags'] == 65536, self.schedule_policies['data']._subtasks
+            ))[0]['subTask']['subTaskId']
+        self.schedule_policies['data'].modify_schedule(
+            schedule_json,
+            schedule_id=schedule_id
+        )
+        self.refresh()
+
+    def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
+        """Add a storage copy as backup destination to this plan
+            Args:
+                copy_name   (str)   -   name of the copy that is being added
+
+                storage_pool (str)  -   name of the storage pool for the copy to be added
+
+                retention   (int)   -   retention period in days for the copy
+
+                extended_retention (tuple)  -   extended retention rules of a copy
+                                                Example: [1, True, "EXTENDED_ALLFULL", 0, 0]
+            Returns:
+                dict    -   dictionary of all copies of this plan
+        """
+        if isinstance(copy_name, str) and isinstance(storage_pool, str):
+            if not self.storage_policy.has_copy(copy_name):
+                self.storage_policy.create_secondary_copy(
+                    copy_name,
+                    global_policy=storage_pool
+                )
+                self.storage_policy.get_copy(copy_name).copy_retention = (retention, 0, 0)
+                if extended_retention:
+                    self.storage_policy.get_copy(
+                        copy_name).extended_retention_rules = extended_retention
+                self.refresh()
+                return self.storage_copies
+            else:
+                err_msg = f'Storage Policy copy "{copy_name}" already exists.'
+                raise SDKException('Storage', '102', err_msg)
+        else:
+            raise SDKException(
+                'Plan', '102', 'Copy name and storage pool name must be a string.'
+            )
+
+    def disable_full_schedule(self):
+        """Disable the full backup schedule of the plan"""
+        try:
+            self.schedule_policies['data'].delete_schedule(schedule_id=list(filter(
+                lambda st: st['subTask']['flags'] == 4194304, self.schedule_policies['data']._subtasks
+            ))[0]['subTask']['subTaskId'])
+        except IndexError:
+            raise IndexError('Full backup schedule not enabled')
+
+    def edit_association(self, entities, new_plan=None):
+        """Reassociates or dissociates the entities from this plan
+            Args:
+                entities    (list)  --  list containing entity objects whose plan association must be edited
+                                        Eg: [
+                                            {
+                                                "clientName": "client",
+                                                "subclientName": "subclient",
+                                                "backupsetName": "backupset",
+                                                "appName": "app"
+                                            }
+                                        ]
+
+                new_plan    (str)   --  new plan to which the associated entities must be reassociated with
+
+            Raises:
+                SDKException
+                    if plan not found
+        """
+        req_json = {
+            'plan': {
+                'planName': self.plan_name
+            },
+            'entities': entities
+        }
+        if new_plan is not None:
+            if self._commcell_object.plans.has_plan(new_plan):
+                req_json.update({
+                    'planOperationType': 'OVERWRITE',
+                    'newPlan': {
+                        'planName': new_plan
+                    }
+                })
+            else:
+                SDKException('Plan', '102', 'No plan exists with name: {0}'.format(
+                    new_plan)
+                )
+        else:
+            req_json.update({
+                'planOperationType': 'DELETE'
+            })
+        req_url = self._services['ASSOCIATED_ENTITIES'] % (self._plan_id)
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', req_url, req_json
+        )
+
+        if flag:
+            if 'response' in response.json():
+                error_code = str(response.json()["response"][0]["errorCode"])
+
+                if error_code == "0":
+                    self.refresh()
+                    return
+            else:
+                error_message = str(response.json()["errorMessage"])
+                o_str = 'Failed to edit plan associated entities\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(error_message))
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _update_plan_props(self, props):
         """Updates the properties of the plan
@@ -1133,6 +1431,101 @@ class Plan(object):
             )
 
     @property
+    def operation_window(self):
+        """Treats the plan incremental operation window as a read-only attribute"""
+        return self._operation_window
+
+    @operation_window.setter
+    def operation_window(self, value):
+        """Modifies the incremental operation window of the plan
+
+            Args:
+                value   (list)    --  list of time slots for setting the backup window
+
+                value   (None)      --  set value to None to clear the operation window
+
+            Raises:
+                SDKException:
+                    if the input is incorrect
+
+                    if the operation window configuration fails
+        """
+        if isinstance(value, list):
+            req_json = {
+                "operationWindow": {
+                    "operations": [
+                        2,
+                        4
+                    ],
+                    "dayTime": value
+                }
+            }
+            resp = self._update_plan_props(req_json)
+            if resp[0]:
+                self.refresh()
+                return
+            else:
+                o_str = 'Failed to update the operation window\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(resp[2]))
+        elif value is None:
+            self._commcell_object.operation_window.delete_operation_window(
+                rule_id=self._operation_window['ruleId']
+            )
+            self.refresh()
+            return
+        else:
+            raise SDKException(
+                'Plan', '102', 'Plan operation window must be a list value or None'
+            )
+
+    @property
+    def full_operation_window(self):
+        """Treats the plan full backup operation window as a read-only attribute"""
+        return self._full_operation_window
+
+    @full_operation_window.setter
+    def full_operation_window(self, value):
+        """Modifies the full backup operation window of the plan
+
+            Args:
+                value   (list)    --  list of time slots for setting the backup window
+
+                value   (None)      --  set value to None to clear the operation window
+
+            Raises:
+                SDKException:
+                    if the input is incorrect
+
+                    if the operation window configuration fails
+        """
+        if isinstance(value, list):
+            req_json = {
+                "operationWindow": {
+                    "operations": [
+                        1,
+                    ],
+                    "dayTime": value
+                }
+            }
+            resp = self._update_plan_props(req_json)
+            if resp[0]:
+                self.refresh()
+                return
+            else:
+                o_str = 'Failed to update the full operation window\nError: "{0}"'
+                raise SDKException('Plan', '102', o_str.format(resp[2]))
+        elif value is None:
+            self._commcell_object.operation_window.delete_operation_window(
+                rule_id=self._full_operation_window['ruleId']
+            )
+            self.refresh()
+            return
+        else:
+            raise SDKException(
+                'Plan', '102', 'Plan full operation window must be a list value or None'
+            )
+
+    @property
     def plan_type(self):
         """Treats the plan type as a read-only attribute."""
         return self._plan_type
@@ -1176,6 +1569,11 @@ class Plan(object):
         return self._child_policies['storagePolicy']
 
     @property
+    def storage_copies(self):
+        """Treats the plan storage policy as a read-only attribute"""
+        return self._storage_copies
+
+    @property
     def schedule_policies(self):
         """Treats the plan schedule policies as read-only attribute"""
         return self._child_policies['schedulePolicy']
@@ -1198,6 +1596,21 @@ class Plan(object):
     def associated_entities(self):
         """getter for the backup entities associated with the plan"""
         return self._associated_entities
+
+    @property
+    def parent_plan(self):
+        """getter for the parent plan of a derived plan"""
+        return self._commcell_object.plans.get(self._parent_plan_name)
+
+    @property
+    def security_associations(self):
+        """getter for the plan's security associations
+            Eg:
+                {
+                    'sample_user_group_name': 'role_name'
+                }
+        """
+        return self._security_associations
 
     def refresh(self):
         """Refresh the properties of the Plan."""

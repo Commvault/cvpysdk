@@ -38,4 +38,8 @@ And Commvault Software v11 SP7 or later release with WebConsole installed
 """
 
 __author__ = 'Commvault Systems Inc.'
+<<<<<<< HEAD
 __version__ = '11.21.2'
+=======
+__version__ = '11.23'
+>>>>>>> 7a4aa34d5c6a5a3ee5205f25728c4972335a9b77

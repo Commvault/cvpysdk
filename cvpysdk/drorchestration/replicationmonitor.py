@@ -136,12 +136,18 @@ class ReplicationMonitor(object):
                 _rep_Ids.append(vm.get('replicationId', 0))
 
             else:
+                # adds support to a list of VM names
+                # for backward compatibility, converts a single string to a list
+                if not isinstance(vm_name, list):
+                    assert isinstance(vm_name, str)
+                    vm_name = [vm_name]
+
+                # makes the entire list lower case
+                vm_name = list(map(lambda x : str(x).lower(), vm_name))
 
                 # iterate through all the vms
                 for _vm in self.replication_monitor:
-
-                    if str(_vm.get("sourceName")).lower() == str(
-                            vm_name).lower():
+                    if str(_vm.get("sourceName")).lower() in vm_name:
                         _rep_Ids.append(_vm.get("replicationId", 0))
 
             self._replicationId = _rep_Ids
@@ -384,5 +390,6 @@ class ReplicationMonitor(object):
 
         # we only need the information about destination guid
         destination_guid = vm["destinationGuid"]
+        instance_id = vm["parentSubclient"]["instanceId"]
 
-        return self._dr_operation.get_snapshot_list(destination_guid)
+        return self._dr_operation.get_snapshot_list(destination_guid, instance_id)

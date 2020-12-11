@@ -40,6 +40,11 @@ class SharepointBackupset(Backupset):
         and to perform operations on that backupset."""
 
     @property
+    def is_sharepoint_online_instance(self):
+        """getter for SharePoint online instance check"""
+        return self.backupset_name == "sharepoint online"
+
+    @property
     def azure_storage_details(self):
         """
         Returns azure storage details associated with backupset

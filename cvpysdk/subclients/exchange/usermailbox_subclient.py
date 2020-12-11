@@ -41,10 +41,10 @@ UsermailboxSubclient:
 
     set_fs_association_for_pst()        --  Helper method to create pst association for
                                             PST Ingestion by FS association
-    
+
     _association_json_with_plan()       --  Create the Association JSON for
                                             associations using Exchange Plan
-    
+
     _association_mailboxes_json()       --  Association for particular mailboxes
 
     backup_mailboxes()                  --  Backup specific mailboxes
@@ -55,7 +55,7 @@ UsermailboxSubclient:
                                             viz. All Public Folders/
                                                 All User Mailboxes/
                                                 All Group Mailboxes
-    
+
     set_adgroup_associations()          --  Create Association for ADGroups
 
     _get_discover_adgroups()            --  Get the discovered AD Groups
@@ -892,8 +892,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                                                (str(subclient_name), str(backupset_name)))
                         subclient_name = subclient_name.lower()
                         sub_dict = {"subclientId": int(backupset_obj.subclients.all_subclients[
-                                                           subclient_name]['id']),
-                                    "subclientName": subclient_name}
+                            subclient_name]['id']),
+                            "subclientName": subclient_name}
                         sub_dict.update(backupset_dict)
                         sub_dict["_type_"] = _type_id["subclient"]
                         assoc_list.append(sub_dict)
@@ -1466,6 +1466,118 @@ class UsermailboxSubclient(ExchangeSubclient):
             'POST', create_task, task_json
         )
         return self._process_backup_response(flag, response)
+
+    def create_recovery_point(self, mailbox_prop, job = None, job_id = None):
+        """
+            Method to create a recovery point
+
+            Arguments:
+                mailbox_prop        (dict)--    Dictionary of mailbox properties for which the Recovery point is to be created
+                Sample:
+                {
+                    'mailbox_smtp' : name of the mailbox for which recovery point is to be created
+                    'mailbox_guid': GUID of the mailbox
+                    'index_server': Name of the index server to be used to create index on
+                }
+                job                 (object)--  Backup Job to which restore point has to be created
+                job_id              (int)--     Backup Job ID to which restore point is to be created
+
+                Either pass the job object or the job_id
+
+            Returns:
+                res_dict            (dict)--    Dictionary of Response
+                Format:
+                {
+                    'rercovery_point_id' : ID of the recovery point created,
+                    'recovery_point_job_id': Job ID for recovery point creation JOB
+                }
+        """
+
+        if(job==None and job_id ==None):
+            raise Exception("At least one value out of job or job_id should be passed")
+
+        if(job == None and type(job_id)==int):
+            job = self._commcell_object.job_controller.get(job_id)
+
+        index_server = self._commcell_object.clients.get(mailbox_prop['index_server'])
+        index_server_id = index_server.client_id
+
+        recovery_point_dict = {
+            "opType": 0,
+            "advOptions": {
+                "advConfig": {
+                    "browseAdvancedConfigReq": {
+                        "additionalFlags": [
+                            {
+                                "flagType": 13,
+                                "value": "{}".format(index_server_id),
+                                "key": "RecoveryPointIndexServer"
+                            }
+                        ]
+                    },
+                    "applicationMining": {
+                        "appType": 137,
+                        "isApplicationMiningReq": True,
+                        "browseInitReq": {
+                            "bCreateRecoveryPoint": True,
+                            "jobId": int(job.job_id),
+                            "pointInTimeRange": {
+                                "fromTime": int(job.start_timestamp),
+                                "toTime": int(job.end_timestamp)
+                            },
+                            "mbxInfo": [
+                                {
+                                    "smtpAdrress": mailbox_prop['mailbox_smtp'],
+                                    "mbxGUIDs": mailbox_prop['mailbox_guid']
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "paths": [
+                {
+                    "path": "\\MB\\{%s}" % mailbox_prop['mailbox_guid']
+                }
+            ],
+            "entity": {
+                "subclientId": int(self.subclient_id),
+                "backupsetId": int(self._backupset_object.backupset_id),
+                "clientId": int(self._client_object.client_id)
+            },
+            "timeRange": {
+                "fromTime": 0,
+                "toTime": int(job.start_timestamp)
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['BROWSE'], recovery_point_dict
+        )
+
+        if flag:
+            if response and response.json():
+                browse_response = response.json()
+
+                if 'browseResponses' in browse_response.keys():
+                    recovery_point_job_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get('advConfig', {}).get(
+                        'applicationMining', {}).get('browseInitResp', {}).get('recoveryPointJobID')
+
+                    recovery_point_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get('advConfig', {}).get(
+                        'applicationMining', {}).get('browseInitResp', {}).get('recoveryPointID',{})
+
+                    res_dict = {
+                        'recovery_point_job_id' : recovery_point_job_id,
+                        'recovery_point_id': recovery_point_id
+                    }
+                    return res_dict
+                else:
+                    raise SDKException('Response', '102', response.json)
+            else:
+                raise SDKException('Response', '102', response.json )
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def refresh(self):
         """Refresh the User Mailbox Subclient."""

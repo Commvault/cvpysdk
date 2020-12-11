@@ -486,7 +486,8 @@ class ExchangeSubclient(Subclient):
             paths,
             overwrite=True,
             journal_report=False,
-            restore_as_stub=None):
+            restore_as_stub=None,
+            recovery_point_id=None):
         """Restores the mailboxes/folders specified in the input paths list to the same location.
 
             Args:
@@ -498,7 +499,10 @@ class ExchangeSubclient(Subclient):
                                                         contentStore Mailbox
                     default: False
 
-                restore_as_stub                   (dict)  --  setters for common options
+                restore_as_stub         (dict)  --  setters for common options
+
+                recovery_point_id       (int)   --  ID of the recovery point to which the mailbox is to be restored to
+                    Default: None
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -536,6 +540,10 @@ class ExchangeSubclient(Subclient):
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
+
+        if recovery_point_id is not None:
+            request_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]['exchangeOption']["recoveryPointId"] = recovery_point_id
 
         return self._process_restore_response(request_json)
 

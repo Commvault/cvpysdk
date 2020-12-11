@@ -29,7 +29,7 @@ IndexServers
 ============
 
     __init__()                          --  initialize object of IndexServers class associated with
-    the commcell
+                                            the commcell
 
     __str()                             --  returns all the index servers of the commcell
 
@@ -62,7 +62,7 @@ IndexServers Attributes
 -----------------------
 
     **all_index_servers**               --  returns the dictionary consisting of all the index
-    servers associated with the commcell and there details
+                                            servers associated with the commcell and there details
 
     **roles_data**                      --  returns the list of cloud roles details
 
@@ -71,7 +71,7 @@ IndexServer
 ===========
 
     __init()__                          --  initializes the object with the specified commcell
-    object, index server name and the cloud id
+                                            object, index server name and the cloud id
 
     __repr__()                          --  returns the index server's name, the instance is
     associated with
@@ -92,10 +92,11 @@ IndexServer
 
     get_all_cores                       --  gets all the cores in index server
 
-    _create_solr_query()                 -- Create solr search query based on inputs provided
+    _create_solr_query()                --  Create solr search query based on inputs provided
 
-    execute_solr_query()                 -- Creates solr url based on input and executes it on solr on given core
+    execute_solr_query()                --  Creates solr url based on input and executes it on solr on given core
 
+    get_index_node()                    --  returns an Index server node object for given node name
 
 IndexServer Attributes
 ----------------------
@@ -119,7 +120,7 @@ IndexServer Attributes
     **client_id**                       --  returns the client id for this index server
 
     **roles**                           --  returns the array of roles installed
-    with the index server within the commcell
+                                            with the index server within the commcell
 
     **cloud_id**                        --  returns the cloud id of the index server
 
@@ -130,6 +131,40 @@ IndexServer Attributes
     **index_server_client_id**          --  returns the index server client id
 
     **role_display_name**               --  display name of roles
+
+    **is_cloud**                        --  returns boolean True if the Index server is cloud else returns False
+
+    **node_count**                      --  returns the number of Index server nodes
+
+
+IndexNode
+=========
+
+    __init__()                          --  initializes the class with commcell object
+                                            Index server cloud id and Node client name
+
+    refresh()                           --  refreshes the attributes
+
+    modify()                            --  to modify the index server node details
+
+IndexNode Attributes
+--------------------
+
+    **node_name**                       --  returns Index server node client name
+
+    **node_id**                         --  returns Index server node client id
+
+    **solr_port**                       --  returns port number Solr is running on the\
+                                            Index server node
+
+    **solr_url**                        --  returns Solr URL for Index server node
+
+    **roles**                           --  returns the array of roles installed
+                                            with the index server within the commcell
+
+    **index_location**                  --  returns Index directory for the Index server Node
+
+    **jvm_memory**                      --  returns Solr JVM memory for the Index server Node
 
 _Roles
 ======
@@ -388,7 +423,12 @@ class IndexServers(object):
                 Args:
                     index_server_node_names         (list)  --  client names for index server node
                     index_server_name               (str)   --  name for the index server
-                    index_directory                 (str)   --  index location for the index server
+                    index_directory                 (list)  --  list of index locations for the index server
+                                                                nodes respectively
+                                                    For example:
+                                                            [<path_1>] - same index location for all the nodes
+                                                            [<path_1>, <path_2>, <path_3>] - different index
+                                                    location for index server with 3 nodes
                     index_server_roles              (list)  --  list of role names to be assigned
                     index_pool_name                 (str)   --  name for the index pool to used by cloud index server
                     cloud_param                     (list)  --  list of custom parameters to be parsed
@@ -412,8 +452,13 @@ class IndexServers(object):
         if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
                 and isinstance(index_server_name, basestring)):
             raise SDKException('IndexServers', '101')
+        if isinstance(index_directory, basestring):
+            index_directory = index_directory.split(",")
+        node_count = len(index_server_node_names)
+        index_directories_count = len(index_directory)
+        if index_directories_count != 1 and index_directories_count != node_count:
+            raise SDKException('IndexServers', '101')
         cloud_meta_infos = {
-            'INDEXLOCATION': index_directory,
             'REPLICATION': '1',
             'LANGUAGE': '0'
         }
@@ -433,9 +478,10 @@ class IndexServers(object):
             req_json['solrCloudInfo']['cloudPoolInfo'] = {
                 'cloudId': int(index_pool_obj['pool_id'])
             }
-            role_meta_infos['ISCLOUDMODE'] = '3'
-            node_meta_infos['WEBSERVER'] = 'true'
-        for node_name in index_server_node_names:
+            cloud_meta_infos['INDEXLOCATION'] = index_directory[0]
+        for node_name_index in range(len(index_server_node_names)):
+            node_name = index_server_node_names[node_name_index]
+            location_index = node_name_index - (node_name_index//index_directories_count)
             node_obj = self._commcell_object.clients[node_name]
             node_data = {
                 "opType": IndexServerConstants.OPERATION_ADD,
@@ -444,7 +490,10 @@ class IndexServers(object):
                     "clientId": int(node_obj['id']),
                     "clientName": node_name
                 },
-                'nodeMetaInfos': []
+                'nodeMetaInfos': [{
+                    "name": "INDEXLOCATION",
+                    "value": index_directory[location_index]
+                }]
             }
             for node_info in node_meta_infos:
                 node_data['nodeMetaInfos'].append({
@@ -540,7 +589,7 @@ class IndexServer(object):
     """Class for performing index server operations for a specific index server"""
 
     def __init__(self, commcell_obj, name, cloud_id=None):
-        """Initialise the IndexServer class instance.
+        """Initialize the IndexServer class instance.
 
             Args:
                 commcell_obj    (object)        --  instance of the Commcell class
@@ -901,9 +950,34 @@ class IndexServer(object):
             return response.json()
         raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
+    def get_index_node(self, node_name):
+        """Returns an Index server node object for given node name
+            Args:
+                node_name           (str)   --  Index server node name
+
+            Returns:
+                IndexNode class object
+
+            Raises:
+                SDKException:
+
+                        if node not found for the given node name
+
+        """
+        node_name = node_name.lower()
+        if node_name in self.client_name:
+            return IndexNode(self._commcell_obj, self.engine_name, node_name)
+        raise SDKException("IndexServers", '104', 'Index server node not found')
+
     @property
     def is_cloud(self):
+        """Returns true if the Index server is cloud and false if not"""
         return self.server_type == 5
+
+    @property
+    def nodes_count(self):
+        """Returns the count of Index server nodes"""
+        return len(self.client_id)
 
     @property
     def roles_data(self):
@@ -917,7 +991,7 @@ class IndexServer(object):
 
     @property
     def host_name(self):
-        """Returns the host name of index server"""
+        """Returns a list of host names of all index server nodes"""
         return self._properties[IndexServerConstants.HOST_NAME]
 
     @property
@@ -927,12 +1001,12 @@ class IndexServer(object):
 
     @property
     def client_name(self):
-        """Returns the client name of index server"""
+        """Returns a list of client names of all index server nodes"""
         return self._properties[IndexServerConstants.CLIENT_NAME]
 
     @property
     def server_url(self):
-        """Returns the content indexing url of index server"""
+        """Returns a list of Solr url of all index server nodes"""
         return self._properties[IndexServerConstants.CI_SERVER_URL]
 
     @property
@@ -942,17 +1016,17 @@ class IndexServer(object):
 
     @property
     def base_port(self):
-        """Returns the base port of index server"""
+        """Returns a list of base ports of all index server nodes"""
         return self._properties[IndexServerConstants.BASE_PORT]
 
     @property
     def client_id(self):
-        """Returns the client id of index server"""
+        """Returns a list client ids of all index server nodes"""
         return self._properties[IndexServerConstants.CLIENT_ID]
 
     @property
     def roles(self):
-        """Returns the roles of index server"""
+        """Returns a list of roles of index server"""
         return self._properties[IndexServerConstants.ROLES]
 
     @property
@@ -985,6 +1059,110 @@ class IndexServer(object):
     def index_server_client_id(self):
         """Returns the index server client id of index server"""
         return self._properties[IndexServerConstants.INDEX_SERVER_CLIENT_ID]
+
+
+class IndexNode(object):
+    """Class for Index server node object"""
+
+    def __init__(self, commcell_obj, index_server_name, node_name):
+        """Initialize the IndexNode class
+
+            Args:
+                commcell_obj        (object)    --  commcell object
+                index_server_name   (int)       --  Index server name
+                node_name           (str)       --  Index server node client name
+
+        """
+        self.commcell = commcell_obj
+        self.index_server_name = index_server_name
+        self.data_index = 0
+        self.index_server = None
+        self.index_node_name = node_name.lower()
+        self.index_node_client = None
+        self.index_client_properties = None
+        self.refresh()
+
+    def refresh(self):
+        """Refresh the index node properties"""
+        self.commcell.index_servers.refresh()
+        self.index_server = self.commcell.index_servers.get(self.index_server_name)
+        self.data_index = self.index_server.client_name.index(self.index_node_name)
+        self.commcell.clients.refresh()
+        self.index_node_client = self.commcell.clients.get(self.index_node_name)
+        self.index_client_properties = self.index_node_client.properties['pseudoClientInfo']['indexServerProperties']
+
+    @property
+    def node_name(self):
+        """Returns Index server node client name"""
+        return self.index_server.client_name[self.data_index]
+
+    @property
+    def node_id(self):
+        """Returns Index server node client id"""
+        return self.index_server.client_id[self.data_index]
+
+    @property
+    def solr_port(self):
+        """Returns port number Solr is running on the Index server node"""
+        return self.index_server.base_port[self.data_index]
+
+    @property
+    def solr_url(self):
+        """Returns Solr URL for Index server node"""
+        return self.index_server.server_url[self.data_index]
+
+    @property
+    def roles(self):
+        """Returns the array of roles installed with the index server within the commcell"""
+        return self.index_server.role_display_name
+
+    @property
+    def index_location(self):
+        """Returns Index directory for the Index server Node"""
+        node_meta_infos = self.index_client_properties['nodeMetaInfos']
+        for info in node_meta_infos:
+            if info['name'] == 'INDEXLOCATION':
+                return info['value']
+        return None
+
+    @property
+    def jvm_memory(self):
+        """Returns Solr JVM memory for the Index server Node"""
+        node_meta_infos = self.index_client_properties['nodeMetaInfos']
+        for info in node_meta_infos:
+            if info['name'] == 'JVMMAXMEMORY':
+                return info['value']
+        return None
+
+    @solr_port.setter
+    def solr_port(self, port_no):
+        """Setter to set the Solr port number for the node
+
+            Args:
+                port_no     (str)   --  Solr port number to be set for node
+
+        """
+        solr_port_param = deepcopy(IndexServerConstants.SOLR_PORT_META_INFO)
+        solr_port_param['value'] = str(port_no)
+        cloud_param = [solr_port_param]
+        self.index_server.modify(self.index_location, self.index_node_name, cloud_param)
+        self.refresh()
+
+    @jvm_memory.setter
+    def jvm_memory(self, memory):
+        """Setter to set the Solr JVM memory for the node
+
+                    Args:
+                        memory      (str)   --  Solr JVM memory to be set for the node
+
+        """
+        solr_jvm_param = deepcopy(IndexServerConstants.SOLR_JVM_META_INFO)
+        solr_jvm_param['value'] = str(memory)
+        solr_port_param = deepcopy(IndexServerConstants.SOLR_PORT_META_INFO)
+        solr_port_param['value'] = str(self.solr_port)
+        cloud_param = [solr_jvm_param, solr_port_param]
+        self.index_server.modify(self.index_location, self.index_node_name, cloud_param)
+        self.refresh()
 
 
 class _Roles(object):

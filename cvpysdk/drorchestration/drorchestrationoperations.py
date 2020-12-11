@@ -507,7 +507,7 @@ class DROrchestrationOperations(object):
 
         return True
 
-    def get_snapshot_list(self, guid: str, timestamp_filter: bool = True):
+    def get_snapshot_list(self, guid: str, instance_id: int, timestamp_filter: bool = True):
         """ Gets snapshot list
 
             Args:
@@ -518,8 +518,8 @@ class DROrchestrationOperations(object):
             Returns:
                 list of dict: list of snapshot information
         """
-        vm_browse_req = "{0}VMBrowse/{1}?instanceId=6&snapshots=true".format(
-            self._commcell_object._web_service, guid)
+        vm_browse_req = "{0}VMBrowse/{1}?instanceId={2}&snapshots=true".format(
+            self._commcell_object._web_service, guid, instance_id)
         (flag, response) = self._commcell_object._cvpysdk_object.make_request(
             method='GET', url=vm_browse_req)
 

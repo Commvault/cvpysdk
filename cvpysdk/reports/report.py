@@ -93,7 +93,7 @@ class Report:
             format_type (FormatType): set file extension using Enum class FormatType
         """
         for each_format_type in FormatType:
-            if each_format_type.name == format_type:
+            if each_format_type.name == format_type.name:
                 self._report_extension = each_format_type.name
                 self._request_json['taskInfo']['subTasks'][0]['options']['adminOpts']\
                 ['reportOption']['commonOpt']['outputFormat']['outputType'] = \
@@ -278,12 +278,52 @@ class BackupJobSummary(Report):
                                             "failureReason": True,
                                             "IncludeMediaDeletedJobs": False,
                                             "drive": False
-                                        }
+                                },
+                                "jobOptions": {
+                                    "numberOfMostFreqErrors": 0,
+                                    "sizeUnit": 0,
+                                    "isThroughputInMB": False,
+                                    "isCommserveTimeZone": True,
+                                    "retentionType": {
+                                        "basicRetention": False,
+                                        "manualRetention": False,
+                                        "extendedRetention": False,
+                                        "retentionAll": False
                                     },
-                                    "timeRangeOption": {
-                                        "TimeZoneName": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-                                        "toTimeValue": "24",
-                                        "type": 13
+                                    "backupTypes": {
+                                        "all": True,
+                                        "syntheticFull": True,
+                                        "automatedSystemRecovery": False,
+                                        "incremental": True,
+                                        "full": True,
+                                        "differential": True
+                                    },
+                                    "jobStatus": {
+                                        "all": True
+                                    },
+                                    "increaseInDataSize": {
+                                        "value": 10,
+                                        "selected": False
+                                    },
+                                    "decreaseInDataSize": {
+                                        "value": 10,
+                                        "selected": False
+                                        }
+                                }
+                                    },
+                            "agentList": [
+                                {
+                                    "_type_": 4,
+                                    "flags": {
+                                        "include": True
+                                    }
+                                }
+                            ],
+                            "timeRangeOption": {
+                                "type": 13,
+                                "_type_": 54,
+                                "TimeZoneID": 42,
+                                "toTime": 86400
                                     }
                                 }
                             }
