@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.hyperv &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.hyperv &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -187,10 +187,10 @@
 <span class="sd">                                                    user to the same location</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">..vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
-<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..vssubclient</span> <span class="kn">import</span> <span class="n">VirtualServerSubclient</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 <span class="c1"># from .vmware import VMWareVirtualServerSubclient</span>
 
 
@@ -198,7 +198,7 @@
     <span class="sd">&quot;&quot;&quot;Derived class from VirtualServerSubclient  Base class, representing a</span>
 <span class="sd">    Hyper-V  virtual server subclient,and to perform operations on that subclient.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
 <span class="sd">        Args</span>
 <span class="sd">        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the</span>
@@ -657,8 +657,12 @@
 
         <span class="c1">#setting restore vms</span>
         <span class="n">vm_list</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">vm_to_restore</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">vm_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">vm_list</span> <span class="o">=</span> <span class="n">vm_to_restore</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">vm_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
 
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_restore_inputs</span><span class="p">(</span>
@@ -679,7 +683,7 @@
             <span class="n">destination_instance</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
             <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
             <span class="n">destination_network</span><span class="o">=</span><span class="n">destination_network</span><span class="p">,</span>
-            <span class="n">destination_os_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_guest_os</span><span class="p">(</span><span class="n">destination_os_name</span><span class="p">)</span>
+            <span class="n">destination_os_name</span><span class="o">=</span><span class="n">destination_os_name</span>
         <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
@@ -797,7 +801,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

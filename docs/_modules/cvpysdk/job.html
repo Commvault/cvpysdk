@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.job &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.job &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -358,6 +358,8 @@
 
 <span class="sd">    advanced_job_details()      --  Returns advanced properties for the job</span>
 
+<span class="sd">    get_events()                --  returns the commserv events for the job</span>
+
 
 <span class="sd">Job instance Attributes</span>
 <span class="sd">-----------------------</span>
@@ -422,20 +424,20 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">AdvancedJobDetailType</span><span class="p">,</span> <span class="n">ApplicationGroup</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">AdvancedJobDetailType</span><span class="p">,</span> <span class="n">ApplicationGroup</span>
 
 
 <div class="viewcode-block" id="JobController"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobController">[docs]</a><span class="k">class</span> <span class="nc">JobController</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for controlling all the jobs associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize instance of the JobController class to get the details of Commcell Jobs.</span>
 
 <span class="sd">            Args:</span>
@@ -451,7 +453,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_update_response_</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all active jobs on this commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -478,7 +480,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the JobController class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;JobController class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -994,7 +996,7 @@
 <div class="viewcode-block" id="JobManagement"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.JobManagement">[docs]</a><span class="k">class</span> <span class="nc">JobManagement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing job management operations. &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize instance of JobManagement class for performing operations on jon management settings.</span>
 
@@ -2022,7 +2024,7 @@
 <div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.Job">[docs]</a><span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing client operations for a specific client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Job class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -2064,6 +2066,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_RESUME</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESUME_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_KILL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;KILL_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_RESUBMIT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;RESUBMIT_JOB&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_EVENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;JOB_EVENTS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_id</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_agent_name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2083,7 +2086,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
 
 <span class="sd">            Returns:</span>
@@ -2305,6 +2308,7 @@
 
         <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;completed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span>
                 <span class="s1">&#39;killed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span>
+                <span class="s1">&#39;committed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span>
                 <span class="s1">&#39;failed&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
 
     <span class="nd">@property</span>
@@ -2623,12 +2627,69 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Job.get_events"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.job.Job.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; gets the commserv events associated with this job</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                None</span>
+
+<span class="sd">            Returns:</span>
+
+<span class="sd">                list - list of job events</span>
+
+<span class="sd">                    Example : [</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;severity&quot;: 3,</span>
+<span class="sd">                            &quot;eventCode&quot;: &quot;318769020&quot;,</span>
+<span class="sd">                            &quot;jobId&quot;: 4547,</span>
+<span class="sd">                            &quot;acknowledge&quot;: 0,</span>
+<span class="sd">                            &quot;eventCodeString&quot;: &quot;19:1916&quot;,</span>
+<span class="sd">                            &quot;subsystem&quot;: &quot;JobManager&quot;,</span>
+<span class="sd">                            &quot;description&quot;: &quot;Data Analytics operation has completed with one or more errors.&quot;,</span>
+<span class="sd">                            &quot;id&quot;: 25245,</span>
+<span class="sd">                            &quot;timeSource&quot;: 1600919001,</span>
+<span class="sd">                            &quot;type&quot;: 0,</span>
+<span class="sd">                            &quot;clientEntity&quot;: {</span>
+<span class="sd">                                &quot;clientId&quot;: 2,</span>
+<span class="sd">                                &quot;clientName&quot;: &quot;xyz&quot;,</span>
+<span class="sd">                                &quot;displayName&quot;: &quot;xyz&quot;</span>
+<span class="sd">                            }</span>
+<span class="sd">                        },</span>
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;severity&quot;: 6,</span>
+<span class="sd">                            &quot;eventCode&quot;: &quot;318767961&quot;,</span>
+<span class="sd">                            &quot;jobId&quot;: 4547,</span>
+<span class="sd">                            &quot;acknowledge&quot;: 0,</span>
+<span class="sd">                            &quot;eventCodeString&quot;: &quot;19:857&quot;,</span>
+<span class="sd">                            &quot;subsystem&quot;: &quot;clBackup&quot;,</span>
+<span class="sd">                            &quot;description&quot;: &quot;Failed to send some items to Index Engine&quot;,</span>
+<span class="sd">                            &quot;id&quot;: 25244,</span>
+<span class="sd">                            &quot;timeSource&quot;: 1600918999,</span>
+<span class="sd">                            &quot;type&quot;: 0,</span>
+<span class="sd">                            &quot;clientEntity&quot;: {</span>
+<span class="sd">                                &quot;clientId&quot;: 33,</span>
+<span class="sd">                                &quot;clientName&quot;: &quot;xyz&quot;,</span>
+<span class="sd">                                &quot;displayName&quot;: &quot;xyz&quot;</span>
+<span class="sd">                            }</span>
+<span class="sd">                        }</span>
+<span class="sd">                    ]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_JOB_EVENTS</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;commservEvents&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commservEvents&#39;</span><span class="p">]</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Job&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
+
 
 <span class="k">class</span> <span class="nc">_ErrorRule</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for enabling, disabling, adding, getting and deleting error rules.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rule_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xml_body</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -2878,9 +2939,9 @@
 
         <span class="n">rule_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">xml_body</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">xml_body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        &lt;App_GetJobErrorDecisionReq&gt;</span>
-<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{self.commcell.commcell_id}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{self.commcell.commserv_name}</span><span class="s2">&quot;/&gt;</span>
+<span class="s2">        &lt;entity _type_=&quot;1&quot; commCellId=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commcell_id</span><span class="si">}</span><span class="s2">&quot; commCellName=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">commserv_name</span><span class="si">}</span><span class="s2">&quot;/&gt;</span>
 <span class="s2">        &lt;/App_GetJobErrorDecisionReq&gt;&quot;&quot;&quot;</span>
 
         <span class="n">xml_body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xml_body</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
@@ -2911,7 +2972,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

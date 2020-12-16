@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.disasterrecovery &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.disasterrecovery &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -244,19 +244,19 @@
 <span class="sd">    **run_post_backup_process**             --  set or get run post backup process</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.policies.storage_policies</span> <span class="k">import</span> <span class="n">StoragePolicy</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="k">import</span> <span class="n">DiskLibrary</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.policies.storage_policies</span> <span class="kn">import</span> <span class="n">StoragePolicy</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="kn">import</span> <span class="n">DiskLibrary</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Client</span>
 
 
 <div class="viewcode-block" id="DisasterRecovery"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecovery">[docs]</a><span class="k">class</span> <span class="nc">DisasterRecovery</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class to perform all the disaster recovery operations on commcell&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes DisasterRecovery object</span>
 
 <span class="sd">            Args:</span>
@@ -785,7 +785,7 @@
 <div class="viewcode-block" id="DisasterRecoveryManagement"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement">[docs]</a><span class="k">class</span> <span class="nc">DisasterRecoveryManagement</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class to perform all the disaster recovery management operations on commcell&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes DisasterRecoveryManagement object</span>
 
 <span class="sd">            Args:</span>
@@ -844,19 +844,16 @@
                                                            <span class="n">payload</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_settings_dict</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;processinginstructioninfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;attributes&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">{}):</span>
-                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span>
-                                           <span class="s1">&#39;Failed to set dr properties, Received errorcode: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                                               <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                                                   <span class="s1">&#39;processinginstructioninfo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;attributes&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)))</span>
-                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to set dr properties. Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                            <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">)</span>
-                        <span class="p">))</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;DisasterRecovery&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to set dr properties. Error: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">)</span>
+                    <span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="DisasterRecoveryManagement.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.disasterrecovery.DisasterRecoveryManagement.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1313,7 +1310,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

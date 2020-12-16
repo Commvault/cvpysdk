@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.cvpysdk &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.cvpysdk &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -204,10 +204,10 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="k">import</span> <span class="n">ExpatError</span>
+<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="kn">import</span> <span class="n">ExpatError</span>
 
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">xmltodict</span>
@@ -219,7 +219,7 @@
     <span class="c1"># Python 3 import</span>
     <span class="kn">import</span> <span class="nn">http.client</span> <span class="k">as</span> <span class="nn">httplib</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="CVPySDK"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.cvpysdk.CVPySDK">[docs]</a><span class="k">class</span> <span class="nc">CVPySDK</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -228,7 +228,7 @@
 <span class="sd">        Also contains common method for running all HTTP requests.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">certificate_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">certificate_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the CVPySDK object for running various operations.</span>
 
 <span class="sd">            Args:</span>
@@ -297,13 +297,25 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_password</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CVPySDK&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">)</span>
 
-            <span class="n">json_login_request</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-                <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_user</span><span class="p">,</span>
-                <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_password</span><span class="p">,</span>
-                <span class="s2">&quot;deviceId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">device_id</span><span class="p">,</span>
-                <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">is_service_commcell</span><span class="p">:</span>
+                <span class="n">json_login_request</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                    <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+                    <span class="s2">&quot;autoLogin&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;autoLoginType&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                        <span class="s2">&quot;encryptedMessage&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">master_saml_token</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">json_login_request</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                    <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_user</span><span class="p">,</span>
+                    <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_password</span><span class="p">,</span>
+                    <span class="s2">&quot;deviceId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">device_id</span><span class="p">,</span>
+                    <span class="s2">&quot;clientType&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+                <span class="p">}</span>
 
             <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
                 <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;LOGIN&#39;</span><span class="p">],</span> <span class="n">json_login_request</span>
@@ -344,7 +356,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_is_saml_login</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_is_saml_login</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">is_service_commcell</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CVPySDK&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
 
             <span class="n">token_renew_request</span> <span class="o">=</span> <span class="p">{</span>
@@ -596,7 +608,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

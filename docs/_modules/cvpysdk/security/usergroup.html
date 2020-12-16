@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.security.usergroup &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.security.usergroup &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -243,20 +243,26 @@
 
 <span class="sd">    associations()                  --  Returns security associations present on the usergroup</span>
 
+<span class="sd">    is_tfa_enabled()                --  Returns status of tfa</span>
+
+<span class="sd">    enable_tfa()                    --  Enables tfa for this user group</span>
+
+<span class="sd">    disable_tfa()                   --  Disables tfa for this user group</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">.security_association</span> <span class="k">import</span> <span class="n">SecurityAssociation</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.security_association</span> <span class="kn">import</span> <span class="n">SecurityAssociation</span>
 
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="UserGroups"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.usergroup.UserGroups">[docs]</a><span class="k">class</span> <span class="nc">UserGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the usergroups associated with a commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the UserGroups class.</span>
 
 <span class="sd">            Args:</span>
@@ -272,7 +278,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_user_groups</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all usergroups of the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -286,7 +292,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the UserGroups class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;UserGroups class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -613,7 +619,7 @@
 <div class="viewcode-block" id="UserGroup"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.usergroup.UserGroup">[docs]</a><span class="k">class</span> <span class="nc">UserGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations for a specific User Group.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">,</span> <span class="n">user_group_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">user_group_name</span><span class="p">,</span> <span class="n">user_group_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the UserGroup class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -645,7 +651,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_usergroup_status</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;User Group instance for UserGroup: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, of Commcell: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
 
@@ -785,6 +791,41 @@
     <span class="k">def</span> <span class="nf">associations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns security associations present on th usergroup&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_security_associations</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_tfa_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns two factor authentication status (True/False)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enableTwoFactorAuthentication&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="UserGroup.enable_tfa"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.usergroup.UserGroup.enable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">enable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        enables two factor authentication on this group</span>
+
+<span class="sd">            Note: tfa will not get enabled for this user group if global tfa is disabled</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;enableTwoFactorAuthentication&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_usergroup_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserGroup.disable_tfa"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.usergroup.UserGroup.disable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">disable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        disables two factor authentication for this group</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                <span class="s2">&quot;enableTwoFactorAuthentication&quot;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_usergroup_props</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="UserGroup.update_security_associations"><a class="viewcode-back" href="../../../source/cvpysdk.security.html#cvpysdk.security.usergroup.UserGroup.update_security_associations">[docs]</a>    <span class="k">def</span> <span class="nf">update_security_associations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_dictionary</span><span class="p">,</span> <span class="n">request_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;handles three way associations (role-usergroup-entities)</span>
@@ -1014,7 +1055,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

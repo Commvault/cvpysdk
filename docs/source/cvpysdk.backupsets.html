@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.backupsets package &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -539,6 +539,7 @@ versions of specified file</p>
 <p>create_replica_copy()               –  Triggers Replica Copy for live Replication.</p>
 <p>delete_replication_pair()           –   Delete Replication Pair</p>
 <p>create_granular_replica_copy()      –   Triggers  Granular replication permanent mount</p>
+<p>get_browse_volume_guid()             –   It returns browse volume guid</p>
 </div></blockquote>
 <dl class="py class">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset">
@@ -548,11 +549,15 @@ versions of specified file</p>
 and to perform operations on that backupset.</p>
 <dl class="py method">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair">
-<code class="sig-name descname">create_fsblr_replication_pair</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">srcclientid</span></em>, <em class="sig-param"><span class="n">destclientid</span></em>, <em class="sig-param"><span class="n">rpstoreid</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replicationtype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">replication_options</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.create_fsblr_replication_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">create_fsblr_replication_pair</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">srcclientid</span></em>, <em class="sig-param"><span class="n">destclientid</span></em>, <em class="sig-param"><span class="n">srcguid</span></em>, <em class="sig-param"><span class="n">destguid</span></em>, <em class="sig-param"><span class="n">rpstoreid</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replicationtype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">replication_options</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.create_fsblr_replication_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.create_fsblr_replication_pair" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Create granular replication pair  json</p>
 <dl>
 <dt>Args:</dt><dd><p>srcclientid   (int)  –  Source client id.</p>
-<p>destclientid    (dict)  – Destintion client id .</p>
+<p>destclientid   (dict)  – Destintion client id .</p>
+<p>srcguid        (str) – Browse guid of source</p>
+<p>dstguid        (str) – Browse guid of destination volume</p>
+<p>rpstoreid      (str) – Rp store id for replication</p>
+<p>replicationtype (str) – Replication pair  type to create</p>
 <p><a href="#id2"><span class="problematic" id="id3">**</span></a>replication_options (dict) – object instance</p>
 </dd>
 </dl>
@@ -567,7 +572,9 @@ and to perform operations on that backupset.</p>
 <p>destclientid    (dict)  – Destintion client id .</p>
 <p>scid           (int) –  Replication Subclient id</p>
 <p>blrid           (int) – Blr pair id</p>
+<p>srcguid         (str) – source volume guid</p>
 <p>dstguid         (str) – Destination relication guid</p>
+<p>restoreguid     (str) – RP store guid</p>
 <p>timestamp        (int) – Replication point timestamp</p>
 <p><a href="#id4"><span class="problematic" id="id5">**</span></a>replication_options (dict) – object instance</p>
 </dd>
@@ -583,6 +590,8 @@ and to perform operations on that backupset.</p>
 <p>destclientid    (dict)  – Destintion client id .</p>
 <p>scid           (int) –  Replication Subclient id</p>
 <p>blrid           (int) – Blr pair id</p>
+<p>srcguid         (str) – Browse guid of source</p>
+<p>dstguid          (str) – Browse guid of destination volume</p>
 <p><a href="#id6"><span class="problematic" id="id7">**</span></a>replication_options (dict) – object instance</p>
 </dd>
 </dl>
@@ -591,11 +600,11 @@ and to perform operations on that backupset.</p>
 <dl class="py method">
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair">
 <code class="sig-name descname">delete_replication_pair</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">blrid</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.delete_replication_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair" title="Permalink to this definition">¶</a></dt>
-<dd><p>“Delete replication pair</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>blrid   (int)  –  blocklevel replication id.</p>
-</dd>
-</dl>
+<dd><p>“Delete replication pair
+Args:</p>
+<blockquote>
+<div><p>blrid   (int)  –  blocklevel replication id.</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -641,6 +650,16 @@ to_time=‘2016-04-31 12:00:00’</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.get_browse_volume_guid">
+<code class="sig-name descname">get_browse_volume_guid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupsets/fsbackupset.html#FSBackupset.get_browse_volume_guid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.get_browse_volume_guid" title="Permalink to this definition">¶</a></dt>
+<dd><p>“to get browse volume guids for client
+Returns:</p>
+<blockquote>
+<div><p>vguids (json) : Returns volume guids and properties</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -1246,7 +1265,7 @@ from browse operation</p>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

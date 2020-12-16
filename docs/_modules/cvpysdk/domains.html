@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.domains &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.domains &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -196,21 +196,33 @@
 <span class="sd">    refresh()                   --  refresh the domains associated with the commcell</span>
 
 
+<span class="sd">Domain:</span>
+
+<span class="sd">    __init__()                  --  initializes instance of the Domain class for doing</span>
+<span class="sd">    operations on the selected Domain</span>
+
+<span class="sd">    __repr__()                  --  returns the string representation of an instance of this class</span>
+
+<span class="sd">    _get_domain_id()            --  Gets the domain id associated with this domain</span>
+
+<span class="sd">    _get_domain_properties      --  get the properties of the domain</span>
+
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Domains"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.domains.Domains">[docs]</a><span class="k">class</span> <span class="nc">Domains</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the domains associated with a commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Domains class.</span>
 
 <span class="sd">            Args:</span>
@@ -231,7 +243,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all domains of the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -246,17 +258,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Domains class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Domains class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the domains associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_domains</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the domain for the given domain ID or</span>
 <span class="sd">            the details of the domain for given domain Name.</span>
 
@@ -360,26 +372,25 @@
 <span class="sd">                domain_name (str)  --  name of the domain</span>
 
 <span class="sd">            Returns:</span>
-<span class="sd">                dict - properties of domain.</span>
+<span class="sd">                object of the domain</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
-<span class="sd">                    if type of the domain name argument is not string</span>
 
-<span class="sd">                    if no domain exists with the given name</span>
+<span class="sd">					if domain doesn&#39;t exist with specified name</span>
+
+<span class="sd">					if type of the domain name argument is not string</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domain_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_domain</span><span class="p">(</span><span class="n">domain_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s2">&quot;Domain </span><span class="si">{0}</span><span class="s2"> doesn&#39;t exists on this commcell.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">domain_name</span><span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_domain</span><span class="p">(</span><span class="n">domain_name</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
-                    <span class="s1">&#39;Domain&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;No domain exists with name: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span>
-                <span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Domain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domains</span><span class="p">[</span><span class="n">domain_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()][</span><span class="s1">&#39;shortName&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Domains.delete"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.domains.Domains.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes the domain from the commcell.</span>
@@ -606,6 +617,88 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="Domain"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.domains.Domain">[docs]</a><span class="k">class</span> <span class="nc">Domain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a particular domain configured on a commcell&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">,</span> <span class="n">domain_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the domain class object for specified domain</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_object (object)  --  instance of the Commcell class</span>
+
+<span class="sd">                domain_name         (str)     --  name of the domain</span>
+
+<span class="sd">                domain_id           (str)     --  id of the domain</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_domain_name</span> <span class="o">=</span> <span class="n">domain_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">domain_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domain_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_domain_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domain_id</span> <span class="o">=</span> <span class="n">domain_id</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DOMAIN_PROPERTIES&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_domain_properties</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
+        <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Domain class instance for Domain: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_name</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_domain_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the domain id associated with this domain</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                domain_name         (str)     --     name of the domain</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                int     -     id associated to the specified user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">Domains</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">domain</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span><span class="o">.</span><span class="n">domain_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_domain_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the properties of this domain</span>
+
+<span class="sd">            Returns (dict):</span>
+<span class="sd">                domain_name (str) - name of the domain</span>
+<span class="sd">                domain_id   (str) - domain id</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;providers&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;providers&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Domain.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.domains.Domain.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the properties of the domain.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_domain_properties</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">domain_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the User display name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;shortName&#39;</span><span class="p">][</span><span class="s1">&#39;domainName&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">domain_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the user name of this commcell user&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;shortName&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span></div>
+
 </pre></div>
 
            </div>
@@ -619,7 +712,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

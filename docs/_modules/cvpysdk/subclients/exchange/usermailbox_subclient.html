@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.exchange.usermailbox_subclient &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.subclients.exchange.usermailbox_subclient &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -187,10 +187,10 @@
 
 <span class="sd">    set_fs_association_for_pst()        --  Helper method to create pst association for</span>
 <span class="sd">                                            PST Ingestion by FS association</span>
-<span class="sd">    </span>
+
 <span class="sd">    _association_json_with_plan()       --  Create the Association JSON for</span>
 <span class="sd">                                            associations using Exchange Plan</span>
-<span class="sd">    </span>
+
 <span class="sd">    _association_mailboxes_json()       --  Association for particular mailboxes</span>
 
 <span class="sd">    backup_mailboxes()                  --  Backup specific mailboxes</span>
@@ -201,7 +201,7 @@
 <span class="sd">                                            viz. All Public Folders/</span>
 <span class="sd">                                                All User Mailboxes/</span>
 <span class="sd">                                                All Group Mailboxes</span>
-<span class="sd">    </span>
+
 <span class="sd">    set_adgroup_associations()          --  Create Association for ADGroups</span>
 
 <span class="sd">    _get_discover_adgroups()            --  Get the discovered AD Groups</span>
@@ -215,17 +215,17 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
-<span class="kn">from</span> <span class="nn">..exchsubclient</span> <span class="k">import</span> <span class="n">ExchangeSubclient</span>
+<span class="kn">from</span> <span class="nn">..exchsubclient</span> <span class="kn">import</span> <span class="n">ExchangeSubclient</span>
 
-<span class="kn">from</span> <span class="nn">...subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">...subclient</span> <span class="kn">import</span> <span class="n">Subclients</span>
 
-<span class="kn">from</span> <span class="nn">...backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
+<span class="kn">from</span> <span class="nn">...backupset</span> <span class="kn">import</span> <span class="n">Backupsets</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
 
@@ -238,7 +238,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given UserMailbox Subclient.</span>
 
 <span class="sd">            Args:</span>
@@ -273,7 +273,7 @@
 <span class="sd">                       the POST Subclient API</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="kn">from</span> <span class="nn">...policies.configuration_policies</span> <span class="k">import</span> <span class="n">ConfigurationPolicy</span>
+        <span class="kn">from</span> <span class="nn">...policies.configuration_policies</span> <span class="kn">import</span> <span class="n">ConfigurationPolicy</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">configuration_policy</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">ConfigurationPolicy</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
@@ -946,8 +946,8 @@
             <span class="k">if</span> <span class="s1">&#39;createPstDestFolder&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">]:</span>
                 <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">][</span><span class="s1">&#39;createPstDestFolder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="s1">&#39;pstDestFolder&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">]:</span>
-                <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">][</span><span class="s1">&#39;pstDestFolder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="s1">&#39;Archived From &#39;</span>
-                                                                            <span class="n">f</span><span class="s1">&#39;Automation&#39;</span><span class="p">)</span>
+                <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstOwnerManagement&#39;</span><span class="p">][</span><span class="s1">&#39;pstDestFolder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Archived From &#39;</span>
+                                                                            <span class="sa">f</span><span class="s1">&#39;Automation&#39;</span><span class="p">)</span>
 
             <span class="n">pst_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;pstTaskName&#39;</span><span class="p">:</span> <span class="n">subclient_content</span><span class="p">[</span><span class="s1">&#39;pstTaskName&#39;</span><span class="p">],</span>
@@ -1038,8 +1038,8 @@
                                                <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">backupset_name</span><span class="p">)))</span>
                         <span class="n">subclient_name</span> <span class="o">=</span> <span class="n">subclient_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                         <span class="n">sub_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">backupset_obj</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">all_subclients</span><span class="p">[</span>
-                                                           <span class="n">subclient_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
-                                    <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span><span class="p">}</span>
+                            <span class="n">subclient_name</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                            <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span><span class="p">}</span>
                         <span class="n">sub_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">backupset_dict</span><span class="p">)</span>
                         <span class="n">sub_dict</span><span class="p">[</span><span class="s2">&quot;_type_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_type_id</span><span class="p">[</span><span class="s2">&quot;subclient&quot;</span><span class="p">]</span>
                         <span class="n">assoc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub_dict</span><span class="p">)</span>
@@ -1613,6 +1613,118 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="UsermailboxSubclient.create_recovery_point"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.create_recovery_point">[docs]</a>    <span class="k">def</span> <span class="nf">create_recovery_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mailbox_prop</span><span class="p">,</span> <span class="n">job</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">job_id</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Method to create a recovery point</span>
+
+<span class="sd">            Arguments:</span>
+<span class="sd">                mailbox_prop        (dict)--    Dictionary of mailbox properties for which the Recovery point is to be created</span>
+<span class="sd">                Sample:</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;mailbox_smtp&#39; : name of the mailbox for which recovery point is to be created</span>
+<span class="sd">                    &#39;mailbox_guid&#39;: GUID of the mailbox</span>
+<span class="sd">                    &#39;index_server&#39;: Name of the index server to be used to create index on</span>
+<span class="sd">                }</span>
+<span class="sd">                job                 (object)--  Backup Job to which restore point has to be created</span>
+<span class="sd">                job_id              (int)--     Backup Job ID to which restore point is to be created</span>
+
+<span class="sd">                Either pass the job object or the job_id</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                res_dict            (dict)--    Dictionary of Response</span>
+<span class="sd">                Format:</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;rercovery_point_id&#39; : ID of the recovery point created,</span>
+<span class="sd">                    &#39;recovery_point_job_id&#39;: Job ID for recovery point creation JOB</span>
+<span class="sd">                }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">job</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">job_id</span> <span class="o">==</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;At least one value out of job or job_id should be passed&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">job</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span><span class="o">==</span><span class="nb">int</span><span class="p">):</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">job_controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+
+        <span class="n">index_server</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mailbox_prop</span><span class="p">[</span><span class="s1">&#39;index_server&#39;</span><span class="p">])</span>
+        <span class="n">index_server_id</span> <span class="o">=</span> <span class="n">index_server</span><span class="o">.</span><span class="n">client_id</span>
+
+        <span class="n">recovery_point_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;advOptions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;advConfig&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;browseAdvancedConfigReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;additionalFlags&quot;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;flagType&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+                                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index_server_id</span><span class="p">),</span>
+                                <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;RecoveryPointIndexServer&quot;</span>
+                            <span class="p">}</span>
+                        <span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;applicationMining&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;appType&quot;</span><span class="p">:</span> <span class="mi">137</span><span class="p">,</span>
+                        <span class="s2">&quot;isApplicationMiningReq&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;browseInitReq&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;bCreateRecoveryPoint&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                            <span class="s2">&quot;jobId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">job_id</span><span class="p">),</span>
+                            <span class="s2">&quot;pointInTimeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;fromTime&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">start_timestamp</span><span class="p">),</span>
+                                <span class="s2">&quot;toTime&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">end_timestamp</span><span class="p">)</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;mbxInfo&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;smtpAdrress&quot;</span><span class="p">:</span> <span class="n">mailbox_prop</span><span class="p">[</span><span class="s1">&#39;mailbox_smtp&#39;</span><span class="p">],</span>
+                                    <span class="s2">&quot;mbxGUIDs&quot;</span><span class="p">:</span> <span class="n">mailbox_prop</span><span class="p">[</span><span class="s1">&#39;mailbox_guid&#39;</span><span class="p">]</span>
+                                <span class="p">}</span>
+                            <span class="p">]</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">MB</span><span class="se">\\</span><span class="s2">{</span><span class="si">%s</span><span class="s2">}&quot;</span> <span class="o">%</span> <span class="n">mailbox_prop</span><span class="p">[</span><span class="s1">&#39;mailbox_guid&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;subclientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subclient_id</span><span class="p">),</span>
+                <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">),</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;fromTime&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;toTime&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">start_timestamp</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;BROWSE&#39;</span><span class="p">],</span> <span class="n">recovery_point_dict</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">browse_response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="s1">&#39;browseResponses&#39;</span> <span class="ow">in</span> <span class="n">browse_response</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">recovery_point_job_id</span> <span class="o">=</span> <span class="n">browse_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseResponses&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseResult&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;advConfig&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;applicationMining&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseInitResp&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;recoveryPointJobID&#39;</span><span class="p">)</span>
+
+                    <span class="n">recovery_point_id</span> <span class="o">=</span> <span class="n">browse_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseResponses&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseResult&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;advConfig&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;applicationMining&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;browseInitResp&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;recoveryPointID&#39;</span><span class="p">,{})</span>
+
+                    <span class="n">res_dict</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;recovery_point_job_id&#39;</span> <span class="p">:</span> <span class="n">recovery_point_job_id</span><span class="p">,</span>
+                        <span class="s1">&#39;recovery_point_id&#39;</span><span class="p">:</span> <span class="n">recovery_point_id</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="n">res_dict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="UsermailboxSubclient.refresh"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.exchange.html#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the User Mailbox Subclient.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_subclient_properties</span><span class="p">()</span>
@@ -1635,7 +1747,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
