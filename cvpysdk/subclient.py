@@ -51,9 +51,9 @@ Subclients:
     has_subclient()             --  checks if a subclient exists with the given name or not
 
     add()                       --  adds a new subclient to the backupset
-    
+
     add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
-    
+
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
     get(subclient_name)         --  returns the subclient object of the input subclient name
@@ -258,7 +258,7 @@ class Subclients(object):
         from .subclients.vminstancesubclient import VMInstanceSubclient
         from .subclients.db2subclient import DB2Subclient
         from .subclients.casesubclient import CaseSubclient
-        from .subclients.aadsubclient import AzureAdSubclient															 
+        from .subclients.aadsubclient import AzureAdSubclient
 
         globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
         globals()['FileSystemSubclient'] = FileSystemSubclient
@@ -283,7 +283,7 @@ class Subclients(object):
         globals()['SharepointSubclient'] = SharepointSubclient
         globals()['VMInstanceSubclient'] = VMInstanceSubclient
         globals()['CaseSubclient'] = CaseSubclient
-        globals()['AzureADSubclient'] = AzureAdSubclient														
+        globals()['AzureADSubclient'] = AzureAdSubclient
 
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -310,7 +310,7 @@ class Subclients(object):
             'informix': InformixSubclient,
             'active directory': ADSubclient,
             'sharepoint server': SharepointSubclient,
-            "azure ad" : AzureAdSubclient										 
+            "azure ad" : AzureAdSubclient
         }
 
         # sql server subclient type dict
@@ -758,7 +758,7 @@ class Subclients(object):
             }
 
         return self._process_add_request(request_json)
-        
+
     def add_oracle_logical_dump_subclient(
                                  self,
                                  subclient_name,
@@ -778,22 +778,22 @@ class Subclients(object):
         be list of values.Rest of thing should be same for both.
         Args:
               subclient_name     (Str)  --  subclient name for logical dump
-              
+
               storage_policy     (Str)  --  Storage policy for subclient
-              
+
               dump_dir            (Str)  --  dump directory for subclient
-              
+
               user_name           (Str)  --  username for oracle database
-              
+
               domain_name         (Str)  --  domainname for oracle database
-              
+
               password           (Str)  --  password for oracle database
                                             (should be in encrypted and decrypted form)
-                                            
+
               full_mode           (bool) --  if ture then subclient for full mode otherwise schema mode
-              
+
               schema_value        (list) --  schema value for schema mode subclient
-              
+
                    default: None
         Return:
                 object  -   instance of the Subclient class
@@ -803,9 +803,9 @@ class Subclients(object):
                     if subclient name argument is not of type string
 
                     if storage policy argument is not of type string
-                    
+
                     if subclient name already present
-                    
+
                     if storage policy does not exist
 
         """
@@ -817,11 +817,11 @@ class Subclients(object):
                 isinstance(password, basestring) and
                 isinstance(full_mode, bool)):
             raise SDKException('Subclient', '101')
-        if (full_mode == False and not 
+        if (full_mode == False and not
                 isinstance(schema_value, list)):
             raise SDKException('Subclient','101')
-        
-            
+
+
         if self.has_subclient(subclient_name):
             raise SDKException(
                 'Subclient', '102', 'Subclient "{0}" already exists.'.format(
@@ -1609,6 +1609,13 @@ c
         }
 
         request_json['subClientProperties'].update(properties_dict)
+
+        # check if subclient name is updated in the request
+        # if subclient name is updated set the newName field in the request
+        if (properties_dict.get('subClientEntity', {}).get('subclientName', self._subClientEntity.get(
+                'subclientName')) != self._subClientEntity.get('subclientName')):
+            request_json['newName'] = properties_dict.get('subClientEntity', {}).get('subclientName')
+
         flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
         status, _, error_string = self._process_update_response(flag, response)
         self.refresh()
@@ -1630,7 +1637,7 @@ c
     @property
     def display_name(self):
         """Returns the Subclient display name"""
-        return self._subclient_properties.get('subClientEntity', {}).get('displayName')
+        return self.name
 
     @property
     def subclient_guid(self):
@@ -1645,7 +1652,7 @@ c
 
         """
         update_properties = self.properties
-        update_properties['subClientEntity']['displayName'] = display_name
+        update_properties['subClientEntity']['subclientName'] = display_name
         self.update_properties(update_properties)
 
     @property
@@ -2779,7 +2786,7 @@ c
                 return None
         else:
             raise SDKException('Subclient', '112')
-    
+
     @plan.setter
     def plan(self, value):
         """Associates a plan to the subclient.

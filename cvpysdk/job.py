@@ -212,6 +212,8 @@ Job
 
     advanced_job_details()      --  Returns advanced properties for the job
 
+    get_events()                --  returns the commserv events for the job
+
 
 Job instance Attributes
 -----------------------
@@ -1918,6 +1920,7 @@ class Job(object):
         self._RESUME = self._services['RESUME_JOB'] % self.job_id
         self._KILL = self._services['KILL_JOB'] % self.job_id
         self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
+        self._JOB_EVENTS = self._services['JOB_EVENTS'] % self.job_id
 
         self._client_name = None
         self._agent_name = None
@@ -2159,6 +2162,7 @@ class Job(object):
 
         return ('completed' in self._status.lower() or
                 'killed' in self._status.lower() or
+                'committed' in self._status.lower() or
                 'failed' in self._status.lower())
 
     @property
@@ -2478,6 +2482,63 @@ class Job(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_events(self):
+        """ gets the commserv events associated with this job
+
+            Args:
+
+                None
+
+            Returns:
+
+                list - list of job events
+
+                    Example : [
+                        {
+                            "severity": 3,
+                            "eventCode": "318769020",
+                            "jobId": 4547,
+                            "acknowledge": 0,
+                            "eventCodeString": "19:1916",
+                            "subsystem": "JobManager",
+                            "description": "Data Analytics operation has completed with one or more errors.",
+                            "id": 25245,
+                            "timeSource": 1600919001,
+                            "type": 0,
+                            "clientEntity": {
+                                "clientId": 2,
+                                "clientName": "xyz",
+                                "displayName": "xyz"
+                            }
+                        },
+                        {
+                            "severity": 6,
+                            "eventCode": "318767961",
+                            "jobId": 4547,
+                            "acknowledge": 0,
+                            "eventCodeString": "19:857",
+                            "subsystem": "clBackup",
+                            "description": "Failed to send some items to Index Engine",
+                            "id": 25244,
+                            "timeSource": 1600918999,
+                            "type": 0,
+                            "clientEntity": {
+                                "clientId": 33,
+                                "clientName": "xyz",
+                                "displayName": "xyz"
+                            }
+                        }
+                    ]
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._JOB_EVENTS)
+        if flag:
+            if response.json() and 'commservEvents' in response.json():
+                    return response.json()['commservEvents']
+            raise SDKException('Job', '104')
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
 
 class _ErrorRule:
     """Class for enabling, disabling, adding, getting and deleting error rules."""

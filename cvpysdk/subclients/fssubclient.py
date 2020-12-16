@@ -1836,6 +1836,8 @@ class FileSystemSubclient(Subclient):
 
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(
                 self._vlr_restore_options_dict)
+            destination_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].get('destination', {})
+            destination_options['destPath'] = destination_options.get('destPath', [''])
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'][0] = \
                 destination_path
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['inPlace'] = False

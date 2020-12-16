@@ -110,6 +110,12 @@ Commcell:
 
     get_commcell_organization_properties()     -- Get the organization properties of commcell
 
+    add_service_commcell_associations()    -- adds an association for an entity on a service commcell
+
+    enable_tfa()                           --   Enables two factor authentication on this commcell
+
+    disable_tfa()                          --  Disables two factor authentication on this commcell
+
 Commcell instance Attributes
 ============================
 
@@ -262,6 +268,12 @@ Commcell instance Attributes
     **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class
     to interact wtih deduplication enines available on the commcell
 
+    **two_factor_authentication**   --  Returns an instance of the TwoFactorAuthentication class.
+
+    **is_tfa_enabled**              --  Returns the status of tfa on this commcell.
+
+    **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.
+    only for user group inclusion tfa.
 """
 
 from __future__ import absolute_import
@@ -285,8 +297,8 @@ from .client import Clients
 from .alert import Alerts
 from .storage import MediaAgents
 from .storage import DiskLibraries
-from .security.usergroup import UserGroups
-from .domains import Domains
+from .security.usergroup import UserGroups, UserGroup
+from .domains import Domains, Domain
 from .workflow import WorkFlows
 from .exception import SDKException
 from .clientgroup import ClientGroups
@@ -296,11 +308,12 @@ from .content_analyzer import ContentAnalyzers
 from .activate_entity import ActivateEntities
 from .plan import Plans
 from .job import JobController
-from .security.user import Users
+from .security.user import Users, User
 from .security.role import Roles
+from .security.two_factor_authentication import TwoFactorAuthentication
 from .credential_manager import Credentials
 from .download_center import DownloadCenter
-from .organization import Organizations
+from .organization import Organizations, Organization
 from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
@@ -345,7 +358,8 @@ class Commcell(object):
             commcell_password=None,
             authtoken=None,
             force_https=False,
-            certificate_path=None):
+            certificate_path=None,
+            is_service_commcell=None):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -379,6 +393,8 @@ class Commcell(object):
 
                     default: None
 
+            **Note** : If SAML token is to be used to login to service commcell please set is_service_commcell=True
+
 
                 force_https             (bool)  --  boolean flag to specify whether to force the
                 connection to the commcell only via HTTPS
@@ -396,8 +412,15 @@ class Commcell(object):
 
                     default: None
 
-
             **Note** If certificate path is provided, force_https is set to True
+
+                is_service_commcell     (bool) --  True if login into service (child commcell)
+                                                   False if it is a normal login
+
+                    default: None
+
+            **Note** In case of Multicommcell Login, if we wanted to login into child commcell (Service commcell)
+                        set is_service_commcell to True
 
             Returns:
                 object  -   instance of this class
@@ -431,6 +454,7 @@ class Commcell(object):
         }
 
         self._device_id = socket.getfqdn()
+        self._is_service_commcell = is_service_commcell
 
         self._cvpysdk_object = CVPySDK(self, certificate_path)
 
@@ -455,7 +479,7 @@ class Commcell(object):
         if isinstance(commcell_password, dict):
             authtoken = commcell_password['Authtoken']
 
-        if authtoken:
+        if authtoken and not is_service_commcell:
             if authtoken.startswith('QSDK ') or authtoken.startswith('SAML '):
                 self._headers['Authtoken'] = authtoken
             else:
@@ -477,12 +501,17 @@ class Commcell(object):
             # and store the token in the headers
             self._headers['Authtoken'] = self._cvpysdk_object._login()
 
+        if self.is_service_commcell and authtoken is not None and authtoken.startswith('SAML '):
+            self._master_saml_token = authtoken
+            self._headers['Authtoken'] = self._cvpysdk_object._login()
+            self._user = self._cvpysdk_object.who_am_i()
         if not self._headers['Authtoken']:
             if isinstance(validity_err, Exception):
                 raise validity_err
 
             raise SDKException('Commcell', '102')
 
+        self._master_saml_token = None
         self._commserv_name = None
         self._commserv_hostname = None
         self._commserv_timezone = None
@@ -538,6 +567,8 @@ class Commcell(object):
         self._hac_clusters = None
         self._index_pools = None
         self._deduplication_engines = None
+        self._redirect_cc_idp = None
+        self._tfa = None
         self.refresh()
 
         del self._password
@@ -632,6 +663,9 @@ class Commcell(object):
         del self._hac_clusters
         del self._index_pools
         del self._deduplication_engines
+        del self._is_service_commcell
+        del self._master_saml_token
+        del self._tfa
         del self
 
     def _get_commserv_details(self):
@@ -683,7 +717,7 @@ class Commcell(object):
                     for key, value in version_replace_strings.items():
                         version_info = version_info.replace(key, value)
 
-                    self._version_info = version_info + '.0'*(3 - len(version_info.split('.')))
+                    self._version_info = version_info + '.0' * (3 - len(version_info.split('.')))
 
                 except KeyError as error:
                     raise SDKException('Commcell', '103', 'Key does not exist: {0}'.format(error))
@@ -1414,6 +1448,17 @@ class Commcell(object):
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
+    @property
+    def commcells_for_user(self):
+        """returns the list of accessible commcells to logged in user
+
+        list - contains the list of accessible commcells
+            ['cc1','cc2']
+        """
+        if self._redirect_cc_idp is None:
+            self._redirect_cc_idp = self._commcells_for_user()
+        return self._redirect_cc_idp
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -1572,6 +1617,7 @@ class Commcell(object):
         self._hac_clusters = None
         self._index_pools = None
         self._deduplication_engines = None
+        self._tfa = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""
@@ -1828,7 +1874,9 @@ class Commcell(object):
     def download_software(self,
                           options=None,
                           os_list=None,
-                          service_pack=None):
+                          service_pack=None,
+                          cu_number=0,
+                          sync_cache=True):
         """Downloads the os packages on the commcell
 
             Args:
@@ -1838,6 +1886,11 @@ class Commcell(object):
                 os_list      (list of enum)    --  list of windows/unix packages to be downloaded
 
                 service_pack (int)             --  service pack to be downloaded
+
+                cu_number (int)                --  maintenance release number
+
+                sync_cache (bool)              --  True if download and sync
+                                                   False only download
 
             Returns:
                 object - instance of the Job class for this download job
@@ -1895,7 +1948,9 @@ class Commcell(object):
         return download.download_software(
             options=options,
             os_list=os_list,
-            service_pack=service_pack
+            service_pack=service_pack,
+            cu_number=cu_number,
+            sync_cache=sync_cache
         )
 
     def push_servicepack_and_hotfix(
@@ -1905,7 +1960,8 @@ class Commcell(object):
             all_client_computers=False,
             all_client_computer_groups=False,
             reboot_client=False,
-            run_db_maintenance=True):
+            run_db_maintenance=True,
+            maintenance_release_only=False):
         """triggers installation of service pack and hotfixes
 
         Args:
@@ -1933,6 +1989,9 @@ class Commcell(object):
 
                 default: True
 
+            maintenance_release_only (bool) -- for clients of feature releases lesser than CS, this option
+            maintenance release of that client FR, if present in cache
+
         Returns:
             object - instance of the Job class for this download job
 
@@ -1956,7 +2015,8 @@ class Commcell(object):
             all_client_computers=all_client_computers,
             all_client_computer_groups=all_client_computer_groups,
             reboot_client=reboot_client,
-            run_db_maintenance=run_db_maintenance
+            run_db_maintenance=run_db_maintenance,
+            maintenance_release_only=maintenance_release_only
         )
 
     def install_software(
@@ -1966,7 +2026,10 @@ class Commcell(object):
             unix_features=None,
             username=None,
             password=None,
-            install_path=None):
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None):
         """
         Installs the selected features in the selected clients
         Args:
@@ -1996,6 +2059,18 @@ class Commcell(object):
 
                  default : None
 
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
+
+                 default : None
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -2022,7 +2097,11 @@ class Commcell(object):
                                 windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
                                 unix_features=None,
                                 username='username',
-                                password='password')
+                                password='password',
+                                install_path='/opt/commvault',
+                                log_file_loc='/var/log',
+                                client_group_name=[My_Servers],
+                                storage_policy_name='My_Storage_Policy')
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -2035,7 +2114,10 @@ class Commcell(object):
             unix_features=unix_features,
             username=username,
             password=password,
-            install_path=install_path)
+            install_path=install_path,
+            log_file_loc=log_file_loc,
+            client_group_name=client_group_name,
+            storage_policy_name=storage_policy_name)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell
@@ -2264,9 +2346,9 @@ class Commcell(object):
                 security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
                 for list_item in security_list:
                     name = list_item.get('userOrGroup')[0].get('userGroupName') or \
-                           list_item.get('userOrGroup')[0].get('userName') or \
-                           list_item.get('userOrGroup')[0].get('providerDomainName') + '\\' + \
-                           list_item.get('userOrGroup')[0].get('externalGroupName')
+                        list_item.get('userOrGroup')[0].get('userName') or \
+                        list_item.get('userOrGroup')[0].get('providerDomainName') + '\\' + \
+                        list_item.get('userOrGroup')[0].get('externalGroupName')
                     value = []
                     if list_item.get('properties').get('role'):
                         value.append(list_item.get('properties').get('role').get('roleName'))
@@ -2557,12 +2639,24 @@ class Commcell(object):
             commcell_name,
             registered_for_routing=False,
             admin_username=None,
-            admin_password=None):
+            admin_password=None,
+            register_for_idp=None):
         """Registers a commcell
 
         Args:
 
-            commcell_name   (str)   -- name of the commcell
+            commcell_name   (str)           -- name of the commcell
+
+            registered_for_routing (bool)   -- True - if we want to register for Routing
+                                               False - if we dont want to register for Routing
+
+            admin_username   (str)          -- username of the user who has administrative
+                                                rights on a commcell
+
+            admin_password  (str)           -- password of the user specified
+
+            register_for_idp (bool)         -- True - if we want to register for Identity provider
+                                                False - if we dont want to register for Identity provider
 
         Raises:
 
@@ -2574,13 +2668,13 @@ class Commcell(object):
 
         """
         commcell_name = commcell_name.lower()
-        if (registered_for_routing):
-            registered_for_routing = 1
-        else:
-            registered_for_routing = 0
+        registered_for_routing = 1 if registered_for_routing else 0
+        register_for_idp = 1 if register_for_idp else 0
+
         xml_to_execute = """
         <EVGui_CN2CellRegReq>
-            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{3}">
+            <commcell isRegisteredForRouting="{0}" adminPwd="{1}" adminUsr="{2}" interfaceName="{3}" ccClientName="{3}"
+            isGlobalIDPCommcell="{4}">
                 <commCell commCellName="{3}" />
             </commcell>
         </EVGui_CN2CellRegReq>
@@ -2588,7 +2682,8 @@ class Commcell(object):
             registered_for_routing,
             admin_password,
             admin_username,
-            commcell_name
+            commcell_name,
+            register_for_idp
         )
 
         flag, response = self._cvpysdk_object.make_request(
@@ -2714,3 +2809,222 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _commcells_for_user(self):
+        """returns the list of accessible commcells to logged in user
+
+        Returns:
+            list - consists list of accessible commcells
+
+                ['S1', 'S2']
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['MULTI_COMMCELL_DROP_DOWN']
+        )
+
+        if flag:
+            if response.json() and 'AvailableRedirects' in response.json():
+                redirect_cc_list = []
+                for ser_comm in response.json()['AvailableRedirects']:
+                    if ser_comm.get('commcellName', False):
+                        continue
+                    redirect_cc_list.append(ser_comm['commcellName'])
+                return redirect_cc_list
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _service_commcells_association(self):
+        """returns the associated entities to a service commcell
+
+        Returns:
+
+                        dict of associated entities to a service commcell
+
+        Raises:
+
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['SERVICE_COMMCELL_ASSOC']
+        )
+
+        if flag:
+            if response.json() and 'associations' in response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_service_commcell_associations(self, entity_name, service_commcell):
+        """adds an association for an entity on a service commcell
+
+        Args:
+
+            entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
+
+            service_commcell (str)    --  name of the service commcell to which above entities can be associated
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if add association fails
+
+                if response is not success
+        """
+
+        if not isinstance(service_commcell, basestring):
+            raise SDKException('User', '101')
+
+        request_json = {
+            "userOrGroup": {
+            },
+            "entity": {
+                "entityType": 194,
+                "entityName": self.registered_routing_commcells[service_commcell]['commCell']['commCellName'],
+                "_type_": 150,
+                "entityId": self.registered_routing_commcells[service_commcell]['commCell']['commCellId'],
+                "flags": {
+                    "includeAll": False
+                }
+            },
+            "properties": {
+                "role": {
+                    "_type_": 120,
+                    "roleId": 3,
+                    "roleName": "View"
+                }
+            }
+        }
+
+        if isinstance(entity_name, User):
+            request_json['userOrGroup']['userId'] = int(entity_name.user_id)
+            request_json['userOrGroup']['userName'] = entity_name.user_name
+            request_json['userOrGroup']['_type_'] = 13
+
+        if isinstance(entity_name, UserGroup):
+            request_json['userOrGroup']['userGroupId'] = int(entity_name.user_group_id)
+            request_json['userOrGroup']['userGroupName'] = entity_name.user_group_name
+            request_json['userOrGroup']['_type_'] = 15
+
+        if isinstance(entity_name, Organization):
+            request_json['providerType'] = 5
+            request_json['userOrGroup']['providerId'] = int(entity_name.organization_id)
+            request_json['userOrGroup']['providerDomainName'] = entity_name.organization_name
+            request_json['userOrGroup']['_type_'] = 61
+
+        if isinstance(entity_name, Domain):
+            request_json['providerType'] = 2
+            request_json['userOrGroup']['providerId'] = int(entity_name.domain_id)
+            request_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
+            request_json['userOrGroup']['_type_'] = 61
+
+        res_json = self._service_commcells_association()
+        res_json['associations'].append(request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['SERVICE_COMMCELL_ASSOC'], res_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('response', [{}])[0].get('errorCode', -1)
+
+                if error_code != 0:
+                    error_string = response.json().get('response', [{}])[0].get('errorString')
+                    raise SDKException(
+                        'CommcellRegistration',
+                        '102',
+                        'Service Commcell Association Failed\n Error: "{0}"'.format(
+                            error_string
+                        )
+                    )
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_service_commcell(self):
+        """Returns the is_service_commcell property."""
+
+        return self._is_service_commcell
+
+    @property
+    def master_saml_token(self):
+        """Returns the saml token of master commcell."""
+
+        return self._master_saml_token
+
+    @property
+    def two_factor_authentication(self):
+        """Returns the instance of the TwoFactorAuthentication class"""
+        try:
+            if self._tfa is None:
+                self._tfa = TwoFactorAuthentication(self)
+            return self._tfa
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def is_tfa_enabled(self):
+        """
+        Returns the status of two factor authentication for this commcell
+
+            bool    --  status of tfa.
+        """
+        return self.two_factor_authentication.is_tfa_enabled
+
+    @property
+    def tfa_enabled_user_groups(self):
+        """
+        Returns the list of user group names for which two factor authentication is enabled.
+         only for user group inclusion tfa.
+            eg:-
+            [
+                {
+                "userGroupId": 1,
+                "userGroupName": "dummy"
+                }
+            ]
+        """
+        return self.two_factor_authentication.tfa_enabled_user_groups
+
+    def enable_tfa(self, user_groups=None):
+        """
+        Enables two factor authentication option on this commcell.
+
+        Args:
+            user_groups     (list)  --  user group names for which tfa needs to be enabled.
+
+        Returns:
+            None
+        """
+        self.two_factor_authentication.enable_tfa(user_groups=user_groups)
+
+    def disable_tfa(self):
+        """
+        Disables two factor authentication on this commcell.
+
+        Returns:
+            None
+        """
+        self.two_factor_authentication.disable_tfa()

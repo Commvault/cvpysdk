@@ -110,6 +110,14 @@ Organization
 
     disable_auto_discover()      --  Diable autodiscover option for the oraganization
 
+    add_service_commcell_associations() -- Adds the organization association on service commcell
+
+    remove_service_commcell_associations()-- Removes the orgainization association on service commcell
+
+    enable_tfa()                --      Enable tfa option for the organization
+
+    disable_tfa()               --      Disable tfa option for the organization
+
 Organization Attributes
 -----------------------
 
@@ -153,6 +161,10 @@ Organization Attributes
 
          **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+         **is_tfa_enabled**          -- returns the status of tfa for the organization.
+
+         **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
+
 """
 
 import re
@@ -163,6 +175,7 @@ from .exception import SDKException
 
 from .security.user import User
 from .security.usergroup import UserGroup
+from .security.two_factor_authentication import TwoFactorAuthentication
 
 
 class Organizations:
@@ -319,7 +332,8 @@ class Organizations:
             email_domain=None,
             primary_domain=None,
             default_plans=None,
-            enable_auto_discover=False):
+            enable_auto_discover=False,
+            service_commcells=None):
         """Adds a new organization with the given name to the Commcell.
 
             Args:
@@ -346,6 +360,10 @@ class Organizations:
 
                     default: None
 
+                service_commcells (list) -- list of service commmcells to be associated with the
+                organization
+
+                    default: None
 
             Returns:
                 object  -   instance of the Organization class, for the newly created organization
@@ -383,6 +401,9 @@ class Organizations:
 
         plans_list = []
 
+        if service_commcells:
+            if not isinstance(service_commcells, list):
+                raise SDKException('Organization', '101')
         if default_plans:
             if not isinstance(default_plans, list):
                 raise SDKException('Organization', '101')
@@ -440,7 +461,13 @@ class Organizations:
                 error_code = response.json()['response']['errorCode']
 
                 if error_code == 0:
+                    org_object = self.get(name)
+                    if service_commcells:
+                        for servicecommcell in service_commcells:
+                            org_object.add_service_commcell_associations(name=name, service_commcell=servicecommcell)
+
                     return self.get(name)
+                    
                 raise SDKException(
                     'Organization', '107', 'Response: {0}'.format(response.json())
                 )
@@ -577,6 +604,7 @@ class Organization:
         self._operator_role = None
         self._plan_details = None
         self._server_count = None
+        self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
 
     def __repr__(self):
@@ -928,6 +956,7 @@ class Organization:
         self._contacts = {}
         self._plans = {}
         self._properties = self._get_properties()
+        self._tfa_obj.refresh()
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code Generation for the Organization.
@@ -1208,3 +1237,146 @@ class Organization:
         """
         self._update_properties_json({'enableAutoDiscovery': False})
         self._update_properties()
+
+    def add_service_commcell_associations(self, name, service_commcell):
+        """To add organization on service commcell
+
+            Args:
+
+                name   (str) -- name of the organization that has to be created on service commcell
+
+                service_commcell (str) -- name of the commcell where the company has to be created
+
+            Raises:
+                SDKException:
+
+                    if organization association to service commcell fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not (isinstance(name, basestring) and
+                isinstance(service_commcell, basestring)):
+            raise SDKException('Organization', '101')
+
+        request_json = {
+            "organizationId": int(self.organization_id),
+            "associationsOperationType": 1,
+            "associations": [
+                {
+                    "userOrGroup": {
+                        "_type_": 61,
+                        "providerId": int(self.organization_id),
+                        "providerDomainName": name
+                    },
+                    "entity": {
+                        "entityType": 194,
+                        "entityName":
+                            self._commcell_object.registered_routing_commcells[service_commcell]['commCell']['commCellName'],
+                        "_type_": 150,
+                        "entityId":
+                            self._commcell_object.registered_routing_commcells[service_commcell]['commCell']['commCellId']
+                    },
+                    "properties": {
+                        "role": {
+                            "roleId": 3,
+                            "roleName": "View"
+                        }
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['SERVICE_COMMCELL_ASSOC'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code != 0:
+                    raise SDKException('Organization', '115')
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def remove_service_commcell_associations(self, name):
+        """ To delete the organization association for service commcell
+
+        Args:
+
+            name    (str) -- name of the organization
+
+        Raises:
+                SDKException:
+
+                    if delete organization association to service commcell fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(name, basestring):
+            raise SDKException('Organization', '101')
+
+        request_json = {
+            "organizationId": int(self.organization_id),
+            "associationsOperationType": 1
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['SERVICE_COMMCELL_ASSOC'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['response'][0]['errorCode']
+
+                if error_code != 0:
+                    raise SDKException('Organization', '113')
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        """returns the status of two factor authentication (True/False)"""
+        return self._tfa_obj.is_tfa_enabled
+
+    @property
+    def tfa_enabled_user_groups(self):
+        """returns the list of user group names for which tfa is enabled. only for group inclusion tfa"""
+        return self._tfa_obj.tfa_enabled_user_groups
+
+    def enable_tfa(self, user_groups=None):
+        """
+        Enables two factor authentication for the oganization.
+
+        Args:
+             user_groups    (list)          --      list of user group names for which tfa needs to be enabled.
+
+        Returns:
+            None
+        """
+        self._tfa_obj.enable_tfa(user_groups=user_groups)
+
+    def disable_tfa(self):
+        """
+        Disables two factor authentication for the organization
+
+        Returns:
+            None
+        """
+        self._tfa_obj.disable_tfa()

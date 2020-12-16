@@ -698,19 +698,16 @@ class DisasterRecoveryManagement(object):
                                                            payload=self._settings_dict)
         if flag:
             if response and response.json():
-                if int(response.json().get('processinginstructioninfo').get('attributes')[0].get('value', 0)) != 0:
-                    if not response.json().get('response', {}):
-                        raise SDKException('DisasterRecovery', '102',
-                                           'Failed to set dr properties, Received errorcode: {0}'.format(
-                                               response.json().get(
-                                                   'processinginstructioninfo').get('attributes')[0].get('value')))
-                    if response.json().get('response')[0].get('errorCode') != 0:
-                        raise SDKException('DisasterRecovery', '102', 'Failed to set dr properties. Error: {0}'.format(
-                            response.json().get('response')[0].get('errorString')
-                        ))
+                if response.json().get('response') and response.json().get('response')[0].get('errorCode') != 0:
+                    raise SDKException('DisasterRecovery', '102', 'Failed to set dr properties. Error: {0}'.format(
+                        response.json().get('response')[0].get('errorString')
+                    ))
                 self.refresh()
+            else:
+                raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '102')
+            raise SDKException('Response', '101')
+
 
     def refresh(self):
         """

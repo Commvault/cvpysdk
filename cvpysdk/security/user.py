@@ -98,7 +98,9 @@ User
 
     update_user_password()              --  Updates new passwords of user
 
+    user_guid()                         --  returns user GUID
 
+    age_password_days()                 --  returns age password days for user
 
 """
 
@@ -106,7 +108,6 @@ from base64 import b64encode
 from past.builtins import basestring
 from .security_association import SecurityAssociation
 from ..exception import SDKException
-
 
 
 class Users(object):
@@ -330,10 +331,7 @@ class Users(object):
             raise SDKException('User', '101')
 
         if self.has_user(username):
-            raise SDKException(
-                'User', '102', "User {0} already exists on this commcell.".format(
-                    username)
-            )
+            raise SDKException('User', '103', 'User: {0}'.format(username))
 
         if password is not None:
             password = b64encode(password.encode()).decode()
@@ -508,8 +506,8 @@ class Users(object):
                 raise SDKException('Response', '102')
 
         else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response' , '101', response_string)
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def service_commcell_users_space(self):
@@ -569,7 +567,9 @@ class User(object):
         self._description = None
         self._associated_usergroups = None
         self._properties = None
+        self._tfa_status = None
         self._get_user_properties()
+        self._get_tfa_status()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -795,6 +795,36 @@ class User(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def user_guid(self):
+        """
+        returns user guid
+        """
+        return self._properties.get('userEntity', {}).get('userGUID')
+
+    @property
+    def age_password_days(self):
+        """
+        returns age password days
+        """
+        return self._properties.get('agePasswordDays')
+
+    @age_password_days.setter
+    def age_password_days(self, days):
+        """
+        sets the age password days
+
+        Args:
+            days    (int) -- number of days password needs to be required
+        """
+        if isinstance(days, int):
+            props_dict = {
+                "agePasswordDays": days
+            }
+            self._update_user_props(props_dict)
+        else:
+            raise SDKException('User', '101')
+
     def update_user_password(self, new_password, logged_in_user_password):
         """updates new passwords of user
 
@@ -815,7 +845,6 @@ class User(object):
         }
         self._update_user_props(props_dict)
 
-
     def add_usergroups(self, usergroups_list):
         """UPDATE the specified usergroups to this commcell user
 
@@ -823,7 +852,6 @@ class User(object):
                 usergroups_list     (list)  --     list of usergroups to be added
         """
         self._update_usergroup_request('UPDATE', usergroups_list)
-
 
     def remove_usergroups(self, usergroups_list):
         """DELETE the specified usergroups to this commcell user
@@ -845,6 +873,7 @@ class User(object):
     def refresh(self):
         """Refresh the properties of the User."""
         self._get_user_properties()
+        self._get_tfa_status()
 
     def update_security_associations(self, entity_dictionary, request_type):
         """handles three way associations (role-user-entities)
@@ -925,15 +954,49 @@ class User(object):
         if self._commcell_object.users.has_user(self.user_name):
             get_otp = self._commcell_object._services['OTP'] % (self.user_id)
 
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'GET', get_otp
-            )
-            if flag:
-                if response.json():
-                    if 'value' in response.json():
-                        return response.json()['value']
-                else:
-                    raise SDKException('Response', '102')
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', get_otp
+        )
+        if flag:
+            if response.json():
+                if 'value' in response.json():
+                    return response.json()['value']
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_tfa_status(self):
+        """
+        Gets the status of two factor authentication for this user
+        """
+        url = self._commcell_object._services['TFA_STATUS_OF_USER'] % self._user_name
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', url=url
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json().get('errorCode') != 0:
+                    raise SDKException('User',
+                                       '102',
+                                       "Failed to get two factor authentication "
+                                       "status. error={0}".format(response.json().get('errorMessage')))
+            if response.json() and 'twoFactorInfo' in response.json():
+                info = response.json().get('twoFactorInfo')
+                self._tfa_status = info.get('isTwoFactorAuthenticationEnabled', False)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        """
+        Returns the status of two factor authentication for this user
+
+        bool    --  tfa status
+        """
+        return self._tfa_status

@@ -151,13 +151,25 @@ class CVPySDK(object):
             if isinstance(self._commcell_object._password, dict):
                 raise SDKException('CVPySDK', '104')
 
-            json_login_request = {
-                "mode": 4,
-                "username": self._commcell_object._user,
-                "password": self._commcell_object._password,
-                "deviceId": self._commcell_object.device_id,
-                "clientType": 16,
-            }
+
+            if self._commcell_object.is_service_commcell:
+                json_login_request = {
+                    "mode": 4,
+                    "clientType": 30,
+                    "autoLogin": {
+                        "autoLoginType": 5,
+                        "encryptedMessage": self._commcell_object.master_saml_token
+                    }
+                }
+
+            else:
+                json_login_request = {
+                    "mode": 4,
+                    "username": self._commcell_object._user,
+                    "password": self._commcell_object._password,
+                    "deviceId": self._commcell_object.device_id,
+                    "clientType": 30,
+                }
 
             flag, response = self.make_request(
                 'POST', self._commcell_object._services['LOGIN'], json_login_request
@@ -198,7 +210,7 @@ class CVPySDK(object):
 
         """
         try:
-            if self._commcell_object._is_saml_login:
+            if self._commcell_object._is_saml_login and not self._commcell_object.is_service_commcell:
                 raise SDKException('CVPySDK', '106')
 
             token_renew_request = {

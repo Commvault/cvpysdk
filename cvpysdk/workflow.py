@@ -912,7 +912,7 @@ class WorkFlow(object):
         else:
             return self._read_inputs(input_dict)
 
-    def _set_workflow_properties(self, attrname, attrval):
+    def _set_workflow_properties(self, attrname, attrval, disabled='0'):
         """Set Workflow Properties
 
             Args:
@@ -924,6 +924,9 @@ class WorkFlow(object):
                                                     0, 1, 2, 19
                                                     "This is workflow description"
 
+                disabled    (str)   : Set to 1 to disable a workflow
+                                        default is '0'
+
             Raises:
                 SDKException:
 
@@ -933,6 +936,7 @@ class WorkFlow(object):
             "Workflow_SetWorkflowProperties":
             {
                 attrname: attrval,
+                "disabled": disabled,
                 "workflow": {
                     "workflowName": self._workflow_name,
                     "workflowId": self._workflow_id
@@ -1044,7 +1048,7 @@ class WorkFlow(object):
 
                     if HTTP Status Code is not SUCCESS / Enabling workflow fails
         """
-        self._set_workflow_properties('flags', '0')
+        self._set_workflow_properties('flags', '0', disabled='0')
 
     def disable(self):
         """ Disable Worklfow
@@ -1054,7 +1058,7 @@ class WorkFlow(object):
 
                     if HTTP Status Code is not SUCCESS / Disabling workflow fails
         """
-        self._set_workflow_properties('flags', '1')
+        self._set_workflow_properties('flags', '1', disabled='1')
 
     def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
         """Deploys a workflow on the Commcell.
