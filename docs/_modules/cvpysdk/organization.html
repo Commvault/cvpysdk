@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.organization &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -256,6 +256,14 @@
 
 <span class="sd">    disable_auto_discover()      --  Diable autodiscover option for the oraganization</span>
 
+<span class="sd">    add_service_commcell_associations() -- Adds the organization association on service commcell</span>
+
+<span class="sd">    remove_service_commcell_associations()-- Removes the orgainization association on service commcell</span>
+
+<span class="sd">    enable_tfa()                --      Enable tfa option for the organization</span>
+
+<span class="sd">    disable_tfa()               --      Disable tfa option for the organization</span>
+
 <span class="sd">Organization Attributes</span>
 <span class="sd">-----------------------</span>
 
@@ -299,22 +307,27 @@
 
 <span class="sd">         **is_auto_discover_enabled**-- returns the autodiscover option for the Organization</span>
 
+<span class="sd">         **is_tfa_enabled**          -- returns the status of tfa for the organization.</span>
+
+<span class="sd">         **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
-<span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">User</span>
-<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="k">import</span> <span class="n">UserGroup</span>
+<span class="kn">from</span> <span class="nn">.security.user</span> <span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="kn">import</span> <span class="n">UserGroup</span>
+<span class="kn">from</span> <span class="nn">.security.two_factor_authentication</span> <span class="kn">import</span> <span class="n">TwoFactorAuthentication</span>
 
 
 <div class="viewcode-block" id="Organizations"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organizations">[docs]</a><span class="k">class</span> <span class="nc">Organizations</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for doing operations on Organizations like add / delete an organization, etc.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes an instance of the Organizations class to perform operations on a company.</span>
 
 <span class="sd">            Args:</span>
@@ -335,7 +348,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all organizations present in the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -350,17 +363,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the string representation of an instance of this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Organizations class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the organizations configured on the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_organizations</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the organization for the given organization ID or</span>
 <span class="sd">            the details of the organization for given organization Name.</span>
 
@@ -465,7 +478,8 @@
             <span class="n">email_domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">primary_domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">default_plans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">enable_auto_discover</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">enable_auto_discover</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">service_commcells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a new organization with the given name to the Commcell.</span>
 
 <span class="sd">            Args:</span>
@@ -492,6 +506,10 @@
 
 <span class="sd">                    default: None</span>
 
+<span class="sd">                service_commcells (list) -- list of service commmcells to be associated with the</span>
+<span class="sd">                organization</span>
+
+<span class="sd">                    default: None</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object  -   instance of the Organization class, for the newly created organization</span>
@@ -529,6 +547,9 @@
 
         <span class="n">plans_list</span> <span class="o">=</span> <span class="p">[]</span>
 
+        <span class="k">if</span> <span class="n">service_commcells</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_commcells</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">default_plans</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default_plans</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -586,7 +607,13 @@
                 <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">org_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">service_commcells</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">servicecommcell</span> <span class="ow">in</span> <span class="n">service_commcells</span><span class="p">:</span>
+                            <span class="n">org_object</span><span class="o">.</span><span class="n">add_service_commcell_associations</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">service_commcell</span><span class="o">=</span><span class="n">servicecommcell</span><span class="p">)</span>
+
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
                     <span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;107&#39;</span><span class="p">,</span> <span class="s1">&#39;Response: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
                 <span class="p">)</span>
@@ -679,7 +706,7 @@
 <div class="viewcode-block" id="Organization"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization">[docs]</a><span class="k">class</span> <span class="nc">Organization</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations on an Organization.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">organization_name</span><span class="p">,</span> <span class="n">organization_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">organization_name</span><span class="p">,</span> <span class="n">organization_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Client class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -723,9 +750,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_operator_role</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plan_details</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_server_count</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span> <span class="o">=</span> <span class="n">TwoFactorAuthentication</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span><span class="n">organization_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_organization_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the string representation of an instance of this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;Organization class instance for Organization: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization_name</span><span class="p">)</span>
 
@@ -1073,7 +1101,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_plan</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_contacts</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plans</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_properties</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Organization.enable_auth_code"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.enable_auth_code">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auth_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to enable Auth Code Generation for the Organization.</span>
@@ -1353,7 +1382,150 @@
 <span class="sd">                    if failed to update enableAutoDiscovery property</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties_json</span><span class="p">({</span><span class="s1">&#39;enableAutoDiscovery&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Organization.add_service_commcell_associations"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.add_service_commcell_associations">[docs]</a>    <span class="k">def</span> <span class="nf">add_service_commcell_associations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">service_commcell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;To add organization on service commcell</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                name   (str) -- name of the organization that has to be created on service commcell</span>
+
+<span class="sd">                service_commcell (str) -- name of the commcell where the company has to be created</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if organization association to service commcell fails</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_commcell</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;organizationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization_id</span><span class="p">),</span>
+            <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;userOrGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">61</span><span class="p">,</span>
+                        <span class="s2">&quot;providerId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization_id</span><span class="p">),</span>
+                        <span class="s2">&quot;providerDomainName&quot;</span><span class="p">:</span> <span class="n">name</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;entityType&quot;</span><span class="p">:</span> <span class="mi">194</span><span class="p">,</span>
+                        <span class="s2">&quot;entityName&quot;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">registered_routing_commcells</span><span class="p">[</span><span class="n">service_commcell</span><span class="p">][</span><span class="s1">&#39;commCell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">],</span>
+                        <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+                        <span class="s2">&quot;entityId&quot;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">registered_routing_commcells</span><span class="p">[</span><span class="n">service_commcell</span><span class="p">][</span><span class="s1">&#39;commCell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellId&#39;</span><span class="p">]</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;roleId&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                            <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="s2">&quot;View&quot;</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SERVICE_COMMCELL_ASSOC&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;115&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Organization.remove_service_commcell_associations"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.remove_service_commcell_associations">[docs]</a>    <span class="k">def</span> <span class="nf">remove_service_commcell_associations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; To delete the organization association for service commcell</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            name    (str) -- name of the organization</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                    if delete organization association to service commcell fails</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;organizationId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">organization_id</span><span class="p">),</span>
+            <span class="s2">&quot;associationsOperationType&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SERVICE_COMMCELL_ASSOC&#39;</span><span class="p">],</span> <span class="n">request_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;response&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;errorCode&#39;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Organization&#39;</span><span class="p">,</span> <span class="s1">&#39;113&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_tfa_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the status of two factor authentication (True/False)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span><span class="o">.</span><span class="n">is_tfa_enabled</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tfa_enabled_user_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the list of user group names for which tfa is enabled. only for group inclusion tfa&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span><span class="o">.</span><span class="n">tfa_enabled_user_groups</span>
+
+<div class="viewcode-block" id="Organization.enable_tfa"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.enable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">enable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables two factor authentication for the oganization.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">             user_groups    (list)          --      list of user group names for which tfa needs to be enabled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span><span class="o">.</span><span class="n">enable_tfa</span><span class="p">(</span><span class="n">user_groups</span><span class="o">=</span><span class="n">user_groups</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Organization.disable_tfa"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.organization.Organization.disable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">disable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disables two factor authentication for the organization</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa_obj</span><span class="o">.</span><span class="n">disable_tfa</span><span class="p">()</span></div></div>
 </pre></div>
 
            </div>
@@ -1367,7 +1539,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

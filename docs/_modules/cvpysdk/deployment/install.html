@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -179,14 +179,14 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Install"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.install.Install">[docs]</a><span class="k">class</span> <span class="nc">Install</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;class for installing software packages&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Install class.</span>
 
 <span class="sd">            Args:</span>
@@ -294,7 +294,7 @@
                                     <span class="s2">&quot;rebootClient&quot;</span><span class="p">:</span> <span class="n">reboot_client</span><span class="p">,</span>
                                     <span class="s2">&quot;clientAndClientGroups&quot;</span><span class="p">:</span> <span class="p">[</span>
                                         <span class="p">{</span>
-                                            <span class="s2">&quot;clientGroupName&quot;</span> <span class="p">:</span> <span class="n">client_group</span><span class="p">,</span>
+                                            <span class="s2">&quot;clientGroupName&quot;</span><span class="p">:</span> <span class="n">client_group</span><span class="p">,</span>
                                             <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">client</span>
                                         <span class="p">}</span>
                                     <span class="p">],</span>
@@ -343,7 +343,8 @@
             <span class="n">all_client_computers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">all_client_computer_groups</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">maintenance_release_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Installs the software packages on the clients</span>
 
 <span class="sd">        Args:</span>
@@ -370,6 +371,9 @@
 <span class="sd">            maintenance not</span>
 
 <span class="sd">                default: True</span>
+
+<span class="sd">            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option</span>
+<span class="sd">            maintenance release of that client FR, if present in cache</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            object - instance of the Job class for this download job</span>
@@ -450,6 +454,7 @@
                                     <span class="s2">&quot;restartExplorerPlugin&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                                     <span class="s2">&quot;rebootClient&quot;</span><span class="p">:</span> <span class="n">reboot_client</span><span class="p">,</span>
                                     <span class="s2">&quot;runDBMaintenance&quot;</span><span class="p">:</span> <span class="n">run_db_maintenance</span><span class="p">,</span>
+                                    <span class="s2">&quot;maintenanceReleaseOnly&quot;</span><span class="p">:</span> <span class="n">maintenance_release_only</span><span class="p">,</span>
                                     <span class="s2">&quot;clientAndClientGroups&quot;</span><span class="p">:</span> <span class="n">all_clients</span><span class="p">,</span>
                                     <span class="s2">&quot;installUpdatesJobType&quot;</span><span class="p">:</span> <span class="p">{</span>
                                         <span class="s2">&quot;upgradeClients&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -487,7 +492,10 @@
             <span class="n">unix_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">log_file_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Installs the features selected on the given machines</span>
 <span class="sd">        Args:</span>
@@ -514,6 +522,18 @@
 <span class="sd">                default : None</span>
 
 <span class="sd">            install_path (str)              -- Install to a specified path on the client</span>
+
+<span class="sd">                 default : None</span>
+
+<span class="sd">            log_file_loc (str)              -- Install to a specified log path on the client</span>
+
+<span class="sd">                 default : None</span>
+
+<span class="sd">            client_group_name (list)        -- List of client groups for the client</span>
+
+<span class="sd">                 default : None</span>
+
+<span class="sd">            storage_policy_name (str)       -- Storage policy for the default subclient</span>
 
 <span class="sd">                 default : None</span>
 
@@ -544,7 +564,10 @@
 <span class="sd">                                unix_features=None,</span>
 <span class="sd">                                username=&#39;username&#39;,</span>
 <span class="sd">                                password=&#39;password&#39;,</span>
-<span class="sd">                                install_path=&#39;C:\\Temp)</span>
+<span class="sd">                                install_path=&#39;C:\\Temp,</span>
+<span class="sd">                                log_file_loc=&#39;/var/log&#39;,</span>
+<span class="sd">                                client_group_name=[My_Servers],</span>
+<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;)</span>
 
 <span class="sd">                    **NOTE:** Either Unix or Windows clients_computers should be chosen and</span>
 <span class="sd">                    not both</span>
@@ -578,6 +601,13 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;106&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">client_group_name</span><span class="p">:</span>
+            <span class="n">client_group_name</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">client_group_name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">client_group_name</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commcell_object</span><span class="o">.</span><span class="n">client_groups</span><span class="o">.</span><span class="n">all_clientgroups</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Install&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">)</span>
+            <span class="n">selected_client_groups</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">:</span> <span class="n">client_group</span><span class="p">}</span>
+                                      <span class="k">for</span> <span class="n">client_group</span> <span class="ow">in</span> <span class="n">client_group_name</span><span class="p">]</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -639,7 +669,10 @@
                                                 <span class="s2">&quot;overrideSoftwareCache&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                                 <span class="s2">&quot;components&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                     <span class="s2">&quot;commonInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                                        <span class="s2">&quot;globalFilters&quot;</span><span class="p">:</span> <span class="mi">2</span>
+                                                        <span class="s2">&quot;globalFilters&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                                        <span class="s2">&quot;storagePolicyToUse&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy_name</span> <span class="k">if</span> <span class="n">storage_policy_name</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                                                        <span class="p">}</span>
                                                     <span class="p">},</span>
                                                     <span class="s2">&quot;fileSystem&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                         <span class="s2">&quot;configureForLaptopBackups&quot;</span><span class="p">:</span> <span class="kc">False</span>
@@ -647,10 +680,14 @@
                                                     <span class="s2">&quot;componentInfo&quot;</span><span class="p">:</span> <span class="n">install_options</span><span class="p">,</span>
                                                 <span class="p">},</span>
                                                 <span class="s2">&quot;clientInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                    <span class="s2">&quot;clientGroups&quot;</span><span class="p">:</span> <span class="n">selected_client_groups</span> <span class="k">if</span> <span class="n">client_group_name</span> <span class="k">else</span> <span class="p">[],</span>
                                                     <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                         <span class="s2">&quot;evmgrcPort&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
                                                         <span class="s2">&quot;cvdPort&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
                                                         <span class="s2">&quot;installDirectory&quot;</span><span class="p">:</span> <span class="n">install_path</span> <span class="k">if</span> <span class="n">install_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                                                    <span class="p">},</span>
+                                                    <span class="s2">&quot;clientProps&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                                        <span class="s2">&quot;logFilesLocation&quot;</span><span class="p">:</span> <span class="n">log_file_loc</span> <span class="k">if</span> <span class="n">log_file_loc</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
                                                     <span class="p">}</span>
                                                 <span class="p">}</span>
                                             <span class="p">}</span>
@@ -701,7 +738,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

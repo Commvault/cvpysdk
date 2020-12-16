@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.postgresinstance &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.instances.postgresinstance &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -172,6 +172,11 @@
 <span class="sd">PostgreSQLInstance:</span>
 <span class="sd">===================</span>
 
+<span class="sd">    _get_instance_properties()           --     Gets the properties of this instance</span>
+
+<span class="sd">    _get_instance_properties_json()      --     Gets all the instance related properties of</span>
+<span class="sd">    PostgreSQL instance.</span>
+
 <span class="sd">    _restore_json()                      --     returns the JSON request to pass to the API as per</span>
 <span class="sd">    the options selected by the user</span>
 
@@ -206,20 +211,28 @@
 
 <span class="sd">    **postgres_version**                 --  returns the postgres server version</span>
 
+<span class="sd">    **standby_instance_name**            --  Returns the standby instance name</span>
+
+<span class="sd">    **standby_instance_id**              --  Returns the standby instance id</span>
+
+<span class="sd">    **use_master_for_log_backup**        --  Returns True if master is used for log backup</span>
+
+<span class="sd">    **use_master_for_data_backup**       --  Returns True if master is used for data backup</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">..instance</span> <span class="k">import</span> <span class="n">Instance</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..instance</span> <span class="kn">import</span> <span class="n">Instance</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="PostgreSQLInstance"><a class="viewcode-back" href="../../../source/cvpysdk.instances.html#cvpysdk.instances.postgresinstance.PostgreSQLInstance">[docs]</a><span class="k">class</span> <span class="nc">PostgreSQLInstance</span><span class="p">(</span><span class="n">Instance</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Derived class from Instance Base class, representing a POSTGRESQL instance,</span>
 <span class="sd">        and to perform operations on that Instance.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Instances class.</span>
 
 <span class="sd">            Args:</span>
@@ -245,7 +258,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_bin_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the bin directory of postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the bin directory of postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;BinaryDirectory&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;BinaryDirectory&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -255,7 +272,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_lib_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the lib directory of postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the lib directory of postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;LibDirectory&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;LibDirectory&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -265,7 +286,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_archive_log_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the archive log directory of postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the archive log directory of postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;ArchiveLogDirectory&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;ArchiveLogDirectory&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -275,7 +300,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_server_user_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the username of postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the username of postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;SAUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;SAUser&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -285,7 +314,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_server_port_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the port number associated with postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the port number associated with postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;port&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;port&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -295,7 +328,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">maintenance_database</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the maintenance database associated with postgres server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the maintenance database associated with postgres server</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MaintainenceDB&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;MaintainenceDB&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
@@ -305,13 +342,124 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">postgres_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the postgres server version&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns the postgres server version</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
             <span class="s1">&#39;Instance&#39;</span><span class="p">,</span>
             <span class="s1">&#39;105&#39;</span><span class="p">,</span>
             <span class="s2">&quot;Could not fetch postgres version.&quot;</span><span class="p">)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">standby_instance_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the standby instance name</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_standby_enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instanceName&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">standby_instance_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the standby instance id</span>
+
+<span class="sd">            Return Type: str</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_standby_enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instanceId&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_standby_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True if standby enabled. False if not</span>
+
+<span class="sd">            Return Type: bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isStandbyEnabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_master_for_log_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns True if master is used for log backup</span>
+
+<span class="sd">            Return Type: bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;useMasterForLogBkp&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@use_master_for_log_backup</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">use_master_for_log_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Setter for user master for log backup standby property</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                value (bool)  -- True to use master for log backup</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span>
+        <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">][</span><span class="s1">&#39;useMasterForLogBkp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_master_for_data_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns True if master is used for data backup</span>
+
+<span class="sd">            Return Type: bool</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;useMasterForDataBkp&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@use_master_for_data_backup</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">use_master_for_data_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Setter for user master for data backup standby property</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                value (bool)  -- True to use master for data backup</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span>
+        <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">][</span><span class="s1">&#39;standbyOptions&#39;</span><span class="p">][</span><span class="s1">&#39;useMasterForDataBkp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_instance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the properties of this instance.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PostgreSQLInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_postgresql_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;postGreSQLInstance&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_instance_properties_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Gets all the instance related properties of PostgreSQL instance.</span>
+
+<span class="sd">           Returns:</span>
+<span class="sd">                dict - all instance properties put inside a dict</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instanceProperties&quot;</span><span class="p">:</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">,</span>
+                    <span class="s2">&quot;postGreSQLInstance&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postgresql_instance</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">instance_json</span>
 
     <span class="k">def</span> <span class="nf">_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the JSON request to pass to the API as per the options selected by the user.</span>
@@ -621,7 +769,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.postgressubclient &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.subclients.postgressubclient &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -172,6 +172,8 @@
 <span class="sd">PostgresSubclient:</span>
 <span class="sd">==================</span>
 
+<span class="sd">    set_content()                        --  Adds/Updates/Deletes the postgresql subclient contents</span>
+
 <span class="sd">    collect_object_list()                --  Sets the collect object list flag for the subclient</span>
 <span class="sd">    as the value provided as input</span>
 
@@ -189,7 +191,6 @@
 <span class="sd">    restore_postgres_server()            --  Method to restore the Postgres server</span>
 
 
-
 <span class="sd">PostgresSubclient instance Attributes</span>
 <span class="sd">=====================================</span>
 
@@ -199,16 +200,15 @@
 <span class="sd">    **collect_object_list**              --  Returns the collect object list flag of the subclient</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
-<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="k">import</span> <span class="n">DatabaseSubclient</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">.dbsubclient</span> <span class="kn">import</span> <span class="n">DatabaseSubclient</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 <div class="viewcode-block" id="PostgresSubclient"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.postgressubclient.PostgresSubclient">[docs]</a><span class="k">class</span> <span class="nc">PostgresSubclient</span><span class="p">(</span><span class="n">DatabaseSubclient</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Derived class from Subclient Base class, representing a file system subclient,</span>
 <span class="sd">        and to perform operations on that subclient.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructor for the class</span>
 
@@ -243,6 +243,61 @@
                         <span class="n">database_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">database</span><span class="p">[</span>
                             <span class="s1">&#39;postgreSQLContent&#39;</span><span class="p">][</span><span class="s1">&#39;databaseName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">database_list</span>
+
+<div class="viewcode-block" id="PostgresSubclient.set_content"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.postgressubclient.PostgresSubclient.set_content">[docs]</a>    <span class="k">def</span> <span class="nf">set_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_list</span><span class="p">,</span> <span class="n">operation_type</span><span class="o">=</span><span class="s2">&quot;OVERWRITE&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Adds/Updates/Deletes the postgresql subclient contents</span>
+
+<span class="sd">            Args:</span>
+
+<span class="sd">                database_list (list)  -- list of databases to be added to the subclient content</span>
+
+<span class="sd">                operation_type (str)  -- Content operation to be performed</span>
+
+<span class="sd">                    Accepted Values:</span>
+
+<span class="sd">                        ADD         -- Adds the database list to existing content</span>
+
+<span class="sd">                        OVERWRITE   -- Replaces the content with given databases</span>
+
+<span class="sd">                        DELETE      -- Deletes the database from the content</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if database list is not a list</span>
+
+<span class="sd">                    if operation type is not accepted value</span>
+
+<span class="sd">                    if the database list is empty</span>
+
+<span class="sd">                    if the operation is performed on default subclient</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">operation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;delete&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Operation type not supported&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">database_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Cannot set empty content to a subclient&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_default_subclient</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Cannot set content to the default subclient&#39;</span><span class="p">)</span>
+        <span class="n">operation_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;add&#39;</span>   <span class="p">:</span>   <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;overwrite&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;delete&#39;</span><span class="p">:</span>   <span class="mi">3</span>
+            <span class="p">}</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span>
+        <span class="n">content_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">database</span> <span class="ow">in</span> <span class="n">database_list</span><span class="p">:</span>
+            <span class="n">content_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;postgreSQLContent&#39;</span><span class="p">:</span>
+                    <span class="p">{</span>
+                        <span class="s1">&#39;databaseName&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">database</span><span class="si">}</span><span class="s1">&#39;</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content_dict</span><span class="p">)</span>
+        <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;contentOperationType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operation_map</span><span class="p">[</span><span class="n">operation_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">properties</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">collect_object_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -522,7 +577,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.vmware &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.vmware &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -187,11 +187,11 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="k">import</span> <span class="n">RPStore</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.subclients.vssubclient</span> <span class="k">import</span> <span class="n">VirtualServerSubclient</span>
-<span class="kn">from</span> <span class="nn">cvpysdk.virtualmachinepolicies</span> <span class="k">import</span> <span class="n">VirtualMachinePolicy</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">...exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.storage</span> <span class="kn">import</span> <span class="n">RPStore</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.subclients.vssubclient</span> <span class="kn">import</span> <span class="n">VirtualServerSubclient</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.virtualmachinepolicies</span> <span class="kn">import</span> <span class="n">VirtualMachinePolicy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">...exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="VMWareVirtualServerSubclient"><a class="viewcode-back" href="../../../../source/cvpysdk.subclients.virtualserver.html#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient">[docs]</a><span class="k">class</span> <span class="nc">VMWareVirtualServerSubclient</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">):</span>
@@ -201,7 +201,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backupset_object</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">subclient_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Instance object for the given Virtual Server instance.</span>
 <span class="sd">        Args</span>
 <span class="sd">        class_object (backupset_object, subclient_name, subclient_id)  --  instance of the</span>
@@ -795,68 +795,65 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">hyperv_client</span><span class="p">,</span>
             <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">hyperv_server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">destination_path</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">esx_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">DestinationPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">register_to_failover</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">network</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">subnet</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">drive</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
+            <span class="n">destination_network</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            This converts the VMware to hyperv</span>
-<span class="sd">            Args:</span>
-<span class="sd">                    vm_to_restore          (list):     provide the VM names to restore</span>
+<span class="sd">                This converts the AzureRM to Hyper-v VM</span>
+<span class="sd">                Args:</span>
 
-<span class="sd">                    hyperv_client    (basestring):      name of the hyperv client</span>
-<span class="sd">                                                       where the VM should be</span>
-<span class="sd">                                                       restored.</span>
+<span class="sd">                    hyperv_client(basestring):  name of the hyper-V client</span>
+<span class="sd">                                                    where the VM should restored.</span>
 
-<span class="sd">                    hyperv_server   (basestring):      HyperV server</span>
+<span class="sd">                    vm_to_restore(dict):    dict containing the VM name(s) to restore as</span>
+<span class="sd">                                                keys and the new VM name(s) as their values.</span>
+<span class="sd">                                                Input empty string for default VM name for</span>
+<span class="sd">                                                restored VM.</span>
+<span class="sd">                                                default: {}</span>
 
-<span class="sd">                    destination_path  (basestring):    path of the destinaion vm</span>
+<span class="sd">                    DestinationPath   (basestring): DestinationPath</span>
+<span class="sd">                                                        in the Hyper-V client</span>
 
-<span class="sd">                    overwrite              (bool):    overwrite the existing VM</span>
-<span class="sd">                                                      default: True</span>
+<span class="sd">                    proxy_client(basestring):   destination proxy client</span>
 
-<span class="sd">                    power_on               (bool):    power on the  restored VM</span>
-<span class="sd">                                                      default: True</span>
+<span class="sd">                    overwrite   (bool):    overwrite the existing VM</span>
+<span class="sd">                                                default: True</span>
 
-<span class="sd">                    resister_to_failover (basestring): failover register</span>
+<span class="sd">                    power_on  (bool):    power on the  restored VM</span>
+<span class="sd">                                            default: True</span>
 
-<span class="sd">                    network           (basestring):   network of the vm</span>
+<span class="sd">                    copy_precedence   (int):    copy precedence value</span>
+<span class="sd">                                                    default: 0</span>
 
-<span class="sd">                    copy_precedence         (int):    copy precedence value</span>
-<span class="sd">                                                      default: 0</span>
+<span class="sd">                    Destination_network   (basestring):      Destination network</span>
+<span class="sd">                                                            in the Hyper-V client</span>
 
-<span class="sd">                    proxy_client      (basestring):   destination proxy client</span>
+<span class="sd">                    Returns:</span>
+<span class="sd">                        object - instance of the Job class for this restore job</span>
 
-<span class="sd">                Returns:</span>
-<span class="sd">                    object - instance of the Job class for this restore job</span>
+<span class="sd">                    Raises:</span>
+<span class="sd">                        SDKException:</span>
+<span class="sd">                            if inputs are not of correct type as per definition</span>
 
-<span class="sd">                Raises:</span>
-<span class="sd">                    SDKException:</span>
-<span class="sd">                        if inputs are not of correct type as per definition</span>
+<span class="sd">                            if failed to initialize job</span>
 
-<span class="sd">                        if failed to initialize job</span>
+<span class="sd">                            if response is empty</span>
 
-<span class="sd">                        if response is empty</span>
-
-<span class="sd">                        if response is not success</span>
+<span class="sd">                            if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># check mandatory input parameters are correct</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">hyperv_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hyperv_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">vm_to_restore</span> <span class="o">=</span> <span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
 
         <span class="n">subclient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_conversion_defaults</span><span class="p">(</span><span class="n">hyperv_client</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">)</span>
         <span class="n">instance</span> <span class="o">=</span> <span class="n">subclient</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">_instance_object</span>
@@ -867,34 +864,25 @@
             <span class="n">restore_option</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">vcenter_client</span><span class="o">=</span><span class="n">hyperv_client</span><span class="p">,</span>
-            <span class="n">destination_path</span><span class="o">=</span><span class="n">destination_path</span><span class="p">,</span>
-            <span class="n">esx_host</span><span class="o">=</span><span class="n">esx_host</span><span class="p">,</span>
             <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
+            <span class="n">DestinationPath</span><span class="o">=</span><span class="n">DestinationPath</span><span class="p">,</span>
             <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
-            <span class="n">register_to_failover</span><span class="o">=</span><span class="n">register_to_failover</span><span class="p">,</span>
-            <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">,</span>
-            <span class="n">subnet</span><span class="o">=</span><span class="n">subnet</span><span class="p">,</span>
-            <span class="n">vm_to_restore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_vm_to_restore</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">),</span>
+            <span class="n">vm_to_restore</span><span class="o">=</span><span class="n">vm_to_restore</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
+            <span class="n">datastore</span><span class="o">=</span><span class="n">DestinationPath</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">vm_to_restore</span><span class="p">,</span>
+            <span class="n">destination_network</span><span class="o">=</span><span class="n">destination_network</span><span class="p">,</span>
             <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">destination_instance</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
             <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
         <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>
-
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span>
-            <span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">][</span><span class="s1">&#39;advancedRestoreOptions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;nics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Network adapter 1&#39;</span><span class="p">,</span>
-                                                                                 <span class="s1">&#39;networkName&#39;</span><span class="p">:</span> <span class="n">network</span>
-                                                                                 <span class="p">}]</span>
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span>
-            <span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">][</span><span class="s1">&#39;advancedRestoreOptions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;DestinationPath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination_path</span>
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span>
-            <span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">][</span><span class="s1">&#39;advancedRestoreOptions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;Datastore&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span>
-            <span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">][</span><span class="s1">&#39;advancedRestoreOptions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;disks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
-            <span class="s1">&#39;DestinationPath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">drive</span> <span class="o">+</span> <span class="n">destination_path</span>
+        <span class="n">disk_options</span> <span class="o">=</span> <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerRstOption&#39;</span><span class="p">][</span><span class="s1">&#39;diskLevelVMRestoreOption&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">disk_info</span> <span class="ow">in</span> <span class="n">disk_options</span><span class="p">[</span><span class="s1">&#39;advancedRestoreOptions&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;disks&#39;</span><span class="p">]:</span>
+            <span class="n">disk_info</span><span class="p">[</span><span class="s1">&#39;newName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;taskInfo&#39;</span><span class="p">][</span><span class="s1">&#39;subTasks&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;restoreOptions&#39;</span><span class="p">][</span><span class="s1">&#39;volumeRstOption&#39;</span><span class="p">][</span><span class="s1">&#39;volumeLevelRestoreType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
@@ -1094,7 +1082,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

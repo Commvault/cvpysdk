@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -285,25 +285,25 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.subclient</span> <span class="k">import</span> <span class="n">Subclients</span>
-<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">AppIDAType</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span><span class="p">,</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.subclient</span> <span class="kn">import</span> <span class="n">Subclients</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">AppIDAType</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span><span class="p">,</span> <span class="n">Schedules</span>
 
 
 <div class="viewcode-block" id="Instances"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instances">[docs]</a><span class="k">class</span> <span class="nc">Instances</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the instances associated with a client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Instances class.</span>
 
 <span class="sd">            Args:</span>
@@ -331,24 +331,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_vs_instance_type_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-        <span class="kn">from</span> <span class="nn">.instances.vsinstance</span> <span class="k">import</span> <span class="n">VirtualServerInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.cainstance</span> <span class="k">import</span> <span class="n">CloudAppsInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.bigdataappsinstance</span> <span class="k">import</span> <span class="n">BigDataAppsInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sqlinstance</span> <span class="k">import</span> <span class="n">SQLServerInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.hanainstance</span> <span class="k">import</span> <span class="n">SAPHANAInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.oracleinstance</span> <span class="k">import</span> <span class="n">OracleInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sybaseinstance</span> <span class="k">import</span> <span class="n">SybaseInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.saporacleinstance</span> <span class="k">import</span> <span class="n">SAPOracleInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.mysqlinstance</span> <span class="k">import</span> <span class="n">MYSQLInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndbinstance</span> <span class="k">import</span> <span class="n">LNDBInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndocinstance</span> <span class="k">import</span> <span class="n">LNDOCInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndminstance</span> <span class="k">import</span> <span class="n">LNDMInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.postgresinstance</span> <span class="k">import</span> <span class="n">PostgreSQLInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.informixinstance</span> <span class="k">import</span> <span class="n">InformixInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.vminstance</span> <span class="k">import</span> <span class="n">VMInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.db2instance</span> <span class="k">import</span> <span class="n">DB2Instance</span>
-        <span class="kn">from</span> <span class="nn">.instances.aadinstance</span> <span class="k">import</span> <span class="n">AzureAdInstance</span>
-        <span class="kn">from</span> <span class="nn">.instances.sharepointinstance</span> <span class="k">import</span> <span class="n">SharepointInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.vsinstance</span> <span class="kn">import</span> <span class="n">VirtualServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.cainstance</span> <span class="kn">import</span> <span class="n">CloudAppsInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.bigdataappsinstance</span> <span class="kn">import</span> <span class="n">BigDataAppsInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sqlinstance</span> <span class="kn">import</span> <span class="n">SQLServerInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.hanainstance</span> <span class="kn">import</span> <span class="n">SAPHANAInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.oracleinstance</span> <span class="kn">import</span> <span class="n">OracleInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sybaseinstance</span> <span class="kn">import</span> <span class="n">SybaseInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.saporacleinstance</span> <span class="kn">import</span> <span class="n">SAPOracleInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.mysqlinstance</span> <span class="kn">import</span> <span class="n">MYSQLInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndbinstance</span> <span class="kn">import</span> <span class="n">LNDBInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndocinstance</span> <span class="kn">import</span> <span class="n">LNDOCInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.lotusnotes.lndminstance</span> <span class="kn">import</span> <span class="n">LNDMInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.postgresinstance</span> <span class="kn">import</span> <span class="n">PostgreSQLInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.informixinstance</span> <span class="kn">import</span> <span class="n">InformixInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.vminstance</span> <span class="kn">import</span> <span class="n">VMInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.db2instance</span> <span class="kn">import</span> <span class="n">DB2Instance</span>
+        <span class="kn">from</span> <span class="nn">.instances.aadinstance</span> <span class="kn">import</span> <span class="n">AzureAdInstance</span>
+        <span class="kn">from</span> <span class="nn">.instances.sharepointinstance</span> <span class="kn">import</span> <span class="n">SharepointInstance</span>
 
         <span class="c1"># add the agent name to this dict, and its class as the value</span>
         <span class="c1"># the appropriate class object will be initialized based on the agent</span>
@@ -372,7 +372,7 @@
             <span class="s1">&#39;sharepoint server&#39;</span><span class="p">:</span> <span class="n">SharepointInstance</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all instances of the agent of a client.</span>
 
 <span class="sd">            Returns:</span>
@@ -393,15 +393,15 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Instances class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Instances class instance for Agent: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the instances associated to the Agent.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_instances</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the instance for the given instance ID or</span>
 <span class="sd">            the details of the instance for given instance Name.</span>
 
@@ -1775,7 +1775,7 @@
 <div class="viewcode-block" id="Instance"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instance">[docs]</a><span class="k">class</span> <span class="nc">Instance</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing instance operations for a specific instance.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_object</span><span class="p">,</span> <span class="n">instance_name</span><span class="p">,</span> <span class="n">instance_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the instance object.</span>
 
 <span class="sd">            Args:</span>
@@ -1826,7 +1826,7 @@
         <span class="n">instances</span> <span class="o">=</span> <span class="n">Instances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">)</span><span class="o">.</span><span class="n">instance_id</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Instance class instance for Instance: &quot;</span><span class="si">{0}</span><span class="s1">&quot; of Agent: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -2444,7 +2444,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Client</span>
+        <span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Client</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">Client</span><span class="p">))</span> <span class="ow">and</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_path</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
@@ -3000,7 +3000,7 @@
 
 <div class="viewcode-block" id="Instance.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.instance.Instance.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the properties of the Instance.&quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="k">import</span> <span class="n">Backupsets</span>
+        <span class="kn">from</span> <span class="nn">.backupset</span> <span class="kn">import</span> <span class="n">Backupsets</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_instance_properties</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backupsets</span> <span class="o">=</span> <span class="n">Backupsets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -3018,7 +3018,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

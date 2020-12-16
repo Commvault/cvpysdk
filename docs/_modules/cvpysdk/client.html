@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.client &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.client &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -371,6 +371,9 @@
 <span class="sd">                                --  Move the Job Results Directory for an</span>
 <span class="sd">                                    Exchange Online Environment</span>
 
+<span class="sd">    get_environment_details()   --  Gets environment tile details present in dashboard page</span>
+
+<span class="sd">    get_needs_attention_details()   -- Gets needs attention tile details from dashboard page</span>
 
 
 <span class="sd">Client Attributes</span>
@@ -455,38 +458,38 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">requests</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.agent</span> <span class="k">import</span> <span class="n">Agents</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
-<span class="kn">from</span> <span class="nn">.deployment.uninstall</span> <span class="k">import</span> <span class="n">Uninstall</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agents</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="kn">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.deployment.uninstall</span> <span class="kn">import</span> <span class="n">Uninstall</span>
 
-<span class="kn">from</span> <span class="nn">.network</span> <span class="k">import</span> <span class="n">Network</span>
-<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="k">import</span> <span class="n">NetworkThrottle</span>
+<span class="kn">from</span> <span class="nn">.network</span> <span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">.network_throttle</span> <span class="kn">import</span> <span class="n">NetworkThrottle</span>
 
-<span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">Users</span>
+<span class="kn">from</span> <span class="nn">.security.user</span> <span class="kn">import</span> <span class="n">Users</span>
 
-<span class="kn">from</span> <span class="nn">.name_change</span> <span class="k">import</span> <span class="n">NameChange</span>
+<span class="kn">from</span> <span class="nn">.name_change</span> <span class="kn">import</span> <span class="n">NameChange</span>
 
 
 <div class="viewcode-block" id="Clients"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Clients">[docs]</a><span class="k">class</span> <span class="nc">Clients</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the clients associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Clients class.</span>
 
 <span class="sd">            Args:</span>
@@ -519,7 +522,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all clients of the commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -533,17 +536,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Clients class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Clients class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the clients associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_clients</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the client for the given client ID or</span>
 <span class="sd">            the details of the client for given client Name.</span>
 
@@ -2695,7 +2698,7 @@
 <div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing client operations for a specific client.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">client_name</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the Client class instance.</span>
 
 <span class="sd">            Args:</span>
@@ -2769,7 +2772,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Client class instance for Client: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">)</span>
@@ -3391,7 +3394,7 @@
     <span class="k">def</span> <span class="nf">_security_association</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the security association object&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">.security.security_association</span> <span class="k">import</span> <span class="n">SecurityAssociation</span>
+            <span class="kn">from</span> <span class="nn">.security.security_association</span> <span class="kn">import</span> <span class="n">SecurityAssociation</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span> <span class="o">=</span> <span class="n">SecurityAssociation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_association_object</span>
@@ -4672,7 +4675,7 @@
 
         <span class="k">if</span> <span class="s2">&quot;url_params&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">url_param</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;url_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">param_string</span> <span class="o">+=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{url_param}</span><span class="s2">=</span><span class="si">{param_val}</span><span class="s2">&amp;&quot;</span>
+                <span class="n">param_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">url_param</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">param_val</span><span class="si">}</span><span class="s2">&amp;&quot;</span>
 
         <span class="k">if</span> <span class="s2">&quot;os_type&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">os_filter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;os_type&#39;</span><span class="p">]</span>
@@ -5373,13 +5376,80 @@
         <span class="sd">&quot;&quot;&quot; returns instance of readiness&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readiness</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_readiness</span> <span class="o">=</span> <span class="n">_Readiness</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readiness</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readiness</span>
 
+<div class="viewcode-block" id="Client.get_environment_details"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.get_environment_details">[docs]</a>    <span class="k">def</span> <span class="nf">get_environment_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary with the count of fileservers, VM, Laptop for all the service commcells</span>
+<span class="sd">        </span>
+<span class="sd">         example output:</span>
+<span class="sd">            {</span>
+<span class="sd">            &#39;fileServerCount&#39;: {&#39;commcell_name&#39;: count},</span>
+<span class="sd">            &#39;laptopCount&#39;: {&#39;commcell_name&#39;: count},</span>
+<span class="sd">            &#39;vmCount&#39;: {&#39;commcell_name&#39;: count}</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Accept&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;CVContext&#39;</span><span class="p">:</span> <span class="s1">&#39;Comet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Authtoken&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DASHBOARD_ENVIRONMENT_TILE&#39;</span><span class="p">],</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;cometClientCount&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">main_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fileServerCount&#39;</span><span class="p">,</span> <span class="s1">&#39;laptopCount&#39;</span><span class="p">,</span> <span class="s1">&#39;vmCount&#39;</span><span class="p">]</span>
+                <span class="n">environment_tile_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">main_keys</span><span class="p">:</span>
+                    <span class="n">tile</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">tile_info</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;cometClientCount&#39;</span><span class="p">]:</span>
+                        <span class="n">tile</span><span class="p">[</span><span class="n">tile_info</span><span class="p">[</span><span class="s1">&#39;commcell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tile_info</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="n">environment_tile_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tile</span>
+                <span class="k">return</span> <span class="n">environment_tile_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Client.get_needs_attention_details"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.client.Client.get_needs_attention_details">[docs]</a>    <span class="k">def</span> <span class="nf">get_needs_attention_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells</span>
+<span class="sd">        </span>
+<span class="sd">        example output:</span>
+<span class="sd">            {</span>
+<span class="sd">            &#39;CountOfAnomalousInfrastructureServers&#39;: {&#39;commcell_name&#39;: count},</span>
+<span class="sd">            &#39;CountOfAnomalousServers&#39;: {&#39;commcell_name&#39;: count},</span>
+<span class="sd">            &#39;CountOfAnomalousJobs&#39;: {&#39;commcell_name&#39;: count}</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Accept&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;CVContext&#39;</span><span class="p">:</span> <span class="s1">&#39;Comet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Authtoken&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DASHBOARD_NEEDS_ATTENTION_TILE&#39;</span><span class="p">],</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;commcellEntityRespList&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">needs_attention_tile_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">main_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CountOfAnomalousInfrastructureServers&#39;</span><span class="p">,</span> <span class="s1">&#39;CountOfAnomalousServers&#39;</span><span class="p">,</span> <span class="s1">&#39;CountOfAnomalousJobs&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">main_keys</span><span class="p">:</span>
+                    <span class="n">tile</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">tile_info</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commcellEntityRespList&#39;</span><span class="p">]:</span>
+                        <span class="n">tile</span><span class="p">[</span><span class="n">tile_info</span><span class="p">[</span><span class="s1">&#39;commcell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tile_info</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="n">needs_attention_tile_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tile</span>
+                <span class="k">return</span> <span class="n">needs_attention_tile_dict</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span></div></div>
 
 <span class="k">class</span> <span class="nc">_Readiness</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot; Class for checking the connection details of a client &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span> <span class="o">=</span> <span class="n">commcell</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span> <span class="o">=</span> <span class="n">client_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reason</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5387,14 +5457,28 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dict</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">__fetch_readiness_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__fetch_readiness_details</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">network</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">resource</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">disabled_clients</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">cs_cc_network_check</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs readiness check on the client</span>
 
 <span class="sd">            Args:</span>
-<span class="sd">                network (bool): Performs Network Readiness Check. Defaults to True.</span>
-<span class="sd">                resource (bool): Performs Resource Readiness Check. Defaults to False.</span>
-<span class="sd">                disabled_clients (bool): Includes backup activity disabled clients. Defaults to False.</span>
+<span class="sd">                network (bool)  - Performs Network Readiness Check.</span>
+<span class="sd">                                    Default: True</span>
+
+<span class="sd">                resource (bool) - Performs Resource Readiness Check.</span>
+<span class="sd">                                    Default: False</span>
+
+<span class="sd">                disabled_clients (bool) - Includes backup activity disabled clients.</span>
+<span class="sd">                                            Default: False</span>
+
+<span class="sd">                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.</span>
+<span class="sd">                                                Default: False</span>
 
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
@@ -5404,7 +5488,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__client_id</span><span class="p">,</span>
+                <span class="n">network</span><span class="p">,</span>
+                <span class="n">resource</span><span class="p">,</span>
+                <span class="n">disabled_clients</span><span class="p">,</span>
+                <span class="n">cs_cc_network_check</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
@@ -5418,13 +5507,28 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__commcell</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">is_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cs_cc_network_check</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs readiness check on the client</span>
 
-<span class="sd">        Returns: connection status</span>
+<span class="sd">        Args:</span>
+<span class="sd">                network (bool)  - Performs Network Readiness Check.</span>
+<span class="sd">                                    Default: True</span>
+
+<span class="sd">                resource (bool) - Performs Resource Readiness Check.</span>
+<span class="sd">                                    Default: False</span>
+
+<span class="sd">                disabled_clients (bool) - Includes backup activity disabled clients.</span>
+<span class="sd">                                            Default: False</span>
+
+<span class="sd">                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.</span>
+<span class="sd">                                                Default: False</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">            (bool)  - True if ready else False</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__fetch_readiness_details</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fetch_readiness_details</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">disabled_clients</span><span class="p">,</span> <span class="n">cs_cc_network_check</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="s2">&quot;Ready.&quot;</span>
 
     <span class="k">def</span> <span class="nf">__check_reason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -5476,7 +5580,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

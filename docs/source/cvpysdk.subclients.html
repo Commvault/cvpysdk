@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients package &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.subclients package &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -819,7 +819,7 @@ Returns:</p>
 
 <dl class="py method">
 <dt id="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place">
-<code class="sig-name descname">restore_in_place</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">journal_report</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">restore_as_stub</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchsubclient.html#ExchangeSubclient.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">restore_in_place</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">journal_report</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">restore_as_stub</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">recovery_point_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/exchsubclient.html#ExchangeSubclient.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restores the mailboxes/folders specified in the input paths list to the same location.</p>
 <dl>
 <dt>Args:</dt><dd><p>paths                   (list)  –  list of paths of mailboxes/folders to restore</p>
@@ -832,7 +832,11 @@ Returns:</p>
 <p>default: False</p>
 </dd>
 </dl>
-<p>restore_as_stub                   (dict)  –  setters for common options</p>
+<p>restore_as_stub         (dict)  –  setters for common options</p>
+<dl class="simple">
+<dt>recovery_point_id       (int)   –  ID of the recovery point to which the mailbox is to be restored to</dt><dd><p>Default: None</p>
+</dd>
+</dl>
 </dd>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
 </dd>
@@ -3254,7 +3258,8 @@ with the subclient</p>
 <div class="section" id="postgressubclient">
 <h3>PostgresSubclient:<a class="headerlink" href="#postgressubclient" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div><p>collect_object_list()                –  Sets the collect object list flag for the subclient
+<div><p>set_content()                        –  Adds/Updates/Deletes the postgresql subclient contents</p>
+<p>collect_object_list()                –  Sets the collect object list flag for the subclient
 as the value provided as input</p>
 <p>_backup_request_json()               –  prepares the json for the backup request</p>
 <p>_get_subclient_properties()          –  gets the subclient related properties of
@@ -3405,6 +3410,35 @@ in order to perform redirect restore</p>
 </dd>
 </dl>
 </div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.postgressubclient.PostgresSubclient.set_content">
+<code class="sig-name descname">set_content</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">database_list</span></em>, <em class="sig-param"><span class="n">operation_type</span><span class="o">=</span><span class="default_value">'OVERWRITE'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/postgressubclient.html#PostgresSubclient.set_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.postgressubclient.PostgresSubclient.set_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds/Updates/Deletes the postgresql subclient contents</p>
+<p>Args:</p>
+<blockquote>
+<div><p>database_list (list)  – list of databases to be added to the subclient content</p>
+<p>operation_type (str)  – Content operation to be performed</p>
+<blockquote>
+<div><p>Accepted Values:</p>
+<blockquote>
+<div><p>ADD         – Adds the database list to existing content</p>
+<p>OVERWRITE   – Replaces the content with given databases</p>
+<p>DELETE      – Deletes the database from the content</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<dl>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if database list is not a list</p>
+<p>if operation type is not accepted value</p>
+<p>if the database list is empty</p>
+<p>if the operation is performed on default subclient</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -4609,7 +4643,7 @@ default: 0</p>
 <dl class="py class">
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.disk_pattern">
 <em class="property">class </em><code class="sig-name descname">disk_pattern</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.disk_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.disk_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
 <p>stores the disk pattern of all hypervisors</p>
 <dl class="py attribute">
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.disk_pattern.datastore">
@@ -4950,7 +4984,7 @@ default: 0</p>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

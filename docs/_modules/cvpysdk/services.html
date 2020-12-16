@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.services &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.services &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -182,8 +182,8 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 
 <span class="n">SERVICES_DICT_TEMPLATE</span> <span class="o">=</span> <span class="p">{</span>
@@ -194,6 +194,14 @@
     <span class="s1">&#39;GET_SAML_TOKEN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/SamlToken?validityInMins=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;WHO_AM_I&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">WhoAmI&#39;</span><span class="p">,</span>
 
+    <span class="s1">&#39;TFA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/TwoFactorAuth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TFA_ENABLE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/TwoFactorAuth/Action/Enable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TFA_DISABLE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/TwoFactorAuth/Action/Disable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ORG_TFA&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Organization/</span><span class="si">%s</span><span class="s1">/TwoFactorAuth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ORG_TFA_ENABLE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Organization/</span><span class="si">%s</span><span class="s1">/TwoFactorAuth/Action/Enable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ORG_TFA_DISABLE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Organization/</span><span class="si">%s</span><span class="s1">/TwoFactorAuth/Action/Disable&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;TFA_STATUS_OF_USER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Security/TwoFactorAuth/Status?username=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;GET_ALL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_VIRTUAL_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?PseudoClientType=VSPseudo&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CLIENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
@@ -201,7 +209,7 @@
     <span class="s1">&#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?hiddenclients=true&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_PSEUDO_CLIENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client?PseudoClientType&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CHECK_READINESS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Client/</span><span class="si">%s</span><span class="s1">/CheckReadiness?network=</span><span class="si">%s</span><span class="s1">&amp;resourceCapacity=</span><span class="si">%s</span><span class="s1">&#39;</span>
-                       <span class="s1">&#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=</span><span class="si">%s</span><span class="s1">&amp;CSCCNetworkCheck=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_ALL_AGENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Agent?clientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;AGENT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Agent&#39;</span><span class="p">,</span>
@@ -227,6 +235,7 @@
     <span class="s1">&#39;KILL_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/kill&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RESUBMIT_JOB&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Job/</span><span class="si">%s</span><span class="s1">/action/Resubmit&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ALL_JOBS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Jobs&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JOB_EVENTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Events?jobId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;JOB_MANAGEMENT_SETTINGS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/JobManagementSetting&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;ENABLE_SHARED_LAPTOP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Commcell/Properties/SharedLaptopUsage/Action/Enable&#39;</span><span class="p">,</span>
@@ -252,8 +261,8 @@
     <span class="s1">&#39;ALERT&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">AlertRule/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;CREATE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Groups&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DELETE_BLR_PAIR&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/continuous/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;GRANULAR_BLR_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Replications/Monitors/continuous/VmScale?destProxyClientId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&#39;</span>
-                           <span class="s1">&#39;&amp;vmUuid=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;GRANULAR_BLR_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Replications/Monitors/continuous/VmScale?destProxyClientId=</span><span class="si">%s</span><span class="s1">&amp;subclientId=</span><span class="si">%s</span><span class="s1">&amp;vmUuid=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;BROWSE_MOUNT_POINTS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Client/</span><span class="si">%s</span><span class="s1">/Action/BrowseMountPoints&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_VM_BROWSE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/VMBrowse?inventoryPath=</span><span class="si">%%</span><span class="s1">5CFOLDER</span><span class="si">%%</span><span class="s1">3AApplications</span><span class="si">%%</span><span class="s1">3AApplications&amp;PseudoClientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
@@ -362,6 +371,7 @@
 
     <span class="s1">&#39;DOMAIN_CONTROLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommCell/DomainController&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DELETE_DOMAIN_CONTROLER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommCell/DomainController/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DOMAIN_PROPERTIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommCell/DomainController?domainId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;DRBACKUP&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/CommServ/DRBackup&#39;</span><span class="p">,</span>
     <span class="s1">&#39;DISASTER_RECOVERY_PROPERTIES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Commcell/DRBackup/Properties&#39;</span><span class="p">,</span>
@@ -505,6 +515,11 @@
     <span class="s1">&#39;POLL_USER_SERVICE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/ServiceCommcell/IsUserPresent?userName=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;POLL_MAIL_SERVICE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/ServiceCommcell/IsUserPresent?email=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;POLL_REQUEST_ROUTER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/CommcellRedirect/RedirectListforUser?user=</span><span class="si">%s</span><span class="s1">&amp;getDistinctSAMLAppType=true&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MULTI_COMMCELL_DROP_DOWN&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/MultiCommcellsForUser&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SERVICE_COMMCELL_ASSOC&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/Security/MultiCommcell&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;DASHBOARD_ENVIRONMENT_TILE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">clients/count?type=fileserver,vm,laptop&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DASHBOARD_NEEDS_ATTENTION_TILE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">CommServ/Anomaly/Entity/Count?anomalousEntityType=14&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;GET_ALL_LIVE_SYNC_PAIRS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_LIVE_SYNC_VM_PAIRS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">Replications/Monitors/streaming?subclientId=</span><span class="si">%s</span><span class="s1">&amp;taskId=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
@@ -526,7 +541,7 @@
     <span class="s1">&#39;CLOUD_NODE_UPDATE&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">cloud/node/update&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_INDEX_SERVERS&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">dcube/getAnalyticsEngine?retrieveall=true&#39;</span><span class="p">,</span>
     <span class="s1">&#39;GET_ALL_ROLES&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">IndexingGateway/GetAnalyticsRolesInfo&#39;</span><span class="p">,</span>
-	<span class="s1">&#39;GET_SWAGGER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">swagger/V3/swagger.json&#39;</span>
+    <span class="s1">&#39;GET_SWAGGER&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">swagger/V3/swagger.json&#39;</span>
 <span class="p">}</span>
 
 
@@ -558,7 +573,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

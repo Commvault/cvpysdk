@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.index_server &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.index_server &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -175,7 +175,7 @@
 <span class="sd">============</span>
 
 <span class="sd">    __init__()                          --  initialize object of IndexServers class associated with</span>
-<span class="sd">    the commcell</span>
+<span class="sd">                                            the commcell</span>
 
 <span class="sd">    __str()                             --  returns all the index servers of the commcell</span>
 
@@ -208,7 +208,7 @@
 <span class="sd">-----------------------</span>
 
 <span class="sd">    **all_index_servers**               --  returns the dictionary consisting of all the index</span>
-<span class="sd">    servers associated with the commcell and there details</span>
+<span class="sd">                                            servers associated with the commcell and there details</span>
 
 <span class="sd">    **roles_data**                      --  returns the list of cloud roles details</span>
 
@@ -217,7 +217,7 @@
 <span class="sd">===========</span>
 
 <span class="sd">    __init()__                          --  initializes the object with the specified commcell</span>
-<span class="sd">    object, index server name and the cloud id</span>
+<span class="sd">                                            object, index server name and the cloud id</span>
 
 <span class="sd">    __repr__()                          --  returns the index server&#39;s name, the instance is</span>
 <span class="sd">    associated with</span>
@@ -238,10 +238,11 @@
 
 <span class="sd">    get_all_cores                       --  gets all the cores in index server</span>
 
-<span class="sd">    _create_solr_query()                 -- Create solr search query based on inputs provided</span>
+<span class="sd">    _create_solr_query()                --  Create solr search query based on inputs provided</span>
 
-<span class="sd">    execute_solr_query()                 -- Creates solr url based on input and executes it on solr on given core</span>
+<span class="sd">    execute_solr_query()                --  Creates solr url based on input and executes it on solr on given core</span>
 
+<span class="sd">    get_index_node()                    --  returns an Index server node object for given node name</span>
 
 <span class="sd">IndexServer Attributes</span>
 <span class="sd">----------------------</span>
@@ -265,7 +266,7 @@
 <span class="sd">    **client_id**                       --  returns the client id for this index server</span>
 
 <span class="sd">    **roles**                           --  returns the array of roles installed</span>
-<span class="sd">    with the index server within the commcell</span>
+<span class="sd">                                            with the index server within the commcell</span>
 
 <span class="sd">    **cloud_id**                        --  returns the cloud id of the index server</span>
 
@@ -276,6 +277,40 @@
 <span class="sd">    **index_server_client_id**          --  returns the index server client id</span>
 
 <span class="sd">    **role_display_name**               --  display name of roles</span>
+
+<span class="sd">    **is_cloud**                        --  returns boolean True if the Index server is cloud else returns False</span>
+
+<span class="sd">    **node_count**                      --  returns the number of Index server nodes</span>
+
+
+<span class="sd">IndexNode</span>
+<span class="sd">=========</span>
+
+<span class="sd">    __init__()                          --  initializes the class with commcell object</span>
+<span class="sd">                                            Index server cloud id and Node client name</span>
+
+<span class="sd">    refresh()                           --  refreshes the attributes</span>
+
+<span class="sd">    modify()                            --  to modify the index server node details</span>
+
+<span class="sd">IndexNode Attributes</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">    **node_name**                       --  returns Index server node client name</span>
+
+<span class="sd">    **node_id**                         --  returns Index server node client id</span>
+
+<span class="sd">    **solr_port**                       --  returns port number Solr is running on the\</span>
+<span class="sd">                                            Index server node</span>
+
+<span class="sd">    **solr_url**                        --  returns Solr URL for Index server node</span>
+
+<span class="sd">    **roles**                           --  returns the array of roles installed</span>
+<span class="sd">                                            with the index server within the commcell</span>
+
+<span class="sd">    **index_location**                  --  returns Index directory for the Index server Node</span>
+
+<span class="sd">    **jvm_memory**                      --  returns Solr JVM memory for the Index server Node</span>
 
 <span class="sd">_Roles</span>
 <span class="sd">======</span>
@@ -296,16 +331,16 @@
 <span class="sd">    **roles_data**                      --  returns the list of details of all cloud roles</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="k">import</span> <span class="n">IndexServerConstants</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.datacube.constants</span> <span class="kn">import</span> <span class="n">IndexServerConstants</span>
 
 
 <div class="viewcode-block" id="IndexServers"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServers">[docs]</a><span class="k">class</span> <span class="nc">IndexServers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the index servers associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the IndexServers class.</span>
 
 <span class="sd">            Args:</span>
@@ -322,7 +357,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all index servers of the commcell.</span>
 
 <span class="sd">                Returns:</span>
@@ -337,13 +372,13 @@
             <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">representation_string</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the IndexServers class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;IndexServers class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the index servers associated with the commcell&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_index_servers</span><span class="p">)</span>
 
@@ -534,7 +569,12 @@
 <span class="sd">                Args:</span>
 <span class="sd">                    index_server_node_names         (list)  --  client names for index server node</span>
 <span class="sd">                    index_server_name               (str)   --  name for the index server</span>
-<span class="sd">                    index_directory                 (str)   --  index location for the index server</span>
+<span class="sd">                    index_directory                 (list)  --  list of index locations for the index server</span>
+<span class="sd">                                                                nodes respectively</span>
+<span class="sd">                                                    For example:</span>
+<span class="sd">                                                            [&lt;path_1&gt;] - same index location for all the nodes</span>
+<span class="sd">                                                            [&lt;path_1&gt;, &lt;path_2&gt;, &lt;path_3&gt;] - different index</span>
+<span class="sd">                                                    location for index server with 3 nodes</span>
 <span class="sd">                    index_server_roles              (list)  --  list of role names to be assigned</span>
 <span class="sd">                    index_pool_name                 (str)   --  name for the index pool to used by cloud index server</span>
 <span class="sd">                    cloud_param                     (list)  --  list of custom parameters to be parsed</span>
@@ -558,8 +598,13 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_roles</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_node_names</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_server_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index_directory</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">index_directory</span> <span class="o">=</span> <span class="n">index_directory</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="n">node_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">index_server_node_names</span><span class="p">)</span>
+        <span class="n">index_directories_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">index_directory</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index_directories_count</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">index_directories_count</span> <span class="o">!=</span> <span class="n">node_count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
         <span class="n">cloud_meta_infos</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;INDEXLOCATION&#39;</span><span class="p">:</span> <span class="n">index_directory</span><span class="p">,</span>
             <span class="s1">&#39;REPLICATION&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
             <span class="s1">&#39;LANGUAGE&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span>
         <span class="p">}</span>
@@ -579,9 +624,10 @@
             <span class="n">req_json</span><span class="p">[</span><span class="s1">&#39;solrCloudInfo&#39;</span><span class="p">][</span><span class="s1">&#39;cloudPoolInfo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;cloudId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">index_pool_obj</span><span class="p">[</span><span class="s1">&#39;pool_id&#39;</span><span class="p">])</span>
             <span class="p">}</span>
-            <span class="n">role_meta_infos</span><span class="p">[</span><span class="s1">&#39;ISCLOUDMODE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-            <span class="n">node_meta_infos</span><span class="p">[</span><span class="s1">&#39;WEBSERVER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
-        <span class="k">for</span> <span class="n">node_name</span> <span class="ow">in</span> <span class="n">index_server_node_names</span><span class="p">:</span>
+            <span class="n">cloud_meta_infos</span><span class="p">[</span><span class="s1">&#39;INDEXLOCATION&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index_directory</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">node_name_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index_server_node_names</span><span class="p">)):</span>
+            <span class="n">node_name</span> <span class="o">=</span> <span class="n">index_server_node_names</span><span class="p">[</span><span class="n">node_name_index</span><span class="p">]</span>
+            <span class="n">location_index</span> <span class="o">=</span> <span class="n">node_name_index</span> <span class="o">-</span> <span class="p">(</span><span class="n">node_name_index</span><span class="o">//</span><span class="n">index_directories_count</span><span class="p">)</span>
             <span class="n">node_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">node_name</span><span class="p">]</span>
             <span class="n">node_data</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">OPERATION_ADD</span><span class="p">,</span>
@@ -590,7 +636,10 @@
                     <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_obj</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
                     <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">node_name</span>
                 <span class="p">},</span>
-                <span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">:</span> <span class="p">[]</span>
+                <span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;INDEXLOCATION&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">index_directory</span><span class="p">[</span><span class="n">location_index</span><span class="p">]</span>
+                <span class="p">}]</span>
             <span class="p">}</span>
             <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">node_meta_infos</span><span class="p">:</span>
                 <span class="n">node_data</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
@@ -685,8 +734,8 @@
 <div class="viewcode-block" id="IndexServer"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer">[docs]</a><span class="k">class</span> <span class="nc">IndexServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing index server operations for a specific index server&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cloud_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise the IndexServer class instance.</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cloud_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the IndexServer class instance.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                commcell_obj    (object)        --  instance of the Commcell class</span>
@@ -711,7 +760,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_roles_obj</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;IndexServer class instance for index server: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_engine_name</span><span class="p">)</span>
@@ -850,7 +899,7 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cloud</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="s2">&quot;Not implemented for solr cloud&quot;</span><span class="p">)</span>
-        <span class="n">baseurl</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{self.server_url[0]}</span><span class="s2">/solr/</span><span class="si">{core_name}</span><span class="s2">/update?commit=true&quot;</span>
+        <span class="n">baseurl</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">server_url</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">/solr/</span><span class="si">{</span><span class="n">core_name</span><span class="si">}</span><span class="s2">/update?commit=true&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">baseurl</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
             <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -894,7 +943,7 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="s1">&#39;client name not found in this index server cloud&#39;</span><span class="p">)</span>
             <span class="n">server_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_url</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">client_name</span><span class="p">)]</span>
         <span class="n">core_names</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">baseurl</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{server_url}</span><span class="s2">/solr/admin/cores&quot;</span>
+        <span class="n">baseurl</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/solr/admin/cores&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">baseurl</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
             <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -926,36 +975,36 @@
 <span class="sd">                        if failed to form solr query</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">search_query</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;q=&#39;</span>
+            <span class="n">search_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;q=&#39;</span>
             <span class="n">simple_search</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">if</span> <span class="n">select_dict</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">select_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                            <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;(</span><span class="si">{key[0]}</span><span class="s1">:{str(value[0])}&#39;</span>
+                            <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span>
                             <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                                <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39; OR </span><span class="si">{key[0]}</span><span class="s1">:{str(val)}&#39;</span>
+                                <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; OR </span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
                         <span class="k">else</span><span class="p">:</span>
-                            <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;(</span><span class="si">{key[0]}</span><span class="s1">:</span><span class="si">{value}</span><span class="s1">&#39;</span>
+                            <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span>
                         <span class="k">for</span> <span class="n">key_val</span> <span class="ow">in</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
                             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                                <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39; OR </span><span class="si">{key_val}</span><span class="s1">:{str(value[0])}&#39;</span>
+                                <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; OR </span><span class="si">{</span><span class="n">key_val</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span>
                                 <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                                    <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39; OR </span><span class="si">{key_val}</span><span class="s1">:{str(val)}&#39;</span>
+                                    <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; OR </span><span class="si">{</span><span class="n">key_val</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39; OR </span><span class="si">{key_val}</span><span class="s1">:</span><span class="si">{value}</span><span class="s1">&#39;</span>
+                                <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; OR </span><span class="si">{</span><span class="n">key_val</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span>
                         <span class="n">search_query</span> <span class="o">+=</span> <span class="s1">&#39;) AND &#39;</span>
                     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                        <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;(</span><span class="si">{key}</span><span class="s1">:{str(value[0])}&#39;</span>
+                        <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span>
                         <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                            <span class="n">search_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39; OR </span><span class="si">{key}</span><span class="s1">:{str(val)}&#39;</span>
+                            <span class="n">search_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; OR </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
                         <span class="n">search_query</span> <span class="o">+=</span> <span class="s2">&quot;) AND &quot;</span>
                     <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;keyword&quot;</span><span class="p">:</span>
                         <span class="n">search_query</span> <span class="o">+=</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="n">value</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
                         <span class="n">simple_search</span> <span class="o">=</span> <span class="mi">1</span>
                         <span class="k">break</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">search_query</span> <span class="o">=</span> <span class="n">search_query</span> <span class="o">+</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{key}</span><span class="s1">:{str(value)} AND &#39;</span>
+                        <span class="n">search_query</span> <span class="o">=</span> <span class="n">search_query</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s1"> AND &#39;</span>
                 <span class="k">if</span> <span class="n">simple_search</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">search_query</span> <span class="o">=</span> <span class="n">search_query</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -965,7 +1014,7 @@
             <span class="k">if</span> <span class="n">attr_list</span><span class="p">:</span>
                 <span class="n">field_query</span> <span class="o">=</span> <span class="s2">&quot;&amp;fl=&quot;</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">attr_list</span><span class="p">:</span>
-                    <span class="n">field_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;{str(item)},&#39;</span>
+                    <span class="n">field_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s1">,&#39;</span>
                 <span class="n">field_query</span> <span class="o">=</span> <span class="n">field_query</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
             <span class="n">ex_query</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -975,13 +1024,13 @@
                 <span class="n">op_params</span><span class="p">[</span><span class="s1">&#39;wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;json&quot;</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">op_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ex_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;&amp;</span><span class="si">{key}</span><span class="s1">&#39;</span>
+                    <span class="n">ex_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&amp;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&#39;</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">ex_query</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;&amp;</span><span class="si">{key}</span><span class="s1">={str(value)}&#39;</span>
-            <span class="n">final_url</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{search_query}{field_query}{ex_query}</span><span class="s1">&#39;</span>
+                    <span class="n">ex_query</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&amp;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">=</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">final_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">search_query</span><span class="si">}{</span><span class="n">field_query</span><span class="si">}{</span><span class="n">ex_query</span><span class="si">}</span><span class="s1">&#39;</span>
             <span class="k">return</span> <span class="n">final_url</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">excp</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s2">&quot;Something went wrong while creating solr query - </span><span class="si">{excp}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Something went wrong while creating solr query - </span><span class="si">{</span><span class="n">excp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="IndexServer.execute_solr_query"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.execute_solr_query">[docs]</a>    <span class="k">def</span> <span class="nf">execute_solr_query</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1034,22 +1083,47 @@
 
 <span class="sd">                        if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">solr_url</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;solr/</span><span class="si">{core_name}</span><span class="s2">/select?{self._create_solr_query(select_dict, attr_list, op_params)}&quot;</span>
+        <span class="n">solr_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;solr/</span><span class="si">{</span><span class="n">core_name</span><span class="si">}</span><span class="s2">/select?</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_solr_query</span><span class="p">(</span><span class="n">select_dict</span><span class="p">,</span> <span class="n">attr_list</span><span class="p">,</span> <span class="n">op_params</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">solr_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">solr_url</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{self.server_url[0]}</span><span class="s2">/</span><span class="si">{solr_url}</span><span class="s2">&quot;</span>
+            <span class="n">solr_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">server_url</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">solr_url</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">solr_client</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="s1">&#39;client name not found in this index server&#39;</span><span class="p">)</span>
             <span class="n">server_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_url</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">solr_client</span><span class="p">)]</span>
-            <span class="n">solr_url</span> <span class="o">=</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{server_url}</span><span class="s2">/</span><span class="si">{solr_url}</span><span class="s2">&quot;</span>
+            <span class="n">solr_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">solr_url</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">solr_url</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;IndexServers&#39;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="s2">&quot;Something went wrong while querying solr&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="IndexServer.get_index_node"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexServer.get_index_node">[docs]</a>    <span class="k">def</span> <span class="nf">get_index_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an Index server node object for given node name</span>
+<span class="sd">            Args:</span>
+<span class="sd">                node_name           (str)   --  Index server node name</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                IndexNode class object</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+
+<span class="sd">                        if node not found for the given node name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">node_name</span> <span class="o">=</span> <span class="n">node_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">node_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">IndexNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span><span class="p">,</span> <span class="n">node_name</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s2">&quot;IndexServers&quot;</span><span class="p">,</span> <span class="s1">&#39;104&#39;</span><span class="p">,</span> <span class="s1">&#39;Index server node not found&#39;</span><span class="p">)</span></div>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_cloud</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns true if the Index server is cloud and false if not&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_type</span> <span class="o">==</span> <span class="mi">5</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nodes_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the count of Index server nodes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">roles_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1063,7 +1137,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">host_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the host name of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of host names of all index server nodes&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">HOST_NAME</span><span class="p">]</span>
 
     <span class="nd">@property</span>
@@ -1073,12 +1147,12 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">client_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the client name of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of client names of all index server nodes&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLIENT_NAME</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">server_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the content indexing url of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of Solr url of all index server nodes&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CI_SERVER_URL</span><span class="p">]</span>
 
     <span class="nd">@property</span>
@@ -1088,17 +1162,17 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">base_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the base port of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of base ports of all index server nodes&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">BASE_PORT</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">client_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the client id of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list client ids of all index server nodes&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">CLIENT_ID</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the roles of index server&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of roles of index server&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">ROLES</span><span class="p">]</span>
 
     <span class="nd">@property</span>
@@ -1133,10 +1207,114 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">INDEX_SERVER_CLIENT_ID</span><span class="p">]</span></div>
 
 
+<div class="viewcode-block" id="IndexNode"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexNode">[docs]</a><span class="k">class</span> <span class="nc">IndexNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for Index server node object&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_obj</span><span class="p">,</span> <span class="n">index_server_name</span><span class="p">,</span> <span class="n">node_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the IndexNode class</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                commcell_obj        (object)    --  commcell object</span>
+<span class="sd">                index_server_name   (int)       --  Index server name</span>
+<span class="sd">                node_name           (str)       --  Index server node client name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span> <span class="o">=</span> <span class="n">commcell_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_server_name</span> <span class="o">=</span> <span class="n">index_server_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_node_name</span> <span class="o">=</span> <span class="n">node_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_node_client</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_client_properties</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+<div class="viewcode-block" id="IndexNode.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.index_server.IndexNode.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refresh the index node properties&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">index_servers</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">index_servers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_server_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">client_name</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_node_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_node_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">commcell</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_node_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_client_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_node_client</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;pseudoClientInfo&#39;</span><span class="p">][</span><span class="s1">&#39;indexServerProperties&#39;</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">node_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Index server node client name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">client_name</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_index</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">node_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Index server node client id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">client_id</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_index</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">solr_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns port number Solr is running on the Index server node&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">base_port</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_index</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">solr_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Solr URL for Index server node&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">server_url</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_index</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">roles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the array of roles installed with the index server within the commcell&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">role_display_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index_location</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Index directory for the Index server Node&quot;&quot;&quot;</span>
+        <span class="n">node_meta_infos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_client_properties</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">node_meta_infos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;INDEXLOCATION&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">jvm_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Solr JVM memory for the Index server Node&quot;&quot;&quot;</span>
+        <span class="n">node_meta_infos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_client_properties</span><span class="p">[</span><span class="s1">&#39;nodeMetaInfos&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">node_meta_infos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;JVMMAXMEMORY&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@solr_port</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">solr_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port_no</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter to set the Solr port number for the node</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                port_no     (str)   --  Solr port number to be set for node</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">solr_port_param</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">SOLR_PORT_META_INFO</span><span class="p">)</span>
+        <span class="n">solr_port_param</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">port_no</span><span class="p">)</span>
+        <span class="n">cloud_param</span> <span class="o">=</span> <span class="p">[</span><span class="n">solr_port_param</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_node_name</span><span class="p">,</span> <span class="n">cloud_param</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+
+    <span class="nd">@jvm_memory</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">jvm_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setter to set the Solr JVM memory for the node</span>
+
+<span class="sd">                    Args:</span>
+<span class="sd">                        memory      (str)   --  Solr JVM memory to be set for the node</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">solr_jvm_param</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">SOLR_JVM_META_INFO</span><span class="p">)</span>
+        <span class="n">solr_jvm_param</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
+        <span class="n">solr_port_param</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">IndexServerConstants</span><span class="o">.</span><span class="n">SOLR_PORT_META_INFO</span><span class="p">)</span>
+        <span class="n">solr_port_param</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solr_port</span><span class="p">)</span>
+        <span class="n">cloud_param</span> <span class="o">=</span> <span class="p">[</span><span class="n">solr_jvm_param</span><span class="p">,</span> <span class="n">solr_port_param</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_server</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_node_name</span><span class="p">,</span> <span class="n">cloud_param</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+
 <span class="k">class</span> <span class="nc">_Roles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for cloud roles data operations&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes _Roles class with commcell object</span>
 
 <span class="sd">            Args:</span>
@@ -1210,7 +1388,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

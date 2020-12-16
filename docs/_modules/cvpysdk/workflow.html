@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.workflow &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -264,27 +264,27 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64decode</span>
-<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="k">import</span> <span class="n">ExpatError</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64decode</span>
+<span class="kn">from</span> <span class="nn">xml.parsers.expat</span> <span class="kn">import</span> <span class="n">ExpatError</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">xmltodict</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">raw_input</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">raw_input</span>
 
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="WorkFlows"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlows">[docs]</a><span class="k">class</span> <span class="nc">WorkFlows</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all workflows associated with the commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the WorkFlow class instance for performing workflow related</span>
 <span class="sd">            operations.</span>
 
@@ -311,7 +311,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh_activities</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all workflows of the Commcell.</span>
 
 <span class="sd">            Returns:</span>
@@ -390,17 +390,17 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the WorkFlow class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;WorkFlow class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the number of the workflows associated to the Commcell.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_workflows</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the name of the workflow for the given workflow ID or</span>
 <span class="sd">            the details of the workflow for given workflow Name.</span>
 
@@ -700,7 +700,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workflow_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="k">import</span> <span class="n">Commcell</span>
+        <span class="kn">from</span> <span class="nn">.commcell</span> <span class="kn">import</span> <span class="n">Commcell</span>
 
         <span class="n">cloud_commcell</span> <span class="o">=</span> <span class="n">Commcell</span><span class="p">(</span><span class="s1">&#39;cloud.commvault.com&#39;</span><span class="p">,</span> <span class="n">cloud_username</span><span class="p">,</span> <span class="n">cloud_password</span><span class="p">)</span>
         <span class="n">cvpysdk_object</span> <span class="o">=</span> <span class="n">cloud_commcell</span><span class="o">.</span><span class="n">_cvpysdk_object</span>
@@ -912,7 +912,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_xml</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="k">import</span> <span class="n">escape</span>
+        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">escape</span>
         <span class="n">escaped_xml</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">input_xml</span><span class="p">)</span>
         <span class="n">commserve_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
 
@@ -968,7 +968,7 @@
 <div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing a workflow on a commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">workflow_name</span><span class="p">,</span> <span class="n">workflow_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">workflow_name</span><span class="p">,</span> <span class="n">workflow_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the WorkFlow class instance for performing workflow related operations.</span>
 
 <span class="sd">            Args:</span>
@@ -1058,7 +1058,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_inputs</span><span class="p">(</span><span class="n">input_dict</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_set_workflow_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">attrval</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_set_workflow_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">attrval</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set Workflow Properties</span>
 
 <span class="sd">            Args:</span>
@@ -1070,6 +1070,9 @@
 <span class="sd">                                                    0, 1, 2, 19</span>
 <span class="sd">                                                    &quot;This is workflow description&quot;</span>
 
+<span class="sd">                disabled    (str)   : Set to 1 to disable a workflow</span>
+<span class="sd">                                        default is &#39;0&#39;</span>
+
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 
@@ -1079,6 +1082,7 @@
             <span class="s2">&quot;Workflow_SetWorkflowProperties&quot;</span><span class="p">:</span>
             <span class="p">{</span>
                 <span class="n">attrname</span><span class="p">:</span> <span class="n">attrval</span><span class="p">,</span>
+                <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="n">disabled</span><span class="p">,</span>
                 <span class="s2">&quot;workflow&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;workflowName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_name</span><span class="p">,</span>
                     <span class="s2">&quot;workflowId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workflow_id</span>
@@ -1160,7 +1164,7 @@
 <span class="sd">                    if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">config_xml</span> <span class="o">=</span> <span class="s2">&quot;&lt;configuration&gt;</span><span class="si">{0}</span><span class="s2">&lt;/configuration&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_xml</span><span class="p">)</span>
-        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="k">import</span> <span class="n">escape</span>
+        <span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">escape</span>
         <span class="n">escaped_xml</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">config_xml</span><span class="p">)</span>
 
         <span class="n">request_xml</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;Workflow_SetConfigurationSettings configSettings=&quot;</span><span class="si">{0}</span><span class="s2">&quot;&gt;</span>
@@ -1190,7 +1194,7 @@
 
 <span class="sd">                    if HTTP Status Code is not SUCCESS / Enabling workflow fails</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_workflow_properties</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_workflow_properties</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkFlow.disable"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.disable">[docs]</a>    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Disable Worklfow</span>
@@ -1200,7 +1204,7 @@
 
 <span class="sd">                    if HTTP Status Code is not SUCCESS / Disabling workflow fails</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_set_workflow_properties</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_workflow_properties</span><span class="p">(</span><span class="s1">&#39;flags&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkFlow.deploy_workflow"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.workflow.WorkFlow.deploy_workflow">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow_engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">workflow_xml</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deploys a workflow on the Commcell.</span>
@@ -1548,7 +1552,7 @@
 <span class="sd">             Returns:</span>
 <span class="sd">                     Object : An instance of the Schedule class for the schedule created</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">cvpysdk.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
+        <span class="kn">from</span> <span class="nn">cvpysdk.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span>
         <span class="k">if</span> <span class="n">workflow_inputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">xml</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">xmltodict</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">input_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;inputs&quot;</span><span class="p">:</span> <span class="n">workflow_inputs</span><span class="p">})</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">task_req</span> <span class="o">=</span> <span class="p">{</span>
@@ -1699,7 +1703,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

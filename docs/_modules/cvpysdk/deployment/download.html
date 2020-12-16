@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.deployment.download &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.deployment.download &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -175,15 +175,16 @@
 <span class="sd">    sync_remote_cache()                   --  syncs remote cache</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">..job</span> <span class="k">import</span> <span class="n">Job</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="k">import</span> <span class="n">DownloadOptions</span>
+
+<span class="kn">from</span> <span class="nn">..job</span> <span class="kn">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.deploymentconstants</span> <span class="kn">import</span> <span class="n">DownloadOptions</span>
 
 
 <div class="viewcode-block" id="Download"><a class="viewcode-back" href="../../../source/cvpysdk.deployment.html#cvpysdk.deployment.download.Download">[docs]</a><span class="k">class</span> <span class="nc">Download</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;class for downloading software packages&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize commcell_object of the Download class.</span>
 
 <span class="sd">            Args:</span>
@@ -203,7 +204,9 @@
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">os_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">service_pack</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">service_pack</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">cu_number</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">sync_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Downloads the os packages on the commcell</span>
 
 <span class="sd">            Args:</span>
@@ -213,6 +216,11 @@
 <span class="sd">                os_list      (list of enum)    --  list of windows/unix packages to be downloaded</span>
 
 <span class="sd">                service_pack (int)             --  service pack to be downloaded</span>
+
+<span class="sd">                cu_number (int)                --  maintenance release number</span>
+
+<span class="sd">                sync_cache (bool)              --  True if download and sync</span>
+<span class="sd">                                                   False only download</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this download job</span>
@@ -260,7 +268,8 @@
 <span class="sd">                &gt;&gt;&gt; commcell_obj.download_software(</span>
 <span class="sd">                        options=&#39;DownloadOptions.SERVICEPACK_AND_HOTFIXES.value&#39;,</span>
 <span class="sd">                        os_list=[DownloadPackages.UNIX_MAC.value],</span>
-<span class="sd">                        service_pack=13</span>
+<span class="sd">                        service_pack=13,</span>
+<span class="sd">                        cu_number=42</span>
 <span class="sd">                        )</span>
 
 <span class="sd">                    **NOTE:** service_pack parameter must be specified for third option</span>
@@ -290,7 +299,7 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Download&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">update_option</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;SPName&#39;</span><span class="p">:</span> <span class="s1">&#39;SP</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">service_pack</span><span class="p">),</span>
+                <span class="s1">&#39;SPName&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">service_pack</span><span class="p">),</span>
                 <span class="s1">&#39;IsSPName&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="s1">&#39;isSpDelayedDays&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                 <span class="s1">&#39;isHotfixesDownload&#39;</span><span class="p">:</span> <span class="kc">False</span>
@@ -324,8 +333,9 @@
                         <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
                             <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
                                 <span class="s2">&quot;updateOption&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;syncUpdateCaches&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="s2">&quot;syncUpdateCaches&quot;</span><span class="p">:</span> <span class="n">sync_cache</span><span class="p">,</span>
                                     <span class="s2">&quot;spName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_option</span><span class="p">[</span><span class="s1">&#39;SPName&#39;</span><span class="p">],</span>
+                                    <span class="s2">&quot;CUNumber&quot;</span><span class="p">:</span> <span class="n">cu_number</span><span class="p">,</span>
                                     <span class="s2">&quot;isWindows&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                                     <span class="s2">&quot;majorOnly&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                     <span class="s2">&quot;isSpName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_option</span><span class="p">[</span><span class="s1">&#39;IsSPName&#39;</span><span class="p">],</span>
@@ -497,7 +507,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

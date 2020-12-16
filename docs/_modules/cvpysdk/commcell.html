@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -256,6 +256,12 @@
 
 <span class="sd">    get_commcell_organization_properties()     -- Get the organization properties of commcell</span>
 
+<span class="sd">    add_service_commcell_associations()    -- adds an association for an entity on a service commcell</span>
+
+<span class="sd">    enable_tfa()                           --   Enables two factor authentication on this commcell</span>
+
+<span class="sd">    disable_tfa()                          --  Disables two factor authentication on this commcell</span>
+
 <span class="sd">Commcell instance Attributes</span>
 <span class="sd">============================</span>
 
@@ -408,71 +414,78 @@
 <span class="sd">    **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class</span>
 <span class="sd">    to interact wtih deduplication enines available on the commcell</span>
 
+<span class="sd">    **two_factor_authentication**   --  Returns an instance of the TwoFactorAuthentication class.</span>
+
+<span class="sd">    **is_tfa_enabled**              --  Returns the status of tfa on this commcell.</span>
+
+<span class="sd">    **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.</span>
+<span class="sd">    only for user group inclusion tfa.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
 <span class="kn">import</span> <span class="nn">getpass</span>
 <span class="kn">import</span> <span class="nn">socket</span>
 
-<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="n">SSLError</span>
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="n">Timeout</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="n">SSLError</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="n">Timeout</span>
 
 <span class="c1"># ConnectionError is a built-in exception, do not override it</span>
-<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">RequestsConnectionError</span>
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="kn">import</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">RequestsConnectionError</span>
 
-<span class="kn">from</span> <span class="nn">.services</span> <span class="k">import</span> <span class="n">get_services</span>
-<span class="kn">from</span> <span class="nn">.cvpysdk</span> <span class="k">import</span> <span class="n">CVPySDK</span>
-<span class="kn">from</span> <span class="nn">.client</span> <span class="k">import</span> <span class="n">Clients</span>
-<span class="kn">from</span> <span class="nn">.alert</span> <span class="k">import</span> <span class="n">Alerts</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">MediaAgents</span>
-<span class="kn">from</span> <span class="nn">.storage</span> <span class="k">import</span> <span class="n">DiskLibraries</span>
-<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="k">import</span> <span class="n">UserGroups</span>
-<span class="kn">from</span> <span class="nn">.domains</span> <span class="k">import</span> <span class="n">Domains</span>
-<span class="kn">from</span> <span class="nn">.workflow</span> <span class="k">import</span> <span class="n">WorkFlows</span>
-<span class="kn">from</span> <span class="nn">.exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="k">import</span> <span class="n">ClientGroups</span>
-<span class="kn">from</span> <span class="nn">.globalfilter</span> <span class="k">import</span> <span class="n">GlobalFilters</span>
-<span class="kn">from</span> <span class="nn">.datacube.datacube</span> <span class="k">import</span> <span class="n">Datacube</span>
-<span class="kn">from</span> <span class="nn">.content_analyzer</span> <span class="k">import</span> <span class="n">ContentAnalyzers</span>
-<span class="kn">from</span> <span class="nn">.activate_entity</span> <span class="k">import</span> <span class="n">ActivateEntities</span>
-<span class="kn">from</span> <span class="nn">.plan</span> <span class="k">import</span> <span class="n">Plans</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobController</span>
-<span class="kn">from</span> <span class="nn">.security.user</span> <span class="k">import</span> <span class="n">Users</span>
-<span class="kn">from</span> <span class="nn">.security.role</span> <span class="k">import</span> <span class="n">Roles</span>
-<span class="kn">from</span> <span class="nn">.credential_manager</span> <span class="k">import</span> <span class="n">Credentials</span>
-<span class="kn">from</span> <span class="nn">.download_center</span> <span class="k">import</span> <span class="n">DownloadCenter</span>
-<span class="kn">from</span> <span class="nn">.organization</span> <span class="k">import</span> <span class="n">Organizations</span>
-<span class="kn">from</span> <span class="nn">.storage_pool</span> <span class="k">import</span> <span class="n">StoragePools</span>
-<span class="kn">from</span> <span class="nn">.monitoring</span> <span class="k">import</span> <span class="n">MonitoringPolicies</span>
-<span class="kn">from</span> <span class="nn">.policy</span> <span class="k">import</span> <span class="n">Policies</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">SchedulePattern</span>
-<span class="kn">from</span> <span class="nn">.schedules</span> <span class="k">import</span> <span class="n">Schedules</span>
-<span class="kn">from</span> <span class="nn">.activitycontrol</span> <span class="k">import</span> <span class="n">ActivityControl</span>
-<span class="kn">from</span> <span class="nn">.eventviewer</span> <span class="k">import</span> <span class="n">Events</span>
-<span class="kn">from</span> <span class="nn">.array_management</span> <span class="k">import</span> <span class="n">ArrayManagement</span>
-<span class="kn">from</span> <span class="nn">.disasterrecovery</span> <span class="k">import</span> <span class="n">DisasterRecovery</span>
-<span class="kn">from</span> <span class="nn">.operation_window</span> <span class="k">import</span> <span class="n">OperationWindow</span>
-<span class="kn">from</span> <span class="nn">.identity_management</span> <span class="k">import</span> <span class="n">IdentityManagementApps</span>
-<span class="kn">from</span> <span class="nn">.system</span> <span class="k">import</span> <span class="n">System</span>
-<span class="kn">from</span> <span class="nn">.commcell_migration</span> <span class="k">import</span> <span class="n">CommCellMigration</span>
-<span class="kn">from</span> <span class="nn">.deployment.download</span> <span class="k">import</span> <span class="n">Download</span>
-<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="k">import</span> <span class="n">CommServeCache</span>
-<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="k">import</span> <span class="n">RemoteCache</span>
-<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="k">import</span> <span class="n">Install</span>
-<span class="kn">from</span> <span class="nn">.name_change</span> <span class="k">import</span> <span class="n">NameChange</span>
-<span class="kn">from</span> <span class="nn">.backup_network_pairs</span> <span class="k">import</span> <span class="n">BackupNetworkPairs</span>
-<span class="kn">from</span> <span class="nn">.reports</span> <span class="k">import</span> <span class="n">report</span>
-<span class="kn">from</span> <span class="nn">.recovery_targets</span> <span class="k">import</span> <span class="n">RecoveryTargets</span>
-<span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">JobManagement</span>
-<span class="kn">from</span> <span class="nn">.index_server</span> <span class="k">import</span> <span class="n">IndexServers</span>
-<span class="kn">from</span> <span class="nn">.hac_clusters</span> <span class="k">import</span> <span class="n">HACClusters</span>
-<span class="kn">from</span> <span class="nn">.index_pools</span> <span class="k">import</span> <span class="n">IndexPools</span>
-<span class="kn">from</span> <span class="nn">.deduplication_engines</span> <span class="k">import</span> <span class="n">DeduplicationEngines</span>
+<span class="kn">from</span> <span class="nn">.services</span> <span class="kn">import</span> <span class="n">get_services</span>
+<span class="kn">from</span> <span class="nn">.cvpysdk</span> <span class="kn">import</span> <span class="n">CVPySDK</span>
+<span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">Clients</span>
+<span class="kn">from</span> <span class="nn">.alert</span> <span class="kn">import</span> <span class="n">Alerts</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">MediaAgents</span>
+<span class="kn">from</span> <span class="nn">.storage</span> <span class="kn">import</span> <span class="n">DiskLibraries</span>
+<span class="kn">from</span> <span class="nn">.security.usergroup</span> <span class="kn">import</span> <span class="n">UserGroups</span><span class="p">,</span> <span class="n">UserGroup</span>
+<span class="kn">from</span> <span class="nn">.domains</span> <span class="kn">import</span> <span class="n">Domains</span><span class="p">,</span> <span class="n">Domain</span>
+<span class="kn">from</span> <span class="nn">.workflow</span> <span class="kn">import</span> <span class="n">WorkFlows</span>
+<span class="kn">from</span> <span class="nn">.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.clientgroup</span> <span class="kn">import</span> <span class="n">ClientGroups</span>
+<span class="kn">from</span> <span class="nn">.globalfilter</span> <span class="kn">import</span> <span class="n">GlobalFilters</span>
+<span class="kn">from</span> <span class="nn">.datacube.datacube</span> <span class="kn">import</span> <span class="n">Datacube</span>
+<span class="kn">from</span> <span class="nn">.content_analyzer</span> <span class="kn">import</span> <span class="n">ContentAnalyzers</span>
+<span class="kn">from</span> <span class="nn">.activate_entity</span> <span class="kn">import</span> <span class="n">ActivateEntities</span>
+<span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plans</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">JobController</span>
+<span class="kn">from</span> <span class="nn">.security.user</span> <span class="kn">import</span> <span class="n">Users</span><span class="p">,</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">.security.role</span> <span class="kn">import</span> <span class="n">Roles</span>
+<span class="kn">from</span> <span class="nn">.security.two_factor_authentication</span> <span class="kn">import</span> <span class="n">TwoFactorAuthentication</span>
+<span class="kn">from</span> <span class="nn">.credential_manager</span> <span class="kn">import</span> <span class="n">Credentials</span>
+<span class="kn">from</span> <span class="nn">.download_center</span> <span class="kn">import</span> <span class="n">DownloadCenter</span>
+<span class="kn">from</span> <span class="nn">.organization</span> <span class="kn">import</span> <span class="n">Organizations</span><span class="p">,</span> <span class="n">Organization</span>
+<span class="kn">from</span> <span class="nn">.storage_pool</span> <span class="kn">import</span> <span class="n">StoragePools</span>
+<span class="kn">from</span> <span class="nn">.monitoring</span> <span class="kn">import</span> <span class="n">MonitoringPolicies</span>
+<span class="kn">from</span> <span class="nn">.policy</span> <span class="kn">import</span> <span class="n">Policies</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">SchedulePattern</span>
+<span class="kn">from</span> <span class="nn">.schedules</span> <span class="kn">import</span> <span class="n">Schedules</span>
+<span class="kn">from</span> <span class="nn">.activitycontrol</span> <span class="kn">import</span> <span class="n">ActivityControl</span>
+<span class="kn">from</span> <span class="nn">.eventviewer</span> <span class="kn">import</span> <span class="n">Events</span>
+<span class="kn">from</span> <span class="nn">.array_management</span> <span class="kn">import</span> <span class="n">ArrayManagement</span>
+<span class="kn">from</span> <span class="nn">.disasterrecovery</span> <span class="kn">import</span> <span class="n">DisasterRecovery</span>
+<span class="kn">from</span> <span class="nn">.operation_window</span> <span class="kn">import</span> <span class="n">OperationWindow</span>
+<span class="kn">from</span> <span class="nn">.identity_management</span> <span class="kn">import</span> <span class="n">IdentityManagementApps</span>
+<span class="kn">from</span> <span class="nn">.system</span> <span class="kn">import</span> <span class="n">System</span>
+<span class="kn">from</span> <span class="nn">.commcell_migration</span> <span class="kn">import</span> <span class="n">CommCellMigration</span>
+<span class="kn">from</span> <span class="nn">.deployment.download</span> <span class="kn">import</span> <span class="n">Download</span>
+<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="kn">import</span> <span class="n">CommServeCache</span>
+<span class="kn">from</span> <span class="nn">.deployment.cache_config</span> <span class="kn">import</span> <span class="n">RemoteCache</span>
+<span class="kn">from</span> <span class="nn">.deployment.install</span> <span class="kn">import</span> <span class="n">Install</span>
+<span class="kn">from</span> <span class="nn">.name_change</span> <span class="kn">import</span> <span class="n">NameChange</span>
+<span class="kn">from</span> <span class="nn">.backup_network_pairs</span> <span class="kn">import</span> <span class="n">BackupNetworkPairs</span>
+<span class="kn">from</span> <span class="nn">.reports</span> <span class="kn">import</span> <span class="n">report</span>
+<span class="kn">from</span> <span class="nn">.recovery_targets</span> <span class="kn">import</span> <span class="n">RecoveryTargets</span>
+<span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">JobManagement</span>
+<span class="kn">from</span> <span class="nn">.index_server</span> <span class="kn">import</span> <span class="n">IndexServers</span>
+<span class="kn">from</span> <span class="nn">.hac_clusters</span> <span class="kn">import</span> <span class="n">HACClusters</span>
+<span class="kn">from</span> <span class="nn">.index_pools</span> <span class="kn">import</span> <span class="n">IndexPools</span>
+<span class="kn">from</span> <span class="nn">.deduplication_engines</span> <span class="kn">import</span> <span class="n">DeduplicationEngines</span>
 
 <span class="n">USER_LOGGED_OUT_MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;User Logged Out. Please initialize the Commcell object again.&#39;</span>
 <span class="sd">&quot;&quot;&quot;str:     Message to be returned to the user, when trying the get the value of an attribute</span>
@@ -484,14 +497,15 @@
 <div class="viewcode-block" id="Commcell"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell">[docs]</a><span class="k">class</span> <span class="nc">Commcell</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for establishing a session to the Commcell via Commvault REST API.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">webconsole_hostname</span><span class="p">,</span>
             <span class="n">commcell_username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">commcell_password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">authtoken</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">force_https</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">certificate_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">certificate_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">is_service_commcell</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the Commcell object with the values required for doing the API operations.</span>
 
 <span class="sd">            Commcell Username and Password can be None, if QSDK / SAML token is being given</span>
@@ -525,6 +539,8 @@
 
 <span class="sd">                    default: None</span>
 
+<span class="sd">            **Note** : If SAML token is to be used to login to service commcell please set is_service_commcell=True</span>
+
 
 <span class="sd">                force_https             (bool)  --  boolean flag to specify whether to force the</span>
 <span class="sd">                connection to the commcell only via HTTPS</span>
@@ -542,8 +558,15 @@
 
 <span class="sd">                    default: None</span>
 
-
 <span class="sd">            **Note** If certificate path is provided, force_https is set to True</span>
+
+<span class="sd">                is_service_commcell     (bool) --  True if login into service (child commcell)</span>
+<span class="sd">                                                   False if it is a normal login</span>
+
+<span class="sd">                    default: None</span>
+
+<span class="sd">            **Note** In case of Multicommcell Login, if we wanted to login into child commcell (Service commcell)</span>
+<span class="sd">                        set is_service_commcell to True</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object  -   instance of this class</span>
@@ -577,6 +600,7 @@
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_device_id</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getfqdn</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_service_commcell</span> <span class="o">=</span> <span class="n">is_service_commcell</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span> <span class="o">=</span> <span class="n">CVPySDK</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">certificate_path</span><span class="p">)</span>
 
@@ -601,7 +625,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">commcell_password</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">authtoken</span> <span class="o">=</span> <span class="n">commcell_password</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">authtoken</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">authtoken</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_service_commcell</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">authtoken</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;QSDK &#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">authtoken</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;SAML &#39;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">authtoken</span>
             <span class="k">else</span><span class="p">:</span>
@@ -623,12 +647,17 @@
             <span class="c1"># and store the token in the headers</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">_login</span><span class="p">()</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_service_commcell</span> <span class="ow">and</span> <span class="n">authtoken</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">authtoken</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;SAML &#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_master_saml_token</span> <span class="o">=</span> <span class="n">authtoken</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">_login</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">who_am_i</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">validity_err</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">validity_err</span>
 
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_master_saml_token</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_hostname</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone</span> <span class="o">=</span> <span class="kc">None</span>
@@ -684,11 +713,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_deduplication_engines</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_cc_idp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_password</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.</span>
 
 <span class="sd">            Returns:</span>
@@ -698,7 +729,7 @@
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Commcell class instance of Commcell: &quot;</span><span class="si">{0}</span><span class="s1">&quot;, for User: &quot;</span><span class="si">{1}</span><span class="s1">&quot;&#39;</span>
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the current instance.</span>
 
 <span class="sd">            Returns:</span>
@@ -707,7 +738,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Logs out the user associated with the current instance.&quot;&quot;&quot;</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">_logout</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_remove_attribs_</span><span class="p">()</span>
@@ -778,6 +809,9 @@
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deduplication_engines</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_service_commcell</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_master_saml_token</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span>
         <span class="k">del</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">_get_commserv_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -829,7 +863,7 @@
                     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">version_replace_strings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="n">version_info</span> <span class="o">=</span> <span class="n">version_info</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_version_info</span> <span class="o">=</span> <span class="n">version_info</span> <span class="o">+</span> <span class="s1">&#39;.0&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">version_info</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_version_info</span> <span class="o">=</span> <span class="n">version_info</span> <span class="o">+</span> <span class="s1">&#39;.0&#39;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">version_info</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)))</span>
 
                 <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Commcell&#39;</span><span class="p">,</span> <span class="s1">&#39;103&#39;</span><span class="p">,</span> <span class="s1">&#39;Key does not exist: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error</span><span class="p">))</span>
@@ -1560,6 +1594,17 @@
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">commcells_for_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the list of accessible commcells to logged in user</span>
+
+<span class="sd">        list - contains the list of accessible commcells</span>
+<span class="sd">            [&#39;cc1&#39;,&#39;cc2&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_cc_idp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_cc_idp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcells_for_user</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_cc_idp</span>
+
 <div class="viewcode-block" id="Commcell.logout"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.logout">[docs]</a>    <span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Logs out the user associated with the current instance.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="s1">&#39;Authtoken&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1717,7 +1762,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_index_servers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hac_clusters</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_index_pools</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_deduplication_engines</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deduplication_engines</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="Commcell.get_remote_cache"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.get_remote_cache">[docs]</a>    <span class="k">def</span> <span class="nf">get_remote_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the instance of the RemoteCache  class.&quot;&quot;&quot;</span>
@@ -1806,7 +1852,7 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
                 <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
-                    <span class="kn">from</span> <span class="nn">.job</span> <span class="k">import</span> <span class="n">Job</span>
+                    <span class="kn">from</span> <span class="nn">.job</span> <span class="kn">import</span> <span class="n">Job</span>
                     <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
 
                 <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
@@ -1974,7 +2020,9 @@
 <div class="viewcode-block" id="Commcell.download_software"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.download_software">[docs]</a>    <span class="k">def</span> <span class="nf">download_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                           <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                           <span class="n">os_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                          <span class="n">service_pack</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                          <span class="n">service_pack</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">cu_number</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">sync_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Downloads the os packages on the commcell</span>
 
 <span class="sd">            Args:</span>
@@ -1984,6 +2032,11 @@
 <span class="sd">                os_list      (list of enum)    --  list of windows/unix packages to be downloaded</span>
 
 <span class="sd">                service_pack (int)             --  service pack to be downloaded</span>
+
+<span class="sd">                cu_number (int)                --  maintenance release number</span>
+
+<span class="sd">                sync_cache (bool)              --  True if download and sync</span>
+<span class="sd">                                                   False only download</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this download job</span>
@@ -2041,7 +2094,9 @@
         <span class="k">return</span> <span class="n">download</span><span class="o">.</span><span class="n">download_software</span><span class="p">(</span>
             <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
             <span class="n">os_list</span><span class="o">=</span><span class="n">os_list</span><span class="p">,</span>
-            <span class="n">service_pack</span><span class="o">=</span><span class="n">service_pack</span>
+            <span class="n">service_pack</span><span class="o">=</span><span class="n">service_pack</span><span class="p">,</span>
+            <span class="n">cu_number</span><span class="o">=</span><span class="n">cu_number</span><span class="p">,</span>
+            <span class="n">sync_cache</span><span class="o">=</span><span class="n">sync_cache</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commcell.push_servicepack_and_hotfix"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.push_servicepack_and_hotfix">[docs]</a>    <span class="k">def</span> <span class="nf">push_servicepack_and_hotfix</span><span class="p">(</span>
@@ -2051,7 +2106,8 @@
             <span class="n">all_client_computers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">all_client_computer_groups</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">reboot_client</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">maintenance_release_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;triggers installation of service pack and hotfixes</span>
 
 <span class="sd">        Args:</span>
@@ -2079,6 +2135,9 @@
 
 <span class="sd">                default: True</span>
 
+<span class="sd">            maintenance_release_only (bool) -- for clients of feature releases lesser than CS, this option</span>
+<span class="sd">            maintenance release of that client FR, if present in cache</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            object - instance of the Job class for this download job</span>
 
@@ -2102,7 +2161,8 @@
             <span class="n">all_client_computers</span><span class="o">=</span><span class="n">all_client_computers</span><span class="p">,</span>
             <span class="n">all_client_computer_groups</span><span class="o">=</span><span class="n">all_client_computer_groups</span><span class="p">,</span>
             <span class="n">reboot_client</span><span class="o">=</span><span class="n">reboot_client</span><span class="p">,</span>
-            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span>
+            <span class="n">run_db_maintenance</span><span class="o">=</span><span class="n">run_db_maintenance</span><span class="p">,</span>
+            <span class="n">maintenance_release_only</span><span class="o">=</span><span class="n">maintenance_release_only</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commcell.install_software"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.install_software">[docs]</a>    <span class="k">def</span> <span class="nf">install_software</span><span class="p">(</span>
@@ -2112,7 +2172,10 @@
             <span class="n">unix_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">log_file_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Installs the selected features in the selected clients</span>
 <span class="sd">        Args:</span>
@@ -2142,6 +2205,18 @@
 
 <span class="sd">                 default : None</span>
 
+<span class="sd">            log_file_loc (str)              -- Install to a specified log path on the client</span>
+
+<span class="sd">                 default : None</span>
+
+<span class="sd">            client_group_name (list)        -- List of client groups for the client</span>
+
+<span class="sd">                 default : None</span>
+
+<span class="sd">            storage_policy_name (str)       -- Storage policy for the default subclient</span>
+
+<span class="sd">                 default : None</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">                object - instance of the Job class for this install_software job</span>
 
@@ -2168,7 +2243,11 @@
 <span class="sd">                                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],</span>
 <span class="sd">                                unix_features=None,</span>
 <span class="sd">                                username=&#39;username&#39;,</span>
-<span class="sd">                                password=&#39;password&#39;)</span>
+<span class="sd">                                password=&#39;password&#39;,</span>
+<span class="sd">                                install_path=&#39;/opt/commvault&#39;,</span>
+<span class="sd">                                log_file_loc=&#39;/var/log&#39;,</span>
+<span class="sd">                                client_group_name=[My_Servers],</span>
+<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;)</span>
 
 <span class="sd">                    **NOTE:** Either Unix or Windows clients_computers should be chosen and</span>
 <span class="sd">                    not both</span>
@@ -2181,7 +2260,10 @@
             <span class="n">unix_features</span><span class="o">=</span><span class="n">unix_features</span><span class="p">,</span>
             <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span>
             <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span>
-            <span class="n">install_path</span><span class="o">=</span><span class="n">install_path</span><span class="p">)</span></div>
+            <span class="n">install_path</span><span class="o">=</span><span class="n">install_path</span><span class="p">,</span>
+            <span class="n">log_file_loc</span><span class="o">=</span><span class="n">log_file_loc</span><span class="p">,</span>
+            <span class="n">client_group_name</span><span class="o">=</span><span class="n">client_group_name</span><span class="p">,</span>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="n">storage_policy_name</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commcell.enable_auth_code"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.enable_auth_code">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auth_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to enable Auth Code for installation on commcell</span>
@@ -2410,9 +2492,9 @@
                 <span class="n">security_list</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;securityAssociations&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;associations&#39;</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">list_item</span> <span class="ow">in</span> <span class="n">security_list</span><span class="p">:</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userGroupName&#39;</span><span class="p">)</span> <span class="ow">or</span> \
-                           <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userName&#39;</span><span class="p">)</span> <span class="ow">or</span> \
-                           <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;providerDomainName&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> \
-                           <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;externalGroupName&#39;</span><span class="p">)</span>
+                        <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userName&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+                        <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;providerDomainName&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> \
+                        <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;externalGroupName&#39;</span><span class="p">)</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="k">if</span> <span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">):</span>
                         <span class="n">value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;roleName&#39;</span><span class="p">))</span>
@@ -2558,7 +2640,7 @@
 <span class="sd">                    if response is not success</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="k">import</span> <span class="p">(</span><span class="n">urlencode</span><span class="p">,</span> <span class="n">quote</span><span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="p">(</span><span class="n">urlencode</span><span class="p">,</span> <span class="n">quote</span><span class="p">)</span>
 
         <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;application/x-www-form-urlencoded&#39;</span>
@@ -2703,12 +2785,24 @@
             <span class="n">commcell_name</span><span class="p">,</span>
             <span class="n">registered_for_routing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">admin_username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">admin_password</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">admin_password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">register_for_idp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Registers a commcell</span>
 
 <span class="sd">        Args:</span>
 
-<span class="sd">            commcell_name   (str)   -- name of the commcell</span>
+<span class="sd">            commcell_name   (str)           -- name of the commcell</span>
+
+<span class="sd">            registered_for_routing (bool)   -- True - if we want to register for Routing</span>
+<span class="sd">                                               False - if we dont want to register for Routing</span>
+
+<span class="sd">            admin_username   (str)          -- username of the user who has administrative</span>
+<span class="sd">                                                rights on a commcell</span>
+
+<span class="sd">            admin_password  (str)           -- password of the user specified</span>
+
+<span class="sd">            register_for_idp (bool)         -- True - if we want to register for Identity provider</span>
+<span class="sd">                                                False - if we dont want to register for Identity provider</span>
 
 <span class="sd">        Raises:</span>
 
@@ -2720,13 +2814,13 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">commcell_name</span> <span class="o">=</span> <span class="n">commcell_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">registered_for_routing</span><span class="p">):</span>
-            <span class="n">registered_for_routing</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">registered_for_routing</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">registered_for_routing</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">registered_for_routing</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">register_for_idp</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">register_for_idp</span> <span class="k">else</span> <span class="mi">0</span>
+
         <span class="n">xml_to_execute</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        &lt;EVGui_CN2CellRegReq&gt;</span>
-<span class="s2">            &lt;commcell isRegisteredForRouting=&quot;</span><span class="si">{0}</span><span class="s2">&quot; adminPwd=&quot;</span><span class="si">{1}</span><span class="s2">&quot; adminUsr=&quot;</span><span class="si">{2}</span><span class="s2">&quot; interfaceName=&quot;</span><span class="si">{3}</span><span class="s2">&quot; ccClientName=&quot;</span><span class="si">{3}</span><span class="s2">&quot;&gt;</span>
+<span class="s2">            &lt;commcell isRegisteredForRouting=&quot;</span><span class="si">{0}</span><span class="s2">&quot; adminPwd=&quot;</span><span class="si">{1}</span><span class="s2">&quot; adminUsr=&quot;</span><span class="si">{2}</span><span class="s2">&quot; interfaceName=&quot;</span><span class="si">{3}</span><span class="s2">&quot; ccClientName=&quot;</span><span class="si">{3}</span><span class="s2">&quot;</span>
+<span class="s2">            isGlobalIDPCommcell=&quot;</span><span class="si">{4}</span><span class="s2">&quot;&gt;</span>
 <span class="s2">                &lt;commCell commCellName=&quot;</span><span class="si">{3}</span><span class="s2">&quot; /&gt;</span>
 <span class="s2">            &lt;/commcell&gt;</span>
 <span class="s2">        &lt;/EVGui_CN2CellRegReq&gt;</span>
@@ -2734,7 +2828,8 @@
             <span class="n">registered_for_routing</span><span class="p">,</span>
             <span class="n">admin_password</span><span class="p">,</span>
             <span class="n">admin_username</span><span class="p">,</span>
-            <span class="n">commcell_name</span>
+            <span class="n">commcell_name</span><span class="p">,</span>
+            <span class="n">register_for_idp</span>
         <span class="p">)</span>
 
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
@@ -2859,7 +2954,226 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div></div>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_commcells_for_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the list of accessible commcells to logged in user</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list - consists list of accessible commcells</span>
+
+<span class="sd">                [&#39;S1&#39;, &#39;S2&#39;]</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;MULTI_COMMCELL_DROP_DOWN&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;AvailableRedirects&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">redirect_cc_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">ser_comm</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;AvailableRedirects&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">ser_comm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;commcellName&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">redirect_cc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ser_comm</span><span class="p">[</span><span class="s1">&#39;commcellName&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">redirect_cc_list</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_service_commcells_association</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns the associated entities to a service commcell</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">                        dict of associated entities to a service commcell</span>
+
+<span class="sd">        Raises:</span>
+
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SERVICE_COMMCELL_ASSOC&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;associations&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Commcell.add_service_commcell_associations"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.add_service_commcell_associations">[docs]</a>    <span class="k">def</span> <span class="nf">add_service_commcell_associations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">,</span> <span class="n">service_commcell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;adds an association for an entity on a service commcell</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class</span>
+
+<span class="sd">            service_commcell (str)    --  name of the service commcell to which above entities can be associated</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SDKException:</span>
+<span class="sd">                if response is empty</span>
+
+<span class="sd">                if add association fails</span>
+
+<span class="sd">                if response is not success</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_commcell</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;userOrGroup&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entityType&quot;</span><span class="p">:</span> <span class="mi">194</span><span class="p">,</span>
+                <span class="s2">&quot;entityName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">registered_routing_commcells</span><span class="p">[</span><span class="n">service_commcell</span><span class="p">][</span><span class="s1">&#39;commCell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellName&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+                <span class="s2">&quot;entityId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">registered_routing_commcells</span><span class="p">[</span><span class="n">service_commcell</span><span class="p">][</span><span class="s1">&#39;commCell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellId&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;includeAll&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;_type_&quot;</span><span class="p">:</span> <span class="mi">120</span><span class="p">,</span>
+                    <span class="s2">&quot;roleId&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;roleName&quot;</span><span class="p">:</span> <span class="s2">&quot;View&quot;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">User</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;userId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entity_name</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;userName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_name</span><span class="o">.</span><span class="n">user_name</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;_type_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">13</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">UserGroup</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;userGroupId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entity_name</span><span class="o">.</span><span class="n">user_group_id</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;userGroupName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_name</span><span class="o">.</span><span class="n">user_group_name</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;_type_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">Organization</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;providerType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;providerId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entity_name</span><span class="o">.</span><span class="n">organization_id</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;providerDomainName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_name</span><span class="o">.</span><span class="n">organization_name</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;_type_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">61</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="n">Domain</span><span class="p">):</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;providerType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;providerId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entity_name</span><span class="o">.</span><span class="n">domain_id</span><span class="p">)</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;providerDomainName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_name</span><span class="o">.</span><span class="n">domain_name</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s1">&#39;userOrGroup&#39;</span><span class="p">][</span><span class="s1">&#39;_type_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">61</span>
+
+        <span class="n">res_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_commcells_association</span><span class="p">()</span>
+        <span class="n">res_json</span><span class="p">[</span><span class="s1">&#39;associations&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;SERVICE_COMMCELL_ASSOC&#39;</span><span class="p">],</span> <span class="n">res_json</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="n">error_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCode&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">error_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">error_string</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorString&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                        <span class="s1">&#39;CommcellRegistration&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Service Commcell Association Failed</span><span class="se">\n</span><span class="s1"> Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">error_string</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_service_commcell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the is_service_commcell property.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_service_commcell</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">master_saml_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the saml token of master commcell.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_master_saml_token</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">two_factor_authentication</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the instance of the TwoFactorAuthentication class&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span> <span class="o">=</span> <span class="n">TwoFactorAuthentication</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tfa</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">USER_LOGGED_OUT_MESSAGE</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_tfa_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the status of two factor authentication for this commcell</span>
+
+<span class="sd">            bool    --  status of tfa.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">two_factor_authentication</span><span class="o">.</span><span class="n">is_tfa_enabled</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tfa_enabled_user_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the list of user group names for which two factor authentication is enabled.</span>
+<span class="sd">         only for user group inclusion tfa.</span>
+<span class="sd">            eg:-</span>
+<span class="sd">            [</span>
+<span class="sd">                {</span>
+<span class="sd">                &quot;userGroupId&quot;: 1,</span>
+<span class="sd">                &quot;userGroupName&quot;: &quot;dummy&quot;</span>
+<span class="sd">                }</span>
+<span class="sd">            ]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">two_factor_authentication</span><span class="o">.</span><span class="n">tfa_enabled_user_groups</span>
+
+<div class="viewcode-block" id="Commcell.enable_tfa"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.enable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">enable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables two factor authentication option on this commcell.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user_groups     (list)  --  user group names for which tfa needs to be enabled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">two_factor_authentication</span><span class="o">.</span><span class="n">enable_tfa</span><span class="p">(</span><span class="n">user_groups</span><span class="o">=</span><span class="n">user_groups</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Commcell.disable_tfa"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.disable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">disable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disables two factor authentication on this commcell.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">two_factor_authentication</span><span class="o">.</span><span class="n">disable_tfa</span><span class="p">()</span></div></div>
 </pre></div>
 
            </div>
@@ -2873,7 +3187,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

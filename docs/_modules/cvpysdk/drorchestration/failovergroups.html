@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.drorchestration.failovergroups &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.drorchestration.failovergroups &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -282,18 +282,19 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
-<span class="kn">from</span> <span class="nn">.drorchestrationoperations</span> <span class="k">import</span> <span class="n">DROrchestrationOperations</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">.drorchestrationoperations</span> <span class="kn">import</span> <span class="n">DROrchestrationOperations</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.instances.vsinstance</span> <span class="kn">import</span> <span class="n">VirtualServerInstance</span>
 
 
 <div class="viewcode-block" id="FailoverGroups"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.failovergroups.FailoverGroups">[docs]</a><span class="k">class</span> <span class="nc">FailoverGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for getting all the failover groups in commcell.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">:</span> <span class="n">VirtualServerInstance</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize object of the Failover groups.</span>
 
 <span class="sd">            Args:</span>
@@ -305,6 +306,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">clients</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">instance_object</span>
 
         <span class="c1">####### init REST API URLS #########</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_DRGROUPS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;DR_GROUPS&#39;</span><span class="p">]</span>
@@ -316,7 +318,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all failover groups.</span>
 
 <span class="sd">            Returns:</span>
@@ -335,7 +337,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the FailoverGroups class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Failover Groups for Commserv: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span><span class="p">)</span>
@@ -859,7 +861,7 @@
 <div class="viewcode-block" id="FailoverGroup"><a class="viewcode-back" href="../../../source/cvpysdk.drorchestration.html#cvpysdk.drorchestration.failovergroups.FailoverGroup">[docs]</a><span class="k">class</span> <span class="nc">FailoverGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing failover operations on a specified failover group.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">failover_group_options</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commcell_object</span><span class="p">,</span> <span class="n">failover_group_options</span><span class="p">,</span> <span class="n">instance_object</span><span class="p">:</span> <span class="n">VirtualServerInstance</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise the FailoverGroup object.</span>
 
 <span class="sd">            Args:</span>
@@ -880,6 +882,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">##### local variables of these class ########</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span> <span class="o">=</span> <span class="n">commcell_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span> <span class="o">=</span> <span class="n">instance_object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_failover_group_options</span> <span class="o">=</span> <span class="n">failover_group_options</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_services</span> <span class="o">=</span> <span class="n">commcell_object</span><span class="o">.</span><span class="n">_services</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_failover_group_properties</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1174,6 +1177,9 @@
 <span class="sd">            Returns:</span>
 <span class="sd">                list of dict: list of snapshot information</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="p">,</span> <span class="n">VirtualServerInstance</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;CVPySDK&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;instance_object is not set&#39;</span><span class="p">)</span>
+
         <span class="c1"># Gets DR client list to fetch the dest GUID</span>
         <span class="n">entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">failover_group_properties</span><span class="p">[</span><span class="s1">&#39;clientList&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span>
         <span class="n">client_list_req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s2">&quot;DR_GROUP_MACHINES&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
@@ -1194,7 +1200,7 @@
                 <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">get_snapshot_list</span><span class="p">(</span><span class="n">destination_guid</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dr_operation</span><span class="o">.</span><span class="n">get_snapshot_list</span><span class="p">(</span><span class="n">destination_guid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span><span class="p">))</span></div>
 </pre></div>
 
            </div>
@@ -1208,7 +1214,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

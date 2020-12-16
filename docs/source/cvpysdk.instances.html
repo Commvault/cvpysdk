@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances package &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.instances package &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -1794,7 +1794,10 @@ to be applied</p>
 <div class="section" id="postgresqlinstance">
 <h3>PostgreSQLInstance:<a class="headerlink" href="#postgresqlinstance" title="Permalink to this headline">¶</a></h3>
 <blockquote>
-<div><p>_restore_json()                      –     returns the JSON request to pass to the API as per
+<div><p>_get_instance_properties()           –     Gets the properties of this instance</p>
+<p>_get_instance_properties_json()      –     Gets all the instance related properties of
+PostgreSQL instance.</p>
+<p>_restore_json()                      –     returns the JSON request to pass to the API as per
 the options selected by the user</p>
 <p>_restore_common_options_json()       –     setter for the common options in restore JSON</p>
 <p>_restore_destination_json()          –     setter for the Destination options in restore JSON</p>
@@ -1818,6 +1821,10 @@ of postgres server</p>
 <p><strong>maintenance_database</strong>             –  returns the maintenance database associated
 with postgres server</p>
 <p><strong>postgres_version</strong>                 –  returns the postgres server version</p>
+<p><strong>standby_instance_name</strong>            –  Returns the standby instance name</p>
+<p><strong>standby_instance_id</strong>              –  Returns the standby instance id</p>
+<p><strong>use_master_for_log_backup</strong>        –  Returns True if master is used for log backup</p>
+<p><strong>use_master_for_data_backup</strong>       –  Returns True if master is used for data backup</p>
 </div></blockquote>
 <dl class="py class">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance">
@@ -1826,45 +1833,59 @@ with postgres server</p>
 <p>Derived class from Instance Base class, representing a POSTGRESQL instance,
 and to perform operations on that Instance.</p>
 <dl class="py method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled">
+<em class="property">property </em><code class="sig-name descname">is_standby_enabled</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if standby enabled. False if not</p>
+<p>Return Type: bool</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database">
 <em class="property">property </em><code class="sig-name descname">maintenance_database</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the maintenance database associated with postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory">
 <em class="property">property </em><code class="sig-name descname">postgres_archive_log_directory</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the archive log directory of postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory">
 <em class="property">property </em><code class="sig-name descname">postgres_bin_directory</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the bin directory of postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory">
 <em class="property">property </em><code class="sig-name descname">postgres_lib_directory</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the lib directory of postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number">
 <em class="property">property </em><code class="sig-name descname">postgres_server_port_number</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the port number associated with postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name">
 <em class="property">property </em><code class="sig-name descname">postgres_server_user_name</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the username of postgres server</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version">
 <em class="property">property </em><code class="sig-name descname">postgres_version</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the postgres server version</p>
+<p>Return Type: str</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1974,6 +1995,34 @@ in order to perform redirect restore</p>
 </dd>
 </dl>
 </div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id">
+<em class="property">property </em><code class="sig-name descname">standby_instance_id</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the standby instance id</p>
+<p>Return Type: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_name">
+<em class="property">property </em><code class="sig-name descname">standby_instance_name</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the standby instance name</p>
+<p>Return Type: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_data_backup">
+<em class="property">property </em><code class="sig-name descname">use_master_for_data_backup</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_data_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if master is used for data backup</p>
+<p>Return Type: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_log_backup">
+<em class="property">property </em><code class="sig-name descname">use_master_for_log_backup</code><a class="headerlink" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_log_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if master is used for log backup</p>
+<p>Return Type: bool</p>
 </dd></dl>
 
 </dd></dl>
@@ -3097,7 +3146,7 @@ instance_id)                    –  initialize object of VMInstance object</p>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>

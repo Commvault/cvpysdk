@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.datacube.datasource &mdash; Developer SDK - Python 11.21 documentation</title>
+  <title>cvpysdk.datacube.datasource &mdash; Developer SDK - Python 11.22 documentation</title>
   
 
   
@@ -248,23 +248,25 @@
 
 <span class="sd">    **properties**						--	returns the properties of the data source</span>
 
+<span class="sd">    **index_server_cloud_id**           --  index server cloudid associated to this data source</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
 
-<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="k">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.handler</span> <span class="k">import</span> <span class="n">Handlers</span>
-<span class="kn">from</span> <span class="nn">.sedstype</span> <span class="k">import</span> <span class="n">SEDS_TYPE_DICT</span>
+<span class="kn">from</span> <span class="nn">.handler</span> <span class="kn">import</span> <span class="n">Handlers</span>
+<span class="kn">from</span> <span class="nn">.sedstype</span> <span class="kn">import</span> <span class="n">SEDS_TYPE_DICT</span>
 
-<span class="kn">from</span> <span class="nn">..exception</span> <span class="k">import</span> <span class="n">SDKException</span>
+<span class="kn">from</span> <span class="nn">..exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
 
 <div class="viewcode-block" id="Datasources"><a class="viewcode-back" href="../../../source/cvpysdk.datacube.html#cvpysdk.datacube.datasource.Datasources">[docs]</a><span class="k">class</span> <span class="nc">Datasources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for representing all the Datasources in the Datacube.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datacube_object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datacube_object</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes an instance of the Datasources class.</span>
 
 <span class="sd">            Args:</span>
@@ -285,7 +287,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_datasources</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string consisting of all datasources in datacube.</span>
 
 <span class="sd">            Returns:</span>
@@ -302,7 +304,7 @@
 
         <span class="k">return</span> <span class="n">representation_string</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Representation string for the instance of the Datasources class.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Datasources class instance for Commcell: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_datacube_object</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_name</span>
@@ -359,12 +361,17 @@
         <span class="n">_datasources</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">collection</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">:</span>
             <span class="n">core_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">cloud_id</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="s1">&#39;computedCoreName&#39;</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
                 <span class="n">core_name</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s1">&#39;computedCoreName&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;cloudId&#39;</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">:</span>
+                <span class="n">cloud_id</span> <span class="o">=</span> <span class="n">collection</span><span class="p">[</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">datasource</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">[</span><span class="s1">&#39;datasources&#39;</span><span class="p">]:</span>
                 <span class="n">datasource_dict</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="k">if</span> <span class="n">core_name</span><span class="p">:</span>
                     <span class="n">datasource_dict</span><span class="p">[</span><span class="s1">&#39;computedCoreName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_name</span>
+                <span class="k">if</span> <span class="n">cloud_id</span><span class="p">:</span>
+                    <span class="n">datasource_dict</span><span class="p">[</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloud_id</span>
                 <span class="n">datasource_dict</span><span class="p">[</span><span class="s1">&#39;data_source_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datasource</span><span class="p">[</span><span class="s1">&#39;datasourceId&#39;</span><span class="p">]</span>
                 <span class="n">datasource_dict</span><span class="p">[</span><span class="s1">&#39;data_source_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datasource</span><span class="p">[</span><span class="s1">&#39;datasourceName&#39;</span><span class="p">]</span>
                 <span class="n">datasource_dict</span><span class="p">[</span><span class="s1">&#39;data_source_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEDS_TYPE_DICT</span><span class="p">[</span>
@@ -618,7 +625,7 @@
 <div class="viewcode-block" id="Datasource"><a class="viewcode-back" href="../../../source/cvpysdk.datacube.html#cvpysdk.datacube.datasource.Datasource">[docs]</a><span class="k">class</span> <span class="nc">Datasource</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class for performing operations on a single datasource&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datacube_object</span><span class="p">,</span> <span class="n">datasource_name</span><span class="p">,</span> <span class="n">datasource_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datacube_object</span><span class="p">,</span> <span class="n">datasource_name</span><span class="p">,</span> <span class="n">datasource_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize an object of the Datasource class.</span>
 
 <span class="sd">            Args:</span>
@@ -673,11 +680,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_handlers_obj</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_computed_core_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data_source_type</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the instance of this class.&quot;&quot;&quot;</span>
         <span class="n">representation_string</span> <span class="o">=</span> <span class="s1">&#39;Datasource class instance for Commcell: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span>
 
@@ -711,6 +719,8 @@
         <span class="n">data_source_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">datacube</span><span class="o">.</span><span class="n">datasources</span><span class="o">.</span><span class="n">get_datasource_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datasource_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="s1">&#39;computedCoreName&#39;</span> <span class="ow">in</span> <span class="n">data_source_dict</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_computed_core_name</span> <span class="o">=</span> <span class="n">data_source_dict</span><span class="p">[</span><span class="s1">&#39;computedCoreName&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;cloudId&#39;</span> <span class="ow">in</span> <span class="n">data_source_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span> <span class="o">=</span> <span class="n">data_source_dict</span><span class="p">[</span><span class="s1">&#39;cloudId&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data_source_type</span> <span class="o">=</span> <span class="n">data_source_dict</span><span class="p">[</span><span class="s1">&#39;data_source_type&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">data_source_dict</span>
 
@@ -850,6 +860,11 @@
     <span class="k">def</span> <span class="nf">computed_core_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the value of the computedcorename attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computed_core_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index_server_cloud_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the cloud id attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cloud_id</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">data_source_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1100,7 +1115,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2019, Commvault Systems® Inc. All Rights Reserved
+        &copy; Copyright 2020, Commvault Systems® Inc. All Rights Reserved
 
     </p>
   </div>
