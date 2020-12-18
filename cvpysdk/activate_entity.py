@@ -83,7 +83,9 @@ ActivateEntity Attributes
 
     **display_name**      --  returns the display name of the regex entity
 
-    **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived)
+    **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)
+
+    **entity_xml**        --  returns the entity xml associated with this entity
 
 """
 
@@ -462,6 +464,7 @@ class ActivateEntity(object):
         self._entity_type = None
         self._is_enabled = None
         self._entity_key = None
+        self._entity_xml = None
         self._category_name = None
         if entity_id is None:
             self._entity_id = self._get_entity_id(entity_name)
@@ -582,6 +585,7 @@ class ActivateEntity(object):
         self._is_enabled = regex_entity_dict['enabled']
         self._entity_key = regex_entity_dict['entityKey']
         self._entity_type = regex_entity_dict['entityType']
+        self._entity_xml = regex_entity_dict['entityXML']
         return regex_entity_dict
 
     @property
@@ -613,6 +617,11 @@ class ActivateEntity(object):
     def entity_key(self):
         """Returns the entity key attribute."""
         return self._entity_key
+
+    @property
+    def entity_xml(self):
+        """Returns the entity xml attribute."""
+        return self._entity_xml
 
     def refresh(self):
         """Refresh the regex entity details for associated object"""

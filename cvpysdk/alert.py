@@ -56,6 +56,8 @@ Alerts:
 
     console_alerts()            --  returns the list of all console alerts
 
+    console_alert()             -- returns console alert details for a console alert with given livefeedid
+
     refresh()                   --   refresh the alerts associated with the commcell
 
 Alerts Attributes
@@ -579,6 +581,10 @@ class Alerts(object):
                     if response is empty
 
                     if response is not success
+
+            Returns:
+                str - String representation of console alerts if version is less than SP23
+                object - json response object for console alerts if version greater than or equal to SP23
         """
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
             raise SDKException('Alert', '101')
@@ -590,6 +596,9 @@ class Alerts(object):
 
         if flag:
             if response.json() and 'totalNoOfAlerts' in response.json():
+                if self._commcell_object.commserv_version >= 23:
+                    return response.json()
+
                 o_str = "Total Console Alerts found: {0}".format(
                     response.json()['totalNoOfAlerts']
                 )
@@ -607,6 +616,40 @@ class Alerts(object):
                     )
 
                 return o_str
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def console_alert(self, live_feed_id):
+        """Returns the console console alert with given live_feed_id
+
+            Args:
+                live_feed_id (int)  --  Live feed ID of console alert to fetch
+
+            Raises:
+                SDKException:
+                    if type of the live_feed_id argument is not int
+
+                    if response is empty
+
+                    if response is not success
+
+            Returns:
+                object - Console alert json object for given live_feed_id
+        """
+        if not (isinstance(live_feed_id, int)):
+            raise SDKException('Alert', '101')
+
+        console_alerts = self._services['GET_CONSOLE_ALERT'] % (
+            live_feed_id)
+
+        flag, response = self._cvpysdk_object.make_request('GET', console_alerts)
+
+        if flag:
+            if response and response.json() and 'description' in response.json():
+                return response.json()
             else:
                 raise SDKException('Response', '102')
         else:

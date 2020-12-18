@@ -90,7 +90,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=0,
             disk_option='Original',
             transport_mode='Auto',
-            proxy_client=None):
+            proxy_client=None,
+            to_time=0):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -121,6 +122,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                to_time                 (int)       -- End time to select the job for restore
+                                                        default: None
 
 
             Returns:
@@ -153,6 +157,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             restore_option['client'] = proxy_client
 
+        if vm_to_restore:
+            vm_to_restore = [vm_to_restore]
         restore_option_copy = restore_option.copy()
 
         # set attr for all the option in restore xml from user inputs
@@ -166,7 +172,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             power_on=power_on,
             disk_option=disk_option_value,
             transport_mode=transport_mode_value,
-            copy_precedence=copy_precedence
+            copy_precedence=copy_precedence,
+            to_time=to_time
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -187,7 +194,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             proxy_client=None,
             source_ip=None,
             destination_ip=None,
-            network=None
+            network=None,
+            dest_computer_name=None,
+            source_subnet=None,
+            source_gateway=None,
+            destination_subnet=None,
+            destination_gateway=None,
+            to_time=0
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -237,10 +250,21 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 network           (basestring)    --  Network of the detination vm
 
+                dest_computer_name  (basestring)    --  Hostname of the restored vm
+
+                source_subnet  (basestring)    --  subnet of the source vm
+
+                source_gateway  (basestring)    --  gateway of the source vm
+
+                destination_subnet  (basestring)    --  subnet of the restored vm
+
+                destination_gateway  (basestring)    --  gateway of the restored vm
+
                 restore_option      (dict)     --  complete dictionary with all advanced options
                     default: {}
 
-
+                to_time             (Int)         --  End time to select the job for restore
+                                                    default: None
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -299,7 +323,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             source_item=[],
             source_ip=source_ip,
             destination_ip=destination_ip,
-            network=network
+            network=network,
+            to_time=to_time
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -552,68 +577,91 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             azure_client,
             vm_to_restore=None,
             resource_group=None,
-            storage_account=True,
+            storage_account=None,
+            datacenter=None,
+            proxy_client=None,
             overwrite=True,
             power_on=True,
-            proxy_client=None,
             instance_size=None,
-            public_ip=True,
+            public_ip=False,
             restore_as_managed=False,
             copy_precedence=0,
-            restore_option=None):
+            disk_type=None,
+            restore_option=None,
+            networkDisplayName=None,
+            networkrsg=None,
+            destsubid=None,
+            subnetId=None):
+        """
+                This converts the Hyperv VM to AzureRM
+                Args:
+                        vm_to_restore          (dict):     dict containing the VM name(s) to restore as
+                                                           keys and the new VM name(s) as their values.
+                                                           Input empty string for default VM name for
+                                                           restored VM.
+                                                           default: {}
+
+                        azure_client    (basestring):      name of the AzureRM client
+                                                           where the VM should be
+                                                           restored.
+
+                        resource_group   (basestring):      destination Resource group
+                                                            in the AzureRM
+
+                        storage_account  (basestring):    storage account where the
+                                                          restored VM should be located
+                                                          in AzureRM
+
+                        overwrite              (bool):    overwrite the existing VM
+                                                          default: True
+
+                        power_on               (bool):    power on the  restored VM
+                                                          default: True
+
+                        instance_size    (basestring):    Instance Size of restored VM
+
+                        public_ip              (bool):    If True, creates the Public IP of
+                                                          restored VM
+
+                        restore_as_managed     (bool):    If True, restore as Managed VM in Azure
+
+                        copy_precedence         (int):    copy precedence value
+                                                          default: 0
+
+                        proxy_client      (basestring):   destination proxy client
+
+                        networkDisplayName(basestring):   destination network display name
+
+                        networkrsg        (basestring):   destination network display name's security group
+
+                        destsubid         (basestring):   destination subscription id
+
+                        subnetId          (basestring):   destination subet id
+
+
+
+                    Returns:
+                        object - instance of the Job class for this restore job
+
+                    Raises:
+                        SDKException:
+                            if inputs are not of correct type as per definition
+
+                            if failed to initialize job
+
+                            if response is empty
+
+                            if response is not success
 
         """
-            This converts the VMware to AzureRM
-            Args:
-                vm_to_restore          (list):     provide the VM names to restore
-
-                azure_client    (basestring):      name of the AzureRM client
-                                                   where the VM should be
-                                                   restored.
-
-                resource_group   (basestring):      destination Resource group
-                                                    in the AzureRM
-
-                storage_account  (basestring):    storage account where the
-                                                  restored VM should be located
-                                                  in AzureRM
-
-                overwrite              (bool):    overwrite the existing VM
-                                                  default: True
-
-                power_on               (bool):    power on the  restored VM
-                                                  default: True
-
-                instance_size    (basestring):    Instance Size of restored VM
-
-                public_ip              (bool):    If True, creates the Public IP of
-                                                  restored VM
-
-                restore_as_managed     (bool):    If True, restore as Managed VM in Azure
-
-                copy_precedence         (int):    copy precedence value
-                                                  default: 0
-
-                proxy_client      (basestring):   destination proxy client
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
-        """
-
         if restore_option is None:
             restore_option = {}
 
+        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+            raise SDKException('Subclient', '101')
+
+        if not isinstance(vm_to_restore, list):
+            vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
         if not isinstance(azure_client, basestring):
             raise SDKException('Subclient', '101')
@@ -629,6 +677,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             vcenter_client=azure_client,
             datastore=storage_account,
             esx_host=resource_group,
+            datacenter=datacenter,
             unconditional_overwrite=overwrite,
             client_name=proxy_client,
             power_on=power_on,
@@ -639,11 +688,16 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             instanceSize=instance_size,
             volume_level_restore=1,
             destination_instance=instance.instance_name,
-            backupset_client_name=instance._agent_object._client_object.client_name
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            networkDisplayName=networkDisplayName,
+            networkrsg=networkrsg,
+            destsubid=destsubid,
+            subnetId=subnetId
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
+
 
     def full_vm_conversion_hyperv(
             self,

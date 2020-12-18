@@ -231,9 +231,9 @@ Job instance Attributes
 **job.subclient_name**              --  returns the name of the subclient, job is running for
 
 **job.status**                      --  returns the current status of the job
-
-                                            (Completed / Suspended / Waiting / ... / etc.)
-
+                                        (Completed / Suspended / Waiting / ... / etc.)
+        http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
+        please refer status section in above doc link for complete list of status available
 
 **job.job_id**                      --  returns the id of the job
 
@@ -397,6 +397,14 @@ class JobController(object):
             if not self._commcell_object.clients.has_client(client):
                 raise SDKException('Job', '102', 'No client with name {0} exists.'.format(client))
 
+        client_list = []
+        for client in options.get('clients_list', []):
+            try:
+                _client_id = int(self._commcell_object.clients.all_clients[client.lower()]['id'])
+            except KeyError:
+                _client_id = int(self._commcell_object.clients.hidden_clients[client.lower()]['id'])
+            client_list.append({"clientId": _client_id})
+
         request_json = {
             "scope": 1,
             "category": job_list_category[options.get('category', 'ALL')],
@@ -409,11 +417,7 @@ class JobController(object):
             "jobFilter": {
                 "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
                 "showAgedJobs": options.get('show_aged_jobs', False),
-                "clientList": [
-                    {
-                        "clientId": int(self._commcell_object.clients.all_clients[client.lower()]['id'])
-                    } for client in options.get('clients_list', [])
-                ],
+                "clientList": client_list,
                 "jobTypeList": [
                     job_type for job_type in options.get('job_type_list', [])
                 ]
@@ -2025,28 +2029,33 @@ class Job(object):
             "jobId": int(self.job_id)
         }
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
+        attempts = 3
+        for _ in range(attempts):  # Retrying to ignore the transient case when job details are not found
+            flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
 
-        if flag:
-            if response.json():
-                if 'job' in response.json():
-                    return response.json()['job']
-                elif 'error' in response.json():
-                    error_code = response.json()['error']['errList'][0]['errorCode']
-                    error_message = response.json()['error']['errList'][0]['errLogMessage']
+            if flag:
+                if response.json():
+                    if 'job' in response.json():
+                        return response.json()['job']
+                    elif 'error' in response.json():
+                        error_code = response.json()['error']['errList'][0]['errorCode']
+                        error_message = response.json()['error']['errList'][0]['errLogMessage']
 
-                    raise SDKException(
-                        'Job',
-                        '105',
-                        'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
-                    )
+                        raise SDKException(
+                            'Job',
+                            '105',
+                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                    else:
+                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
                 else:
-                    raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                    time.sleep(2)
+                    continue
             else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        raise SDKException('Response', '102')
 
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
@@ -2197,7 +2206,9 @@ class Job(object):
 
     @property
     def status(self):
-        """Treats the job status as a read-only attribute."""
+        """Treats the job status as a read-only attribute.
+           http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
+           please refer status section in above doc link for complete list of status available"""
         self.is_finished
         return self._status
 

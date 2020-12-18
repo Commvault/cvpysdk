@@ -2159,6 +2159,10 @@ class Instance(object):
 
                         job_description (str)   --  Restore job description
 
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -2278,6 +2282,10 @@ class Instance(object):
                     Options:
 
                         job_description (str)   --  Restore job description
+
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
@@ -2590,6 +2598,8 @@ class Instance(object):
             value["copy_precedence_applicable"] = True
 
         time_range_dict = {}
+        options = value.get("advanced_options") or {}
+
         if value.get('from_time'):
             time_range_dict['fromTimeValue'] = value.get('from_time')
 
@@ -2621,7 +2631,7 @@ class Instance(object):
                 "appName": self._agent_object.agent_name
             },
             "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time",
+                "TimeZoneName": options.get("timezone", self._commcell_object.default_timezone)
             },
             "timeRange": time_range_dict
         }

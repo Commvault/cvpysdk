@@ -84,7 +84,8 @@ from __future__ import unicode_literals
 EXCEPTION_DICT = {
     'Response': {
         '101': 'Response was not success',
-        '102': 'Response received is empty'
+        '102': 'Response received is empty',
+        '500': 'Unable to perform the requested method'
     },
     'Commcell': {
         '101': 'Commcell is not reachable. Please check the commcell name and services again',

@@ -832,15 +832,14 @@ class Organization:
     @default_plan.setter
     def default_plan(self, value):
         """Update the default plan associated with the Organization."""
-        if not isinstance(value, basestring):
-            raise SDKException('Organization', '101')
 
-        value = value.lower()
-
-        if value not in self.plans:
+        if not value:
+            self._update_properties_json({'defaultPlansOperationType': 'OVERWRITE'})
+            self._update_properties()
+        elif value.lower() not in self.plans:
             raise SDKException('Organization', '111')
         else:
-            temp_plan = self._commcell_object.plans.get(value)
+            temp_plan = self._commcell_object.plans.get(value.lower())
             temp = [{
                 'plan': {
                     'planId': int(temp_plan.plan_id),

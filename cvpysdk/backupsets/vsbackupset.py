@@ -47,6 +47,7 @@ from importlib import import_module
 from inspect import isabstract, isclass, getmembers
 
 from ..backupset import Backupset
+from ..client import Client
 from ..exception import SDKException
 
 
@@ -226,3 +227,18 @@ class VSBackupset(Backupset):
 
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def index_server(self):
+        """Returns the index server client set for the backupset"""
+
+        client_name = None
+
+        if 'indexSettings' in self._properties:
+            if 'currentIndexServer' in self._properties['indexSettings']:
+                client_name = self._properties['indexSettings']['currentIndexServer']['clientName']
+
+        if client_name is not None:
+            return Client(self._commcell_object, client_name=client_name)
+
+        return None

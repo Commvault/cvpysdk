@@ -593,7 +593,7 @@ class SQLServerInstance(Instance):
                 point_in_time   (timestamp) -- unix time for the point in time recovery point creation
                         default 0.  performs restore to last backup
 
-                destination_instance (str)  -- name of the destination instance in whcih recovery point is to be
+                destination_instance (str)  -- name of the destination instance in which recovery point is to be
                                                 created.
                                 default None. creates in the same instance
 
@@ -608,19 +608,34 @@ class SQLServerInstance(Instance):
             recovery_point_name = dbname + str(int(timestamp))
 
         instance = self
-        if destination_instance is not None:
+        if destination_instance != self.instance_name:
             instance = SQLServerInstance(self._agent_object, destination_instance)
 
         # fetching db details
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._commcell_object._services["SQL_DATABASES"] % dbname, None
         )
-        db_details = None
+        if flag:
+            response = response.json()
+            db_id = response["SqlDatabase"][0]["dbId"]
+        else:
+            raise SDKException('Response', 102, "failed to fetch db details")
+
+        # fetching full database details
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._commcell_object._services["SQL_DATABASE_DETAILS"] %(self.instance_id, db_id), None
+        )
         if flag:
             response = response.json()
             db_details = response["SqlDatabase"][0]
         else:
             raise SDKException('Response', 102, "failed to fetch db details")
+
+        fullbackup_job = db_details["fBkpJob"]
+        if fullbackup_job is None:
+            raise Exception("failed to get last full backup job details")
+
+        job = self._commcell_object.job_controller.get(fullbackup_job)
 
         # retrieving the physical paths and logical file names
         restore_options = self._get_sql_restore_options([dbname])
@@ -629,18 +644,6 @@ class SQLServerInstance(Instance):
         for files in restore_options["sqlDbdeviceItem"]:
             physical_files.append(files["fileName"])
             logical_files.append(files["logicalFileName"])
-
-        job = self._commcell_object.job_controller.get(db_details["jobId"])
-
-        # fetching job details
-        browse_dict = self.browse(get_full_details=True)
-        fullbackup_job = None
-        for dbs in browse_dict:
-            if dbs["databaseName"] == dbname:
-                fullbackup_job = dbs["jobId"]
-                break
-        if fullbackup_job is None:
-            raise Exception("failed to get last full backup job details")
 
         request_json = {
             "opType": 0,
@@ -673,14 +676,14 @@ class SQLServerInstance(Instance):
                             "appMinType": 2 if not snap else 0,
                             "expireDays": expire_days,
                             "instance": {
-                                "clientId": int(self._agent_object._client_object.client_id),
+                                "clientId": instance.properties["instance"]["clientId"],
                                 "instanceName": instance.instance_name,
                                 "instanceId": int(instance.instance_id),
                                 "applicationId": 81
                             },
                             "miningJobs": [fullbackup_job],
                             "client": {
-                                "clientId": int(db_details["cId"])
+                                "clientId": self.properties["instance"]["clientId"]
                             },
                             "phyfileRename": physical_files,
                             "logfileRename": logical_files,
@@ -689,7 +692,7 @@ class SQLServerInstance(Instance):
                 }
             },
             "ma": {
-                "clientId": int(self._agent_object._client_object.client_id)
+                "clientId": self.properties["instance"]["clientId"]
             },
             "options": {
                 "instantSend": True,
@@ -702,7 +705,7 @@ class SQLServerInstance(Instance):
                 "libraryId": job.details["jobDetail"]["generalInfo"]["mediaLibrary"]["libraryId"],
                 "backupsetId": job.details["jobDetail"]["generalInfo"]["subclient"]["backupsetId"],
                 "instanceId": int(self.instance_id),
-                "clientId": db_details["cId"]
+                "clientId": self.properties["instance"]["clientId"]
             },
             "timeRange": {
                 "fromTime": 0,

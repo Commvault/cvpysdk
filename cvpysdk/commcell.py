@@ -274,6 +274,10 @@ Commcell instance Attributes
 
     **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.
     only for user group inclusion tfa.
+
+    **is_linux_commserv**           -- boolean specifying if CommServer is installed on linux cs.
+
+    **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.
 """
 
 from __future__ import absolute_import
@@ -519,6 +523,7 @@ class Commcell(object):
         self._commserv_guid = None
         self._commserv_version = None
         self._version_info = None
+        self._is_linux_commserv = None
 
         self._id = None
         self._clients = None
@@ -699,9 +704,16 @@ class Commcell(object):
                     version_info = response.json().get('csVersionInfo')
                     self._id = response.json()['commcell']['commCellId']
 
-                    self._commserv_timezone = re.search(
-                        r'\(.*', response.json()['timeZone']
-                    ).group()
+                    try:
+                        self._commserv_timezone = re.search(
+                            r'\(.*', response.json()['timeZone']
+                        ).group()
+                    except:
+                        # in case where timezone string might be missing strings like
+                        # (UTC+5:30) substitute the prepending strings like 0:-300: with ''
+                        self._commserv_timezone = re.sub(
+                            r'^([+|-]*\d*:)*', '', response.json()['timeZone']
+                        )
 
                     # set commcell version (E.g. 11.21.0)
                     version_replace_strings = {
@@ -2029,7 +2041,8 @@ class Commcell(object):
             install_path=None,
             log_file_loc=None,
             client_group_name=None,
-            storage_policy_name=None):
+            storage_policy_name=None,
+            **kwargs):
         """
         Installs the selected features in the selected clients
         Args:
@@ -2071,6 +2084,14 @@ class Commcell(object):
 
                  default : None
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict)            -- dictionary of install flag values
+
+                default : None
+
+            Ex : install_flags = {"preferredIPfamily":2, "install32Base":True}
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -2101,7 +2122,8 @@ class Commcell(object):
                                 install_path='/opt/commvault',
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
-                                storage_policy_name='My_Storage_Policy')
+                                storage_policy_name='My_Storage_Policy',
+                                install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
                     not both
@@ -2117,7 +2139,8 @@ class Commcell(object):
             install_path=install_path,
             log_file_loc=log_file_loc,
             client_group_name=client_group_name,
-            storage_policy_name=storage_policy_name)
+            storage_policy_name=storage_policy_name,
+            **kwargs)
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell
@@ -3007,6 +3030,19 @@ class Commcell(object):
             ]
         """
         return self.two_factor_authentication.tfa_enabled_user_groups
+
+    @property
+    def is_linux_commserv(self):
+        """Returns true if CommServer is installed on the linux cs
+        """
+        if self._is_linux_commserv is None:
+            self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
+        return self._is_linux_commserv
+
+    @property
+    def default_timezone(self):
+        """Returns the default timezone used for all the operations performed via cvpysdk"""
+        return '(GMT) Monrovia, Reykjavik' if self.is_linux_commserv else '(UTC) Coordinated Universal Time'
 
     def enable_tfa(self, user_groups=None):
         """

@@ -1697,6 +1697,13 @@ class StoragePolicy(object):
         """Treats the storage policy name as a read-only attribute."""
         return self._storage_policy_name
 
+    @property
+    def description(self):
+        """Returns the Storage Policy Description Field"""
+        if self._storage_policy_advanced_properties is None:
+            self._storage_policy_advanced_properties = self._get_storage_policy_advanced_properties()
+        return self._storage_policy_advanced_properties.get('policies',[{}])[0].get('description')
+
     def get_copy_precedence(self, copy_name):
         """ returns the copy precedence value associated with the copy name
 
@@ -2038,7 +2045,7 @@ class StoragePolicy(object):
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=0):
+                     all_copies=True, total_jobs_to_process=1000):
         """Runs the aux copy job from the commcell.
             Args:
 
@@ -2866,6 +2873,8 @@ class StoragePolicyCopy(object):
 
                 self._dedupe_flags = self._copy_properties.get('dedupeFlags')
 
+                self._media_agent = self._copy_properties.get('mediaAgent')
+
             else:
                 raise SDKException('Response', '102')
         else:
@@ -3125,6 +3134,11 @@ class StoragePolicyCopy(object):
                 raise SDKException('Response', '110')
 
         self._set_copy_properties()
+
+    @property
+    def media_agent(self):
+        """Gets the media agent name of the copy"""
+        return self._media_agent.get('mediaAgentName')
 
     def delete_job(self, job_id):
         """

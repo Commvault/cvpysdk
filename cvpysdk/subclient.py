@@ -54,7 +54,11 @@ Subclients:
 
     add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
 
+    add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.
+
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
+
+    add_onedrive_subclient()   --  adds a new onedrive subclient to the instance
 
     get(subclient_name)         --  returns the subclient object of the input subclient name
 
@@ -910,6 +914,109 @@ class Subclients(object):
 
         return self._process_add_request(request_json)
 
+    def add_postgresql_subclient(
+            self, subclient_name, storage_policy,
+            contents, no_of_streams=1, collect_object_list=False):
+        """Adds a new postgresql subclient to the backupset.
+
+            Args:
+                subclient_name          (str)   --  name of the new subclient to add
+
+                storage_policy          (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                contents                (list)  --  database list to be added as subclient content
+
+
+                no_of_streams           (int)   --  No of backup streams to be used
+
+                    default: 1
+
+                collect_object_list     (bool)  --  Boolean flag to determine if collect object
+                list needs to be enabled for subclient or not
+
+                    default: False
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if conetnts argument is not of type list
+
+                    if contents is empty list
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        """
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(storage_policy, basestring) and
+                isinstance(contents, list)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    storage_policy)
+            )
+
+        if not contents:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Content list cannot be empty'
+            )
+
+        content_list = []
+        for content in contents:
+            content_list.append({"postgreSQLContent": {"databaseName": content}})
+
+        request_json = {
+            "subClientProperties": {
+                "contentOperationType": 2,
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": subclient_name
+                },
+                "commonProperties": {
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
+                        }
+                    },
+                },
+                "postgreSQLSubclientProp": {
+                    "numberOfBackupStreams": no_of_streams,
+                    "collectObjectListDuringBackup": collect_object_list
+                },
+                "content": content_list
+            }
+        }
+
+        return self._process_add_request(request_json)
+
     def add_virtual_server_subclient(
             self,
             subclient_name,
@@ -1042,6 +1149,100 @@ class Subclients(object):
                     }
         else:
             raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
+
+        return self._process_add_request(request_json)
+
+    def add_onedrive_subclient(self,
+                               subclient_name,
+                               server_plan):
+
+        """Adds a new subclient to the backupset.
+
+            Args:
+                subclient_name     (str)   --  name of the new subclient to add
+
+                server_plan     (str)   --  name of the server plan to be associated
+                                                with the subclient
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if server plan argument is not of type string
+
+                    if description argument is not of type string
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+                    if server plan  donot exists with the given name
+
+                """
+
+        if not (isinstance(subclient_name, basestring) and
+                isinstance(server_plan, basestring)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if self._backupset_object is None:
+            if self._instance_object.backupsets.has_backupset(
+                    self._instance_object.backupsets.default_backup_set):
+                self._backupset_object = self._instance_object.backupsets.get(
+                    self._instance_object.backupsets.default_backup_set)
+            else:
+                self._backupset_object = self._instance_object.backupsets.get(
+                    sorted(self._instance_object.backupsets.all_backupsets)[0]
+                )
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_id = int(server_plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        request_json = {
+            "subClientProperties": {
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetId": int(self._backupset_object.backupset_id),
+                    "instanceId": int(self._instance_object.instance_id),
+                    "clientId": int(self._client_object.client_id),
+                    "appName": self._agent_object.agent_name,
+                    "applicationId": 134,
+                    "subclientName": subclient_name
+                },
+                "planEntity": {
+                    "planId": server_plan_id
+                },
+                "cloudAppsSubClientProp": {
+                    "instanceType": 7,
+                    "oneDriveSubclient": {
+                        "enableOneNote": False,
+                        "isEnterprise": True
+                    }
+                },
+                "cloudconnectorSubclientProp": {
+                    "isAutoDiscoveryEnabled": False
+                },
+                "commonProperties": {
+                    "enableBackup": True
+                }
+            }
+        }
 
         return self._process_add_request(request_json)
 
@@ -1973,6 +2174,8 @@ c
                 enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
                     format: YYYY-MM-DD HH:mm:ss
 
+                **Note** In case of linux CommServer provide time in GMT timezone
+
             Raises:
                 SDKException:
                     if time value entered is less than the current time
@@ -1993,7 +2196,7 @@ c
             raise SDKException('Subclient', '109')
 
         enable_backup_at_time = {
-            "TimeZoneName": "(UTC) Coordinated Universal Time",
+            "TimeZoneName": self._commcell_object.default_timezone,
             "timeValue": enable_time
         }
 
@@ -2128,6 +2331,21 @@ c
             'POST', backup_service)
 
         return self._process_backup_response(flag, response)
+
+    def get_ma_associated_storagepolicy(self):
+        """
+        Get Media agents associated with storage policy
+        
+        Raise Exception:
+                if unable to get MA names
+        """
+        storage = self._subclient_properties['commonProperties']['storageDevice']
+        if 'performanceMode' in storage:
+            data_backup_storage_device = storage['performanceMode']["perfCRCDetails"]
+            malist = []
+            for each_ma in data_backup_storage_device :
+                malist.append(each_ma['perfMa'])
+            return malist
 
     def browse(self, *args, **kwargs):
         """Browses the content of the Subclient.
@@ -2308,6 +2526,10 @@ c
 
                         job_description (str)   --  Restore job description
 
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
                          instance of the Schedule class for this restore job if its a scheduled Job
@@ -2413,6 +2635,10 @@ c
                     Options:
 
                         job_description (str)   --  Restore job description
+
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Returns:
                 object - instance of the Job class for this restore job if its an immediate Job
