@@ -65,10 +65,10 @@ class SharepointInstance(Instance):
         self._commonoption_restore_json = {
             "allVersion": True,
             "offlineMiningRestore": False,
-            "skip": True,
+            "skip": not value.get("unconditional_overwrite", False),
             "restoreACLs": False,
             "erExSpdbPathRestore": True,
-            "unconditionalOverwrite": value.get("overwrite", False),
+            "unconditionalOverwrite": value.get("unconditional_overwrite", False),
             "siteReplicationrestore": False,
             "append": False
         }

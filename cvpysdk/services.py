@@ -316,7 +316,7 @@ SERVICES_DICT_TEMPLATE = {
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
-
+    'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',

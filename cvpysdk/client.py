@@ -1688,7 +1688,8 @@ class Clients(object):
             azure_app_key_secret,
             azure_tenant_name,
             azure_app_key_id,
-            environment_type):
+            environment_type,
+            backupset_type_to_create = 1):
         """Adds a new Exchange Mailbox Client to the Commcell.
 
             Args:
@@ -1712,6 +1713,12 @@ class Clients(object):
                 azure_tenant_name       (str)   --  tenant for exchange online
 
                 azure_app_key_id        (str)   --  app key for exchange online
+
+                backupset_type_to_create (int)  --  Backup set type to create
+                    Possible Values:
+                        1: user mailbox
+                        2: journal mailbox
+                        3: content store mailbox
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -1794,6 +1801,7 @@ class Clients(object):
             "clientInfo": {
                 "clientType": 25,
                 "exchangeOnePassClientProperties": {
+                    "backupSetTypeToCreate" : backupset_type_to_create,
                     "recallService": recall_service_url,
                     "onePassProp": {
                         "environmentType": environment_type,

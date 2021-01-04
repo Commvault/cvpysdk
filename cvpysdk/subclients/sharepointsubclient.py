@@ -177,19 +177,22 @@ class SharepointSubclient(Subclient):
 
                     if response is not success
         """
-        if not isinstance(content_to_restore, list):
-            raise SDKException('Subclient', '101')
+        if not self._backupset_object.is_sharepoint_online_instance:
+            if not isinstance(content_to_restore, list):
+                raise SDKException('Subclient', '101')
 
-        self._backupset_object._instance_object._restore_association = self._subClientEntity
+            self._backupset_object._instance_object._restore_association = self._subClientEntity
 
-        request_json = self._sharepoint_restore_options_json(
-            content_to_restore,
-            database_client,
-            spsetup_list,
-            overwrite=overwrite
-        )
+            request_json = self._sharepoint_restore_options_json(
+                content_to_restore,
+                database_client,
+                spsetup_list,
+                overwrite=overwrite
+            )
 
-        return self._process_restore_response(request_json)
+            return self._process_restore_response(request_json)
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint Online Instance')
 
     def _sharepoint_restore_options_json(
             self,
@@ -216,127 +219,130 @@ class SharepointSubclient(Subclient):
             Returns:
                 dict: dictionary consisting of the Sharepoint Server options.
         """
-        client_name = self._client_object._client_name
+        if not self._backupset_object.is_sharepoint_online_instance:
+            client_name = self._client_object._client_name
 
-        request_json = self._restore_json(
-            client=client_name
-        )
+            request_json = self._restore_json(
+                client=client_name
+            )
 
-        if destination_client is None:
-            destination_client = client_name
+            if destination_client is None:
+                destination_client = client_name
 
-        common_options = {
-            "allVersion": True,
-            "erExSpdbPathRestore": True
-        }
-        destination = {
-            "inPlace": True,  # TODO check if in-place/oop.. will do this when we implement oop testcase
-            "destClient": {
-                "clientName": destination_client
-            },
-            "destinationInstance": {
-                "clientName": destination_client,
-                "instanceName": "defaultInstance",
-                "appName": self._agent_object.agent_name
+            common_options = {
+                "allVersion": True,
+                "erExSpdbPathRestore": True
             }
-        }
-        sql_restore_options = {
-            "sqlRecoverType": SQLDefines.STATE_RECOVER,
-            "dropConnectionsToDatabase": True,
-            "overWrite": overwrite,
-            "sqlRestoreType": SQLDefines.DATABASE_RESTORE
-        }
-        sharepoint_restore_option = {
-            "configContentDatabase": True,
-            "isSharePointRBS": False,
-            "restoreSqlDBTO": False,
-            "is90OrUpgradedClient": False,
-            "restoreSqlDBtoLocation": "",
-            "fetchSqlDatabases": True,
-            "spRestoreToDisk": {
-                "restoreToDisk": False
-            }
-        }
-        sharepoint_db_restore_option = {
-            "restoreType": "SameConfiguration",
-            "restoreDatabaseOption": "RESTORE_ALL",
-            "rbsOptions": {
-                "sqlSource": {
-                    "clientName": database_client
+            destination = {
+                "inPlace": True,  # TODO check if in-place/oop.. will do this when we implement oop testcase
+                "destClient": {
+                    "clientName": destination_client
                 },
-                "sqlDestination": {
-                    "destClient": {
+                "destinationInstance": {
+                    "clientName": destination_client,
+                    "instanceName": "defaultInstance",
+                    "appName": self._agent_object.agent_name
+                }
+            }
+            sql_restore_options = {
+                "sqlRecoverType": SQLDefines.STATE_RECOVER,
+                "dropConnectionsToDatabase": True,
+                "overWrite": overwrite,
+                "sqlRestoreType": SQLDefines.DATABASE_RESTORE
+            }
+            sharepoint_restore_option = {
+                "configContentDatabase": True,
+                "isSharePointRBS": False,
+                "restoreSqlDBTO": False,
+                "is90OrUpgradedClient": False,
+                "restoreSqlDBtoLocation": "",
+                "fetchSqlDatabases": True,
+                "spRestoreToDisk": {
+                    "restoreToDisk": False
+                }
+            }
+            sharepoint_db_restore_option = {
+                "restoreType": "SameConfiguration",
+                "restoreDatabaseOption": "RESTORE_ALL",
+                "rbsOptions": {
+                    "sqlSource": {
                         "clientName": database_client
+                    },
+                    "sqlDestination": {
+                        "destClient": {
+                            "clientName": database_client
+                        }
                     }
                 }
             }
-        }
 
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'] \
-            ['browseOption']['backupset']["backupsetName"] = self._backupset_object._backupset_name
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sqlServerRstOption"] = sql_restore_options
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sharePointDBRestoreOption"] = sharepoint_db_restore_option
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["commonOptions"].update(common_options)
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["destination"].update(destination)
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sharePointRstOption"].update(sharepoint_restore_option)
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'] \
+                ['browseOption']['backupset']["backupsetName"] = self._backupset_object._backupset_name
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sqlServerRstOption"] = sql_restore_options
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sharePointDBRestoreOption"] = sharepoint_db_restore_option
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["commonOptions"].update(common_options)
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["destination"].update(destination)
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sharePointRstOption"].update(sharepoint_restore_option)
 
-        content_json = {}
-        source_items = []
-        database_list = []
-        for item in content:
-            item = item.split("\\")[2]
-            for sp_dict in spsetup_list:
-                if sp_dict["application_pool"].lower() == item.lower():
-                    database_name = sp_dict["content_database"]
-                    database_server = sp_dict["database_server"]
-                    web_application = sp_dict["web_application"]
-                    username = sp_dict["credentials"]["username"]
-                    password = b64encode(sp_dict["credentials"]["password"].encode()).decode()
+            content_json = {}
+            source_items = []
+            database_list = []
+            for item in content:
+                item = item.split("\\")[2]
+                for sp_dict in spsetup_list:
+                    if sp_dict["application_pool"].lower() == item.lower():
+                        database_name = sp_dict["content_database"]
+                        database_server = sp_dict["database_server"]
+                        web_application = sp_dict["web_application"]
+                        username = sp_dict["credentials"]["username"]
+                        password = b64encode(sp_dict["credentials"]["password"].encode()).decode()
 
-                    source_items.append(
-                        SharepointDefines.CONTENT_WEBAPP.format(item)
-                    )
-                    source_items.append(
-                        SharepointDefines.CONTENT_DB.format(item, database_name)
-                    )
+                        source_items.append(
+                            SharepointDefines.CONTENT_WEBAPP.format(item)
+                        )
+                        source_items.append(
+                            SharepointDefines.CONTENT_DB.format(item, database_name)
+                        )
 
-                    database_list.append(database_name)
+                        database_list.append(database_name)
 
-                    content_json = {
-                        "SharePointMetaData": [{
-                            "newDirectoryName": "",
-                            "newDatabaseServerName": database_server,
-                            "sourceItem":
-                                SharepointDefines.CONTENT_DB.format(item, database_name),
-                            "newDatabaseName": database_name,
-                            "sharePointMetaDataType": "SPContentDatabase"
-                        }, {
-                            "sourceItem":
-                                SharepointDefines.CONTENT_WEBAPP.format(item),
-                            "newWebApplicationURL": web_application,
-                            "newWebApplicationName": item,
-                            "sharePointMetaDataType": "SPWebApplication",
-                            "credentials": {
-                                "userName": username,
-                                "password": password
-                            }
-                        }]
-                    }
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"]\
-            ["fileOption"]["sourceItem"] = source_items
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sqlServerRstOption"]["database"] = database_list
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sqlServerRstOption"]["restoreSource"] = database_list
-        request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
-            ["sharePointDBRestoreOption"].update(content_json)
+                        content_json = {
+                            "SharePointMetaData": [{
+                                "newDirectoryName": "",
+                                "newDatabaseServerName": database_server,
+                                "sourceItem":
+                                    SharepointDefines.CONTENT_DB.format(item, database_name),
+                                "newDatabaseName": database_name,
+                                "sharePointMetaDataType": "SPContentDatabase"
+                            }, {
+                                "sourceItem":
+                                    SharepointDefines.CONTENT_WEBAPP.format(item),
+                                "newWebApplicationURL": web_application,
+                                "newWebApplicationName": item,
+                                "sharePointMetaDataType": "SPWebApplication",
+                                "credentials": {
+                                    "userName": username,
+                                    "password": password
+                                }
+                            }]
+                        }
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"]\
+                ["fileOption"]["sourceItem"] = source_items
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sqlServerRstOption"]["database"] = database_list
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sqlServerRstOption"]["restoreSource"] = database_list
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
+                ["sharePointDBRestoreOption"].update(content_json)
 
-        return request_json
+            return request_json
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint Online Instance')
 
     def _json_disk_restore_sharepoint_restore_option(self, value):
         """Setter for  the SharePoint Online Disk restore option
@@ -469,6 +475,42 @@ class SharepointSubclient(Subclient):
             'destination'] = self._out_of_place_destination_json
         return request_json
 
+    def _set_properties_to_update_site_association(self, operation):
+        """Updates the association properties of site
+
+            Args:
+
+               operation (int)                  --  type of operation to be performed
+                                                     Example: 1 - Associate
+                                                              2 - Enable
+                                                              3 - Disable
+                                                              4 - Remove
+
+            Raises:
+
+            SDKException:
+
+                if the method is called by SharePoint On-Premise Instance
+
+        """
+        if self._backupset_object.is_sharepoint_online_instance:
+            properties_dict = {}
+            if operation == 1:
+                properties_dict["commonFlags"] = 0
+                properties_dict["isAutoDiscoveredUser"] = False
+                properties_dict["accountStatus"] = 0
+            elif operation == 2:
+                properties_dict["commonFlags"] = 4
+                properties_dict["accountStatus"] = 0
+            elif operation == 3:
+                properties_dict["commonFlags"] = 4
+                properties_dict["accountStatus"] = 2
+            elif operation == 4:
+                properties_dict["isAutoDiscoveredUser"] = True
+            return properties_dict
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
     def run_manual_discovery(self):
         """Runs the manual discovery of backupset
 
@@ -481,6 +523,8 @@ class SharepointSubclient(Subclient):
                     if response is empty
 
                     if response is not success
+
+                    if the method is called by SharePoint On-Premise Instance
 
         """
         if self._backupset_object.is_sharepoint_online_instance:
@@ -535,6 +579,8 @@ class SharepointSubclient(Subclient):
                     if response is empty
 
                     if response is not success
+
+                    if the method is called by SharePoint On-Premise Instance
 
          """
         if self._backupset_object.is_sharepoint_online_instance:
@@ -610,6 +656,8 @@ class SharepointSubclient(Subclient):
 
                     if response is not success
 
+                    if the method is called by SharePoint On-Premise Instance
+
         """
         if self._backupset_object.is_sharepoint_online_instance:
             self._ASSOCIATE_CONTENT = self._services['UPDATE_USER_POLICY_ASSOCIATION']
@@ -665,7 +713,7 @@ class SharepointSubclient(Subclient):
 
                 Returns:
 
-                    web_content     (dict)  --  dictionary of web content
+                    site_dict     (dict)    --  dictionary of sites properties
 
                     no_of_records   (int)   --  no of records
 
@@ -676,6 +724,8 @@ class SharepointSubclient(Subclient):
                         if response is empty
 
                         if response is not success
+
+                        if the method is called by SharePoint On-Premise Instance
 
         """
         if self._backupset_object.is_sharepoint_online_instance:
@@ -724,6 +774,8 @@ class SharepointSubclient(Subclient):
                                 user_account_info = site.get("userAccountInfo", {})
                                 site_dict[site_url] = {
                                     'userAccountInfo': user_account_info,
+                                    'accountStatus': site.get("accountStatus"),
+                                    'discoverByType': site.get("discoverByType"),
                                     'planName': site.get("plan", {}).get("planName", "")
                                 }
                     return site_dict, no_of_records
@@ -732,15 +784,21 @@ class SharepointSubclient(Subclient):
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
 
-    def associate_site_collections_and_webs(self, site_user_accounts_list, plan_id=None):
-        """Associates the specified site collections/webs
+    def update_sites_association_properties(self, site_user_accounts_list, operation, plan_id=None):
+        """Updates the association properties of site
 
                 Args:
 
-                    site_user_accounts_list   (list)   --  list of user accounts of all sites
+                    site_user_accounts_list (list)   --  list of user accounts of all sites
                                                            It has all information of sites/webs
 
-                    plan_id (int)                      --  id of office 365 plan
+                    operation (int)                  --  type of operation to be performed
+                                                         Example: 1 - Associate
+                                                                  2 - Enable
+                                                                  3 - Disable
+                                                                  4 - Remove
+
+                    plan_id (int)                    --  id of office 365 plan
 
                 Raises:
 
@@ -750,15 +808,24 @@ class SharepointSubclient(Subclient):
 
                         if response is not success
 
+                        if the method is called by SharePoint On-Premise Instance
+
         """
         if self._backupset_object.is_sharepoint_online_instance:
+            properties_dict = self._set_properties_to_update_site_association(operation)
             self._ASSOCIATE_CONTENT = self._services['UPDATE_USER_POLICY_ASSOCIATION']
             for user_account in site_user_accounts_list:
-                user_account["commonFlags"] = 0
-                user_account["isAutoDiscoveredUser"] = False
+                item_type = user_account['itemType']
+                if item_type == 2 and operation == 4:
+                    user_account['commonFlags'] = 6
+                elif item_type == 1 and operation == 4:
+                    user_account['commonFlags'] = 10
+                else:
+                    user_account['commonFlags'] = properties_dict['commonFlags']
+                if properties_dict.get('isAutoDiscoveredUser', None) is not None:
+                    user_account['isAutoDiscoveredUser'] = properties_dict['isAutoDiscoveredUser']
             request_json = {
                 "cloudAppAssociation": {
-                    "accountStatus": 0,
                     "subclientEntity": {
                         "subclientId": int(self.subclient_id)
                     },
@@ -768,6 +835,8 @@ class SharepointSubclient(Subclient):
                     }
                 }
             }
+            if properties_dict.get('accountStatus', None) is not None:
+                request_json['cloudAppAssociation']['accountStatus'] = properties_dict['accountStatus']
             if plan_id:
                 request_json['cloudAppAssociation']['plan'] = {
                     "planId": plan_id
@@ -859,17 +928,29 @@ class SharepointSubclient(Subclient):
         """Runs a in-place restore job on the specified Sharepoint pseudo client
            This is used by Sharepoint V2 pseudo client
 
-                 Kwargs:
+             Kwargs:
 
-                     paths     (list)   --  list of sites or webs to be restored
-                     Example: [
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents",
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List"
-                        ]
+                 paths     (list)   --  list of sites or webs to be restored
+                 Example: [
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents",
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List"
+                    ]
 
-                 Returns:
+             Returns:
 
-                    Job object
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if the method is called by SharePoint On-Premise Instance
 
         """
         if self._backupset_object.is_sharepoint_online_instance:
@@ -907,12 +988,14 @@ class SharepointSubclient(Subclient):
 
                     if response is not success
 
+                    if the method is called by SharePoint On-Premise Instance
+
         """
         if self._backupset_object.is_sharepoint_online_instance:
             restore_option = {}
             if not paths:
                 raise SDKException('Subclient', '104')
-            restore_option['unconditional_overwrite'] = overwrite
+            restore_option['overwrite'] = overwrite
             restore_option['paths'] = paths
             restore_option['destination_path'] = destination_path
             restore_option['in_place'] = False
@@ -951,6 +1034,7 @@ class SharepointSubclient(Subclient):
 
             Raises:
                 SDKException:
+
                     if paths is not a list
 
                     if failed to initialize job
@@ -958,6 +1042,8 @@ class SharepointSubclient(Subclient):
                     if response is empty
 
                     if response is not success
+
+                    if the method is called by SharePoint On-Premise Instance
 
         """
         if self._backupset_object.is_sharepoint_online_instance:
@@ -972,5 +1058,47 @@ class SharepointSubclient(Subclient):
             restore_option['in_place'] = in_place
             request_json = self._prepare_disk_restore_json(restore_option)
             return self._process_restore_response(request_json)
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+    def process_index_retention_rules(self, index_server_client_id):
+        """Makes API call to process index retention rules
+
+         Args:
+                index_server_client_id (int)  --  client id of index server
+
+        Raises:
+
+                SDKException:
+
+                    if response is empty
+
+                    if response is not success
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        """
+        if self._backupset_object.is_sharepoint_online_instance:
+            request_json = {
+                "appType": int(self._agent_object.agent_id),
+                "indexServerClientId": index_server_client_id
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                'POST', self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES'], request_json
+            )
+            if flag:
+                if response.json():
+                    if "resp" in response.json():
+                        error_code = response.json()['resp']['errorCode']
+                        if error_code != 0:
+                            error_string = response.json()['response']['errorString']
+                            o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                            raise SDKException('Subclient', '102', o_str)
+                    elif 'errorMessage' in response.json():
+                        error_string = response.json()['errorMessage']
+                        o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                        raise SDKException('Subclient', '102', o_str)
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')

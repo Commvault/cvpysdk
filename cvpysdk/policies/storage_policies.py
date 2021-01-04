@@ -108,6 +108,8 @@ StoragePolicy:
 
     run_ddb_verification()                  --  Runs DDB verification job
 
+    run_data_verification()                 --  Runs Data Verification Job
+
     get_copy()                              --  Returns the StoragePolicyCopy class object of the input copy
 
     mark_for_recovery()                     --  Marks Deduplication store for recovery
@@ -2453,6 +2455,107 @@ class StoragePolicy(object):
                     error_message = response.json()['errorMessage']
 
                     o_str = 'DDB verification job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '109')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def run_data_verification(self, media_agent_name='', copy_name='', streams=0,
+                              jobs_to_verify='NEW', use_scalable=False, **kwargs):
+        """Runs Data verification job
+
+        Args:
+            media_agent_name    (str)  : name of the mediaAgent to use for data reading
+
+            copy_name           (str)  : name of Copy
+                                         (default - verifies jobs on all copies)
+
+            streams             (int)  : number of streams to use
+                                         (default - use Maximum)
+
+            jobs_to_verify      (str)  : jobs to be Verified
+                                         (NEW/ VERF_EXPIRED/ ALL)
+
+            use_scalable       (bool) : True/False to use Scalable Resource Allocation
+
+            kwargs              (dict) : optional arguments
+                Available kwargs Options:
+                    job_description     (str): Description for Job
+
+        Returns:
+            object - instance of the Job class for this Data Verification Job
+
+            errorMessage - If Data Verification Job fails to Start
+        """
+        if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
+                and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+            raise SDKException('Storage', '101')
+
+        if jobs_to_verify.upper() == 'NEW':
+            jobs_to_verify = 'NEWLY_AVAILABLE'
+        elif jobs_to_verify.upper() == 'VERF_EXPIRED':
+            jobs_to_verify = 'VERIFICATION_EXP'
+        elif jobs_to_verify.upper() == 'ALL':
+            jobs_to_verify = 'BOTH_NEWLY_AVAILABLE_AND_VERIFICATION_EXP'
+
+        request = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "copyName": copy_name,
+                        "storagePolicyName": self.storage_policy_name
+                    }
+                ],
+                "task": {},
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4007
+                        },
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": streams,
+                                        "useMaximumStreams": not bool(streams),
+                                        "useScallableResourceManagement": use_scallable,
+                                        "mediaAgent": {
+                                            "mediaAgentName": media_agent_name
+                                        }
+                                    }
+                                }
+                            },
+                            "adminOpts": {
+                                "archiveCheckOption": {
+                                    "jobsToVerify": jobs_to_verify,
+                                }
+                            },
+                            "commonOpts": {
+                                "jobDescription": kwargs.get('job_description','')
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        data_verf = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', data_verf, request
+        )
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'Data verification Request failed. Error: "{0}"'.format(error_message)
                     raise SDKException('Storage', '102', o_str)
                 else:
                     raise SDKException('Storage', '109')

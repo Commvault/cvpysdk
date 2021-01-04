@@ -1989,9 +1989,10 @@ class Job(object):
                     if response is not success
 
         """
-        attempts = 3
-        for _ in range(attempts):  # Retrying to ignore the transient case when no jobs are found
+        attempts = 0
+        while attempts < 5:  # Retrying to ignore the transient case when no jobs are found
             flag, response = self._cvpysdk_object.make_request('GET', self._JOB)
+            attempts += 1
 
             if flag:
                 if response.json():
@@ -2003,7 +2004,10 @@ class Job(object):
                         for job in response.json()['jobs']:
                             return job['jobSummary']
                 else:
-                    raise SDKException('Response', '102')
+                    if attempts > 4:
+                        raise SDKException('Response', '102')
+                    time.sleep(20)
+
             else:
                 response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
@@ -2029,9 +2033,11 @@ class Job(object):
             "jobId": int(self.job_id)
         }
 
-        attempts = 3
-        for _ in range(attempts):  # Retrying to ignore the transient case when job details are not found
+        retry_count = 0
+
+        while retry_count < 5:  # Retrying to ignore the transient case when job details are not found
             flag, response = self._cvpysdk_object.make_request('POST', self._JOB_DETAILS, payload)
+            retry_count += 1
 
             if flag:
                 if response.json():
@@ -2049,8 +2055,9 @@ class Job(object):
                     else:
                         raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
                 else:
-                    time.sleep(2)
-                    continue
+                    if retry_count > 4:
+                        raise SDKException('Response', '102')
+                    time.sleep(20)
             else:
                 response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)

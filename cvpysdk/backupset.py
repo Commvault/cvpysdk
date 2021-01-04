@@ -1597,6 +1597,7 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+
     def _do_browse(self, options=None, retry=10):
         """Performs a browse operation with the given options.
 
@@ -1627,6 +1628,9 @@ class Backupset(object):
                 break
             attempt += 1
         return self._process_browse_response(flag, response, options)
+    
+    
+
 
     def update_properties(self, properties_dict):
         """Updates the backupset properties
@@ -1866,6 +1870,7 @@ class Backupset(object):
                 'Plan not eligible to be associated with the backupset'
             )
 
+
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
             if it is not the default backupset.
@@ -1923,6 +1928,8 @@ class Backupset(object):
             thread.join()
 
         return return_list
+
+
 
     def browse(self, *args, **kwargs):
         """Browses the content of the Backupset.
@@ -2057,6 +2064,27 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
+    
+    def create_subclient(self, subclient, storagepolicyname, description):
+
+            """"
+            This is to create new subclient
+            
+            Args: 
+                subclientname (str) - subclient name to be created
+                storagepolicyname  (str) - name of the storage policy associate to subclient
+                description (str) - Description for subclient which is to be created
+            Raise:
+                  Exception:
+                    If fail to create subclient
+    
+            """
+            try:
+                self.subclients.add(subclient, storagepolicyname,description)
+            except Exception as err:
+                self.log.exception(
+                    "Exception while adding contents to subclient" + str(err))
+                raise err
 
     def delete_data(self, paths):
         """Deletes items for the backupset in the Index and makes them unavailable for
