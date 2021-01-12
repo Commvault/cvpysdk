@@ -1014,7 +1014,8 @@ class Backupset(object):
             'browse_view_name': 'VOLUMEVIEW',
 
             '_subclient_id': 0,
-            '_raw_response': False
+            '_raw_response': False,
+            '_custom_queries': False
         }
 
     def __getattr__(self, attribute):
@@ -1406,6 +1407,9 @@ class Backupset(object):
             request_json['mode']['mode'] = 3
             request_json['options']['vsVolumeBrowse'] = True
             request_json['advOptions']['browseViewName'] = options['browse_view_name']
+
+        if options['_custom_queries']:
+            request_json['queries'] = options['_custom_queries']
 
         return request_json
 
