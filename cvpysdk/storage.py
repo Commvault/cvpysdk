@@ -96,6 +96,8 @@ MediaAgent:
 
     mark_for_maintenance() -- marks/unmarks media agent offline for maintenance
 
+    set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
+
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
 
@@ -864,7 +866,55 @@ class MediaAgent(object):
         else:
             raise SDKException('Response', '101')
 
+    def set_ransomware_protection(self, status):
+        """Enables / Disables the ransomware protection on Windows MediaAgent.
 
+        Args:
+            status    (bool)        --  True or False value to turn it on/off
+                                        True - ransomware protection on MediaAgent - ON
+                                        False - ransomware protection on MediaAgent - OFF
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            Exception(Exception_Code, Exception_Message):
+                - if there is failure in executing the operation
+        """
+        # this works only on WINDOWS MA
+        if self._platform != 'WINDOWS':
+            raise SDKException('Storage', '101')
+
+        if type(status) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "isRansomwareProtected": status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     @property
     def name(self):

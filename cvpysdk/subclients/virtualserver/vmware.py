@@ -324,7 +324,12 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             source_ip=source_ip,
             destination_ip=destination_ip,
             network=network,
-            to_time=to_time
+            to_time=to_time,
+            destComputerName=dest_computer_name,
+            source_subnet=source_subnet,
+            source_gateway=source_gateway,
+            destination_subnet=destination_subnet,
+            destination_gateway=destination_gateway
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
