@@ -65,6 +65,8 @@ Instances:
 
     add_postgresql_instance()       --  Method to add a new postgresql instance
 
+    add_oracle_instance()           --  Method to add a new oracle instance
+
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
     cloud storage instance
 
@@ -72,7 +74,7 @@ Instances:
     new cloud storage instance
 
     refresh()                       --  refresh the instances associated with the agent
-    
+
     add_mysql_instance()            --  Method to add new mysql Instance
 
 
@@ -1355,12 +1357,73 @@ class Instances(object):
                     "logStoragePolicy": {
                         "storagePolicyName": kwargs.get("storage_policy", "")
                     },
-
                 }
             }
         }
         self._process_add_response(request_json)
 
+    def add_oracle_instance(self, instance_name, **kwargs):
+        """Adds new oracle instance to given client
+            Args:
+                instance_name       (str)   --  instance_name (Oracle SID)
+                kwargs              (dict)  --  dict of keyword arguments as follows:
+                                                   storage_policy     (str)   -- storage policy
+                                                   oracle_domain_name (str)   -- oracle domain name
+                                                   oracle_user_name   (str)   -- oracle user name
+                                                   oracle_password    (str)   -- oracle password
+                                                   oracle_home        (str)   -- oracle home path
+                                                   tns_admin          (str)   -- tns admin path
+                                                   connect_string     (dict)  -- {
+                                                       "username": "",
+                                                       "password": "",
+                                                       "service_name": "",
+                                                   }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+        password = b64encode(kwargs.get("oracle_password", "").encode()).decode()
+        connect_string_password = b64encode(
+            kwargs.get("connect_string", {}).get("password", "").encode()
+        ).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": "Oracle",
+                },
+                "oracleInstance": {
+                    "TNSAdminPath": kwargs.get("tns_admin", ""),
+                    "oracleHome": kwargs.get("oracle_home", ""),
+                    "oracleUser": {
+                        "userName": kwargs.get("oracle_user_name", ""),
+                        "password": password,
+                    },
+                    "sqlConnect": {
+                        "domainName": kwargs.get("connect_string", {}).get("service_name", ""),
+                        "userName": kwargs.get("connect_string", {}).get("username", ""),
+                        "password": connect_string_password,
+                    },
+                    "oracleStorageDevice": {
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy", "")
+                        }
+                    },
+                }
+            }
+        }
+        self._process_add_response(request_json)
 
     @property
     def _general_properties_json(self):
