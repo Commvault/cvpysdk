@@ -478,7 +478,7 @@ class Clients(object):
 
                 return clients_dict
             else:
-                raise SDKException('Response', '102')
+                return {} # logged in user might not have privileges on any client
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -586,7 +586,7 @@ class Clients(object):
                 }
                 return hidden_clients_dict
             else:
-                raise SDKException('Response', '102')
+                return {} # logged in user might not have privileges on any client
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
