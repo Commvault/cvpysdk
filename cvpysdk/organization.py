@@ -333,7 +333,8 @@ class Organizations:
             primary_domain=None,
             default_plans=None,
             enable_auto_discover=False,
-            service_commcells=None):
+            service_commcells=None,
+            send_email=False):
         """Adds a new organization with the given name to the Commcell.
 
             Args:
@@ -345,7 +346,7 @@ class Organizations:
 
                 company_alias   (str)   --  alias of the company
 
-                email_domain    (str)   --  email domain supported for the organization
+                email_domain    (list)  --  list of email domains supported for the organization
 
                     if no value is given, domain of the user creating the organization will be used
 
@@ -364,6 +365,11 @@ class Organizations:
                 organization
 
                     default: None
+
+                send_email      (bool) --  If set to true, a welcome email is sent to the
+                primary contact user.
+
+                    default: False
 
             Returns:
                 object  -   instance of the Organization class, for the newly created organization
@@ -450,6 +456,8 @@ class Organizations:
             }
         }
 
+        send_email and request_json.update({'sendEmail': send_email})
+
         __, response = self._cvpysdk_object.make_request(
             'POST', self._organizations_api, request_json
         )
@@ -467,7 +475,7 @@ class Organizations:
                             org_object.add_service_commcell_associations(name=name, service_commcell=servicecommcell)
 
                     return self.get(name)
-                    
+
                 raise SDKException(
                     'Organization', '107', 'Response: {0}'.format(response.json())
                 )
