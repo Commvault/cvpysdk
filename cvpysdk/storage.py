@@ -1250,11 +1250,13 @@ class DiskLibraries(object):
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', _stdout.format(library_name, _stderr))
 
-    def get(self, library_name):
+    def get(self, library_name, library_details=None):
         """Returns a DiskLibrary object of the specified disk library name.
 
             Args:
                 library_name (str)  --  name of the disk library
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
 
             Returns:
                 object - instance of the DiskLibrary class for the given library name
@@ -1273,7 +1275,7 @@ class DiskLibraries(object):
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
                                    library_name,
-                                   self._libraries[library_name])
+                                   self._libraries[library_name], library_details)
 
             raise SDKException(
                 'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
@@ -1296,6 +1298,9 @@ class DiskLibrary(object):
                 library_name     (str)     --  name of the disk library
 
                 library_id       (str)     --  id of the disk library
+                    default: None
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
                     default: None
 
             Returns:
