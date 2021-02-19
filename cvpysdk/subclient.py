@@ -3006,7 +3006,7 @@ c
         if 'planEntity' in self._subclient_properties:
             planEntity = self._subclient_properties['planEntity']
 
-            if bool(planEntity):
+            if bool(planEntity) and 'planName' in planEntity:
                 return planEntity['planName']
             else:
                 return None
