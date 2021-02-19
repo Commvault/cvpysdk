@@ -478,7 +478,7 @@ class Clients(object):
 
                 return clients_dict
             else:
-                raise SDKException('Response', '102')
+                return {} # logged in user might not have privileges on any client
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -586,7 +586,7 @@ class Clients(object):
                 }
                 return hidden_clients_dict
             else:
-                raise SDKException('Response', '102')
+                return {} # logged in user might not have privileges on any client
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -2805,7 +2805,7 @@ class Clients(object):
         """Deletes the client from the commcell.
 
             Args:
-                client_name (str)  --  name of the client to remove from the commcell
+                client_name (str)  --  name of the client to remove from  commcell
 
             Raises:
                 SDKException:
@@ -2826,7 +2826,10 @@ class Clients(object):
             client_name = client_name.lower()
 
             if self.has_client(client_name):
-                client_id = self.all_clients[client_name]['id']
+                if client_name in self.all_clients:
+                    client_id = self.all_clients[client_name]['id']
+                else:
+                    client_id = self.hidden_clients[client_name]['id']
                 client_delete_service = self._services['CLIENT'] % (client_id)
                 client_delete_service += "?forceDelete=1"
 

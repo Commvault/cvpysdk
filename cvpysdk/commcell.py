@@ -3033,9 +3033,14 @@ class Commcell(object):
 
     @property
     def is_linux_commserv(self):
-        """Returns true if CommServer is installed on the linux cs
-        """
-        if self._is_linux_commserv is None:
+        """Returns true if CommServer is installed on the linux machine
+
+            Returns None if unable to determine the CommServ OS type
+
+			**Note** To determine CommServ OS type logged in user
+				should have access on CommServ client
+		"""
+        if self._is_linux_commserv is None and self.clients.has_client(self._commserv_name):
             self._is_linux_commserv = 'unix' in self.commserv_client.os_info.lower()
         return self._is_linux_commserv
 

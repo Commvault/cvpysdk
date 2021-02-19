@@ -192,15 +192,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             disk_option='Original',
             transport_mode='Auto',
             proxy_client=None,
-            source_ip=None,
-            destination_ip=None,
-            network=None,
-            dest_computer_name=None,
-            source_subnet=None,
-            source_gateway=None,
-            destination_subnet=None,
-            destination_gateway=None,
-            to_time=0
+            to_time=0,
+            **kwargs,
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -244,27 +237,28 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
-
-                network           (basestring)    --  Network of the detination vm
-
-                dest_computer_name  (basestring)    --  Hostname of the restored vm
-
-                source_subnet  (basestring)    --  subnet of the source vm
-
-                source_gateway  (basestring)    --  gateway of the source vm
-
-                destination_subnet  (basestring)    --  subnet of the restored vm
-
-                destination_gateway  (basestring)    --  gateway of the restored vm
-
-                restore_option      (dict)     --  complete dictionary with all advanced options
-                    default: {}
-
                 to_time             (Int)         --  End time to select the job for restore
                                                     default: None
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                                eg:
+                                source_ip           (basestring)    --  IP of the source VM
+
+                                destination_ip      (basestring)    --  IP of the destination VM
+
+                                destComputerName  (basestring)    --  Hostname of the restored vm
+
+                                source_subnet  (basestring)    --  subnet of the source vm
+
+                                source_gateway  (basestring)    --  gateway of the source vm
+
+                                destination_subnet  (basestring)    --  subnet of the restored vm
+
+                                destination_gateway  (basestring)    --  gateway of the restored vm
+
+                                restore_option      (dict)     --  complete dictionary with all advanced options
+                                    default: {}
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -282,7 +276,14 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         """
 
         restore_option = {}
-
+        extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
+                         'source_subnet', 'source_gateway', 'destination_subnet',
+                         'destination_gateway']
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')
@@ -321,9 +322,6 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             source_item=[],
-            source_ip=source_ip,
-            destination_ip=destination_ip,
-            network=network,
             to_time=to_time
         )
 

@@ -676,9 +676,8 @@ class LiveSyncVMPair:
                     'instanceName') or self._agent_object.instances.get(
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
-                self._latest_replication_job = self._properties['VMReplInfoProperties'][1]['propertyValue']
                 try:
-                    int(self._latest_replication_job)
+                    self._latest_replication_job = int(self._properties['VMReplInfoProperties'][1]['propertyValue'])
                 except Exception:
                     self._latest_replication_job = self._properties['VMReplInfoProperties'][0]['propertyValue']
 
