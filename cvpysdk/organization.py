@@ -87,6 +87,10 @@ Organization
 
     _get_properties()           --  get the properties of the organization
 
+    _get_company_usergroup()    --  get usergroups associated to a organization
+
+    get_security_associations() --  get the security associations for a organization
+
     _update_properties()        --  update the properties of the organization
 
     _update_properties_json()   --  update the values of organizationProperties tag
@@ -118,6 +122,7 @@ Organization
 
     disable_tfa()               --      Disable tfa option for the organization
 
+    get_alerts()                --  get all the alerts associated to organization
 Organization Attributes
 -----------------------
 
@@ -165,10 +170,26 @@ Organization Attributes
 
          **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
 
+         **is_using_upn**           -- returns if organization is using upn or not
+
+         **reseller_enabled**       -- returns if reseller is enabled or not
+
+         **is_data_encryption_enabled**-- returns if owners are allowed to enable data encryption
+
+         **infrastructure_type**    -- returns infrastructure associated with a organization
+
+         **auto_laptop_owners_enabled**-- returns if laptop owners are assigned automatically for an organization
+
+         **supported_solutions**    -- returns the supported solutions for an organization
+
+         **job_start_time**         -- returns the job start time associated with the organization
+
+        **client_groups**          -- returns clientgroups associated with the organization
 """
 
 import re
 
+from datetime import datetime
 from past.builtins import basestring
 
 from .exception import SDKException
@@ -589,7 +610,7 @@ class Organization:
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
 
-        self._organization_name = organization_name.lower()
+        self._organization_name = organization_name
 
         if organization_id:
             self._organization_id = str(organization_id)
@@ -612,8 +633,122 @@ class Organization:
         self._operator_role = None
         self._plan_details = None
         self._server_count = None
+        self._user_groups = None
+        self._sender_email = None
+        self._sender_name = None
+        self._supported_solutions = None
+        self._org_creation_time = None
+        self._use_upn = None
+        self._reseller_enabled = None
+        self._is_data_encryption_enabled = None
+        self._infrastructure_type = None
+        self._auto_laptop_owners = None
+        self._file_exceptions = {}
+        self._global_file_exceptions_enabled = False
+        self._job_start_time = None
+        self._client_groups = None
+
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
+
+    @property
+    def is_using_upn(self):
+        """ Returns if company uses UPN instead of Email """
+        return self._use_upn
+
+    @is_using_upn.setter
+    def is_using_upn(self, value):
+        """ Sets company to use UPN instead of Email """
+        self._update_properties_json({'useUPNForEmail': value})
+        self._update_properties()
+
+    @property
+    def reseller_enabled(self):
+        """ Returns if reseller is enabled """
+        return self._reseller_enabled
+
+    @reseller_enabled.setter
+    def reseller_enabled(self, value):
+        """ Sets the reseller mode for a company"""
+        self._update_properties_json({'canCreateCompanies': value})
+        self._update_properties()
+
+    @property
+    def is_data_encryption_enabled(self):
+        """ Returns if owners are allowed to enable data encryption"""
+        return self._is_data_encryption_enabled
+
+    def set_data_encryption_enabled(self, value):
+        """ Sets property to allow owners to enable data encryption """
+        self._update_properties_json({'showDLP': value})
+        self._update_properties()
+
+    @property
+    def infrastructure_type(self):
+        """ Returns infrastructure type """
+        return self._infrastructure_type
+
+    @infrastructure_type.setter
+    def infrastructure_type(self, value):
+        """ Sets infrastruture type for a comapny
+
+        Args:
+            value (int) : id for the infrastructure type
+        """
+        self._update_properties_json({'infrastructureType': value})
+        self._update_properties()
+
+    @property
+    def auto_laptop_owners_enabled(self):
+        """ Returns if laptop owners are assigned automatically """
+        return True if self._auto_laptop_owners else False
+
+    def set_auto_laptop_owners(self, client_assign_type, client_assign_value=None):
+        """ Sets the property in company to assign owners to laptop automatically
+
+        Args:
+            client_assign_type (int): client owner assignment type
+            client_assign_value (str): client owner assignment value
+        """
+        if client_assign_type == 3:
+            self._update_properties_json({'autoClientOwnerAssignmentType': client_assign_type,
+                                          'autoClientOwnerAssignmentValue': client_assign_value})
+        else:
+            self._update_properties_json({'autoClientOwnerAssignmentType': client_assign_type})
+
+        self._update_properties()
+
+    @property
+    def supported_solutions(self):
+        """ Returns the supported solutions
+        supported solution from API is a integer value and it needs to be changed to a list
+        """
+        return self._supported_solutions
+
+    @supported_solutions.setter
+    def supported_solutions(self, value):
+        """Sets the supported solution property of a company
+
+        Args:
+            value (int): bits converted to int for the supported solutions
+        """
+        self._update_properties_json({'supportedSolutions': value})
+        self._update_properties()
+
+    @property
+    def job_start_time(self):
+        """ Returns the job start time for a company or 'System default' if not set """
+        return self._job_start_time
+
+    @job_start_time.setter
+    def job_start_time(self, value):
+        """Sets the job start time property for a company
+
+        Args:
+            value (int): time to be set for job start time for a company
+        """
+        self._update_properties_json({'jobStartTime': value})
+        self._update_properties()
 
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
@@ -659,9 +794,32 @@ class Organization:
 
                 self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']
                 self._auth_code = organization_properties.get('authCode')
+                self._use_upn = organization_properties.get('useUPNForEmail')
+                self._reseller_enabled = organization_properties.get('canCreateCompanies')
+                self._is_data_encryption_enabled = organization_properties.get('showDLP')
+                self._infrastructure_type = organization_properties.get('infrastructureType')
+                self._auto_laptop_owners = organization_properties.get('autoClientOwnerAssignmentType')
+                self._supported_solutions = organization_properties.get('supportedSolutions')
+                self._global_file_exceptions_enabled = organization_properties.get('useCompanyGlobalFilter')
+
+                job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
+                if job_time_enabled:
+                    job_time_epoch = organization_properties.get('jobStartTime')
+                    self._job_start_time = datetime.fromtimestamp(job_time_epoch).strftime("%H:%M %p")
+                else:
+                    self._job_start_time = 'System default'
+
+                time_epoch = organization_properties.get('orgCreationDateTime')
+                time_string = (datetime.fromtimestamp(time_epoch).strftime("%b %#d") +
+                               (datetime.fromtimestamp(time_epoch).strftime(" %Y") if datetime.now().year != datetime.fromtimestamp(time_epoch).year else '') +
+                               datetime.fromtimestamp(time_epoch).strftime(", %#I:%M:%S %p"))
+                self._org_creation_time = time_string
 
                 self._machine_count = organization_properties['totalMachineCount']
                 self._user_count = organization_properties['userCount']
+
+                self._sender_name = organization_properties.get('senderName', '')
+                self._sender_email = organization_properties.get('senderSmtp', '')
 
                 for contact in organization_properties.get('primaryContacts', []):
                     self._contacts[contact['user']['userName']] = {
@@ -682,7 +840,81 @@ class Organization:
 
                 self._server_count = organization_properties['serverCount']
 
+                for file_filter in organization_properties['globalFiltersInfo']['globalFiltersInfoList']:
+                    os_type_map = {1: 'Windows', 2: 'Unix'}
+                    self._file_exceptions[os_type_map[file_filter['operatingSystemType']]] =\
+                        file_filter['globalFilters'].get('filters', [])
+
                 return self._organization_info
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_company_usergroup(self):
+        """ Get usergroups associated to a organization """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['COMPANY_USERGROUP'] % self.organization_id
+        )
+
+        if flag:
+            if response.json() and 'userGroups' in response.json():
+                user_group_info = response.json()['userGroups']
+                details = []
+                for user_group in user_group_info:
+                    details.append(user_group.get('userGroupEntity', {}).get('userGroupName'))
+
+                return details
+            else:
+                return []
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_security_associations(self):
+        """ Get the security associations for a organization
+                    Returns: (dict)
+                            {
+                            'master': [
+                                        ['Array Management'],
+                                        ['Create Role', 'Edit Role', 'Delete Role'],
+                                        ['Master']
+                                    ],
+                            'User2': [
+                                        ['View']
+                                    ]
+                            }
+                 """
+        security_associations = {}
+        value_list = {}
+        url = self._services['SECURITY_ASSOCIATION'] + f'/61/{self._organization_id}'
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
+                for list_item in security_list:
+                    name = list_item.get('userOrGroup')[0].get('userGroupName') or \
+                           list_item.get('userOrGroup')[0].get('userName') or \
+                           list_item.get('userOrGroup')[0].get('providerDomainName') + '\\' + \
+                           list_item.get('userOrGroup')[0].get('externalGroupName')
+                    if list_item.get('properties').get('role'):
+                        value = (list_item.get('properties').get('role').get('roleName'))
+                    elif list_item.get('properties').get('categoryPermission'):
+                        for sub_list_item in list_item.get('properties').get('categoryPermission').get(
+                                'categoriesPermissionList'):
+                            value = (sub_list_item.get('permissionName'))
+                    if value:
+                        if name in value_list:
+                            value_list[name].append(value)
+                            value_list[name].sort()
+                        else:
+                            value_list[name] = [value]
+                        security_associations.update({name: value_list[name]})
+
+                return security_associations
             else:
                 raise SDKException('Response', '102')
         else:
@@ -766,7 +998,7 @@ class Organization:
     @property
     def organization_name(self):
         """Returns the value of the name for this Organization."""
-        return self._organization_name
+        return self._organization_name.lower()
 
     @property
     def description(self):
@@ -833,6 +1065,11 @@ class Organization:
         return list(self._contacts.keys())
 
     @property
+    def contacts_fullname(self):
+        """ Returns Primary Contacts full name for the organization"""
+        return [contact['name'] for contact in self._contacts.values()]
+
+    @property
     def default_plan(self):
         """Returns the Default Plans associated to this Organization."""
         return self._default_plan
@@ -873,6 +1110,36 @@ class Organization:
     def server_count(self):
         """Returns the server count associated with a company"""
         return self._server_count
+
+    @property
+    def sender_name(self):
+        """Returns sender name"""
+        return self._sender_name
+
+    @property
+    def sender_email(self):
+        """Returns sender email"""
+        return self._sender_email
+
+    @property
+    def user_groups(self):
+        """Returns the user group associated with a company"""
+        return self._user_groups
+
+    @property
+    def organization_created_on(self):
+        """ Returns the company creation time """
+        return self._org_creation_time
+
+    @property
+    def file_exceptions(self):
+        """ Returns the file exceptions for a company """
+        return self._file_exceptions
+
+    @property
+    def is_global_file_exceptions_enabled(self):
+        """ Returns if file exception is enabled """
+        return self._global_file_exceptions_enabled
 
     @plans.setter
     def plans(self, value):
@@ -963,6 +1230,7 @@ class Organization:
         self._contacts = {}
         self._plans = {}
         self._properties = self._get_properties()
+        self._user_groups = self._get_company_usergroup()
         self._tfa_obj.refresh()
 
     def enable_auth_code(self):
@@ -1038,7 +1306,16 @@ class Organization:
     def tenant_operator(self):
         """Returns the operators associated to this organization"""
         tenant_operators = self._organization_info.get('organizationProperties', {}).get('operators', [])
-        return [role['user']['userName'] for role in tenant_operators]
+        user_list = []
+        usergroup_list = []
+        for role in tenant_operators:
+            if 'user' in role:
+                user_list.append(role['user']['userName'])
+            else:
+                usergroup_list.append(role['userGroup']['userGroupName'])
+
+        operators = {'Users': user_list, 'User Group': usergroup_list}
+        return operators
 
     def add_user_groups_as_operator(self, user_group_list, request_type):
         """Update the local user_group as tenant operator of the company
@@ -1387,3 +1664,79 @@ class Organization:
             None
         """
         self._tfa_obj.disable_tfa()
+
+    @property
+    def client_groups(self):
+        """returns all the clientgroups associated with the organization
+
+            Returns:
+                dict - consists of all clientgroups associated to an organization
+                        {
+                             "clientgroup1_name": clientgroup1_id,
+                             "clientgroup2_name": clientgroup2_id,
+                        }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        organization_name = self._organization_name
+        if self._client_groups is None:
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'GET', self._services['CLIENTGROUPS']
+            )
+
+            if flag:
+                if response.json() and 'groups' in response.json():
+                    client_groups = response.json()['groups']
+                    clientgroups_dict = {}
+
+                    for client_group in client_groups:
+                        temp_name = client_group['name'].lower()
+                        temp_id = str(client_group['Id']).lower()
+                        company_name = client_group['clientGroup']['entityInfo']['companyName']
+                        if company_name in clientgroups_dict.keys():
+                            clientgroups_dict[company_name][temp_name] = temp_id
+                        else:
+                            clientgroups_dict[company_name] = {temp_name: temp_id}
+                    self._client_groups = clientgroups_dict[organization_name]
+                else:
+                    self._client_groups = []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        return self._client_groups
+
+    def get_alerts(self):
+        """
+        Get all the alerts associated to organization
+
+        Args:
+            org_id (int) : organization id
+
+        Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._services['GET_ALL_ALERTS']
+        )
+        alerts = []
+        if flag:
+            if response.json() and 'alertList' in response.json():
+                alert_list = response.json()['alertList']
+                for alert in alert_list:
+                    if alert['organizationId'] == int(self.organization_id):
+                        alerts.append(alert['alert']['name'])
+
+                return alerts
+            else:
+                return []
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

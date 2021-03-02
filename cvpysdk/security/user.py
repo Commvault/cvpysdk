@@ -79,6 +79,8 @@ User
     associated_usergroups()             --  returns the usergroups associated with
                                             this user
 
+    associated_external_usergroups()    -- returns the external usergroups associated with this user
+
     add_usergroups()                    --  associates the usergroups with this user
 
     remove_usergroups()                 --  disassociated the usergroups with this user
@@ -565,6 +567,7 @@ class User(object):
         self._user_status = None
         self._email = None
         self._description = None
+        self._associated_external_usergroups = None
         self._associated_usergroups = None
         self._properties = None
         self._tfa_status = None
@@ -612,6 +615,9 @@ class User(object):
 
                 if 'associatedUserGroups' in self._properties:
                     self._associated_usergroups = self._properties['associatedUserGroups']
+
+                if 'associatedExternalUserGroups' in self._properties:
+                    self._associated_external_usergroups = self._properties['associatedExternalUserGroups']
             else:
                 raise SDKException('Response', '102')
         else:
@@ -757,6 +763,15 @@ class User(object):
         if self._associated_usergroups is not None:
             for usergroup in self._associated_usergroups:
                 usergroups.append(usergroup['userGroupName'])
+        return usergroups
+
+    @property
+    def associated_external_usergroups(self):
+        """Returns the list of associated external usergroups"""
+        usergroups = []
+        if self._associated_external_usergroups is not None:
+            for usergroup in self._associated_external_usergroups:
+                usergroups.append(usergroup['externalGroupName'])
         return usergroups
 
     @property

@@ -245,6 +245,8 @@ class ArrayManagement(object):
                   array_name,
                   username,
                   password,
+                  vendor_id,
+                  config_data,
                   control_host=None,
                   array_access_node=None,
                   is_ocum=False):
@@ -258,6 +260,10 @@ class ArrayManagement(object):
 
                     password            (str)               -- password to access array
 
+                    vendor_id           (int)               -- vendor id of the array
+
+                    config_data         (list)              -- SNap configs list to be updated
+
                     control_host        (str)               -- control host of the array
 
                     array_access_node   (list)              -- Array Access Node MediaAgent's Name list
@@ -269,6 +275,23 @@ class ArrayManagement(object):
 
                 errorMessage   (string) :  Error message
         """
+
+        snap_configs = {}
+        assocType = 0
+        if config_data is not None:
+            assocType = 3
+            request_json_service = self.storage_arrays + '/Vendors/{0}'.format(vendor_id)
+            flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
+                'GET', request_json_service
+            )
+            snap_configs = snap_configs.json()
+            for m_config, value in config_data.items():
+                for config in snap_configs['configs']['configList']:
+                    if int(config['masterConfigId']) == int(m_config):
+                        config['value'] = str(value)
+
+        else:
+            snap_configs['configs'] = {}
 
         selectedMAs = []
         if array_access_node is not None:
@@ -295,7 +318,7 @@ class ArrayManagement(object):
         request_json = {
             "clientId": 0,
             "flags": 0,
-            "assocType": 0,
+            "assocType": assocType,
             "copyId": 0,
             "appId": 0,
             "selectedMAs":selectedMAs,
@@ -314,7 +337,7 @@ class ArrayManagement(object):
                 "disableDG": False,
                 "useDevicesFromThisDG": False
             },
-            "configList": {},
+            "configs": snap_configs['configs'],
             "array": {
                 "name": "",
                 "id": 0
@@ -389,7 +412,7 @@ class ArrayManagement(object):
             error_message = response.json()['errorMessage']
 
             if error_code != 0:
-                if error_code == 1:
+                if error_code in [1, 10]:
                     raise SDKException('StorageArray', '101')
 
                 error_message = response.json().get('errorMessage', '')
@@ -446,24 +469,35 @@ class ArrayManagement(object):
         """
 
         copy_level_id = app_level_id = client_level_id = 0
-        request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
-        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_json_service
-        )
 
         if config_update_level == "array":
             config_update_level = 3
+            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+
         elif config_update_level == "copy":
             config_update_level = 6
             copy_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?copyId={1}&assocType={2}'.format(
+                control_host_id, copy_level_id, config_update_level)
+
         elif config_update_level == "subclient":
             config_update_level = 9
             app_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?appId={1}&assocType={2}'.format(
+                control_host_id, app_level_id, config_update_level)
+
         elif config_update_level == "client":
             config_update_level = 8
             client_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?clientId={1}&assocType={2}'.format(
+                control_host_id, client_level_id, config_update_level)
+
         else:
             config_update_level = 3
+            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+
+        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+            'GET', request_json_service)
 
         request_json = request_json.json()
 

@@ -2177,6 +2177,12 @@ class Instance(object):
             }
             request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = backup_opt_json
 
+        if restore_option.get('restore_acls_only', False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["restoreACLsType"] = 1
+
+        if restore_option.get('restore_data_only', False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["restoreACLsType"] = 2
+
         return request_json
 
     def _restore_in_place(

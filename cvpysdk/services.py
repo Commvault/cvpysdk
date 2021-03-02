@@ -152,6 +152,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
+    'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
