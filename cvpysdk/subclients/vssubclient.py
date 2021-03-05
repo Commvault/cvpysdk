@@ -623,10 +623,10 @@ class VirtualServerSubclient(Subclient):
             else:
                 display_name = child['displayName']
                 content_type = VSAObjects(child['type']).name
-                vm_id = child['name']
+                vm_id = child.get('name', '')
                 temp_dict = {
                     'equal_value': child['equalsOrNotEquals'],
-                    'allOrAnyChildren': child['allOrAnyChildren'],
+                    'allOrAnyChildren': child.get('allOrAnyChildren', True),
                     'id': vm_id,
                     'path': path,
                     'display_name': display_name,
@@ -842,13 +842,14 @@ class VirtualServerSubclient(Subclient):
             Setting IP for destination vm
         """
         vmip = []
+        _asterisk = "*.*.*.*"
         vm_ip = {
             "sourceIP": value.get("source_ip"),
-            "sourceSubnet": value["source_subnet"] if value.get("source_subnet") else "*.*.*.*",
-            "sourceGateway": value["source_gateway"] if value.get("source_gateway") else "*.*.*.*",
+            "sourceSubnet": value["source_subnet"] if value.get("source_subnet") else _asterisk,
+            "sourceGateway": value["source_gateway"] if value.get("source_gateway") else _asterisk,
             "destinationIP": value.get("destination_ip"),
-            "destinationSubnet": value["destination_subnet"] if value.get("destination_subnet") else "*.*.*.*",
-            "destinationGateway": value["destination_gateway"] if value.get("destination_gateway") else "*.*.*.*",
+            "destinationSubnet": value["destination_subnet"] if value.get("destination_subnet") else _asterisk,
+            "destinationGateway": value["destination_gateway"] if value.get("destination_gateway") else _asterisk,
             "primaryDNS": value.get("primary_dns", ""),
             "alternateDNS": value.get("alternate_dns", ""),
             "primaryWins": value.get("primare_wins", ""),
@@ -915,7 +916,7 @@ class VirtualServerSubclient(Subclient):
             "newGuid": value.get("new_guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
-            "projectId" : value.get("project_id", ""),
+            "projectId": value.get("project_id", ""),
             "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
@@ -2031,7 +2032,7 @@ class VirtualServerSubclient(Subclient):
             folder_path = vs_metadata.get("inventoryPath", '')
             instanceSize = vs_metadata.get("instanceSize", '')
         else:
-            folder_path = ''
+            folder_path = restore_option['folder_path'] if restore_option.get('folder_path') else ''
             instanceSize = ''
 
         if 'resourcePoolPath' in restore_option and restore_option['resourcePoolPath'] is None:
@@ -2098,10 +2099,9 @@ class VirtualServerSubclient(Subclient):
         if "nics" not in restore_option or self._instance_object.instance_name == 'google cloud platform':
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
-            if "source_ip" in restore_option and "destination_ip" in restore_option:
-                if restore_option["source_ip"] and restore_option["destination_ip"]:
-                    vm_ip = self._json_vmip_advanced_restore_options(restore_option)
-                    restore_option["vm_ip_address_options"] = vm_ip
+            if restore_option.get('source_ip') and restore_option.get('destination_ip'):
+                vm_ip = self._json_vmip_advanced_restore_options(restore_option)
+                restore_option["vm_ip_address_options"] = vm_ip
             if restore_option["in_place"]:
                 if "hyper" in restore_option["destination_instance"].lower():
                     restore_option["client_name"] = vs_metadata['esxHost']

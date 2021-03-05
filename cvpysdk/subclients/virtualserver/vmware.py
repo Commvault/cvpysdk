@@ -278,7 +278,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
-                         'destination_gateway']
+                         'destination_gateway', 'folder_path']
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
