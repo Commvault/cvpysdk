@@ -1306,6 +1306,88 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_hyperv_client(
+            self,
+            client_name,
+            hyperv_hostname,
+            hyperv_username,
+            hyperv_password,
+            clients
+    ):
+        """Adds a new Hyper-V Virtualization Client to the Commcell.
+            Args:
+                client_name        (str)   --  name of the new Hyper-V Virtual Client
+                hyperv_hostname    (str)   --  hostname of the hyperv to connect to
+                hyperv_username    (str)   --  login username for the hyperv
+                hyperv_password    (str)   --  plain-text password for the hyperv
+                clients            (list)  --  list cotaining client names / client objects,
+                                                    to associate with the Virtual Client
+            Returns:
+                object  -   instance of the Client class for this new client
+            Raises:
+                SDKException:
+                    if client with given name already exists
+                    if failed to add the client
+                    if response is empty
+                    if response is not success
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        hyperv_password = b64encode(hyperv_password.encode()).decode()
+        member_servers = self._member_servers(clients)
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "virtualServerClientProperties": {
+                    "virtualServerInstanceInfo": {
+                        "vsInstanceType": 2,
+                        "hyperV": {
+                            "serverName": hyperv_hostname,
+                            "credentials": {
+                                "userName": hyperv_username,
+                                "password": hyperv_password,
+                            }
+                        },
+                        "associatedClients": {
+                            "memberServers": member_servers
+                        },
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_share_point_client(
             self,
             client_name,
@@ -2695,10 +2777,21 @@ class Clients(object):
 
             client_name = name if client_from_hostname is None else client_from_hostname
 
-            try:
-                client_id = self.all_clients[client_name]['id']
-            except KeyError:
-                client_id = self.hidden_clients[client_name]['id']
+            if client_from_hostname:
+                if self._get_client_from_hostname(client_name):
+                    client_id = [cl_name for cl_name, cl_obj in self.all_clients.items()
+                                 if cl_obj['hostname'] == client_name][0]
+                elif self._get_hidden_client_from_hostname(client_name):
+                    client_id = [cl_name for cl_name, cl_obj in self.hidden_clients.items()
+                                 if cl_obj['hostname'] == client_name][0]
+            else:
+                if client_name in self.all_clients:
+                    client_id = self.all_clients[client_name]['id']
+                elif client_name in self.hidden_clients:
+                    client_id = self.hidden_clients[client_name]['id']
+
+            if client_id is None:
+                raise SDKException('Client', '102', f'No client exists with the given name/hostname: {client_name}')
 
             return Client(self._commcell_object, client_name, client_id)
 

@@ -2743,6 +2743,10 @@ class Instance(object):
                 'clientName': value.get("iscsi_server")
             }
 
+        # Add this option to enable restoring of troubleshooting folder
+        if value.get("include_metadata", False):
+            self._browse_restore_json["includeMetaData"] = True
+
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
 
