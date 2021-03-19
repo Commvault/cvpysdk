@@ -2768,8 +2768,8 @@ class Clients(object):
 
             if self.has_client(name):
                 client_from_hostname = self._get_client_from_hostname(name)
-            elif self.has_hidden_client(name):
-                client_from_hostname = self._get_hidden_client_from_hostname(name)
+                if self.has_hidden_client(name) and not client_from_hostname:
+                    client_from_hostname = self._get_hidden_client_from_hostname(name)
             else:
                 raise SDKException(
                     'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
@@ -2777,18 +2777,10 @@ class Clients(object):
 
             client_name = name if client_from_hostname is None else client_from_hostname
 
-            if client_from_hostname:
-                if self._get_client_from_hostname(client_name):
-                    client_id = [cl_name for cl_name, cl_obj in self.all_clients.items()
-                                 if cl_obj['hostname'] == client_name][0]
-                elif self._get_hidden_client_from_hostname(client_name):
-                    client_id = [cl_name for cl_name, cl_obj in self.hidden_clients.items()
-                                 if cl_obj['hostname'] == client_name][0]
-            else:
-                if client_name in self.all_clients:
-                    client_id = self.all_clients[client_name]['id']
-                elif client_name in self.hidden_clients:
-                    client_id = self.hidden_clients[client_name]['id']
+            if client_name in self.all_clients:
+                client_id = self.all_clients[client_name]['id']
+            elif client_name in self.hidden_clients:
+                client_id = self.hidden_clients[client_name]['id']
 
             if client_id is None:
                 raise SDKException('Client', '102', f'No client exists with the given name/hostname: {client_name}')

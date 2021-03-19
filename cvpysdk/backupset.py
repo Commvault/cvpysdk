@@ -1010,6 +1010,7 @@ class Backupset(object):
             'include_meta_data':False,
             'include_hidden': False,
             'include_running_jobs': False,
+            'compute_folder_size': False,
             'vs_volume_browse': False,
             'browse_view_name': 'VOLUMEVIEW',
 
@@ -1402,6 +1403,9 @@ class Backupset(object):
 
         if options['include_running_jobs']:
             request_json['options']['includeRunningJobs'] = True
+
+        if options['compute_folder_size']:
+            request_json['options']['computeFolderSizeForFilteredBrowse'] = True
 
         if options['vs_volume_browse']:
             request_json['mode']['mode'] = 3
