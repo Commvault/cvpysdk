@@ -354,7 +354,8 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             azure_client,
             vm_to_restore=None,
             resource_group=None,
-            storage_account=True,
+            storage_account=None,
+            datacenter=None,
             proxy_client=None,
             overwrite=True,
             power_on=True,
@@ -362,7 +363,12 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             public_ip=False,
             restore_as_managed=False,
             copy_precedence=0,
-            restore_option=None):
+            disk_type=None,
+            restore_option=None,
+            networkDisplayName=None,
+            networkrsg=None,
+            destsubid=None,
+            subnetId=None):
         """
                 This converts the Hyperv VM to AzureRM
                 Args:
@@ -401,6 +407,16 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
 
                         proxy_client      (basestring):   destination proxy client
 
+                        networkDisplayName(basestring):   destination network display name
+
+                        networkrsg        (basestring):   destination network display name's security group
+
+                        destsubid         (basestring):   destination subscription id
+
+                        subnetId          (basestring):   destination subet id
+
+
+
                     Returns:
                         object - instance of the Job class for this restore job
 
@@ -418,8 +434,13 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         if restore_option is None:
             restore_option = {}
 
+        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+            raise SDKException('Subclient', '101')
+
+        if not isinstance(vm_to_restore, list):
+            vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
-        if not (isinstance(azure_client, basestring)):
+        if not isinstance(azure_client, basestring):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -433,6 +454,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             vcenter_client=azure_client,
             datastore=storage_account,
             esx_host=resource_group,
+            datacenter=datacenter,
             unconditional_overwrite=overwrite,
             client_name=proxy_client,
             power_on=power_on,
@@ -443,7 +465,11 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             instanceSize=instance_size,
             volume_level_restore=1,
             destination_instance=instance.instance_name,
-            backupset_client_name=instance._agent_object._client_object.client_name
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            networkDisplayName=networkDisplayName,
+            networkrsg=networkrsg,
+            destsubid=destsubid,
+            subnetId=subnetId
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)

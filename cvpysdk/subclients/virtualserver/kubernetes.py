@@ -46,6 +46,10 @@ Class: KubernetesVirtualServerSubclient:    Derived class from VirtualServerSubC
 
         _json_restore_virtualServerRstOption() -- json for VirtualServerRst options for Kubernetes.
 
+        disk_restore()                  --  Function to restore disk.
+
+        enable_intelli_snap()           --  Enables Intellisnap on subclient
+
 
 Class: ApplicationGroups:                Derived class from Subclients Base
                                             class,representing a Kubernetes ApplicationGroups,
@@ -84,7 +88,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         """
         super(KubernetesVirtualServerSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
-        self.disk_extension = [".vmdk"]
+        self.diskExtension = [".yaml"]
 
         self._disk_option = {
             'Original': 0,
@@ -106,7 +110,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore,
             restored_vm_name=None,
             vcenter_client=None,
-            esx_host=None,
+            kubernetes_host=None,
             datastore=None,
             datacenter=None,
             overwrite=True,
@@ -133,12 +137,14 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 vcenter_client           (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
-                esx_host                (str)    --  destination esx host. Restores to the source
-                                                      VM esx if this value is not specified
+                kubernetes_host          (str)    --  destination Kubernetes. Restores to the source
+                                                      Kubernetes host if this value is not specified
 
                 datastore               (str)    --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
+
+                datacenter               (str)   --  Datacenter / namespace for VM kubernetes
 
                 overwrite               (bool)    --  overwrite the existing VM
                                                       default: True
@@ -210,7 +216,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             in_place=False,
             vcenter_client=vcenter_client,
             datastore=datastore,
-            esx_host=esx_host,
+            esx_host=kubernetes_host,
             datacenter=datacenter,
             esx_server=None,
             unconditional_overwrite=overwrite,
@@ -467,6 +473,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore=None,
             overwrite=True,
             power_on=True,
+            kubernetes_host=None,
+            datastore=None,
+            datacenter=None,
             copy_precedence=0,
             disk_option='Original',
             transport_mode='Auto',
@@ -483,6 +492,12 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
                 power_on              (bool)        --  power on the  restored VM
                                                         default: True
+
+                kubernetes_host       (str)         --   Kubernetes host for restore
+
+                datastore              (str)         -- datastore type eg: rook-ceph, netapp
+
+                datacenter              (str)         -- datacenter namespace of pod
 
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
@@ -537,6 +552,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             in_place=True,
+            datastore=datastore,
+            esx_host=kubernetes_host,
+            datacenter=datacenter,
             esx_server_name="",
             volume_level_restore=1,
             unconditional_overwrite=overwrite,
@@ -546,8 +564,288 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence
         )
 
-        request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self._prepare_kubernetes_inplace_restore_json(restore_option)
         return self._process_restore_response(request_json)
+
+    def _prepare_kubernetes_inplace_restore_json(self, restore_option):
+        """
+        Prepare Full VM restore Json with all getters
+
+        Args:
+            restore_option - dictionary with all VM restore options
+
+        value:
+            restore_option:
+
+                preserve_level           (bool)   - set the preserve level in restore
+
+                unconditional_overwrite  (bool)  - unconditionally overwrite the disk
+                                                    in the restore path
+
+                destination_path          (str)- path where the disk needs to be
+                                                 restored
+
+                client_name               (str)  - client where the disk needs to be
+                                                   restored
+
+                destination_vendor         (str) - vendor id of the Hypervisor
+
+                destination_disktype       (str) - type of disk needs to be restored
+                                                   like VHDX,VHD,VMDK
+
+                source_item                 (str)- GUID of VM from which disk needs to
+                                                   be restored
+                                                   eg:
+                                                   \\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
+
+                copy_precedence_applicable  (bool)- True if needs copy_precedence to
+                                                    be honoured else False
+
+                copy_precedence            (int) - the copy id from which browse and
+                                                   restore needs to be performed
+
+                power_on                    (bool) - power on the VM after restore
+
+                add_to_failover             (bool) - Register the VM to Failover Cluster
+
+                datastore                   (str) - Datastore where the VM needs to be
+                                                    restored
+
+                disks   (list of dict)      - list with dict for each disk in VM
+                                                eg: [{
+                                                        name:"disk1.vmdk"
+                                                        datastore:"local"
+                                                    }
+                                                    {
+                                                        name:"disk2.vmdk"
+                                                        datastore:"local1"
+                                                    }
+                                                ]
+                guid                    (str)    - GUID of the VM needs to be restored
+                new_name                (str)    - New name for the VM to be restored
+                esx_host                (str)    - esx_host or client name where it need
+                                                     to be restored
+                name                    (str)    - name of the VM to be restored
+
+        returns:
+              request_json        -complete json for perfomring Full VM Restore
+                                   options
+
+        """
+        if restore_option is None:
+            restore_option = {}
+        restore_option['paths'] = []
+
+        if "destination_vendor" not in restore_option:
+            restore_option["destination_vendor"] = \
+                self._backupset_object._instance_object._vendor_id
+
+        if restore_option.get('copy_precedence'):
+            restore_option['copy_precedence_applicable'] = True
+
+        # set all the restore defaults
+        self._set_restore_defaults(restore_option)
+
+        # set the setters
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+        self._json_restore_virtualServerRstOption(restore_option)
+        self._json_restore_diskLevelVMRestoreOption(restore_option)
+        self._json_vcenter_instance(restore_option)
+
+        for _each_vm_to_restore in restore_option['vm_to_restore']:
+            if not restore_option["in_place"]:
+                if 'disk_type' in restore_option:
+                    restore_option['restoreAsManagedVM'] = restore_option['disk_type'][_each_vm_to_restore]
+                if ("restore_new_name" in restore_option and
+                        restore_option["restore_new_name"] is not None):
+                    restore_option["new_name"] = restore_option["restore_new_name"] + _each_vm_to_restore
+                else:
+                    restore_option["new_name"] = "del" + _each_vm_to_restore
+            else:
+                restore_option["new_name"] = _each_vm_to_restore
+            self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)
+        # prepare json
+        request_json = self._restore_json(restore_option=restore_option)
+        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
+            "advancedRestoreOptions"] = self._advanced_restore_option_list
+        self._advanced_restore_option_list = []
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "virtualServerRstOption"] = self._virtualserver_option_restore_json
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "volumeRstOption"] = self._json_restore_volumeRstOption(
+                restore_option)
+        return request_json
+
+    def disk_restore(self,
+                     vm_name,
+                     destination_path,
+                     disk_name=None,
+                     proxy_client=None,
+                     copy_precedence=0,
+                     convert_to=None,
+                     media_agent=None,
+                     snap_proxy=None):
+        """Restores the disk specified in the input paths list to the same location
+
+            Args:
+                vm_name             (basestring)    --  Name of the VM added in subclient content
+                                                        whose  disk is selected for restore
+
+                destination_path        (basestring)    --  Staging (destination) path to restore the
+                                                        disk.
+
+                disk_name                 (list)    --  name of the disk which has to be restored
+                                                        (only vmdk files permitted - enter full
+                                                        name of the disk)
+                                                        default: None
+
+                proxy_client        (basestring)    --  Destination proxy client to be used
+                                                        default: None
+
+                copy_precedence            (int)    --  SP copy precedence from which browse has to
+                                                         be performed
+
+                convert_to          (basestring)    --  disk format for the restored disk
+                                                        (applicable only when the vmdk disk is
+                                                        selected for restore). Allowed values are
+                                                        "VHDX" or "VHD"
+                                                        default: None
+
+                media_agent         (str)   -- MA needs to use for disk browse
+                    default :Storage policy MA
+
+                snap_proxy          (str)   -- proxy need to be used for disk
+                                                    restores from snap
+                    default :proxy in instance or subclient
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not passed in proper expected format
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        _disk_restore_option = {}
+
+        disk_extn = '.vmdk'
+        if not disk_name:
+            disk_name = []
+        else:
+            disk_extn = self._get_disk_extension(disk_name)
+
+        # check if inputs are correct
+        if not (isinstance(vm_name, basestring) and
+                isinstance(destination_path, basestring) and
+                isinstance(disk_name, list) and
+                disk_extn == '.vmdk'):
+            raise SDKException('Subclient', '101')
+
+        if convert_to is not None:
+            convert_to = convert_to.lower()
+            if convert_to not in ['vhdx', 'vhd']:
+                raise SDKException('Subclient', '101')
+
+        if copy_precedence:
+            _disk_restore_option['copy_precedence_applicable'] = True
+
+        # fetching all disks from the vm
+        disk_list, disk_info_dict = self.disk_level_browse(
+            "\\" + vm_ids[vm_name])
+
+        if not disk_name:  # if disk names are not provided, restore all vmdk disks
+            for each_disk_path in disk_list:
+                disk_name.append(each_disk_path.split('\\')[-1])
+
+        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
+            for each_disk in disk_name:
+                each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
+                if each_disk_path not in disk_list:
+                    raise SDKException('Subclient', '111')
+
+        # if conversion option is given
+        if convert_to is not None:
+            dest_disk_dict = {
+                'VHD_DYNAMIC': 13,
+                'VHDX_DYNAMIC': 21
+            }
+            vol_restore, dest_disk = self._get_conversion_disk_Type('vmdk', convert_to)
+            _disk_restore_option["destination_disktype"] = dest_disk_dict[dest_disk]
+            _disk_restore_option["volume_level_restore"] = 4
+        else:
+            _disk_restore_option["volume_level_restore"] = 3
+
+        _disk_restore_option["destination_vendor"] = \
+            self._backupset_object._instance_object._vendor_id
+
+        if proxy_client is not None:
+            _disk_restore_option['client'] = proxy_client
+        else:
+            _disk_restore_option['client'] = self._backupset_object._instance_object.co_ordinator
+
+        # set Source item List
+        src_item_list = []
+        for each_disk in disk_name:
+            src_item_list.append("\\" + vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
+
+        _disk_restore_option['paths'] = src_item_list
+
+        self._set_restore_inputs(
+            _disk_restore_option,
+            in_place=False,
+            copy_precedence=copy_precedence,
+            destination_path=destination_path,
+            paths=src_item_list
+        )
+
+        request_json = self._prepare_disk_restore_json(_disk_restore_option)
+        return self._process_restore_response(request_json)
+
+    def enable_intelli_snap(self, snap_engine_name=None, proxy_options=None, snapshot_engine_id =None):
+        """Enables Intelli Snap for the subclient.
+
+            Args:
+                snap_engine_name    (str)   --  Snap Engine Name
+
+                proxy_options       (str)    -- to set proxy for Kubernetes
+
+                snapshot_engine_id   (int)   -- Snapshot engine id
+
+            Raises:
+                SDKException:
+                    if failed to enable intelli snap for subclient
+        """
+        if snapshot_engine_id is None:
+            snapshot_engine_id = 82
+
+        properties_dict = {
+            "isSnapBackupEnabled": True,
+            "snapToTapeSelectedEngine": {
+                "snapShotEngineId": snapshot_engine_id,
+                "snapShotEngineName": snap_engine_name
+            }
+        }
+        if proxy_options is not None:
+            if "snap_proxy" in proxy_options:
+                properties_dict["snapToTapeProxyToUse"] = {
+                    "clientName": proxy_options["snap_proxy"]
+                }
+
+            if "backupcopy_proxy" in proxy_options:
+                properties_dict["useSeparateProxyForSnapToTape"] = True
+                properties_dict["separateProxyForSnapToTape"] = {
+                    "clientName": proxy_options["backupcopy_proxy"]
+                }
+
+            if "use_source_if_proxy_unreachable" in proxy_options:
+                properties_dict["snapToTapeProxyToUseSource"] = True
+
+        self._set_subclient_properties(
+            "_commonProperties['snapCopyInfo']", properties_dict)
 
 
 class ApplicationGroups(Subclients):
@@ -634,4 +932,3 @@ class ApplicationGroups(Subclients):
                                                            app_create_json)
         if flag == False:
             raise SDKException('Response', '101', self._update_response_(response.text))
-

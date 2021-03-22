@@ -36,6 +36,27 @@ class SharepointInstance(Instance):
     """ Class  representing a sharepoint instance, and to perform operations on that instance
     """
 
+    def _restore_browse_option_json(self, value):
+        """setter for the Browse options for restore in Json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Instance', '101')
+
+        time_range_dict = {}
+        if value.get('to_time'):
+            time_range_dict['toTime'] = value.get('to_time')
+        self._browse_restore_json = {
+            "commCellId":  int(self._commcell_object.commcell_id),
+            "showDeletedItems": value.get("showDeletedItems", False),
+            "backupset": {
+                "clientName": self._agent_object._client_object.client_name,
+                "appName": self._agent_object.agent_name,
+                "clientId": int(self._instance['clientId']),
+                "backupsetId": int(self._restore_association['backupsetId'])
+            },
+            "timeRange": time_range_dict
+        }
+
     def _restore_common_options_json(self, value):
         """setter for  the Common options of in restore JSON"""
         if not isinstance(value, dict):
@@ -44,12 +65,25 @@ class SharepointInstance(Instance):
         self._commonoption_restore_json = {
             "allVersion": True,
             "offlineMiningRestore": False,
-            "skip": True,
+            "skip": not value.get("unconditional_overwrite", False),
             "restoreACLs": False,
             "erExSpdbPathRestore": True,
-            "unconditionalOverwrite": False,
+            "unconditionalOverwrite": value.get("unconditional_overwrite", False),
             "siteReplicationrestore": False,
             "append": False
+        }
+
+    def _restore_destination_json(self, value):
+        """setter for  the destination restore option in restore JSON"""
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._destination_restore_json = {
+            "inPlace": value.get("in_place", True),
+            "destClient": {
+                "clientName": value.get("client_name", ""),
+                "clientId": value.get("client_id", -1)
+            }
         }
 
     def _restore_json(self, **kwargs):
@@ -70,16 +104,9 @@ class SharepointInstance(Instance):
         """
         rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
         rest_json["taskInfo"]["task"]["initiatedFrom"] = 1
-        rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"]\
-            ["destClient"]["clientId"] = int(self._instance['clientId'])
-        rest_json["taskInfo"]["subTasks"][0]["options"]\
-            ["restoreOptions"]["browseOption"]["backupset"]["clientId"] = int(self._instance['clientId'])
-        rest_json["taskInfo"]["subTasks"][0]["options"]\
-            ["restoreOptions"]["browseOption"]["backupset"]["backupsetId"] = int(self._restore_association
-                                                                                 ['backupsetId'])
         rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["sharePointDocRstOption"] = {}
         rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]\
-            ["sharePointRstOption"]: {
+            ["sharePointRstOption"]= {
                 "sharePointDocument": True,
                 "spRestoreToDisk": {
                     "restoreToDiskPath": "",

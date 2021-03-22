@@ -192,7 +192,7 @@ class CVPySDK(object):
             raise con_err
 
     def _renew_login_token(self):
-        """Posts a Renew Login Token request to the server.
+        """Posts a Renew Login-Token request to the server.
 
             Returns:
                 str     -   new token received from the WebServer

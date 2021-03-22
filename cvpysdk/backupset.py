@@ -984,7 +984,8 @@ class Backupset(object):
         self._is_on_demand_backupset = False
         self._properties = None
         self._backupset_association = {}
-        self._plan = None
+        self._plan_name = None
+        self._plan_obj = None
 
         self.subclients = None
         self.schedules = None
@@ -1076,11 +1077,9 @@ class Backupset(object):
                     self._description = self._properties["commonBackupSet"]["userDescription"]
 
                 if "planName" in self._properties["planEntity"]:
-                    self._plan = self._commcell_object.plans.get(
-                        self._properties["planEntity"]["planName"]
-                    )
+                    self._plan_name = self._properties["planEntity"]["planName"]
                 else:
-                    self._plan = None
+                    self._plan_name = None
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1598,6 +1597,7 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+
     def _do_browse(self, options=None, retry=10):
         """Performs a browse operation with the given options.
 
@@ -1628,6 +1628,9 @@ class Backupset(object):
                 break
             attempt += 1
         return self._process_browse_response(flag, response, options)
+    
+    
+
 
     def update_properties(self, properties_dict):
         """Updates the backupset properties
@@ -1711,7 +1714,13 @@ class Backupset(object):
     @property
     def plan(self):
         """Treats the backupset plan as a property of the Backupset class."""
-        return self._plan
+        if self._plan_obj is not None:
+            return self._plan_obj
+        elif self._plan_name is not None:
+            self._plan_obj = self._commcell_object.plans.get(self._plan_name)
+            return self._plan_obj
+        else:
+            return None
 
     @property
     def guid(self):
@@ -1785,7 +1794,7 @@ class Backupset(object):
             Args:
                 value   (object)    --  the Plan object which is to be associated
                                         with the backupset
-                
+
                 value   (str)       --  name of the plan which is to be associated
                                         with the backupset
 
@@ -1802,13 +1811,11 @@ class Backupset(object):
         """
         from .plan import Plan
         if isinstance(value, Plan):
-            plan_obj = value
+            self._plan_obj = value
         elif isinstance(value, basestring):
-            plan_obj = self._commcell_object.plans.get(value)
+            self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
-            plan_obj = {
-                'planName': None
-            }
+            self._plan_obj = None
         else:
             raise SDKException('Backupset', '102', 'Input value is not of supported type')
 
@@ -1818,15 +1825,15 @@ class Backupset(object):
             'appId': int(self._agent_object.agent_id),
             'backupsetId': int(self.backupset_id)
         }
-        if value is not None and plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
+        if value is not None and self._plan_obj.plan_name in plans_obj.get_eligible_plans(entity_dict):
             request_json = {
                 'backupsetProperties': {
                     'planEntity': {
-                        'planSubtype': int(plan_obj.subtype),
+                        'planSubtype': int(self._plan_obj.subtype),
                         '_type_': 158,
-                        'planType': int(plan_obj.plan_type),
-                        'planName': plan_obj.plan_name,
-                        'planId': int(plan_obj.plan_id)
+                        'planType': int(self._plan_obj.plan_type),
+                        'planName': self._plan_obj.plan_name,
+                        'planId': int(self._plan_obj.plan_id)
                     }
                 }
             }
@@ -1862,6 +1869,7 @@ class Backupset(object):
                 '102',
                 'Plan not eligible to be associated with the backupset'
             )
+
 
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
@@ -1920,6 +1928,8 @@ class Backupset(object):
             thread.join()
 
         return return_list
+
+
 
     def browse(self, *args, **kwargs):
         """Browses the content of the Backupset.
@@ -2054,6 +2064,27 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
+    
+    def create_subclient(self, subclient, storagepolicyname, description):
+
+            """"
+            This is to create new subclient
+            
+            Args: 
+                subclientname (str) - subclient name to be created
+                storagepolicyname  (str) - name of the storage policy associate to subclient
+                description (str) - Description for subclient which is to be created
+            Raise:
+                  Exception:
+                    If fail to create subclient
+    
+            """
+            try:
+                self.subclients.add(subclient, storagepolicyname,description)
+            except Exception as err:
+                self.log.exception(
+                    "Exception while adding contents to subclient" + str(err))
+                raise err
 
     def delete_data(self, paths):
         """Deletes items for the backupset in the Index and makes them unavailable for

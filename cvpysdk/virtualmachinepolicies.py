@@ -931,11 +931,11 @@ class VirtualMachinePolicy(object):
         if vm_policy_type_id == 4 or vm_policy_type_id == 2:  # for 'Live Mount'
             return object.__new__(LiveMountPolicy)
         # TODO: future support for 'Clone From Template'
-        elif vm_policy_type_id == 0:
+        elif vm_policy_type_id == 6:
             return object.__new__(VirtualMachinePolicy)
         # TODO: future support for 'Restore From Backup'
         else:
-            return
+            return object.__new__(VirtualMachinePolicy)
 
     def __init__(
             self,

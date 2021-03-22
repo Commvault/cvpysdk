@@ -110,6 +110,7 @@ SERVICES_DICT_TEMPLATE = {
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
+    'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -122,6 +123,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
+    'GET_CONSOLE_ALERT': '{0}Alert/%s',
     'ENABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Enable',
     'DISABLE_ALERT_NOTIFICATION': '{0}AlertRule/%s/notificationType/%s/Action/Disable',
     'ENABLE_ALERT': '{0}AlertRule/%s/Action/Enable',
@@ -155,6 +157,7 @@ SERVICES_DICT_TEMPLATE = {
     'RESTORE': '{0}CreateTask',
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
+    'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -305,14 +308,15 @@ SERVICES_DICT_TEMPLATE = {
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
 
-    'CREATE_PSEUDO_CLIENT':'{0}pseudoClient',
-    'CREATE_NAS_CLIENT':'{0}NASClient',
-    'GET_OFFICE_365_ENTITIES':'{0}Office365/entities',
-    'CLOUD_DISCOVERY':'{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
-    'USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UserPolicyAssociation',
-    'UPDATE_USER_POLICY_ASSOCIATION':'{0}Office365/CloudApps/UpdateUserPolicyAssociation',
-    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY' : '{0}Office365/MoveJobResultsDirectory',
-
+    'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
+    'CREATE_NAS_CLIENT': '{0}NASClient',
+    'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
+    'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
+    'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
+    'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
+    'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
+    'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
+    'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
@@ -338,7 +342,9 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE': '{0}Client/License/Release',
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
-    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&discType=%s',
+    'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
+    'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
+
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 

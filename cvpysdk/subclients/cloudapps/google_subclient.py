@@ -37,6 +37,10 @@ GoogleSubclient:
 
     discover()                          --  runs user discovery on subclient
 
+    add_AD_group()                      --  adds AD group to the subclient
+
+    add_user                            --  adds user to the subclient
+
 """
 
 from __future__ import unicode_literals
@@ -300,3 +304,128 @@ class GoogleSubclient(CloudAppsSubclient):
             self._content.extend(grp_list)
             self._set_subclient_properties("_subclient_properties['content']", self._content)
         self.refresh()
+
+    def run_subclient_discovery(self):
+        """
+            This method launches AutoDiscovery on the subclient
+        """
+
+        discover_type = 15
+        discover_users = self._services['GET_CLOUDAPPS_ONEDRIVE_USERS'] % (self._instance_object.instance_id,
+                                                                           self._client_object.client_id,
+                                                                           discover_type,
+                                                                           self.subclient_id)
+        flag, response = self._cvpysdk_object.make_request('GET', discover_users)
+        if response.status_code != 200 and response.status_code != 500:
+            raise SDKException('Response', '101')
+
+    def add_AD_group(self, value):
+        """Adds the user group to the subclient if auto discovery type selected
+            AD group at instance level.
+                Args:
+                    value   (list)  --  List of user groups
+        """
+        grp_list = []
+        groups = self.discover(discover_type='GROUPS')
+        for item in value:
+            for group in groups:
+                if group['contentName'].lower() == item.lower():
+                    grp_list.append(group)
+
+        contentinfo = []
+
+        for grp in grp_list:
+            info = {
+                      "contentValue": grp['contentValue'],
+                      "contentType": grp['contentType'],
+                      "contentName": grp['contentName']
+                    }
+            contentinfo.append(info)
+
+        request_json = {
+            "App_DiscoveryContent": {
+                "scDiscoveryContent": [
+                    {
+                        "scEntity": {
+                            "subclientId": self.subclient_id
+                        },
+                        "contentInfo": contentinfo
+                    }
+                ]
+            }
+        }
+        add_ADgroup = self._services['EXECUTE_QCOMMAND']
+        flag, response = self._cvpysdk_object.make_request('POST', add_ADgroup, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    raise SDKException('Response', '101')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_user(self, user_name):
+        """This method adds one drive user to the subclient
+                Args:
+                    user_name   (str)  --  Onedrive user name
+        """
+        users = self.discover(discover_type='USERS')
+
+        for user in users:
+            if user['contentName'].lower() == user_name.lower():
+                user_dict = user
+                break
+
+        request_json = {
+            "App_DiscoveryContent": {
+                "scDiscoveryContent": [
+                    {
+                        "scEntity": {
+                            "subclientId": self.subclient_id
+                        },
+                        "contentInfo": [
+                            {
+                                "contentValue": user_dict['contentValue'],
+                                "contentType": user_dict['contentType'],
+                                "contentName": user_dict['contentName']
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        add_user = self._services['EXECUTE_QCOMMAND']
+        flag,response = self._cvpysdk_object.make_request('POST', add_user, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = 'Failed to user to the subclient\nError: "{0}"'
+                    raise SDKException('Subclient', '102', output_string.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_subclient_users(self):
+        """Method to get the users in the subclient
+
+            Returns:
+                List of Users in subclient
+        """
+        users = []
+        result = self.content
+        for user in result:
+            users.append(user['SMTPAddress'])
+        return users
+
+    @property
+    def get_subclient_users(self):
+        """Returns the users in subclient"""
+        return self._get_subclient_users()

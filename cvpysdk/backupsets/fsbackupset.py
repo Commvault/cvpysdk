@@ -136,6 +136,10 @@ class FSBackupset(Backupset):
 
                         job_description (str)   --  Restore job description
 
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -242,6 +246,10 @@ class FSBackupset(Backupset):
                     Options:
 
                         job_description (str)   --  Restore job description
+
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
 
             Returns:
                 object - instance of the Job class for this restore job
