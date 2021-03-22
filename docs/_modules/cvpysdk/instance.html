@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.instance &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -2305,6 +2305,10 @@
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
 
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
 <span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
@@ -2424,6 +2428,10 @@
 <span class="sd">                    Options:</span>
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
+
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
@@ -2736,6 +2744,8 @@
             <span class="n">value</span><span class="p">[</span><span class="s2">&quot;copy_precedence_applicable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="n">time_range_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;advanced_options&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+
         <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;from_time&#39;</span><span class="p">):</span>
             <span class="n">time_range_dict</span><span class="p">[</span><span class="s1">&#39;fromTimeValue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;from_time&#39;</span><span class="p">)</span>
 
@@ -2767,7 +2777,7 @@
                 <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span>
             <span class="p">},</span>
             <span class="s2">&quot;timeZone&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timezone&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">default_timezone</span><span class="p">)</span>
             <span class="p">},</span>
             <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="n">time_range_dict</span>
         <span class="p">}</span>

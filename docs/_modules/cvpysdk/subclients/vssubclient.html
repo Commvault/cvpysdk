@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclients.vssubclient &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -934,7 +934,7 @@
 <span class="sd">            Setter for nics list for advanced restore option json</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">nics_dict_from_browse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_nics_from_browse</span><span class="p">()</span>
+        <span class="n">nics_dict_from_browse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_nics_from_browse</span><span class="p">(</span><span class="n">copy_precedence</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;copy_precedence&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">nics_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">vm_nics_list</span> <span class="o">=</span> <span class="n">nics_dict_from_browse</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
 
@@ -990,11 +990,11 @@
         <span class="n">vmip</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">vm_ip</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;sourceIP&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_ip&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;sourceSubnet&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_subnet&quot;</span><span class="p">,</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;sourceGateway&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_gateway&quot;</span><span class="p">,</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;sourceSubnet&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;source_subnet&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_subnet&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sourceGateway&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;source_gateway&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_gateway&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">,</span>
             <span class="s2">&quot;destinationIP&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_ip&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;destinationSubnet&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_subnet&quot;</span><span class="p">,</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;destinationGateway&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_subnet&quot;</span><span class="p">,</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;destinationSubnet&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;destination_subnet&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_subnet&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;destinationGateway&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;destination_gateway&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination_gateway&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;*.*.*.*&quot;</span><span class="p">,</span>
             <span class="s2">&quot;primaryDNS&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primary_dns&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;alternateDNS&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alternate_dns&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="s2">&quot;primaryWins&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primare_wins&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
@@ -1067,7 +1067,8 @@
             <span class="s2">&quot;nics&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nics&quot;</span><span class="p">,</span> <span class="p">[]),</span>
             <span class="s2">&quot;vmIPAddressOptions&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vm_ip_address_options&quot;</span><span class="p">,</span> <span class="p">[]),</span>
             <span class="s2">&quot;FolderPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FolderPath&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;resourcePoolPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ResourcePool&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;resourcePoolPath&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ResourcePool&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;volumeType&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volumeType&quot;</span><span class="p">,</span> <span class="s2">&quot;Auto&quot;</span><span class="p">)</span>
         <span class="p">}</span>
 
         <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -1284,7 +1285,9 @@
                <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                <span class="n">vm_files_browse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-               <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;browse&#39;</span><span class="p">):</span>
+               <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;browse&#39;</span><span class="p">,</span>
+               <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span>
+               <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the content of the backup for this subclient at the path</span>
 <span class="sd">           specified.</span>
 
@@ -1308,6 +1311,8 @@
 <span class="sd">                                                default: True</span>
 
 <span class="sd">                operation            (str)   -- Type of operation, browser of find</span>
+
+<span class="sd">                copy_precedence      (int)   -- The copy precedence to do the operation from</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1335,7 +1340,8 @@
                 <span class="n">vm_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_vm_path</span><span class="p">(</span><span class="n">vm_names</span><span class="p">,</span> <span class="n">vm_path</span><span class="p">)</span>
                 <span class="n">browse_content</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">VirtualServerSubclient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span>
                     <span class="n">show_deleted_files</span><span class="p">,</span> <span class="n">vm_disk_browse</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">vm_path</span><span class="p">,</span>
-                    <span class="n">vs_file_browse</span><span class="o">=</span><span class="n">vm_files_browse</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span>
+                    <span class="n">vs_file_browse</span><span class="o">=</span><span class="n">vm_files_browse</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">,</span>
+                    <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span>
                 <span class="p">)</span>
                 <span class="n">vm_path_list</span> <span class="o">+=</span> <span class="n">browse_content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">browse_content_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">browse_content</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -1396,11 +1402,13 @@
 
         <span class="k">return</span> <span class="n">nic_list</span></div>
 
-<div class="viewcode-block" id="VirtualServerSubclient.get_nics_from_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">[docs]</a>    <span class="k">def</span> <span class="nf">get_nics_from_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VirtualServerSubclient.get_nics_from_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">[docs]</a>    <span class="k">def</span> <span class="nf">get_nics_from_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Browses the vm to get the nics info xml, gets the nics info using</span>
 <span class="sd">            the parse_nics_xml method and prepares the dict for nics json</span>
 
+<span class="sd">            Args:</span>
+<span class="sd">                copy_precedence     (int)   --  The copy precedence to do browse from</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                dict:   --   dict with key as vm_name and the value as the</span>
@@ -1408,7 +1416,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">path</span><span class="p">,</span> <span class="n">path_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">path_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
 
         <span class="n">nics_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">nics</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -1419,7 +1427,7 @@
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;browseMetaData&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">])</span> <span class="ow">or</span> \
                     <span class="p">(</span><span class="s1">&#39;virtualServerMetaData&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">][</span><span class="s1">&#39;browseMetaData&#39;</span><span class="p">])</span> <span class="ow">or</span> \
                     <span class="p">(</span><span class="s1">&#39;nics&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">][</span><span class="s1">&#39;browseMetaData&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerMetaData&#39;</span><span class="p">]):</span>
-                <span class="n">path</span><span class="p">,</span> <span class="n">path_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;find&#39;</span><span class="p">)</span>
+                <span class="n">path</span><span class="p">,</span> <span class="n">path_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_disk_browse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;find&#39;</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">vmpath</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">path_dict</span><span class="p">[</span><span class="n">vmpath</span><span class="p">]</span>
             <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -1831,7 +1839,7 @@
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_filelevel_restore_json</span><span class="p">(</span><span class="n">_file_restore_option</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_restore_response</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;browse&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vm_path</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;browse&#39;</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the Files and Folders of a Virtual Machine.</span>
 
 <span class="sd">            Args:</span>
@@ -1843,6 +1851,10 @@
 <span class="sd">                show_deleted_files  (bool)  --  include deleted files in the</span>
 <span class="sd">                                                content or not</span>
 <span class="sd">                                                default: False</span>
+
+<span class="sd">                operation           (str)   --  The type of operation to perform (browse/find)</span>
+
+<span class="sd">                copy_precedence     (int)   --  The copy precedence to do browse from</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                list - list of all folders or files with their full paths</span>
@@ -1859,7 +1871,7 @@
 
 <span class="sd">                    if response is not success</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">vm_path</span><span class="p">,</span> <span class="n">show_deleted_files</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VirtualServerSubclient.vm_files_browse_in_time"><a class="viewcode-back" href="../../../source/cvpysdk.subclients.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time">[docs]</a>    <span class="k">def</span> <span class="nf">vm_files_browse_in_time</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -2148,7 +2160,8 @@
         <span class="c1"># If new_name is not given, it restores the VM with same name</span>
         <span class="c1"># with suffix Delete.</span>
         <span class="n">vm_names</span><span class="p">,</span> <span class="n">vm_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_vm_ids_and_names_dict_from_browse</span><span class="p">()</span>
-        <span class="n">browse_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vm_files_browse</span><span class="p">()</span>
+        <span class="n">copy_precedence</span> <span class="o">=</span> <span class="n">restore_option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;copy_precedence&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">browse_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vm_files_browse</span><span class="p">(</span><span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
 
         <span class="c1"># vs metadata from browse result</span>
         <span class="n">_metadata</span> <span class="o">=</span> <span class="n">browse_result</span><span class="p">[</span><span class="mi">1</span><span class="p">][(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">vm_to_restore</span><span class="p">)]</span>
@@ -2156,7 +2169,7 @@
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;browseMetaData&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_metadata</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">])</span> <span class="ow">or</span> \
                 <span class="p">(</span><span class="s1">&#39;virtualServerMetaData&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_metadata</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">][</span><span class="s1">&#39;browseMetaData&#39;</span><span class="p">])</span> <span class="ow">or</span> \
                 <span class="p">(</span><span class="s1">&#39;nics&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_metadata</span><span class="p">[</span><span class="s1">&#39;advanced_data&#39;</span><span class="p">][</span><span class="s1">&#39;browseMetaData&#39;</span><span class="p">][</span><span class="s1">&#39;virtualServerMetaData&#39;</span><span class="p">]):</span>
-            <span class="n">browse_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vm_files_browse</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s1">&#39;find&#39;</span><span class="p">)</span>
+            <span class="n">browse_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vm_files_browse</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s1">&#39;find&#39;</span><span class="p">,</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
             <span class="n">_metadata</span> <span class="o">=</span> <span class="n">browse_result</span><span class="p">[</span><span class="mi">1</span><span class="p">][(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">vm_to_restore</span><span class="p">)]</span>
 
         <span class="n">vs_metadata</span> <span class="o">=</span> <span class="n">_metadata</span><span class="p">[</span><span class="s2">&quot;advanced_data&quot;</span><span class="p">][</span><span class="s2">&quot;browseMetaData&quot;</span><span class="p">][</span><span class="s2">&quot;virtualServerMetaData&quot;</span><span class="p">]</span>
@@ -2193,7 +2206,7 @@
         <span class="c1"># populate restore disk and datastore</span>
         <span class="n">vm_disks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">disk_list</span><span class="p">,</span> <span class="n">disk_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">disk_level_browse</span><span class="p">(</span>
-            <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">vm_ids</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">])</span>
+            <span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">vm_ids</span><span class="p">[</span><span class="n">vm_to_restore</span><span class="p">],</span> <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">disk</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">disk_info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">ds</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>

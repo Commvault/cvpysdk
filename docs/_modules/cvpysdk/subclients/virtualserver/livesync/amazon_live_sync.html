@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.livesync.azure_live_sync &mdash; Developer SDK - Python 11.23 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.livesync.amazon_live_sync &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -128,7 +128,7 @@
         
           <li><a href="../../../../index.html">Module code</a> &raquo;</li>
         
-      <li>cvpysdk.subclients.virtualserver.livesync.azure_live_sync</li>
+      <li>cvpysdk.subclients.virtualserver.livesync.amazon_live_sync</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,7 +143,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for cvpysdk.subclients.virtualserver.livesync.azure_live_sync</h1><div class="highlight"><pre>
+  <h1>Source code for cvpysdk.subclients.virtualserver.livesync.amazon_live_sync</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
 <span class="c1"># --------------------------------------------------------------------------</span>
@@ -162,146 +162,135 @@
 <span class="c1"># limitations under the License.</span>
 <span class="c1"># --------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;File for configuring and monitoring live sync on the AzureRM subclient.</span>
+<span class="sd">&quot;&quot;&quot;File for configuring and monitoring live sync on the amazon subclient.</span>
 
-<span class="sd">AzureLiveSync is the only class defined in this file.</span>
-<span class="sd">AzureLiveSync: Class for configuring and monitoring Hyper-V subclient live sync</span>
+<span class="sd">AmazonLiveSync is the only class defined in this file.</span>
 
-<span class="sd">AzureLiveSync:</span>
+<span class="sd">AmazonLiveSync: Class for configuring and monitoring Amazon subclient live sync</span>
 
-<span class="sd">    generate_restore_options_json()     -- To generate the restore</span>
-<span class="sd">                                            options json for Hyper-V live sync</span>
+<span class="sd">AmazonLiveSync:</span>
+
+<span class="sd">    configure_live_sync()     -- To configure live sync from supplied parameters</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.subclients.virtualserver.livesync.vsa_live_sync</span> <span class="kn">import</span> <span class="n">VsaLiveSync</span>
+<span class="kn">from</span> <span class="nn">cvpysdk.exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
-<span class="kn">from</span> <span class="nn">.vsa_live_sync</span> <span class="kn">import</span> <span class="n">VsaLiveSync</span>
-<span class="kn">from</span> <span class="nn">....exception</span> <span class="kn">import</span> <span class="n">SDKException</span>
 
-
-<div class="viewcode-block" id="AzureLiveSync"><a class="viewcode-back" href="../../../../../source/cvpysdk.subclients.virtualserver.livesync.html#cvpysdk.subclients.virtualserver.livesync.azure_live_sync.AzureLiveSync">[docs]</a><span class="k">class</span> <span class="nc">AzureLiveSync</span><span class="p">(</span><span class="n">VsaLiveSync</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class for configuring and monitoring Hyper-V live sync operations&quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="AzureLiveSync.configure_live_sync"><a class="viewcode-back" href="../../../../../source/cvpysdk.subclients.virtualserver.livesync.html#cvpysdk.subclients.virtualserver.livesync.azure_live_sync.AzureLiveSync.configure_live_sync">[docs]</a>    <span class="k">def</span> <span class="nf">configure_live_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="AmazonLiveSync"><a class="viewcode-back" href="../../../../../source/cvpysdk.subclients.virtualserver.livesync.html#cvpysdk.subclients.virtualserver.livesync.amazon_live_sync.AmazonLiveSync">[docs]</a><span class="k">class</span> <span class="nc">AmazonLiveSync</span><span class="p">(</span><span class="n">VsaLiveSync</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for configuring and monitoring Amazon live sync operations&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AmazonLiveSync.configure_live_sync"><a class="viewcode-back" href="../../../../../source/cvpysdk.subclients.virtualserver.livesync.html#cvpysdk.subclients.virtualserver.livesync.amazon_live_sync.AmazonLiveSync.configure_live_sync">[docs]</a>    <span class="k">def</span> <span class="nf">configure_live_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                             <span class="n">schedule_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">destination_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                            <span class="n">resource_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">storage_account</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">createpublicip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">restoreasmanagedvm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">instancesize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">restored_vm_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">pattern_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">restored_vm_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">networkdisplayname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">pattern_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                             <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">destsubid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">networkrsg</span><span class="o">=</span><span class="kc">None</span>
+                            <span class="n">data_center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">security_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">network</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">volume_type</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
                             <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;To configure live</span>
 
-<span class="sd">        Args:</span>
+<span class="sd">                Args:</span>
 
-<span class="sd">            schedule_name               (str)   -- Name of the Live sync schedule to be created</span>
+<span class="sd">                    schedule_name               (str)   -- Name of the Live sync schedule to be created</span>
 
-<span class="sd">            destination_client          (str)   --  Client Name where</span>
-<span class="sd">                                                    VM needs to be restored</span>
+<span class="sd">                    destination_client          (str)   -- Client Name where VM needs to be restored</span>
 
-<span class="sd">            proxy_client                (str)   -- Name of the proxy client to be used</span>
+<span class="sd">                    proxy_client                (str)   -- Name of the proxy client to be used</span>
 
-<span class="sd">            copy_precedence             (int)   -- Copy id from which restore needs to be performed</span>
-<span class="sd">                                                    default: 0</span>
+<span class="sd">                    copy_precedence             (int)   -- Copy id from which restore needs to be performed</span>
+<span class="sd">                                                            default: 0</span>
 
-<span class="sd">            vm_to_restore               (list)  -- VM&#39;s to be restored</span>
+<span class="sd">                    power_on                    (bool)  -- To validate destination VM power on and off</span>
+<span class="sd">                                                            default: True</span>
 
+<span class="sd">                    unconditional_overwrite     (bool)  -- To overwrite VM and disk in destination</span>
+<span class="sd">                                                            default: False</span>
 
-<span class="sd">            power_on                    (bool)  -- To validate destination VM power on and off</span>
-<span class="sd">                                                    default: True</span>
+<span class="sd">                    vm_to_restore               (list)  -- VM&#39;s to be restored</span>
 
-<span class="sd">            unconditional_overwrite     (bool)  -- To overwrite VM and disk in destination</span>
+<span class="sd">                    restored_vm_name            (str)   -- Name used for the VM when restored</span>
 
-<span class="sd">            resource_group              (str)  -- Destination Resource Group</span>
+<span class="sd">                    restore_option              (dict)  -- Restore options dictionary with advanced options</span>
 
-<span class="sd">            storage_account             (str)  -- storage account to be used for destiantion VM</span>
-
-<span class="sd">            restored_vm_name            (str)   -- Name used for the VM when restored</span>
-
-<span class="sd">            createpublicip             (bool)  -- To create public IP in destination vm</span>
-
-<span class="sd">            datacenter                 (str)   -- region of the destionation VM</span>
-
-<span class="sd">            restoreasmanagedvm          (bool)  -- To Restore VM as a maganed VM</span>
-
-<span class="sd">            networkdisplayname          (str)   -- Network Display name</span>
+<span class="sd">                    networkdisplayname          (str)   -- Network Display name</span>
 <span class="sd">                                                    which has used for destination VM</span>
 
-<span class="sd">            networkrsg                  (str)   -- Resource group of the Network</span>
-<span class="sd">                                                    to be used by destination VM</span>
+<span class="sd">                    region                      (str)   -- region of the destination vm</span>
 
-<span class="sd">            restore_option              (dict)  -- Restore options</span>
-<span class="sd">                                                    dictionary with advanced options</span>
+<span class="sd">                    datacenter                  (str)   -- esx host</span>
 
-<span class="sd">            pattern_dict                (dict)  -- Dictionary to generate</span>
-<span class="sd">                                                    the live sync schedule</span>
+<span class="sd">                    securityGroups              (dict)  -- security groups to associate with replicated vm</span>
 
-<span class="sd">            instancesize                (str)   -- instance size of destination vm</span>
+<span class="sd">                    network                     (dict)  -- network, subnet to associate with replicated vm</span>
 
-<span class="sd">            destsubid                   (str)   -- subscription id destination client</span>
+<span class="sd">                    pattern_dict                (dict)  -- Dictionary to generate the live sync schedule</span>
 
-<span class="sd">            region                       (str)  -- region of the destination VM</span>
+<span class="sd">                        Sample:</span>
 
-<span class="sd">            restored_vm_name            (str)   -- Name used for the VM when restored</span>
+<span class="sd">                            for after_job_completes :</span>
+<span class="sd">                            {</span>
+<span class="sd">                                &quot;freq_type&quot;: &#39;after_job_completes&#39;,</span>
+<span class="sd">                                &quot;active_start_date&quot;: date_in_%m/%d/%y (str),</span>
+<span class="sd">                                &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                &quot;repeat_days&quot;: days_to_repeat (int)</span>
+<span class="sd">                            }</span>
 
-<span class="sd">                Sample:</span>
+<span class="sd">                            for daily:</span>
+<span class="sd">                            {</span>
+<span class="sd">                                 &quot;freq_type&quot;: &#39;daily&#39;,</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;repeat_days&quot;: days_to_repeat (int)</span>
+<span class="sd">                            }</span>
 
-<span class="sd">                    for after_job_completes :</span>
-<span class="sd">                    {</span>
-<span class="sd">                        &quot;freq_type&quot;: &#39;after_job_completes&#39;,</span>
-<span class="sd">                        &quot;active_start_date&quot;: date_in_%m/%d/%y (str),</span>
-<span class="sd">                        &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                        &quot;repeat_days&quot;: days_to_repeat (int)</span>
-<span class="sd">                    }</span>
+<span class="sd">                            for weekly:</span>
+<span class="sd">                            {</span>
+<span class="sd">                                 &quot;freq_type&quot;: &#39;weekly&#39;,</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;repeat_weeks&quot;: weeks_to_repeat (int)</span>
+<span class="sd">                                 &quot;weekdays&quot;: list of weekdays [&#39;Monday&#39;,&#39;Tuesday&#39;]</span>
+<span class="sd">                            }</span>
 
-<span class="sd">                    for daily:</span>
-<span class="sd">                    {</span>
-<span class="sd">                         &quot;freq_type&quot;: &#39;daily&#39;,</span>
-<span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                         &quot;repeat_days&quot;: days_to_repeat (int)</span>
-<span class="sd">                    }</span>
+<span class="sd">                            for monthly:</span>
+<span class="sd">                            {</span>
+<span class="sd">                                 &quot;freq_type&quot;: &#39;monthly&#39;,</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;repeat_months&quot;: weeks_to_repeat (int)</span>
+<span class="sd">                                 &quot;on_day&quot;: Day to run schedule (int)</span>
+<span class="sd">                            }</span>
 
-<span class="sd">                    for weekly:</span>
-<span class="sd">                    {</span>
-<span class="sd">                         &quot;freq_type&quot;: &#39;weekly&#39;,</span>
-<span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                         &quot;repeat_weeks&quot;: weeks_to_repeat (int)</span>
-<span class="sd">                         &quot;weekdays&quot;: list of weekdays [&#39;Monday&#39;,&#39;Tuesday&#39;]</span>
-<span class="sd">                    }</span>
+<span class="sd">                            for yearly:</span>
+<span class="sd">                            {</span>
+<span class="sd">                                 &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
+<span class="sd">                                 &quot;on_month&quot;: month to run schedule (str) January, February...</span>
+<span class="sd">                                 &quot;on_day&quot;: Day to run schedule (int)</span>
+<span class="sd">                            }</span>
 
-<span class="sd">                    for monthly:</span>
-<span class="sd">                    {</span>
-<span class="sd">                         &quot;freq_type&quot;: &#39;monthly&#39;,</span>
-<span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                         &quot;repeat_months&quot;: weeks_to_repeat (int)</span>
-<span class="sd">                         &quot;on_day&quot;: Day to run schedule (int)</span>
-<span class="sd">                    }</span>
+<span class="sd">                Returns:</span>
+<span class="sd">                    object - instance of the Schedule class for this Live sync</span>
+<span class="sd">                    :param restored_vm_name:</span>
+<span class="sd">                    :param vm_to_restore:</span>
+<span class="sd">                    :param pattern_dict:</span>
+<span class="sd">                    :param unconditional_overwrite:</span>
+<span class="sd">                    :param power_on:</span>
+<span class="sd">                    :param copy_precedence:</span>
+<span class="sd">                    :param proxy_client:</span>
+<span class="sd">                    :param networkdisplayname:</span>
+<span class="sd">                    :param destination_client:</span>
+<span class="sd">                    :param schedule_name:</span>
+<span class="sd">                    :param security_groups:</span>
 
-<span class="sd">                    for yearly:</span>
-<span class="sd">                    {</span>
-<span class="sd">                         &quot;active_start_time&quot;: time_in_%H/%S (str),</span>
-<span class="sd">                         &quot;on_month&quot;: month to run schedule (str) January, Febuary...</span>
-<span class="sd">                         &quot;on_day&quot;: Day to run schedule (int)</span>
-<span class="sd">                    }</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            object - instance of the Schedule class for this Live sync</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">                &quot;&quot;&quot;</span>
         <span class="c1"># restore options</span>
         <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
@@ -309,7 +298,7 @@
         <span class="k">if</span> <span class="n">vm_to_restore</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">restored_vm_name</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">restored_vm_name</span><span class="p">:</span>
             <span class="n">restored_vm_name</span> <span class="o">=</span> <span class="s2">&quot;LiveSync_&quot;</span>
         <span class="n">restore_option</span><span class="p">[</span><span class="s1">&#39;restore_new_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">restored_vm_name</span>
 
@@ -335,17 +324,15 @@
             <span class="n">copy_precedence</span><span class="o">=</span><span class="n">copy_precedence</span><span class="p">,</span>
             <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
-            <span class="n">esx_host</span><span class="o">=</span><span class="n">resource_group</span><span class="p">,</span>
-            <span class="n">datastore</span><span class="o">=</span><span class="n">storage_account</span><span class="p">,</span>
+            <span class="n">esx_host</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
             <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">networkDisplayName</span><span class="o">=</span><span class="n">networkdisplayname</span><span class="p">,</span>
-            <span class="n">datacenter</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
-            <span class="n">restoreAsManagedVM</span><span class="o">=</span><span class="n">restoreasmanagedvm</span><span class="p">,</span>
-            <span class="n">instanceSize</span><span class="o">=</span><span class="n">instancesize</span><span class="p">,</span>
-            <span class="n">createPublicIP</span><span class="o">=</span><span class="n">createpublicip</span><span class="p">,</span>
-            <span class="n">destsubid</span><span class="o">=</span><span class="n">destsubid</span><span class="p">,</span>
-            <span class="n">networkrsg</span><span class="o">=</span><span class="n">networkrsg</span>
-            <span class="p">)</span>
+            <span class="n">datacenter</span><span class="o">=</span><span class="n">data_center</span><span class="p">,</span>
+            <span class="n">securityGroups</span><span class="o">=</span><span class="n">security_groups</span><span class="p">,</span>
+            <span class="n">volumeType</span><span class="o">=</span><span class="n">volume_type</span><span class="p">,</span>
+            <span class="n">live_sync</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">nics</span><span class="o">=</span><span class="n">network</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configure_live_sync</span><span class="p">(</span><span class="n">schedule_name</span><span class="p">,</span> <span class="n">restore_option</span><span class="p">,</span> <span class="n">pattern_dict</span><span class="p">)</span></div></div>
 </pre></div>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.commcell &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -420,6 +420,10 @@
 
 <span class="sd">    **tfa_enabled_user_groups**     -- Returns user group names on which tfa is enabled.</span>
 <span class="sd">    only for user group inclusion tfa.</span>
+
+<span class="sd">    **is_linux_commserv**           -- boolean specifying if CommServer is installed on linux cs.</span>
+
+<span class="sd">    **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
@@ -665,6 +669,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_guid</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_version</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_version_info</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_linux_commserv</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clients</span> <span class="o">=</span> <span class="kc">None</span>
@@ -845,9 +850,16 @@
                     <span class="n">version_info</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;csVersionInfo&#39;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;commcell&#39;</span><span class="p">][</span><span class="s1">&#39;commCellId&#39;</span><span class="p">]</span>
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-                        <span class="sa">r</span><span class="s1">&#39;\(.*&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;timeZone&#39;</span><span class="p">]</span>
-                    <span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                            <span class="sa">r</span><span class="s1">&#39;\(.*&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;timeZone&#39;</span><span class="p">]</span>
+                        <span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="c1"># in case where timezone string might be missing strings like</span>
+                        <span class="c1"># (UTC+5:30) substitute the prepending strings like 0:-300: with &#39;&#39;</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_commserv_timezone</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+                            <span class="sa">r</span><span class="s1">&#39;^([+|-]*\d*:)*&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;timeZone&#39;</span><span class="p">]</span>
+                        <span class="p">)</span>
 
                     <span class="c1"># set commcell version (E.g. 11.21.0)</span>
                     <span class="n">version_replace_strings</span> <span class="o">=</span> <span class="p">{</span>
@@ -2175,7 +2187,8 @@
             <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">log_file_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Installs the selected features in the selected clients</span>
 <span class="sd">        Args:</span>
@@ -2217,6 +2230,14 @@
 
 <span class="sd">                 default : None</span>
 
+<span class="sd">            **kwargs: (dict) -- Key value pairs for supporting conditional initializations</span>
+<span class="sd">            Supported -</span>
+<span class="sd">            install_flags (dict)            -- dictionary of install flag values</span>
+
+<span class="sd">                default : None</span>
+
+<span class="sd">            Ex : install_flags = {&quot;preferredIPfamily&quot;:2, &quot;install32Base&quot;:True}</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">                object - instance of the Job class for this install_software job</span>
 
@@ -2247,7 +2268,8 @@
 <span class="sd">                                install_path=&#39;/opt/commvault&#39;,</span>
 <span class="sd">                                log_file_loc=&#39;/var/log&#39;,</span>
 <span class="sd">                                client_group_name=[My_Servers],</span>
-<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;)</span>
+<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;,</span>
+<span class="sd">                                install_flags={&quot;preferredIPFamily&quot;:2})</span>
 
 <span class="sd">                    **NOTE:** Either Unix or Windows clients_computers should be chosen and</span>
 <span class="sd">                    not both</span>
@@ -2263,7 +2285,8 @@
             <span class="n">install_path</span><span class="o">=</span><span class="n">install_path</span><span class="p">,</span>
             <span class="n">log_file_loc</span><span class="o">=</span><span class="n">log_file_loc</span><span class="p">,</span>
             <span class="n">client_group_name</span><span class="o">=</span><span class="n">client_group_name</span><span class="p">,</span>
-            <span class="n">storage_policy_name</span><span class="o">=</span><span class="n">storage_policy_name</span><span class="p">)</span></div>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="n">storage_policy_name</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Commcell.enable_auth_code"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.enable_auth_code">[docs]</a>    <span class="k">def</span> <span class="nf">enable_auth_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Executes the request on the server to enable Auth Code for installation on commcell</span>
@@ -3153,6 +3176,24 @@
 <span class="sd">            ]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">two_factor_authentication</span><span class="o">.</span><span class="n">tfa_enabled_user_groups</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_linux_commserv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns true if CommServer is installed on the linux machine</span>
+
+<span class="sd">            Returns None if unable to determine the CommServ OS type</span>
+
+<span class="sd">			**Note** To determine CommServ OS type logged in user</span>
+<span class="sd">				should have access on CommServ client</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_linux_commserv</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">has_client</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commserv_name</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_linux_commserv</span> <span class="o">=</span> <span class="s1">&#39;unix&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commserv_client</span><span class="o">.</span><span class="n">os_info</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_linux_commserv</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">default_timezone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the default timezone used for all the operations performed via cvpysdk&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;(GMT) Monrovia, Reykjavik&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_linux_commserv</span> <span class="k">else</span> <span class="s1">&#39;(UTC) Coordinated Universal Time&#39;</span>
 
 <div class="viewcode-block" id="Commcell.enable_tfa"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.commcell.Commcell.enable_tfa">[docs]</a>    <span class="k">def</span> <span class="nf">enable_tfa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.livesync.vsa_live_sync &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.livesync.vsa_live_sync &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -297,6 +297,11 @@
         <span class="k">if</span> <span class="n">instance_name</span> <span class="o">==</span> <span class="n">hv_type</span><span class="o">.</span><span class="n">VIRTUAL_CENTER</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="kn">from</span> <span class="nn">.vmware_live_sync</span> <span class="kn">import</span> <span class="n">VMWareLiveSync</span>
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">VMWareLiveSync</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">instance_name</span> <span class="o">==</span> <span class="n">hv_type</span><span class="o">.</span><span class="n">AMAZON_AWS</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="kn">from</span> <span class="nn">.amazon_live_sync</span> <span class="kn">import</span> <span class="n">AmazonLiveSync</span>
+            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">AmazonLiveSync</span><span class="p">)</span>
+
         <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
             <span class="s1">&#39;LiveSync&#39;</span><span class="p">,</span>
             <span class="s1">&#39;102&#39;</span><span class="p">,</span>
@@ -817,9 +822,8 @@
                     <span class="s1">&#39;instanceName&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;destinationInstance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;instanceId&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">name</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_last_backup_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;lastSyncedBkpJob&#39;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_latest_replication_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;VMReplInfoProperties&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;propertyValue&#39;</span><span class="p">]</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_latest_replication_job</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_latest_replication_job</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;VMReplInfoProperties&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;propertyValue&#39;</span><span class="p">])</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_latest_replication_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s1">&#39;VMReplInfoProperties&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;propertyValue&#39;</span><span class="p">]</span>
 

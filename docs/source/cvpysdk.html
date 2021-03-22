@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk package &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk package &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -131,6 +131,7 @@
 <li><a class="reference internal" href="#module-cvpysdk.credential_manager">cvpysdk.credential_manager module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.cvpysdk">cvpysdk.cvpysdk module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.deduplication_engines">cvpysdk.deduplication_engines module</a></li>
+<li><a class="reference internal" href="#module-cvpysdk.dev_test_group">cvpysdk.dev_test_group module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.disasterrecovery">cvpysdk.disasterrecovery module</a><ul>
 <li><a class="reference internal" href="#disasterrecovery">DisasterRecovery:</a></li>
 <li><a class="reference internal" href="#disasterrecovery-attributes">DisasterRecovery Attributes</a></li>
@@ -205,7 +206,7 @@
 <li><a class="reference internal" href="#module-cvpysdk.metricsreport">cvpysdk.metricsreport module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.monitoring">cvpysdk.monitoring module</a><ul>
 <li><a class="reference internal" href="#attributes">Attributes</a></li>
-<li><a class="reference internal" href="#id44">Attributes</a></li>
+<li><a class="reference internal" href="#id46">Attributes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cvpysdk.name_change">cvpysdk.name_change module</a></li>
@@ -231,7 +232,7 @@
 </li>
 <li><a class="reference internal" href="#module-cvpysdk.plan">cvpysdk.plan module</a><ul>
 <li><a class="reference internal" href="#plans">Plans</a><ul>
-<li><a class="reference internal" href="#id47">Attributes</a></li>
+<li><a class="reference internal" href="#id49">Attributes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#plan">Plan</a><ul>
@@ -251,7 +252,7 @@
 <li><a class="reference internal" href="#module-cvpysdk.storage">cvpysdk.storage module</a></li>
 <li><a class="reference internal" href="#module-cvpysdk.storage_pool">cvpysdk.storage_pool module</a><ul>
 <li><a class="reference internal" href="#storagepools">StoragePools</a><ul>
-<li><a class="reference internal" href="#id48">Attributes</a></li>
+<li><a class="reference internal" href="#id50">Attributes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#storagepool">StoragePool</a></li>
@@ -423,7 +424,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.deployment.html#module-cvpysdk.deployment.uninstall">cvpysdk.deployment.uninstall module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="cvpysdk.deployment.html#id2">Download</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cvpysdk.deployment.html#id4">Download</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.deployment.html#module-cvpysdk.deployment">Module contents</a></li>
@@ -722,7 +723,8 @@ entity_id=None)             –  initialize an object of ActivateEntity Class wi
 <p><strong>category_name</strong>     –  returns the category name of the regex entity</p>
 <p><strong>is_enabled</strong>        –  returns the enabled flag of the regex entity</p>
 <p><strong>display_name</strong>      –  returns the display name of the regex entity</p>
-<p><strong>entity_type</strong>       –  returns the type of entity (1- NER 2-RER 3-Derived)</p>
+<p><strong>entity_type</strong>       –  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)</p>
+<p><strong>entity_xml</strong>        –  returns the entity xml associated with this entity</p>
 </div></blockquote>
 <dl class="py class">
 <dt id="cvpysdk.activate_entity.ActivateEntities">
@@ -902,6 +904,12 @@ entity_id=None)             –  initialize an object of ActivateEntity Class wi
 <dt id="cvpysdk.activate_entity.ActivateEntity.entity_type">
 <em class="property">property </em><code class="sig-name descname">entity_type</code><a class="headerlink" href="#cvpysdk.activate_entity.ActivateEntity.entity_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the entity type attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.activate_entity.ActivateEntity.entity_xml">
+<em class="property">property </em><code class="sig-name descname">entity_xml</code><a class="headerlink" href="#cvpysdk.activate_entity.ActivateEntity.entity_xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the entity xml attribute.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1206,6 +1214,7 @@ installed / configured on the Client for the selected Agent.</p>
 <dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt><dd><p>format: YYYY-MM-DD HH:mm:ss</p>
 </dd>
 </dl>
+<p><strong>Note</strong> In case of linux CommServer provide time in GMT timezone</p>
 </dd>
 <dt>Raises:</dt><dd><dl>
 <dt>SDKException:</dt><dd><p>if time value entered is less than the current time</p>
@@ -1442,6 +1451,7 @@ details for the given alert name</p>
 <p>get(alert_name)             –  returns the alert class object of the input alert name</p>
 <p>delete(alert_name)          –  removes the alerts from the commcell of the specified alert</p>
 <p>console_alerts()            –  returns the list of all console alerts</p>
+<p>console_alert()             – returns console alert details for a console alert with given livefeedid</p>
 <p>refresh()                   –   refresh the alerts associated with the commcell</p>
 </dd>
 </dl>
@@ -1668,6 +1678,25 @@ the alert is associated with</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.alert.Alerts.console_alert">
+<code class="sig-name descname">console_alert</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">live_feed_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/alert.html#Alerts.console_alert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.alert.Alerts.console_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the console console alert with given live_feed_id</p>
+<dl>
+<dt>Args:</dt><dd><p>live_feed_id (int)  –  Live feed ID of console alert to fetch</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if type of the live_feed_id argument is not int</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - Console alert json object for given live_feed_id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.alert.Alerts.console_alerts">
 <code class="sig-name descname">console_alerts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">page_number</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">page_count</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/alert.html#Alerts.console_alerts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.alert.Alerts.console_alerts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the console alerts from page_number to the number of pages asked for page_count</p>
@@ -1681,6 +1710,9 @@ the alert is associated with</p>
 <p>if response is not success</p>
 </dd>
 </dl>
+</dd>
+<dt>Returns:</dt><dd><p>str - String representation of console alerts if version is less than SP23
+object - json response object for console alerts if version greater than or equal to SP23</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2193,6 +2225,24 @@ from browse operation</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.backupset.Backupset.create_subclient">
+<code class="sig-name descname">create_subclient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subclient</span></em>, <em class="sig-param"><span class="n">storagepolicyname</span></em>, <em class="sig-param"><span class="n">description</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupset.html#Backupset.create_subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupset.create_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>”
+This is to create new subclient</p>
+<dl class="simple">
+<dt>Args: </dt><dd><p>subclientname (str) - subclient name to be created
+storagepolicyname  (str) - name of the storage policy associate to subclient
+description (str) - Description for subclient which is to be created</p>
+</dd>
+<dt>Raise:</dt><dd><dl class="simple">
+<dt>Exception:</dt><dd><p>If fail to create subclient</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.backupset.Backupset.delete_data">
 <code class="sig-name descname">delete_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/backupset.html#Backupset.delete_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.backupset.Backupset.delete_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes items for the backupset in the Index and makes them unavailable for
@@ -2616,6 +2666,7 @@ hostname if exists</p>
 <p>add_google_client()                    –  adds a new google cloud client</p>
 <p>add_alicloud_client()                    –  adds a new alibaba cloud client</p>
 <p>add_nutanix_files_client()                  –  adds a new nutanix files client</p>
+<p>add_onedrive_client()                 –  adds a new onedrive client</p>
 <p>get(client_name)                      –  returns the Client class object of the input client
 name</p>
 <p>delete(client_name)                   –  deletes the client specified by the client name from
@@ -2686,6 +2737,7 @@ and id, and associated to the commcell</p>
 <p>repair_software()            – triggers Repair software on the client machine</p>
 <p>get_dag_member_servers()     –  Gets the member servers of an Exchange DAG client.</p>
 <p>create_pseudo_client()       –  Creates a pseudo client</p>
+<p>register_decoupled_client()  –  registers decoupled client</p>
 <p>set_job_start_time()         – sets the job start time at client level</p>
 <p>uninstall_software()         – Uninstalls all the packages of the client</p>
 <p>get_network_summary()        – Gets the network summary of the client</p>
@@ -4093,7 +4145,7 @@ azure_options   (dict)  – dictionary for Azure details:</p>
 
 <dl class="py method">
 <dt id="cvpysdk.client.Clients.add_exchange_client">
-<code class="sig-name descname">add_exchange_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em>, <em class="sig-param"><span class="n">index_server</span></em>, <em class="sig-param"><span class="n">clients_list</span></em>, <em class="sig-param"><span class="n">storage_policy</span></em>, <em class="sig-param"><span class="n">recall_service_url</span></em>, <em class="sig-param"><span class="n">job_result_dir</span></em>, <em class="sig-param"><span class="n">exchange_servers</span></em>, <em class="sig-param"><span class="n">service_accounts</span></em>, <em class="sig-param"><span class="n">azure_app_key_secret</span></em>, <em class="sig-param"><span class="n">azure_tenant_name</span></em>, <em class="sig-param"><span class="n">azure_app_key_id</span></em>, <em class="sig-param"><span class="n">environment_type</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.add_exchange_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_exchange_client" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_exchange_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em>, <em class="sig-param"><span class="n">index_server</span></em>, <em class="sig-param"><span class="n">clients_list</span></em>, <em class="sig-param"><span class="n">storage_policy</span></em>, <em class="sig-param"><span class="n">recall_service_url</span></em>, <em class="sig-param"><span class="n">job_result_dir</span></em>, <em class="sig-param"><span class="n">exchange_servers</span></em>, <em class="sig-param"><span class="n">service_accounts</span></em>, <em class="sig-param"><span class="n">azure_app_key_secret</span></em>, <em class="sig-param"><span class="n">azure_tenant_name</span></em>, <em class="sig-param"><span class="n">azure_app_key_id</span></em>, <em class="sig-param"><span class="n">environment_type</span></em>, <em class="sig-param"><span class="n">backupset_type_to_create</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.add_exchange_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_exchange_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new Exchange Mailbox Client to the Commcell.</p>
 <dl>
 <dt>Args:</dt><dd><p>client_name             (str)   –  name of the new Exchange Mailbox Client</p>
@@ -4107,6 +4159,15 @@ to associate with the Virtual Client</p>
 <p>azure_app_key_secret    (str)   –  app secret for the Exchange online</p>
 <p>azure_tenant_name       (str)   –  tenant for exchange online</p>
 <p>azure_app_key_id        (str)   –  app key for exchange online</p>
+<dl class="simple">
+<dt>backupset_type_to_create (int)  –  Backup set type to create</dt><dd><dl class="simple">
+<dt>Possible Values:</dt><dd><p>1: user mailbox
+2: journal mailbox
+3: content store mailbox</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd>
 <dt>Returns:</dt><dd><p>object  -   instance of the Client class for this new client</p>
 </dd>
@@ -4226,6 +4287,47 @@ array_name      (str)   –  FQDN of the Nutanix array(File Server)</p>
 <dt>Raises:</dt><dd><dl>
 <dt>SDKException:</dt><dd><p>if nfs_option and cifs_option both are false</p>
 <p>if pseudo client with same name already exists</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.client.Clients.add_onedrive_client">
+<code class="sig-name descname">add_onedrive_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em>, <em class="sig-param"><span class="n">instance_name</span></em>, <em class="sig-param"><span class="n">server_plan</span></em>, <em class="sig-param"><span class="n">connection_details</span></em>, <em class="sig-param"><span class="n">access_node</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">auto_discovery</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.add_onedrive_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.add_onedrive_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new OneDrive Client to the Commcell.</p>
+<dl>
+<dt>Args:</dt><dd><p>client_name             (str)   –  name of the new Exchange Mailbox Client</p>
+<dl>
+<dt>server_plan            (str)   –  name of the server plan to be associated</dt><dd><p>with the client</p>
+</dd>
+<dt>connection_details   (dict)  – dictionary for Azure App details:</dt><dd><dl>
+<dt>Example:</dt><dd><dl>
+<dt>connection_details = {</dt><dd><blockquote>
+<div><p>“azure_directory_id”: ‘azure directory id’,
+“application_id”: ‘application id’,
+“application_key_value”: ‘application key value’,</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>access_node          (str)   –  name of the access node</p>
+<p>auto_discovery      (bool)   –  Enable/Disable (True/False)</p>
+</dd>
+<dt>Returns:</dt><dd><p>object  -   instance of the Client class for this new client</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if client with given name already exists</p>
+<p>if server plan  donot exists with the given name</p>
+<p>if access node  donot exists with the given name</p>
+<p>if failed to add the client</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
 </dd>
 </dl>
 </dd>
@@ -4417,10 +4519,16 @@ clients             (list)  –  list cotaining client names / client objects,</
 
 <dl class="py method">
 <dt id="cvpysdk.client.Clients.create_pseudo_client">
-<code class="sig-name descname">create_pseudo_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.create_pseudo_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.create_pseudo_client" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">create_pseudo_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em>, <em class="sig-param"><span class="n">client_hostname</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.create_pseudo_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.create_pseudo_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a pseudo client</p>
 <dl>
-<dt>Args:</dt><dd><p>client_name (str)    –  client name</p>
+<dt>Args:</dt><dd><p>client_name     (str)   –  name of the client to be created</p>
+<blockquote>
+<div><dl class="simple">
+<dt>client_hostname (str)   –      hostname of the client to be created</dt><dd><p>default:None</p>
+</dd>
+</dl>
+</div></blockquote>
 </dd>
 <dt>Returns:</dt><dd><p>client object for the created client.</p>
 </dd>
@@ -4547,6 +4655,27 @@ client</p>
 <dt id="cvpysdk.client.Clients.refresh">
 <code class="sig-name descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.refresh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refresh the clients associated with the Commcell.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.client.Clients.register_decoupled_client">
+<code class="sig-name descname">register_decoupled_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_name</span></em>, <em class="sig-param"><span class="n">client_host_name</span></em>, <em class="sig-param"><span class="n">port_number</span><span class="o">=</span><span class="default_value">8400</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/client.html#Clients.register_decoupled_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.client.Clients.register_decoupled_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>registers decoupled client</p>
+<dl>
+<dt>Args:</dt><dd><p>client_name (str)    –  client name</p>
+<p>client_host_name (str)  – client host name</p>
+<p>port_number (int)   – port number of the decoupled client</p>
+</dd>
+<dt>Returns:</dt><dd><p>client object for the registered client.</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if client name type is incorrect</p>
+<p>if response is empty</p>
+<p>if failed to get client id from response</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -5453,6 +5582,8 @@ to interact wtih deduplication enines available on the commcell</p>
 <p><strong>is_tfa_enabled</strong>              –  Returns the status of tfa on this commcell.</p>
 <p><strong>tfa_enabled_user_groups</strong>     – Returns user group names on which tfa is enabled.
 only for user group inclusion tfa.</p>
+<p><strong>is_linux_commserv</strong>           – boolean specifying if CommServer is installed on linux cs.</p>
+<p><strong>default_timezone</strong>            – Default timezone used by all the operations performed via cvpysdk.</p>
 </div></blockquote>
 <dl class="py class">
 <dt id="cvpysdk.commcell.Commcell">
@@ -5682,6 +5813,12 @@ Args:</p>
 <dt id="cvpysdk.commcell.Commcell.deduplication_engines">
 <em class="property">property </em><code class="sig-name descname">deduplication_engines</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.deduplication_engines" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the instance of the Deduplicationengines class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.commcell.Commcell.default_timezone">
+<em class="property">property </em><code class="sig-name descname">default_timezone</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.default_timezone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the default timezone used for all the operations performed via cvpysdk</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6108,7 +6245,7 @@ Returns: (dict)</p>
 
 <dl class="py method">
 <dt id="cvpysdk.commcell.Commcell.install_software">
-<code class="sig-name descname">install_software</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_computers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">windows_features</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unix_features</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">username</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">password</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">install_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_file_loc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">client_group_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">storage_policy_name</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/commcell.html#Commcell.install_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.install_software" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">install_software</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_computers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">windows_features</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unix_features</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">username</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">password</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">install_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_file_loc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">client_group_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">storage_policy_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/commcell.html#Commcell.install_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.commcell.Commcell.install_software" title="Permalink to this definition">¶</a></dt>
 <dd><p>Installs the selected features in the selected clients
 Args:</p>
 <blockquote>
@@ -6149,6 +6286,13 @@ features on</p>
 <blockquote>
 <div><p>default : None</p>
 </div></blockquote>
+<p><a href="#id28"><span class="problematic" id="id29">**</span></a>kwargs: (dict) – Key value pairs for supporting conditional initializations
+Supported -
+install_flags (dict)            – dictionary of install flag values</p>
+<blockquote>
+<div><p>default : None</p>
+</div></blockquote>
+<p>Ex : install_flags = {“preferredIPfamily”:2, “install32Base”:True}</p>
 </div></blockquote>
 <dl>
 <dt>Returns:</dt><dd><p>object - instance of the Job class for this install_software job</p>
@@ -6181,7 +6325,8 @@ input to the install_software method, it can be imported by</p>
 <span class="go">                install_path=&#39;/opt/commvault&#39;,</span>
 <span class="go">                log_file_loc=&#39;/var/log&#39;,</span>
 <span class="go">                client_group_name=[My_Servers],</span>
-<span class="go">                storage_policy_name=&#39;My_Storage_Policy&#39;)</span>
+<span class="go">                storage_policy_name=&#39;My_Storage_Policy&#39;,</span>
+<span class="go">                install_flags={&quot;preferredIPFamily&quot;:2})</span>
 </pre></div>
 </div>
 <blockquote>
@@ -6209,6 +6354,19 @@ not both</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.commcell.Commcell.is_linux_commserv">
+<em class="property">property </em><code class="sig-name descname">is_linux_commserv</code><a class="headerlink" href="#cvpysdk.commcell.Commcell.is_linux_commserv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if CommServer is installed on the linux machine</p>
+<p>Returns None if unable to determine the CommServ OS type</p>
+<blockquote>
+<div><dl class="simple">
+<dt><strong>Note</strong> To determine CommServ OS type logged in user</dt><dd><p>should have access on CommServ client</p>
+</dd>
+</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -8301,6 +8459,38 @@ Args:</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-cvpysdk.dev_test_group">
+<span id="cvpysdk-dev-test-group-module"></span><h2>cvpysdk.dev_test_group module<a class="headerlink" href="#module-cvpysdk.dev_test_group" title="Permalink to this headline">¶</a></h2>
+<p>Main file for performing virtual lab restore operations on the Commcell.</p>
+<dl class="simple">
+<dt>Dev_Test_Group<span class="classifier">Class for representing all the Virtual Lab creation associated</span></dt><dd><p>with the Commcell.</p>
+</dd>
+<dt>Dev_Test_Group:</dt><dd><dl class="simple">
+<dt>__init__(commcell_object)               –  initialize the VirtualMachinePolicies instance for</dt><dd><p>the Commcell</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="cvpysdk.dev_test_group.Dev_Test_Group">
+<em class="property">class </em><code class="sig-prename descclassname">cvpysdk.dev_test_group.</code><code class="sig-name descname">Dev_Test_Group</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">commcell_object</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/dev_test_group.html#Dev_Test_Group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.dev_test_group.Dev_Test_Group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for Virtual Lab restore opreation with the Commcell</p>
+<dl class="py method">
+<dt id="cvpysdk.dev_test_group.Dev_Test_Group.dev_test_lab_json">
+<code class="sig-name descname">dev_test_lab_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vapp_prop</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/dev_test_group.html#Dev_Test_Group.dev_test_lab_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.dev_test_group.Dev_Test_Group.dev_test_lab_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs Virtual Lab job for the Dev-Test-Group at Commcell Level.</p>
+<dl class="simple">
+<dt>vapp_prop (dict) – options like vappName and vappId to be include while making</dt><dd><p>the request</p>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for the Virtual Lab job</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-cvpysdk.disasterrecovery">
 <span id="cvpysdk-disasterrecovery-module"></span><h2>cvpysdk.disasterrecovery module<a class="headerlink" href="#module-cvpysdk.disasterrecovery" title="Permalink to this headline">¶</a></h2>
 <p>main file for performing disaster recovery operations on commcell</p>
@@ -8870,7 +9060,7 @@ operations on the selected Domain</p>
 “ldap server”</p>
 </dd>
 </dl>
-<p><a href="#id28"><span class="problematic" id="id29">**</span></a>kwargs            –      required parameters for LDAP Server registration</p>
+<p><a href="#id30"><span class="problematic" id="id31">**</span></a>kwargs            –      required parameters for LDAP Server registration</p>
 <blockquote>
 <div><p>group_filter    (str)   –  group filter for ldap server
 user_filter     (str)   –  user filter for ldap server
@@ -9355,7 +9545,7 @@ location of the file</p>
 </dd>
 </dl>
 </div></blockquote>
-<p><a href="#id30"><span class="problematic" id="id31">**</span></a>kwargs:</p>
+<p><a href="#id32"><span class="problematic" id="id33">**</span></a>kwargs:</p>
 <blockquote>
 <div><p>valid_from          (str)   –  date from which the package should be valid</p>
 <blockquote>
@@ -11315,7 +11505,7 @@ and returns all the files matching the filters given.</p>
 <dt>Dictionary of browse options:</dt><dd><p>Example:</p>
 <blockquote>
 <div><dl>
-<dt>find({</dt><dd><p>‘file_name’: ‘<a href="#id33"><span class="problematic" id="id34">*</span></a>.txt’,</p>
+<dt>find({</dt><dd><p>‘file_name’: ‘<a href="#id35"><span class="problematic" id="id36">*</span></a>.txt’,</p>
 <p>‘show_deleted’: True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p>‘to_time’: ‘2016-04-31 12:00:00’</p>
@@ -11330,7 +11520,7 @@ and returns all the files matching the filters given.</p>
 <dt>Keyword argument of browse options:</dt><dd><p>Example:</p>
 <blockquote>
 <div><dl>
-<dt>find(</dt><dd><p>file_name=’<a href="#id35"><span class="problematic" id="id36">*</span></a>.txt’,</p>
+<dt>find(</dt><dd><p>file_name=’<a href="#id37"><span class="problematic" id="id38">*</span></a>.txt’,</p>
 <p>show_deleted=True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p>to_time=‘2016-04-31 12:00:00’</p>
@@ -11783,7 +11973,7 @@ salesforce_options          (dict)  – salesforce options</p>
 <p>}</p>
 </dd>
 </dl>
-<p><a href="#id38"><span class="problematic" id="id39">**</span></a>kwargs                    (dict)   – dict of keyword arguments as follows</p>
+<p><a href="#id40"><span class="problematic" id="id41">**</span></a>kwargs                    (dict)   – dict of keyword arguments as follows</p>
 <blockquote>
 <div><p>download_cache_path     (str)   – download cache path
 mutual_auth_path        (str)   – mutual auth cert path
@@ -12051,7 +12241,7 @@ on this commcell</p>
 with the commcell it is associated with</p>
 <p>_get_jobs_list()            –  executes the request, and parses and returns the jobs response</p>
 <dl class="simple">
-<dt>_get_jobs_request_json(<a href="#id40"><span class="problematic" id="id41">**</span></a>options)</dt><dd><p>–  Returns the request json for the jobs request</p>
+<dt>_get_jobs_request_json(<a href="#id42"><span class="problematic" id="id43">**</span></a>options)</dt><dd><p>–  Returns the request json for the jobs request</p>
 </dd>
 <dt>_modify_all_jobs(operation_type=None)</dt><dd><dl class="simple">
 <dt>–  executes a request on the server to suspend/resume/kill all</dt><dd><p>the jobs on the commserver.</p>
@@ -12194,10 +12384,14 @@ to given status, whichever is earlier</p>
 <p><strong>job.instance_name</strong>               –  returns the name of the instance, job is running for</p>
 <p><strong>job.backupset_name</strong>              –  returns the name of the backupset, job is running for</p>
 <p><strong>job.subclient_name</strong>              –  returns the name of the subclient, job is running for</p>
-<p><strong>job.status</strong>                      –  returns the current status of the job</p>
-<blockquote>
+<dl>
+<dt><strong>job.status</strong>                      –  returns the current status of the job</dt><dd><blockquote>
 <div><p>(Completed / Suspended / Waiting / … / etc.)</p>
 </div></blockquote>
+<p><a class="reference external" href="http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm">http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm</a>
+please refer status section in above doc link for complete list of status available</p>
+</dd>
+</dl>
 <p><strong>job.job_id</strong>                      –  returns the id of the job</p>
 <p><strong>job.job_type</strong>                    –  returns the type of the job</p>
 <p><strong>job.backup_level</strong>                –  returns the backup level (if applicable), otherwise None</p>
@@ -12509,7 +12703,9 @@ enum from the constants</p>
 <dl class="py method">
 <dt id="cvpysdk.job.Job.status">
 <em class="property">property </em><code class="sig-name descname">status</code><a class="headerlink" href="#cvpysdk.job.Job.status" title="Permalink to this definition">¶</a></dt>
-<dd><p>Treats the job status as a read-only attribute.</p>
+<dd><p>Treats the job status as a read-only attribute.
+<a class="reference external" href="http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm">http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm</a>
+please refer status section in above doc link for complete list of status available</p>
 </dd></dl>
 
 <dl class="py method">
@@ -13770,7 +13966,7 @@ information such as cloudid and analyticsserver name</p>
 <p><strong>all_templates</strong>               – returns the dictionary consisting of
 all the templates that are associated with the commcell and their
 information such as templateid and templatename</p>
-<p><a href="#id42"><span class="problematic" id="id43">**</span></a>all_monitoring_policies       – returns the dictionary consisting of
+<p><a href="#id44"><span class="problematic" id="id45">**</span></a>all_monitoring_policies       – returns the dictionary consisting of
 all the monitoring policies that are associated with the commcell and
 their information such as monitoringpolicyid and name</p>
 </div></blockquote>
@@ -13794,8 +13990,8 @@ of the commcell</p>
 </dl>
 </div></blockquote>
 </div>
-<div class="section" id="id44">
-<h3>Attributes<a class="headerlink" href="#id44" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id46">
+<h3>Attributes<a class="headerlink" href="#id46" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><p><strong>monitoring_policy_name</strong>          – returns the monitoringpolicy name</p>
 <p><strong>monitoring_policy_id</strong>            – returnd the id of monitoringpolicy</p>
@@ -14921,7 +15117,7 @@ False: if the specified group is a client group</p>
 <p>[{‘group_type’:2, ‘group_name’: “test1”, ‘is_mnemonic’: False },
 {‘group_type’:1, ‘group_name’: “test2”, ‘is_mnemonic’: False },
 {‘group_type’:3, ‘group_name’: “test3”, ‘is_mnemonic’: False }]</p>
-<p><a href="#id45"><span class="problematic" id="id46">**</span></a>kwargs             (dict)  – Key value pairs for supported arguments</p>
+<p><a href="#id47"><span class="problematic" id="id48">**</span></a>kwargs             (dict)  – Key value pairs for supported arguments</p>
 <p>Supported arguments:</p>
 <p>network_topology_name   (str)       –  new name of the network topology</p>
 <p>description             (str)       –  description for the network topology</p>
@@ -15955,8 +16151,8 @@ or the details for the given plan name</p>
 <p>delete()                    –  deletes the plan from the commcell</p>
 <p>refresh()                   –  refresh the plans associated with the commcell</p>
 </div></blockquote>
-<div class="section" id="id47">
-<h4>Attributes<a class="headerlink" href="#id47" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id49">
+<h4>Attributes<a class="headerlink" href="#id49" title="Permalink to this headline">¶</a></h4>
 <blockquote>
 <div><p><strong>all_plans</strong>   –  returns the dict consisting of plans and their details</p>
 </div></blockquote>
@@ -15976,6 +16172,9 @@ or the details for the given plan name</p>
 <p>plan_id                     –  returns the ID of the plan</p>
 <p>refresh()                   –  refresh the properties of the plan</p>
 <p>associate_user()            –  associates users to the plan</p>
+<p>modify_schedule()           –  modifies the RPO schedules of the plan</p>
+<p>add_storage_copy()          –  adds a storage pool as a copy to the plan</p>
+<p>disable_full_schedule()     –  disables the full schedule of a plan</p>
 </div></blockquote>
 <div class="section" id="plan-attributes">
 <h4>Plan Attributes<a class="headerlink" href="#plan-attributes" title="Permalink to this headline">¶</a></h4>
@@ -15990,12 +16189,35 @@ or the details for the given plan name</p>
 <p><strong>schedule_policies</strong>       –  returns the schedule policy of the plan</p>
 <p><strong>subclient_policy</strong>        –  returns the subclient policy of the plan</p>
 <p><strong>associated_entities</strong>     –  returns all the backup entities associated with the plan</p>
+<p><strong>operation_window</strong>        –  returns the incremental operation window set by the plan</p>
+<p><strong>full_operation_window</strong>   –  returns the full operation window set by the plan</p>
+<p><strong>associated_entities</strong>     –  returns all the entities associated with the plan</p>
 </div></blockquote>
 <dl class="py class">
 <dt id="cvpysdk.plan.Plan">
 <em class="property">class </em><code class="sig-prename descclassname">cvpysdk.plan.</code><code class="sig-name descname">Plan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">commcell_object</span></em>, <em class="sig-param"><span class="n">plan_name</span></em>, <em class="sig-param"><span class="n">plan_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class for performing operations for a specific Plan.</p>
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.add_storage_copy">
+<code class="sig-name descname">add_storage_copy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">copy_name</span></em>, <em class="sig-param"><span class="n">storage_pool</span></em>, <em class="sig-param"><span class="n">retention</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">extended_retention</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plan.add_storage_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan.add_storage_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a storage copy as backup destination to this plan
+Args:</p>
+<blockquote>
+<div><p>copy_name   (str)   -   name of the copy that is being added</p>
+<p>storage_pool (str)  -   name of the storage pool for the copy to be added</p>
+<p>retention   (int)   -   retention period in days for the copy</p>
+<dl class="simple">
+<dt>extended_retention (tuple)  -   extended retention rules of a copy</dt><dd><p>Example: [1, True, “EXTENDED_ALLFULL”, 0, 0]</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dict    -   dictionary of all copies of this plan</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt id="cvpysdk.plan.Plan.addons">
 <em class="property">property </em><code class="sig-name descname">addons</code><a class="headerlink" href="#cvpysdk.plan.Plan.addons" title="Permalink to this definition">¶</a></dt>
@@ -16096,9 +16318,107 @@ left blank if overriding is optional</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.plan.Plan.disable_full_schedule">
+<code class="sig-name descname">disable_full_schedule</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plan.disable_full_schedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan.disable_full_schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable the full backup schedule of the plan</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.edit_association">
+<code class="sig-name descname">edit_association</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">entities</span></em>, <em class="sig-param"><span class="n">new_plan</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plan.edit_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan.edit_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reassociates or dissociates the entities from this plan
+Args:</p>
+<blockquote>
+<div><dl>
+<dt>entities    (list)  –  list containing entity objects whose plan association must be edited</dt><dd><dl>
+<dt>Eg: [</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“clientName”: “client”,
+“subclientName”: “subclient”,
+“backupsetName”: “backupset”,
+“appName”: “app”</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<p>]</p>
+</dd>
+</dl>
+<p>new_plan    (str)   –  new plan to which the associated entities must be reassociated with</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>SDKException</dt><dd><p>if plan not found</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.full_operation_window">
+<em class="property">property </em><code class="sig-name descname">full_operation_window</code><a class="headerlink" href="#cvpysdk.plan.Plan.full_operation_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the plan full backup operation window as a read-only attribute</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.modify_schedule">
+<code class="sig-name descname">modify_schedule</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">schedule_json</span></em>, <em class="sig-param"><span class="n">is_full_schedule</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plan.modify_schedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plan.modify_schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the incremental RPO schedule pattern of the plan with the given schedule json</p>
+<p>Args:
+schedule_json (dict) – {</p>
+<blockquote>
+<div><dl>
+<dt>pattern<span class="classifier">{}, – Please refer SchedulePattern.create_schedule in schedules.py for the types of</span></dt><dd><p>pattern to be sent</p>
+<dl>
+<dt>eg: {</dt><dd><blockquote>
+<div><p>“freq_type”: ‘daily’,
+“active_start_time”: time_in_%H/%S (str),
+“repeat_days”: days_to_repeat (int)</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>options: {} – Please refer ScheduleOptions.py classes for respective schedule options</p>
+<blockquote>
+<div><dl>
+<dt>eg:  {</dt><dd><p>“maxNumberOfStreams”: 0,
+“useMaximumStreams”: True,
+“useScallableResourceManagement”: True,
+“totalJobsToProcess”: 1000,
+“allCopies”: True,
+“mediaAgent”: {</p>
+<blockquote>
+<div><p>“mediaAgentName”: “&lt;ANY MEDIAAGENT&gt;”</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<p>is_full_schedule (bool) –  Pass True if he schedule to be modified is the full backup schedule</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.operation_window">
+<em class="property">property </em><code class="sig-name descname">operation_window</code><a class="headerlink" href="#cvpysdk.plan.Plan.operation_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the plan incremental operation window as a read-only attribute</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.plan.Plan.override_entities">
 <em class="property">property </em><code class="sig-name descname">override_entities</code><a class="headerlink" href="#cvpysdk.plan.Plan.override_entities" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the plan override_entities as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.parent_plan">
+<em class="property">property </em><code class="sig-name descname">parent_plan</code><a class="headerlink" href="#cvpysdk.plan.Plan.parent_plan" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the parent plan of a derived plan</p>
 </dd></dl>
 
 <dl class="py method">
@@ -16132,9 +16452,29 @@ left blank if overriding is optional</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.plan.Plan.security_associations">
+<em class="property">property </em><code class="sig-name descname">security_associations</code><a class="headerlink" href="#cvpysdk.plan.Plan.security_associations" title="Permalink to this definition">¶</a></dt>
+<dd><p>getter for the plan’s security associations
+Eg:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>‘sample_user_group_name’: ‘role_name’</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.plan.Plan.sla_in_minutes">
 <em class="property">property </em><code class="sig-name descname">sla_in_minutes</code><a class="headerlink" href="#cvpysdk.plan.Plan.sla_in_minutes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats the plan SLA/RPO as a read-only attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.plan.Plan.storage_copies">
+<em class="property">property </em><code class="sig-name descname">storage_copies</code><a class="headerlink" href="#cvpysdk.plan.Plan.storage_copies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats the plan storage policy as a read-only attribute</p>
 </dd></dl>
 
 <dl class="py method">
@@ -16164,7 +16504,7 @@ left blank if overriding is optional</p>
 <p>Class for representing all the plans in the commcell.</p>
 <dl class="py method">
 <dt id="cvpysdk.plan.Plans.add">
-<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plan_name</span></em>, <em class="sig-param"><span class="n">plan_sub_type</span></em>, <em class="sig-param"><span class="n">storage_pool_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sla_in_minutes</span><span class="o">=</span><span class="default_value">240</span></em>, <em class="sig-param"><span class="n">override_entities</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plans.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plans.add" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plan_name</span></em>, <em class="sig-param"><span class="n">plan_sub_type</span></em>, <em class="sig-param"><span class="n">storage_pool_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sla_in_minutes</span><span class="o">=</span><span class="default_value">1440</span></em>, <em class="sig-param"><span class="n">override_entities</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/plan.html#Plans.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.plan.Plans.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new Plan to the CommCell.</p>
 <dl>
 <dt>Args:</dt><dd><p>plan_name           (str)   –  name of the new plan to add</p>
@@ -16178,11 +16518,13 @@ left blank if overriding is optional</p>
 <p>storage_pool_name   (str)   –  name of the storage pool to be used for the plan</p>
 <p>sla_in_minutes      (int)   –  Backup SLA in hours</p>
 <blockquote>
-<div><p>default: 240</p>
+<div><p>default: 1440</p>
 </div></blockquote>
-<p>override_entities   (dict)  –  Specify the entities with respective overriding.</p>
-<blockquote>
-<div><p>default: None</p>
+<dl>
+<dt>override_entities   (dict)  –  Specify the entities with respective</dt><dd><blockquote>
+<div><p>inheritance values.</p>
+</div></blockquote>
+<p>default: None</p>
 <blockquote>
 <div><dl>
 <dt>{</dt><dd><p>‘privateEntities’: [1, 4],</p>
@@ -16192,7 +16534,7 @@ left blank if overriding is optional</p>
 <p>}
 - where,</p>
 <blockquote>
-<div><p>privateEntities are set when respective entity overriding is must
+<div><p>privateEntities are set when respective entity overriding is required
 enforcedEntities are set when respective entity overriding is not
 allowed
 left blank if overriding is optional</p>
@@ -16200,7 +16542,7 @@ left blank if overriding is optional</p>
 <ul class="simple">
 <li><dl class="simple">
 <dt>entity IDs,</dt><dd><p>1    - Storage
-4    - SLA/Schedules
+4    - RPO/Schedules
 256  - Windows content
 512  - Unix content
 1024 - Mac content</p>
@@ -16209,7 +16551,8 @@ left blank if overriding is optional</p>
 </li>
 </ul>
 </div></blockquote>
-</div></blockquote>
+</dd>
+</dl>
 </dd>
 <dt>Returns:</dt><dd><p>object  -   instance of the Plan class created by this method</p>
 </dd>
@@ -18174,8 +18517,8 @@ pool Id or the details for the given storage pool name</p>
 <p>delete()                    –  deletes the specified storage pool</p>
 <p>refresh()                   –  refresh the list of storage pools associated with the commcell</p>
 </div></blockquote>
-<div class="section" id="id48">
-<h4>Attributes<a class="headerlink" href="#id48" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id50">
+<h4>Attributes<a class="headerlink" href="#id50" title="Permalink to this headline">¶</a></h4>
 <blockquote>
 <div><p><strong>all_storage_pools</strong>   –  returns dict of all the storage pools on commcell</p>
 </div></blockquote>
@@ -18420,7 +18763,9 @@ or the details for the given subclient name</p>
 <p>has_subclient()             –  checks if a subclient exists with the given name or not</p>
 <p>add()                       –  adds a new subclient to the backupset</p>
 <p>add_oracle_logical_dump_subclient()  –  add subclient for oracle logical dump</p>
+<p>add_postgresql_subclient()  –  Adds a new postgresql subclient to the backupset.</p>
 <p>add_virtual_server_subclient()  – adds a new virtual server subclient to the backupset</p>
+<p>add_onedrive_subclient()   –  adds a new onedrive subclient to the instance</p>
 <p>get(subclient_name)         –  returns the subclient object of the input subclient name</p>
 <p>delete(subclient_name)      –  deletes the subclient (subclient name) from the backupset</p>
 <p>refresh()                   –  refresh the subclients associated with the Backupset / Instance</p>
@@ -18646,6 +18991,7 @@ from browse operation</p>
 <dt>enable_time (str)  –  UTC time to enable the backup at, in 24 Hour format</dt><dd><p>format: YYYY-MM-DD HH:mm:ss</p>
 </dd>
 </dl>
+<p><strong>Note</strong> In case of linux CommServer provide time in GMT timezone</p>
 </dd>
 <dt>Raises:</dt><dd><dl>
 <dt>SDKException:</dt><dd><p>if time value entered is less than the current time</p>
@@ -18715,7 +19061,7 @@ and returns all the files matching the filters given.</p>
 <dt>Dictionary of browse options:</dt><dd><p>Example:</p>
 <blockquote>
 <div><dl>
-<dt>find({</dt><dd><p>‘file_name’: ‘<a href="#id50"><span class="problematic" id="id51">*</span></a>.txt’,</p>
+<dt>find({</dt><dd><p>‘file_name’: ‘<a href="#id52"><span class="problematic" id="id53">*</span></a>.txt’,</p>
 <p>‘show_deleted’: True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p>‘to_time’: ‘2016-04-31 12:00:00’</p>
@@ -18730,7 +19076,7 @@ and returns all the files matching the filters given.</p>
 <dt>Keyword argument of browse options:</dt><dd><p>Example:</p>
 <blockquote>
 <div><dl>
-<dt>find(</dt><dd><p>file_name=’<a href="#id52"><span class="problematic" id="id53">*</span></a>.txt’,</p>
+<dt>find(</dt><dd><p>file_name=’<a href="#id54"><span class="problematic" id="id55">*</span></a>.txt’,</p>
 <p>show_deleted=True,</p>
 <p>‘from_time’: ‘2014-04-20 12:00:00’,</p>
 <p>to_time=‘2016-04-31 12:00:00’</p>
@@ -18805,6 +19151,16 @@ give the values <strong>comma(,)</strong> separated</p>
 <dt>SDKException:</dt><dd><p>if any error occurred while finding the latest job.</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">
+<code class="sig-name descname">get_ma_associated_storagepolicy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclient.html#Subclient.get_ma_associated_storagepolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Media agents associated with storage policy</p>
+<dl class="simple">
+<dt>Raise Exception:</dt><dd><p>if unable to get MA names</p>
 </dd>
 </dl>
 </dd></dl>
@@ -18949,6 +19305,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -19037,6 +19397,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -19212,6 +19576,34 @@ default : None</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.subclient.Subclients.add_onedrive_subclient">
+<code class="sig-name descname">add_onedrive_subclient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subclient_name</span></em>, <em class="sig-param"><span class="n">server_plan</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclient.html#Subclients.add_onedrive_subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add_onedrive_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new subclient to the backupset.</p>
+<dl>
+<dt>Args:</dt><dd><p>subclient_name     (str)   –  name of the new subclient to add</p>
+<dl class="simple">
+<dt>server_plan     (str)   –  name of the server plan to be associated</dt><dd><p>with the subclient</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object  -   instance of the Subclient class</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if subclient name argument is not of type string</p>
+<p>if server plan argument is not of type string</p>
+<p>if description argument is not of type string</p>
+<p>if failed to create subclient</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p>if subclient already exists with the given name</p>
+<p>if server plan  donot exists with the given name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.subclient.Subclients.add_oracle_logical_dump_subclient">
 <code class="sig-name descname">add_oracle_logical_dump_subclient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subclient_name</span></em>, <em class="sig-param"><span class="n">storage_policy</span></em>, <em class="sig-param"><span class="n">dump_dir</span></em>, <em class="sig-param"><span class="n">user_name</span></em>, <em class="sig-param"><span class="n">domain_name</span></em>, <em class="sig-param"><span class="n">password</span></em>, <em class="sig-param"><span class="n">full_mode</span></em>, <em class="sig-param"><span class="n">schema_value</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclient.html#Subclients.add_oracle_logical_dump_subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add_oracle_logical_dump_subclient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to add subclient for oracle logical dump.
@@ -19249,6 +19641,42 @@ Args:</p>
 <p>if storage policy does not exist</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclient.Subclients.add_postgresql_subclient">
+<code class="sig-name descname">add_postgresql_subclient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subclient_name</span></em>, <em class="sig-param"><span class="n">storage_policy</span></em>, <em class="sig-param"><span class="n">contents</span></em>, <em class="sig-param"><span class="n">no_of_streams</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">collect_object_list</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclient.html#Subclients.add_postgresql_subclient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclient.Subclients.add_postgresql_subclient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new postgresql subclient to the backupset.</p>
+<dl>
+<dt>Args:</dt><dd><p>subclient_name          (str)   –  name of the new subclient to add</p>
+<p>storage_policy          (str)   –  name of the storage policy to be associated
+with the subclient</p>
+<p>contents                (list)  –  database list to be added as subclient content</p>
+<p>no_of_streams           (int)   –  No of backup streams to be used</p>
+<blockquote>
+<div><p>default: 1</p>
+</div></blockquote>
+<p>collect_object_list     (bool)  –  Boolean flag to determine if collect object
+list needs to be enabled for subclient or not</p>
+<blockquote>
+<div><p>default: False</p>
+</div></blockquote>
+</dd>
+<dt>Returns:</dt><dd><p>object  -   instance of the Subclient class</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if subclient name argument is not of type string</p>
+<p>if storage policy argument is not of type string</p>
+<p>if conetnts argument is not of type list</p>
+<p>if contents is empty list</p>
+<p>if failed to create subclient</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p>if subclient already exists with the given name</p>
 </dd>
 </dl>
 </dd>
@@ -20564,6 +20992,19 @@ to this module.</p>
 </div>
 <div class="section" id="module-cvpysdk">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk" title="Permalink to this headline">¶</a></h2>
+<p>CVPySDK (Developer SDK - Python) is a Python Package for Commvault Software.</p>
+<p>CVPySDK uses Commvault REST API to perform operations on a Commcell.</p>
+<p>CVPySDK is available on GitHub (<a class="reference external" href="https://github.com/CommvaultEngg/cvpysdk">https://github.com/CommvaultEngg/cvpysdk</a>).</p>
+<p>CVPySDK is compatible with both Python 2 and Python 3</p>
+<p>CVPySDK requires the following Python packages to run:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>requests</strong></p></li>
+<li><p><strong>future</strong></p></li>
+<li><p><strong>xmltodict</strong></p></li>
+</ul>
+</div></blockquote>
+<p>And Commvault Software v11 SP7 or later release with WebConsole installed</p>
 </div>
 </div>
 

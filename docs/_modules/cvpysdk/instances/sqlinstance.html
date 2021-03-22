@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.sqlinstance &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.instances.sqlinstance &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -739,7 +739,7 @@
 <span class="sd">                point_in_time   (timestamp) -- unix time for the point in time recovery point creation</span>
 <span class="sd">                        default 0.  performs restore to last backup</span>
 
-<span class="sd">                destination_instance (str)  -- name of the destination instance in whcih recovery point is to be</span>
+<span class="sd">                destination_instance (str)  -- name of the destination instance in which recovery point is to be</span>
 <span class="sd">                                                created.</span>
 <span class="sd">                                default None. creates in the same instance</span>
 
@@ -754,19 +754,34 @@
             <span class="n">recovery_point_name</span> <span class="o">=</span> <span class="n">dbname</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">timestamp</span><span class="p">))</span>
 
         <span class="n">instance</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">if</span> <span class="n">destination_instance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">destination_instance</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_name</span><span class="p">:</span>
             <span class="n">instance</span> <span class="o">=</span> <span class="n">SQLServerInstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="p">,</span> <span class="n">destination_instance</span><span class="p">)</span>
 
         <span class="c1"># fetching db details</span>
         <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
             <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s2">&quot;SQL_DATABASES&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">dbname</span><span class="p">,</span> <span class="kc">None</span>
         <span class="p">)</span>
-        <span class="n">db_details</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">db_id</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;SqlDatabase&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;dbId&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="mi">102</span><span class="p">,</span> <span class="s2">&quot;failed to fetch db details&quot;</span><span class="p">)</span>
+
+        <span class="c1"># fetching full database details</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s2">&quot;SQL_DATABASE_DETAILS&quot;</span><span class="p">]</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">,</span> <span class="n">db_id</span><span class="p">),</span> <span class="kc">None</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
             <span class="n">db_details</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;SqlDatabase&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="mi">102</span><span class="p">,</span> <span class="s2">&quot;failed to fetch db details&quot;</span><span class="p">)</span>
+
+        <span class="n">fullbackup_job</span> <span class="o">=</span> <span class="n">db_details</span><span class="p">[</span><span class="s2">&quot;fBkpJob&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">fullbackup_job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;failed to get last full backup job details&quot;</span><span class="p">)</span>
+
+        <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">job_controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fullbackup_job</span><span class="p">)</span>
 
         <span class="c1"># retrieving the physical paths and logical file names</span>
         <span class="n">restore_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sql_restore_options</span><span class="p">([</span><span class="n">dbname</span><span class="p">])</span>
@@ -775,18 +790,6 @@
         <span class="k">for</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">restore_options</span><span class="p">[</span><span class="s2">&quot;sqlDbdeviceItem&quot;</span><span class="p">]:</span>
             <span class="n">physical_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="s2">&quot;fileName&quot;</span><span class="p">])</span>
             <span class="n">logical_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="s2">&quot;logicalFileName&quot;</span><span class="p">])</span>
-
-        <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">job_controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">db_details</span><span class="p">[</span><span class="s2">&quot;jobId&quot;</span><span class="p">])</span>
-
-        <span class="c1"># fetching job details</span>
-        <span class="n">browse_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">get_full_details</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">fullbackup_job</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">dbs</span> <span class="ow">in</span> <span class="n">browse_dict</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">dbs</span><span class="p">[</span><span class="s2">&quot;databaseName&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dbname</span><span class="p">:</span>
-                <span class="n">fullbackup_job</span> <span class="o">=</span> <span class="n">dbs</span><span class="p">[</span><span class="s2">&quot;jobId&quot;</span><span class="p">]</span>
-                <span class="k">break</span>
-        <span class="k">if</span> <span class="n">fullbackup_job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;failed to get last full backup job details&quot;</span><span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;opType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -819,14 +822,14 @@
                             <span class="s2">&quot;appMinType&quot;</span><span class="p">:</span> <span class="mi">2</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">snap</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
                             <span class="s2">&quot;expireDays&quot;</span><span class="p">:</span> <span class="n">expire_days</span><span class="p">,</span>
                             <span class="s2">&quot;instance&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">instance</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">],</span>
                                 <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
                                 <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
                                 <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="mi">81</span>
                             <span class="p">},</span>
                             <span class="s2">&quot;miningJobs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">fullbackup_job</span><span class="p">],</span>
                             <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">db_details</span><span class="p">[</span><span class="s2">&quot;cId&quot;</span><span class="p">])</span>
+                                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span>
                             <span class="p">},</span>
                             <span class="s2">&quot;phyfileRename&quot;</span><span class="p">:</span> <span class="n">physical_files</span><span class="p">,</span>
                             <span class="s2">&quot;logfileRename&quot;</span><span class="p">:</span> <span class="n">logical_files</span><span class="p">,</span>
@@ -835,7 +838,7 @@
                 <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;ma&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span>
             <span class="p">},</span>
             <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;instantSend&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -848,7 +851,7 @@
                 <span class="s2">&quot;libraryId&quot;</span><span class="p">:</span> <span class="n">job</span><span class="o">.</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;jobDetail&quot;</span><span class="p">][</span><span class="s2">&quot;generalInfo&quot;</span><span class="p">][</span><span class="s2">&quot;mediaLibrary&quot;</span><span class="p">][</span><span class="s2">&quot;libraryId&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="n">job</span><span class="o">.</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;jobDetail&quot;</span><span class="p">][</span><span class="s2">&quot;generalInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subclient&quot;</span><span class="p">][</span><span class="s2">&quot;backupsetId&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
-                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">db_details</span><span class="p">[</span><span class="s2">&quot;cId&quot;</span><span class="p">]</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;instance&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span>
             <span class="p">},</span>
             <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;fromTime&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>

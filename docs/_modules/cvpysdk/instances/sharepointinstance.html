@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.instances.sharepointinstance &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.instances.sharepointinstance &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -182,6 +182,27 @@
     <span class="sd">&quot;&quot;&quot; Class  representing a sharepoint instance, and to perform operations on that instance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="nf">_restore_browse_option_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for the Browse options for restore in Json&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Instance&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">time_range_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;to_time&#39;</span><span class="p">):</span>
+            <span class="n">time_range_dict</span><span class="p">[</span><span class="s1">&#39;toTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;to_time&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_browse_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;commCellId&quot;</span><span class="p">:</span>  <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commcell_id</span><span class="p">),</span>
+            <span class="s2">&quot;showDeletedItems&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;showDeletedItems&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;backupset&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">[</span><span class="s1">&#39;clientId&#39;</span><span class="p">]),</span>
+                <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span><span class="p">[</span><span class="s1">&#39;backupsetId&#39;</span><span class="p">])</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="n">time_range_dict</span>
+        <span class="p">}</span>
+
     <span class="k">def</span> <span class="nf">_restore_common_options_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;setter for  the Common options of in restore JSON&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -190,12 +211,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_commonoption_restore_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;allVersion&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s2">&quot;offlineMiningRestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;skip&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;skip&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;restoreACLs&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;erExSpdbPathRestore&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;unconditionalOverwrite&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;unconditionalOverwrite&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unconditional_overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;siteReplicationrestore&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;append&quot;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_restore_destination_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;setter for  the destination restore option in restore JSON&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destination_restore_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;inPlace&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;in_place&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s2">&quot;destClient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">}</span>
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_restore_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -216,16 +250,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">rest_json</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SharepointInstance</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_restore_json</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;task&quot;</span><span class="p">][</span><span class="s2">&quot;initiatedFrom&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;destination&quot;</span><span class="p">]</span>\
-            <span class="p">[</span><span class="s2">&quot;destClient&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">[</span><span class="s1">&#39;clientId&#39;</span><span class="p">])</span>
-        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">]</span>\
-            <span class="p">[</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s2">&quot;backupset&quot;</span><span class="p">][</span><span class="s2">&quot;clientId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="p">[</span><span class="s1">&#39;clientId&#39;</span><span class="p">])</span>
-        <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">]</span>\
-            <span class="p">[</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;browseOption&quot;</span><span class="p">][</span><span class="s2">&quot;backupset&quot;</span><span class="p">][</span><span class="s2">&quot;backupsetId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_restore_association</span>
-                                                                                 <span class="p">[</span><span class="s1">&#39;backupsetId&#39;</span><span class="p">])</span>
         <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">][</span><span class="s2">&quot;sharePointDocRstOption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">rest_json</span><span class="p">[</span><span class="s2">&quot;taskInfo&quot;</span><span class="p">][</span><span class="s2">&quot;subTasks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;restoreOptions&quot;</span><span class="p">]</span>\
-            <span class="p">[</span><span class="s2">&quot;sharePointRstOption&quot;</span><span class="p">]:</span> <span class="p">{</span>
+            <span class="p">[</span><span class="s2">&quot;sharePointRstOption&quot;</span><span class="p">]</span><span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;sharePointDocument&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="s2">&quot;spRestoreToDisk&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;restoreToDiskPath&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>

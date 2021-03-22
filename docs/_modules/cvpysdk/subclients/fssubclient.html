@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.fssubclient &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclients.fssubclient &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -292,10 +292,13 @@
 
 <span class="sd">	**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.</span>
 
+<span class="sd">	**impersonate_user**                  --  Impersonation information for the subclient.</span>
+
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
-
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span>
 <span class="kn">from</span> <span class="nn">past.builtins</span> <span class="kn">import</span> <span class="n">basestring</span>
 
 <span class="kn">from</span> <span class="nn">..client</span> <span class="kn">import</span> <span class="n">Client</span>
@@ -1791,6 +1794,10 @@
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
 
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
 <span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
@@ -1924,6 +1931,10 @@
 <span class="sd">                    Options:</span>
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
+
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job</span>
@@ -2533,6 +2544,35 @@
             <span class="n">update_properties</span><span class="p">[</span><span class="s2">&quot;fsSubClientProp&quot;</span><span class="p">][</span><span class="s1">&#39;enableNetworkShareAutoMount&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">update_properties</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">impersonate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the username ONLY and applicable to Windows FS subclients only.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;impersonateUser&#39;</span><span class="p">]</span>
+
+    <span class="nd">@impersonate_user</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">impersonate_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the user impersonation information for a subclient, applicable to Windows only.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            value   (dict)  --  Valid keys are &#39;username&#39; and &#39;password&#39;</span>
+
+<span class="sd">                username    (str)   --  The username</span>
+
+<span class="sd">                password    (str)   --  The password</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">update_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">update_properties</span><span class="p">[</span><span class="s2">&quot;impersonateUser&quot;</span><span class="p">][</span><span class="s2">&quot;userName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span>
+            <span class="n">update_properties</span><span class="p">[</span><span class="s2">&quot;impersonateUser&quot;</span><span class="p">][</span><span class="s2">&quot;password&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;password&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">update_properties</span><span class="p">)</span></div>
 </pre></div>

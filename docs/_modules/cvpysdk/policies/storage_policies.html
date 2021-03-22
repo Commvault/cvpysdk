@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.policies.storage_policies &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -253,6 +253,8 @@
 <span class="sd">    move_dedupe_store()                     --  Moves a deduplication store</span>
 
 <span class="sd">    run_ddb_verification()                  --  Runs DDB verification job</span>
+
+<span class="sd">    run_data_verification()                 --  Runs Data Verification Job</span>
 
 <span class="sd">    get_copy()                              --  Returns the StoragePolicyCopy class object of the input copy</span>
 
@@ -1113,7 +1115,10 @@
                 <span class="n">active</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;active&#39;</span><span class="p">]</span>
                 <span class="n">copy_id</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;StoragePolicyCopy&#39;</span><span class="p">][</span><span class="s1">&#39;copyId&#39;</span><span class="p">]</span>
                 <span class="n">copy_name</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;StoragePolicyCopy&#39;</span><span class="p">][</span><span class="s1">&#39;copyName&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                <span class="n">library_name</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;library&#39;</span><span class="p">][</span><span class="s1">&#39;libraryName&#39;</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">library_name</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;library&#39;</span><span class="p">][</span><span class="s1">&#39;libraryName&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">library_name</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">copy_precedence</span> <span class="o">=</span> <span class="n">copy</span><span class="p">[</span><span class="s1">&#39;copyPrecedence&#39;</span><span class="p">]</span>
                 <span class="n">is_snap</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">copy</span><span class="p">[</span><span class="s1">&#39;isSnapCopy&#39;</span><span class="p">]))</span>
                 <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span>
@@ -1843,6 +1848,13 @@
         <span class="sd">&quot;&quot;&quot;Treats the storage policy name as a read-only attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_name</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the Storage Policy Description Field&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_storage_policy_advanced_properties</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage_policy_advanced_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;policies&#39;</span><span class="p">,[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="StoragePolicy.get_copy_precedence"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.get_copy_precedence">[docs]</a>    <span class="k">def</span> <span class="nf">get_copy_precedence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy_name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; returns the copy precedence value associated with the copy name</span>
 
@@ -2184,7 +2196,7 @@
 
 <div class="viewcode-block" id="StoragePolicy.run_aux_copy"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy">[docs]</a>    <span class="k">def</span> <span class="nf">run_aux_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_policy_copy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">media_agent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">streams</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                     <span class="n">all_copies</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">total_jobs_to_process</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                     <span class="n">all_copies</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">total_jobs_to_process</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Runs the aux copy job from the commcell.</span>
 <span class="sd">            Args:</span>
 
@@ -2592,6 +2604,107 @@
                     <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
 
                     <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;DDB verification job failed</span><span class="se">\n</span><span class="s1">Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;109&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StoragePolicy.run_data_verification"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification">[docs]</a>    <span class="k">def</span> <span class="nf">run_data_verification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">media_agent_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">copy_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">streams</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                              <span class="n">jobs_to_verify</span><span class="o">=</span><span class="s1">&#39;NEW&#39;</span><span class="p">,</span> <span class="n">use_scalable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs Data verification job</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            media_agent_name    (str)  : name of the mediaAgent to use for data reading</span>
+
+<span class="sd">            copy_name           (str)  : name of Copy</span>
+<span class="sd">                                         (default - verifies jobs on all copies)</span>
+
+<span class="sd">            streams             (int)  : number of streams to use</span>
+<span class="sd">                                         (default - use Maximum)</span>
+
+<span class="sd">            jobs_to_verify      (str)  : jobs to be Verified</span>
+<span class="sd">                                         (NEW/ VERF_EXPIRED/ ALL)</span>
+
+<span class="sd">            use_scalable       (bool) : True/False to use Scalable Resource Allocation</span>
+
+<span class="sd">            kwargs              (dict) : optional arguments</span>
+<span class="sd">                Available kwargs Options:</span>
+<span class="sd">                    job_description     (str): Description for Job</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object - instance of the Job class for this Data Verification Job</span>
+
+<span class="sd">            errorMessage - If Data Verification Job fails to Start</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">copy_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jobs_to_verify</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">media_agent_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">jobs_to_verify</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;NEW&#39;</span><span class="p">:</span>
+            <span class="n">jobs_to_verify</span> <span class="o">=</span> <span class="s1">&#39;NEWLY_AVAILABLE&#39;</span>
+        <span class="k">elif</span> <span class="n">jobs_to_verify</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;VERF_EXPIRED&#39;</span><span class="p">:</span>
+            <span class="n">jobs_to_verify</span> <span class="o">=</span> <span class="s1">&#39;VERIFICATION_EXP&#39;</span>
+        <span class="k">elif</span> <span class="n">jobs_to_verify</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;ALL&#39;</span><span class="p">:</span>
+            <span class="n">jobs_to_verify</span> <span class="o">=</span> <span class="s1">&#39;BOTH_NEWLY_AVAILABLE_AND_VERIFICATION_EXP&#39;</span>
+
+        <span class="n">request</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;copyName&quot;</span><span class="p">:</span> <span class="n">copy_name</span><span class="p">,</span>
+                        <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_policy_name</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s2">&quot;subTasks&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subTaskOperation&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s2">&quot;subTask&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;subTaskType&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">&quot;operationType&quot;</span><span class="p">:</span> <span class="mi">4007</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;backupOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;mediaOpt&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;auxcopyJobOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;maxNumberOfStreams&quot;</span><span class="p">:</span> <span class="n">streams</span><span class="p">,</span>
+                                        <span class="s2">&quot;useMaximumStreams&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">streams</span><span class="p">),</span>
+                                        <span class="s2">&quot;useScallableResourceManagement&quot;</span><span class="p">:</span> <span class="n">use_scallable</span><span class="p">,</span>
+                                        <span class="s2">&quot;mediaAgent&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                            <span class="s2">&quot;mediaAgentName&quot;</span><span class="p">:</span> <span class="n">media_agent_name</span>
+                                        <span class="p">}</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;adminOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;archiveCheckOption&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;jobsToVerify&quot;</span><span class="p">:</span> <span class="n">jobs_to_verify</span><span class="p">,</span>
+                                <span class="p">}</span>
+                            <span class="p">},</span>
+                            <span class="s2">&quot;commonOpts&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;jobDescription&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_description&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">data_verf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;CREATE_TASK&#39;</span><span class="p">]</span>
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span>
+            <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">data_verf</span><span class="p">,</span> <span class="n">request</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;jobIds&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="n">Job</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;jobIds&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s2">&quot;errorCode&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                    <span class="n">error_message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;errorMessage&#39;</span><span class="p">]</span>
+                    <span class="n">o_str</span> <span class="o">=</span> <span class="s1">&#39;Data verification Request failed. Error: &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="n">o_str</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="s1">&#39;109&#39;</span><span class="p">)</span>
@@ -3012,6 +3125,8 @@
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">_dedupe_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dedupeFlags&#39;</span><span class="p">)</span>
 
+                <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_copy_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mediaAgent&#39;</span><span class="p">)</span>
+
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -3271,6 +3386,11 @@
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;110&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_copy_properties</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">media_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets the media agent name of the copy&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_media_agent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mediaAgentName&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="StoragePolicyCopy.delete_job"><a class="viewcode-back" href="../../../source/cvpysdk.policies.html#cvpysdk.policies.storage_policies.StoragePolicyCopy.delete_job">[docs]</a>    <span class="k">def</span> <span class="nf">delete_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

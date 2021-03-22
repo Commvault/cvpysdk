@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients.virtualserver.hyperv &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclients.virtualserver.hyperv &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -694,7 +694,8 @@
             <span class="n">azure_client</span><span class="p">,</span>
             <span class="n">vm_to_restore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">resource_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">storage_account</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">storage_account</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">datacenter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">proxy_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">power_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -702,7 +703,12 @@
             <span class="n">public_ip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">restore_as_managed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">copy_precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">disk_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">restore_option</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">networkDisplayName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">networkrsg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">destsubid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">subnetId</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">                This converts the Hyperv VM to AzureRM</span>
 <span class="sd">                Args:</span>
@@ -741,6 +747,16 @@
 
 <span class="sd">                        proxy_client      (basestring):   destination proxy client</span>
 
+<span class="sd">                        networkDisplayName(basestring):   destination network display name</span>
+
+<span class="sd">                        networkrsg        (basestring):   destination network display name&#39;s security group</span>
+
+<span class="sd">                        destsubid         (basestring):   destination subscription id</span>
+
+<span class="sd">                        subnetId          (basestring):   destination subet id</span>
+
+
+
 <span class="sd">                    Returns:</span>
 <span class="sd">                        object - instance of the Job class for this restore job</span>
 
@@ -758,6 +774,11 @@
         <span class="k">if</span> <span class="n">restore_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">restore_option</span> <span class="o">=</span> <span class="p">{}</span>
 
+        <span class="k">if</span> <span class="n">vm_to_restore</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vm_to_restore</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">vm_to_restore</span> <span class="o">=</span> <span class="p">[</span><span class="n">vm_to_restore</span><span class="p">]</span>
         <span class="c1"># check mandatory input parameters are correct</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">azure_client</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -773,6 +794,7 @@
             <span class="n">vcenter_client</span><span class="o">=</span><span class="n">azure_client</span><span class="p">,</span>
             <span class="n">datastore</span><span class="o">=</span><span class="n">storage_account</span><span class="p">,</span>
             <span class="n">esx_host</span><span class="o">=</span><span class="n">resource_group</span><span class="p">,</span>
+            <span class="n">datacenter</span><span class="o">=</span><span class="n">datacenter</span><span class="p">,</span>
             <span class="n">unconditional_overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">client_name</span><span class="o">=</span><span class="n">proxy_client</span><span class="p">,</span>
             <span class="n">power_on</span><span class="o">=</span><span class="n">power_on</span><span class="p">,</span>
@@ -783,7 +805,11 @@
             <span class="n">instanceSize</span><span class="o">=</span><span class="n">instance_size</span><span class="p">,</span>
             <span class="n">volume_level_restore</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">destination_instance</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
-            <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span>
+            <span class="n">backupset_client_name</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+            <span class="n">networkDisplayName</span><span class="o">=</span><span class="n">networkDisplayName</span><span class="p">,</span>
+            <span class="n">networkrsg</span><span class="o">=</span><span class="n">networkrsg</span><span class="p">,</span>
+            <span class="n">destsubid</span><span class="o">=</span><span class="n">destsubid</span><span class="p">,</span>
+            <span class="n">subnetId</span><span class="o">=</span><span class="n">subnetId</span>
         <span class="p">)</span>
 
         <span class="n">request_json</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_fullvm_restore_json</span><span class="p">(</span><span class="n">restore_option</span><span class="p">)</span>

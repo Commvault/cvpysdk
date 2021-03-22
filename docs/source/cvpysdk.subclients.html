@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclients package &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclients package &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -236,6 +236,7 @@
 <li class="toctree-l2"><a class="reference internal" href="cvpysdk.subclients.virtualserver.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html">cvpysdk.subclients.virtualserver.livesync package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html#module-cvpysdk.subclients.virtualserver.livesync.amazon_live_sync">cvpysdk.subclients.virtualserver.livesync.amazon_live_sync module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html#module-cvpysdk.subclients.virtualserver.livesync.azure_live_sync">cvpysdk.subclients.virtualserver.livesync.azure_live_sync module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html#module-cvpysdk.subclients.virtualserver.livesync.hyperv_live_sync">cvpysdk.subclients.virtualserver.livesync.hyperv_live_sync module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="cvpysdk.subclients.virtualserver.livesync.html#module-cvpysdk.subclients.virtualserver.livesync.vmware_live_sync">cvpysdk.subclients.virtualserver.livesync.vmware_live_sync module</a></li>
@@ -973,6 +974,7 @@ File System subclient</p>
 <blockquote>
 <div><p><strong>pre_post_commands</strong>                             –  Sets the pre/post commands for the subclient.</p>
 <p><strong>backup_nodes</strong>                      –  Sets backup nodes for FS Agent under Network Share clients.</p>
+<p><strong>impersonate_user</strong>                  –  Impersonation information for the subclient.</p>
 </div></blockquote>
 </div></blockquote>
 <dl class="py class">
@@ -1378,6 +1380,12 @@ to_time=‘2016-04-31 12:00:00’</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.impersonate_user">
+<em class="property">property </em><code class="sig-name descname">impersonate_user</code><a class="headerlink" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.impersonate_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the username ONLY and applicable to Windows FS subclients only.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.index_pruning_cycles_retention">
 <em class="property">property </em><code class="sig-name descname">index_pruning_cycles_retention</code><a class="headerlink" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.index_pruning_cycles_retention" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns number of cycles to be maintained in index by index pruning for the subclient</p>
@@ -1508,6 +1516,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -1604,6 +1616,10 @@ This is an OPTIONAL key.</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -1977,6 +1993,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -2065,6 +2085,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -3530,24 +3554,38 @@ and to perform operations on that subclient</p>
 <p>Derived class from Subclient Base class, representing a Sharepoint subclient,
 and to perform operations on that subclient.</p>
 <dl class="py method">
-<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.associate_site_collections_and_webs">
-<code class="sig-name descname">associate_site_collections_and_webs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">site_user_accounts_list</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.associate_site_collections_and_webs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.associate_site_collections_and_webs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Associates the specified site collections/webs</p>
-<p>Args:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>site_user_accounts_list   (list)   –  list of user accounts of all sites</dt><dd><p>It has all information of sites/webs</p>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.backup">
+<code class="sig-name descname">backup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backup_level</span><span class="o">=</span><span class="default_value">'Incremental'</span></em>, <em class="sig-param"><span class="n">incremental_backup</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">incremental_level</span><span class="o">=</span><span class="default_value">'BEFORE_SYNTH'</span></em>, <em class="sig-param"><span class="n">collect_metadata</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">advanced_options</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a backup job for the subclient of the level specified.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>backup_level            (str)   –  level of backup the user wish to run</dt><dd><p>Full / Incremental</p>
+</dd>
+<dt>incremental_backup      (bool)  –  run incremental backup</dt><dd><p>only applicable in case of Synthetic_full backup</p>
+</dd>
+<dt>incremental_level       (str)   –  run incremental backup before/after synthetic full</dt><dd><p>BEFORE_SYNTH / AFTER_SYNTH
+only applicable in case of Synthetic_full backup</p>
 </dd>
 </dl>
+<p>collect_metadata        (bool)  –  Collect Meta data for the backup</p>
+<dl class="simple">
+<dt>advanced_options       (dict)  –  advanced backup options to be included while</dt><dd><p>making the request</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this backup job if its an immediate Job</p>
+<blockquote>
+<div><p>instance of the Schedule class for the backup job if its a scheduled Job</p>
 </div></blockquote>
-<p>Raises:</p>
-<blockquote>
-<div><p>SDKException:</p>
-<blockquote>
-<div><p>if response is empty</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if backup level specified is not correct</p>
+<p>if response is empty</p>
 <p>if response is not success</p>
-</div></blockquote>
-</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -3564,7 +3602,7 @@ For all Non-Associated Web/Sites = 7</p>
 </div></blockquote>
 <p>Returns:</p>
 <blockquote>
-<div><p>web_content     (dict)  –  dictionary of web content</p>
+<div><p>site_dict     (dict)    –  dictionary of sites properties</p>
 <p>no_of_records   (int)   –  no of records</p>
 </div></blockquote>
 <p>Raises:</p>
@@ -3573,6 +3611,35 @@ For all Non-Associated Web/Sites = 7</p>
 <blockquote>
 <div><p>if response is empty</p>
 <p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.configure_group_for_backup">
+<code class="sig-name descname">configure_group_for_backup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">discovery_type</span></em>, <em class="sig-param"><span class="n">association_group_name</span></em>, <em class="sig-param"><span class="n">plan_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.configure_group_for_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.configure_group_for_backup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures group for backup</p>
+<p>Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>discovery_type  (int)       –  type of discovery for content</dt><dd><p>All Web Sites - 9
+All Groups And Teams Sites - 10
+All Project Online Sites - 11</p>
+</dd>
+<dt>association_group_name(str) –  type of association</dt><dd><p>Example: All Web Sites, All Groups And Teams Sites,
+All Project Online Sites</p>
+</dd>
+</dl>
+<p>plan_id (int)               –  id of office 365 plan</p>
+</div></blockquote>
+<p>Raises:</p>
+<blockquote>
+<div><p>SDKException:</p>
+<blockquote>
+<div><p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
 </div></blockquote>
 </div></blockquote>
 </dd></dl>
@@ -3585,6 +3652,87 @@ For all Non-Associated Web/Sites = 7</p>
 <dt>Returns:</dt><dd><p>list - list of content associated with the subclient</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.disk_restore">
+<code class="sig-name descname">disk_restore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em>, <em class="sig-param"><span class="n">destination_client</span></em>, <em class="sig-param"><span class="n">destination_path</span></em>, <em class="sig-param"><span class="n">disk_restore_type</span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">in_place</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.disk_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.disk_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the sharepoint libraries/list specified in the input paths list to the same location.</p>
+<dl>
+<dt>value:</dt><dd><blockquote>
+<div><p>paths                   (list)  –  list of paths of lists/libraries to restore</p>
+<p>destination_client              –  client where the lists/libraries needs to be restored</p>
+<p>destination_path                –  path where the lists/libraries needs to be restored</p>
+<p>disk_restore_type               –  type of disk restore</p>
+<dl class="simple">
+<dt>unconditional_overwrite (bool)  –  unconditional overwrite files during restore</dt><dd><p>default: True</p>
+</dd>
+<dt>in_place               (bool)   –  in place restore set to false by default</dt><dd><p>default: False</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
+</dd>
+<dt>Raises:</dt><dd><p>SDKException:</p>
+<blockquote>
+<div><p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.out_of_place_restore">
+<code class="sig-name descname">out_of_place_restore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em>, <em class="sig-param"><span class="n">destination_path</span></em>, <em class="sig-param"><span class="n">overwrite</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.out_of_place_restore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.out_of_place_restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restores the SharePoint list/libraries specified in the input paths list to the different site</p>
+<dl>
+<dt>Args:</dt><dd><p>paths                   (list)  –  list of paths of SharePoint list/libraries to restore</p>
+<p>destination_path        (str)   –  path where the SharePoint Site where list/libraries needs to be restored</p>
+<dl class="simple">
+<dt>overwrite               (bool)  –  unconditional overwrite files during restore</dt><dd><p>default: True</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this restore job</p>
+</dd>
+<dt>Raises:</dt><dd><dl>
+<dt>SDKException:</dt><dd><p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.process_index_retention_rules">
+<code class="sig-name descname">process_index_retention_rules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index_server_client_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.process_index_retention_rules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.process_index_retention_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes API call to process index retention rules</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Args:</dt><dd><p>index_server_client_id (int)  –  client id of index server</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Raises:</p>
+<blockquote>
+<div><p>SDKException:</p>
+<blockquote>
+<div><p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -3612,23 +3760,35 @@ For all Non-Associated Web/Sites = 7</p>
 
 <dl class="py method">
 <dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.restore_in_place">
-<code class="sig-name descname">restore_in_place</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paths</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.restore_in_place" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">restore_in_place</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.restore_in_place"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.restore_in_place" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs a in-place restore job on the specified Sharepoint pseudo client
 This is used by Sharepoint V2 pseudo client</p>
 <blockquote>
-<div><p>Args:</p>
+<div><blockquote>
+<div><p>Kwargs:</p>
 <blockquote>
 <div><p>paths     (list)   –  list of sites or webs to be restored
 Example: [</p>
 <blockquote>
-<div><p>“MBhttps://cvdevtenant.sharepoint.com/sites/TestSite/Shared DocumentsTestFolder”,
-“MBhttps://cvdevtenant.sharepoint.com/sites/TestSite/ListsTestList”
+<div><p>“MBhttps://cvdevtenant.sharepoint.com/sites/TestSiteContentsShared Documents”,
+“MBhttps://cvdevtenant.sharepoint.com/sites/TestSiteContentsTest Automation List”
 ]</p>
 </div></blockquote>
 </div></blockquote>
 <p>Returns:</p>
 <blockquote>
 <div><p>Job object</p>
+</div></blockquote>
+</div></blockquote>
+<p>Raises:</p>
+<blockquote>
+<div><p>SDKException:</p>
+<blockquote>
+<div><p>if paths is not a list</p>
+<p>if failed to initialize job</p>
+<p>if response is empty</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd></dl>
@@ -3644,6 +3804,7 @@ Example: [</p>
 <div><p>if failed to initialize job</p>
 <p>if response is empty</p>
 <p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
 </div></blockquote>
 </div></blockquote>
 </dd></dl>
@@ -3652,6 +3813,68 @@ Example: [</p>
 <dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.sharepoint_subclient_prop">
 <em class="property">property </em><code class="sig-name descname">sharepoint_subclient_prop</code><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.sharepoint_subclient_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>getter for sql server subclient properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_auto_association_group_properties">
+<code class="sig-name descname">update_auto_association_group_properties</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">discovery_type</span></em>, <em class="sig-param"><span class="n">association_group_name</span></em>, <em class="sig-param"><span class="n">account_status</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plan_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.update_auto_association_group_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_auto_association_group_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associates the content for backup based on provided group</p>
+<p>Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>discovery_type  (int)       –  type of discovery for content</dt><dd><p>All Web Sites - 9
+All Groups And Teams Sites - 10
+All Project Online Sites - 11</p>
+</dd>
+<dt>association_group_name(str) –  type of association</dt><dd><p>Example: All Web Sites, All Groups And Teams Sites,
+All Project Online Sites</p>
+</dd>
+<dt>account_status  (int)       –  type of operation to be performed</dt><dd><p>enable - 0
+remove - 1
+disable - 2</p>
+</dd>
+</dl>
+<p>plan_id (int)               –  id of office 365 plan</p>
+</div></blockquote>
+<p>Raises:</p>
+<blockquote>
+<div><p>SDKException:</p>
+<blockquote>
+<div><p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_sites_association_properties">
+<code class="sig-name descname">update_sites_association_properties</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">site_user_accounts_list</span></em>, <em class="sig-param"><span class="n">operation</span></em>, <em class="sig-param"><span class="n">plan_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/sharepointsubclient.html#SharepointSubclient.update_sites_association_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_sites_association_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the association properties of site</p>
+<p>Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>site_user_accounts_list (list)   –  list of user accounts of all sites</dt><dd><p>It has all information of sites/webs</p>
+</dd>
+<dt>operation (int)                  –  type of operation to be performed</dt><dd><dl class="simple">
+<dt>Example: 1 - Associate</dt><dd><p>2 - Enable
+3 - Disable
+4 - Remove</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>plan_id (int)                    –  id of office 365 plan</p>
+</div></blockquote>
+<p>Raises:</p>
+<blockquote>
+<div><p>SDKException:</p>
+<blockquote>
+<div><p>if response is empty</p>
+<p>if response is not success</p>
+<p>if the method is called by SharePoint On-Premise Instance</p>
+</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>
@@ -3967,6 +4190,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -4055,6 +4282,10 @@ validate_only       : To validate data backed up for restore</p>
 <div><p>Options:</p>
 <blockquote>
 <div><p>job_description (str)   –  Restore job description</p>
+<p>timezone        (str)   –  Timezone to be used for restore</p>
+<blockquote>
+<div><p><strong>Note</strong> make use of TIMEZONES dict in constants.py to pass timezone</p>
+</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 </dd>
@@ -4483,7 +4714,7 @@ backup_copy_type                –  Backup Copy level using storage policy</p>
 
 <dl class="py method">
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse">
-<code class="sig-name descname">browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vm_path</span><span class="o">=</span><span class="default_value">'\\'</span></em>, <em class="sig-param"><span class="n">show_deleted_files</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">vm_disk_browse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">vm_files_browse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'browse'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vm_path</span><span class="o">=</span><span class="default_value">'\\'</span></em>, <em class="sig-param"><span class="n">show_deleted_files</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">vm_disk_browse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">vm_files_browse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'browse'</span></em>, <em class="sig-param"><span class="n">copy_precedence</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the content of the backup for this subclient at the path
 specified.</p>
 <blockquote>
@@ -4505,6 +4736,7 @@ default: False</p>
 </dd>
 </dl>
 <p>operation            (str)   – Type of operation, browser of find</p>
+<p>copy_precedence      (int)   – The copy precedence to do the operation from</p>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>list - list of all folders or files with their full paths</dt><dd><p>inside the input path</p>
@@ -4664,10 +4896,12 @@ default: 0</p>
 
 <dl class="py method">
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">
-<code class="sig-name descname">get_nics_from_browse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.get_nics_from_browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_nics_from_browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">copy_precedence</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.get_nics_from_browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Browses the vm to get the nics info xml, gets the nics info using
 the parse_nics_xml method and prepares the dict for nics json</p>
 <dl class="simple">
+<dt>Args:</dt><dd><p>copy_precedence     (int)   –  The copy precedence to do browse from</p>
+</dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>dict:   –   dict with key as vm_name and the value as the</dt><dd><p>nics info for that vm</p>
 </dd>
@@ -4873,7 +5107,7 @@ name                        - name of the VM to be restored</p>
 
 <dl class="py method">
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">
-<code class="sig-name descname">vm_files_browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vm_path</span><span class="o">=</span><span class="default_value">'\\'</span></em>, <em class="sig-param"><span class="n">show_deleted_files</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'browse'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.vm_files_browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">vm_files_browse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vm_path</span><span class="o">=</span><span class="default_value">'\\'</span></em>, <em class="sig-param"><span class="n">show_deleted_files</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">operation</span><span class="o">=</span><span class="default_value">'browse'</span></em>, <em class="sig-param"><span class="n">copy_precedence</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/subclients/vssubclient.html#VirtualServerSubclient.vm_files_browse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Browses the Files and Folders of a Virtual Machine.</p>
 <dl>
 <dt>Args:</dt><dd><dl class="simple">
@@ -4885,6 +5119,8 @@ content</p>
 default: False</p>
 </dd>
 </dl>
+<p>operation           (str)   –  The type of operation to perform (browse/find)</p>
+<p>copy_precedence     (int)   –  The copy precedence to do browse from</p>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>list - list of all folders or files with their full paths</dt><dd><p>inside the input path</p>
@@ -4969,6 +5205,7 @@ default: 0</p>
 </div>
 <div class="section" id="module-cvpysdk.subclients">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk.subclients" title="Permalink to this headline">¶</a></h2>
+<p>Initialize Subclients for the SDK.</p>
 </div>
 </div>
 

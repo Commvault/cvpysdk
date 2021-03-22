@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.deployment.install &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -495,7 +495,8 @@
             <span class="n">install_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">log_file_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">client_group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">storage_policy_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Installs the features selected on the given machines</span>
 <span class="sd">        Args:</span>
@@ -537,6 +538,11 @@
 
 <span class="sd">                 default : None</span>
 
+<span class="sd">            **kwargs: (dict) -- Key value pairs for supporting conditional initializations</span>
+<span class="sd">            Supported -</span>
+<span class="sd">            install_flags (dict) - dictionary of install flag values</span>
+<span class="sd">            Ex : install_flags = {&quot;preferredIPFamily&quot;:2, &quot;install32Base&quot;:True}</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">                object - instance of the Job class for this install_software job</span>
 
@@ -567,7 +573,8 @@
 <span class="sd">                                install_path=&#39;C:\\Temp,</span>
 <span class="sd">                                log_file_loc=&#39;/var/log&#39;,</span>
 <span class="sd">                                client_group_name=[My_Servers],</span>
-<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;)</span>
+<span class="sd">                                storage_policy_name=&#39;My_Storage_Policy&#39;,</span>
+<span class="sd">                                install_flags={&quot;preferredIPFamily&quot;:2})</span>
 
 <span class="sd">                    **NOTE:** Either Unix or Windows clients_computers should be chosen and</span>
 <span class="sd">                    not both</span>
@@ -609,6 +616,8 @@
             <span class="n">selected_client_groups</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;clientGroupName&#39;</span><span class="p">:</span> <span class="n">client_group</span><span class="p">}</span>
                                       <span class="k">for</span> <span class="n">client_group</span> <span class="ow">in</span> <span class="n">client_group_name</span><span class="p">]</span>
 
+        <span class="n">install_flags</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;install_flags&#39;</span><span class="p">)</span>
+
         <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;taskInfo&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -645,7 +654,7 @@
                                             <span class="s2">&quot;allowMultipleInstances&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                                             <span class="s2">&quot;restoreOnlyAgents&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;killBrowserProcesses&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-                                            <span class="s2">&quot;install32Base&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                            <span class="s2">&quot;install32Base&quot;</span><span class="p">:</span> <span class="n">install_flags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;install32Base&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">install_flags</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;disableOSFirewall&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;stopOracleServices&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;skipClientsOfCS&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -653,6 +662,7 @@
                                             <span class="s2">&quot;ignoreJobsRunning&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;forceReboot&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                             <span class="s2">&quot;overrideClientInfo&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                            <span class="s2">&quot;preferredIPFamily&quot;</span><span class="p">:</span> <span class="n">install_flags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preferredIPFamily&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">install_flags</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
                                             <span class="s2">&quot;firewallInstall&quot;</span><span class="p">:</span> <span class="p">{</span>
                                                 <span class="s2">&quot;enableFirewallConfig&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                                                 <span class="s2">&quot;firewallConnectionType&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>

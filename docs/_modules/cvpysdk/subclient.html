@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.subclient &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -200,7 +200,11 @@
 
 <span class="sd">    add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump</span>
 
+<span class="sd">    add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.</span>
+
 <span class="sd">    add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset</span>
+
+<span class="sd">    add_onedrive_subclient()   --  adds a new onedrive subclient to the instance</span>
 
 <span class="sd">    get(subclient_name)         --  returns the subclient object of the input subclient name</span>
 
@@ -1056,6 +1060,109 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Subclients.add_postgresql_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_postgresql_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_postgresql_subclient</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">subclient_name</span><span class="p">,</span> <span class="n">storage_policy</span><span class="p">,</span>
+            <span class="n">contents</span><span class="p">,</span> <span class="n">no_of_streams</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">collect_object_list</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new postgresql subclient to the backupset.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_name          (str)   --  name of the new subclient to add</span>
+
+<span class="sd">                storage_policy          (str)   --  name of the storage policy to be associated</span>
+<span class="sd">                with the subclient</span>
+
+<span class="sd">                contents                (list)  --  database list to be added as subclient content</span>
+
+
+<span class="sd">                no_of_streams           (int)   --  No of backup streams to be used</span>
+
+<span class="sd">                    default: 1</span>
+
+<span class="sd">                collect_object_list     (bool)  --  Boolean flag to determine if collect object</span>
+<span class="sd">                list needs to be enabled for subclient or not</span>
+
+<span class="sd">                    default: False</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Subclient class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if subclient name argument is not of type string</span>
+
+<span class="sd">                    if storage policy argument is not of type string</span>
+
+<span class="sd">                    if conetnts argument is not of type list</span>
+
+<span class="sd">                    if contents is empty list</span>
+
+<span class="sd">                    if failed to create subclient</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if subclient already exists with the given name</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_policy</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">storage_policies</span><span class="o">.</span><span class="n">has_policy</span><span class="p">(</span>
+                <span class="n">storage_policy</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Storage Policy: &quot;</span><span class="si">{0}</span><span class="s1">&quot; does not exist in the Commcell&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">storage_policy</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">contents</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;102&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Content list cannot be empty&#39;</span>
+            <span class="p">)</span>
+
+        <span class="n">content_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">contents</span><span class="p">:</span>
+            <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;postgreSQLContent&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;databaseName&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">}})</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;contentOperationType&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;backupsetName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_name</span><span class="p">,</span>
+                    <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;storageDevice&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;dataBackupStoragePolicy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;storagePolicyName&quot;</span><span class="p">:</span> <span class="n">storage_policy</span>
+                        <span class="p">}</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;postgreSQLSubclientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;numberOfBackupStreams&quot;</span><span class="p">:</span> <span class="n">no_of_streams</span><span class="p">,</span>
+                    <span class="s2">&quot;collectObjectListDuringBackup&quot;</span><span class="p">:</span> <span class="n">collect_object_list</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content_list</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Subclients.add_virtual_server_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_virtual_server_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_virtual_server_subclient</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">subclient_name</span><span class="p">,</span>
@@ -1188,6 +1295,100 @@
                     <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Either Plan or Storage policy should be given as input&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Subclients.add_onedrive_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclients.add_onedrive_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">add_onedrive_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                               <span class="n">subclient_name</span><span class="p">,</span>
+                               <span class="n">server_plan</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;Adds a new subclient to the backupset.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                subclient_name     (str)   --  name of the new subclient to add</span>
+
+<span class="sd">                server_plan     (str)   --  name of the server plan to be associated</span>
+<span class="sd">                                                with the subclient</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object  -   instance of the Subclient class</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if subclient name argument is not of type string</span>
+
+<span class="sd">                    if server plan argument is not of type string</span>
+
+<span class="sd">                    if description argument is not of type string</span>
+
+<span class="sd">                    if failed to create subclient</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">                    if subclient already exists with the given name</span>
+
+<span class="sd">                    if server plan  donot exists with the given name</span>
+
+<span class="sd">                &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">server_plan</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_subclient</span><span class="p">(</span><span class="n">subclient_name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span>
+                <span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Subclient &quot;</span><span class="si">{0}</span><span class="s1">&quot; already exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">subclient_name</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">has_backupset</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">default_backup_set</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">default_backup_set</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">backupsets</span><span class="o">.</span><span class="n">all_backupsets</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">has_plan</span><span class="p">(</span><span class="n">server_plan</span><span class="p">):</span>
+            <span class="n">server_plan_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">server_plan</span><span class="p">)</span>
+            <span class="n">server_plan_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">server_plan_object</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Plan&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Provide Valid Plan Name&#39;</span><span class="p">)</span>
+
+        <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;subClientProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;subClientEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;clientName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_name</span><span class="p">,</span>
+                    <span class="s2">&quot;instanceName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_name</span><span class="p">,</span>
+                    <span class="s2">&quot;backupsetId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backupset_object</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">),</span>
+                    <span class="s2">&quot;instanceId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance_object</span><span class="o">.</span><span class="n">instance_id</span><span class="p">),</span>
+                    <span class="s2">&quot;clientId&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_client_object</span><span class="o">.</span><span class="n">client_id</span><span class="p">),</span>
+                    <span class="s2">&quot;appName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_name</span><span class="p">,</span>
+                    <span class="s2">&quot;applicationId&quot;</span><span class="p">:</span> <span class="mi">134</span><span class="p">,</span>
+                    <span class="s2">&quot;subclientName&quot;</span><span class="p">:</span> <span class="n">subclient_name</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;planEntity&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;planId&quot;</span><span class="p">:</span> <span class="n">server_plan_id</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;cloudAppsSubClientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;instanceType&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+                    <span class="s2">&quot;oneDriveSubclient&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;enableOneNote&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;isEnterprise&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;cloudconnectorSubclientProp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;isAutoDiscoveryEnabled&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;commonProperties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;enableBackup&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_add_request</span><span class="p">(</span><span class="n">request_json</span><span class="p">)</span></div>
 
@@ -2119,6 +2320,8 @@
 <span class="sd">                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format</span>
 <span class="sd">                    format: YYYY-MM-DD HH:mm:ss</span>
 
+<span class="sd">                **Note** In case of linux CommServer provide time in GMT timezone</span>
+
 <span class="sd">            Raises:</span>
 <span class="sd">                SDKException:</span>
 <span class="sd">                    if time value entered is less than the current time</span>
@@ -2139,7 +2342,7 @@
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Subclient&#39;</span><span class="p">,</span> <span class="s1">&#39;109&#39;</span><span class="p">)</span>
 
         <span class="n">enable_backup_at_time</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="s2">&quot;(UTC) Coordinated Universal Time&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;TimeZoneName&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">default_timezone</span><span class="p">,</span>
             <span class="s2">&quot;timeValue&quot;</span><span class="p">:</span> <span class="n">enable_time</span>
         <span class="p">}</span>
 
@@ -2274,6 +2477,21 @@
             <span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_backup_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Subclient.get_ma_associated_storagepolicy"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">[docs]</a>    <span class="k">def</span> <span class="nf">get_ma_associated_storagepolicy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get Media agents associated with storage policy</span>
+<span class="sd">        </span>
+<span class="sd">        Raise Exception:</span>
+<span class="sd">                if unable to get MA names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subclient_properties</span><span class="p">[</span><span class="s1">&#39;commonProperties&#39;</span><span class="p">][</span><span class="s1">&#39;storageDevice&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;performanceMode&#39;</span> <span class="ow">in</span> <span class="n">storage</span><span class="p">:</span>
+            <span class="n">data_backup_storage_device</span> <span class="o">=</span> <span class="n">storage</span><span class="p">[</span><span class="s1">&#39;performanceMode&#39;</span><span class="p">][</span><span class="s2">&quot;perfCRCDetails&quot;</span><span class="p">]</span>
+            <span class="n">malist</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">each_ma</span> <span class="ow">in</span> <span class="n">data_backup_storage_device</span> <span class="p">:</span>
+                <span class="n">malist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">each_ma</span><span class="p">[</span><span class="s1">&#39;perfMa&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">malist</span></div>
 
 <div class="viewcode-block" id="Subclient.browse"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.subclient.Subclient.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the content of the Subclient.</span>
@@ -2454,6 +2672,10 @@
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
 
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
+
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>
 <span class="sd">                         instance of the Schedule class for this restore job if its a scheduled Job</span>
@@ -2559,6 +2781,10 @@
 <span class="sd">                    Options:</span>
 
 <span class="sd">                        job_description (str)   --  Restore job description</span>
+
+<span class="sd">                        timezone        (str)   --  Timezone to be used for restore</span>
+
+<span class="sd">                            **Note** make use of TIMEZONES dict in constants.py to pass timezone</span>
 
 <span class="sd">            Returns:</span>
 <span class="sd">                object - instance of the Job class for this restore job if its an immediate Job</span>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.activate_entity &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.activate_entity &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -229,7 +229,9 @@
 
 <span class="sd">    **display_name**      --  returns the display name of the regex entity</span>
 
-<span class="sd">    **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived)</span>
+<span class="sd">    **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)</span>
+
+<span class="sd">    **entity_xml**        --  returns the entity xml associated with this entity</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -608,6 +610,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_entity_type</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_enabled</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_xml</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_category_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">entity_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_entity_id</span><span class="p">(</span><span class="n">entity_name</span><span class="p">)</span>
@@ -728,6 +731,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_enabled</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityKey&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_entity_type</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityType&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_xml</span> <span class="o">=</span> <span class="n">regex_entity_dict</span><span class="p">[</span><span class="s1">&#39;entityXML&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">regex_entity_dict</span>
 
     <span class="nd">@property</span>
@@ -759,6 +763,11 @@
     <span class="k">def</span> <span class="nf">entity_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the entity key attribute.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_key</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entity_xml</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the entity xml attribute.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_xml</span>
 
 <div class="viewcode-block" id="ActivateEntity.refresh"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.activate_entity.ActivateEntity.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Refresh the regex entity details for associated object&quot;&quot;&quot;</span>

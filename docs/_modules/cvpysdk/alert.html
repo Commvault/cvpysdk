@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.alert &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.alert &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -201,6 +201,8 @@
 <span class="sd">    delete(alert_name)          --  removes the alerts from the commcell of the specified alert</span>
 
 <span class="sd">    console_alerts()            --  returns the list of all console alerts</span>
+
+<span class="sd">    console_alert()             -- returns console alert details for a console alert with given livefeedid</span>
 
 <span class="sd">    refresh()                   --   refresh the alerts associated with the commcell</span>
 
@@ -725,6 +727,10 @@
 <span class="sd">                    if response is empty</span>
 
 <span class="sd">                    if response is not success</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                str - String representation of console alerts if version is less than SP23</span>
+<span class="sd">                object - json response object for console alerts if version greater than or equal to SP23</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">page_number</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">page_count</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
@@ -736,6 +742,9 @@
 
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;totalNoOfAlerts&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">commserv_version</span> <span class="o">&gt;=</span> <span class="mi">23</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
                 <span class="n">o_str</span> <span class="o">=</span> <span class="s2">&quot;Total Console Alerts found: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;totalNoOfAlerts&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
@@ -753,6 +762,40 @@
                     <span class="p">)</span>
 
                 <span class="k">return</span> <span class="n">o_str</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="n">response_string</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Alerts.console_alert"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.alert.Alerts.console_alert">[docs]</a>    <span class="k">def</span> <span class="nf">console_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">live_feed_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the console console alert with given live_feed_id</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                live_feed_id (int)  --  Live feed ID of console alert to fetch</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                SDKException:</span>
+<span class="sd">                    if type of the live_feed_id argument is not int</span>
+
+<span class="sd">                    if response is empty</span>
+
+<span class="sd">                    if response is not success</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                object - Console alert json object for given live_feed_id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">live_feed_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Alert&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">)</span>
+
+        <span class="n">console_alerts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_services</span><span class="p">[</span><span class="s1">&#39;GET_CONSOLE_ALERT&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">live_feed_id</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cvpysdk_object</span><span class="o">.</span><span class="n">make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">console_alerts</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;description&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>

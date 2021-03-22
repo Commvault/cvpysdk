@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.backupset &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -1130,7 +1130,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_on_demand_backupset</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backupset_association</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plan_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">schedules</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1222,11 +1223,9 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;commonBackupSet&quot;</span><span class="p">][</span><span class="s2">&quot;userDescription&quot;</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="s2">&quot;planName&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;planEntity&quot;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;planEntity&quot;</span><span class="p">][</span><span class="s2">&quot;planName&quot;</span><span class="p">]</span>
-                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plan_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_properties</span><span class="p">[</span><span class="s2">&quot;planEntity&quot;</span><span class="p">][</span><span class="s2">&quot;planName&quot;</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plan_name</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1744,6 +1743,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Response&#39;</span><span class="p">,</span> <span class="s1">&#39;101&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_response_</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 
+
     <span class="k">def</span> <span class="nf">_do_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">retry</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs a browse operation with the given options.</span>
 
@@ -1774,6 +1774,9 @@
                 <span class="k">break</span>
             <span class="n">attempt</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_browse_response</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+    
+    
+
 
 <div class="viewcode-block" id="Backupset.update_properties"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.update_properties">[docs]</a>    <span class="k">def</span> <span class="nf">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">properties_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates the backupset properties</span>
@@ -1857,7 +1860,13 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">plan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Treats the backupset plan as a property of the Backupset class.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plan_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">guid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1931,7 +1940,7 @@
 <span class="sd">            Args:</span>
 <span class="sd">                value   (object)    --  the Plan object which is to be associated</span>
 <span class="sd">                                        with the backupset</span>
-<span class="sd">                </span>
+
 <span class="sd">                value   (str)       --  name of the plan which is to be associated</span>
 <span class="sd">                                        with the backupset</span>
 
@@ -1948,13 +1957,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.plan</span> <span class="kn">import</span> <span class="n">Plan</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Plan</span><span class="p">):</span>
-            <span class="n">plan_obj</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-            <span class="n">plan_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commcell_object</span><span class="o">.</span><span class="n">plans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">plan_obj</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;planName&#39;</span><span class="p">:</span> <span class="kc">None</span>
-            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SDKException</span><span class="p">(</span><span class="s1">&#39;Backupset&#39;</span><span class="p">,</span> <span class="s1">&#39;102&#39;</span><span class="p">,</span> <span class="s1">&#39;Input value is not of supported type&#39;</span><span class="p">)</span>
 
@@ -1964,15 +1971,15 @@
             <span class="s1">&#39;appId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_agent_object</span><span class="o">.</span><span class="n">agent_id</span><span class="p">),</span>
             <span class="s1">&#39;backupsetId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backupset_id</span><span class="p">)</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_name</span> <span class="ow">in</span> <span class="n">plans_obj</span><span class="o">.</span><span class="n">get_eligible_plans</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span><span class="o">.</span><span class="n">plan_name</span> <span class="ow">in</span> <span class="n">plans_obj</span><span class="o">.</span><span class="n">get_eligible_plans</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">):</span>
             <span class="n">request_json</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;backupsetProperties&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;planEntity&#39;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s1">&#39;planSubtype&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_obj</span><span class="o">.</span><span class="n">subtype</span><span class="p">),</span>
+                        <span class="s1">&#39;planSubtype&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span><span class="o">.</span><span class="n">subtype</span><span class="p">),</span>
                         <span class="s1">&#39;_type_&#39;</span><span class="p">:</span> <span class="mi">158</span><span class="p">,</span>
-                        <span class="s1">&#39;planType&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_type</span><span class="p">),</span>
-                        <span class="s1">&#39;planName&#39;</span><span class="p">:</span> <span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_name</span><span class="p">,</span>
-                        <span class="s1">&#39;planId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_obj</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+                        <span class="s1">&#39;planType&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span><span class="o">.</span><span class="n">plan_type</span><span class="p">),</span>
+                        <span class="s1">&#39;planName&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span><span class="o">.</span><span class="n">plan_name</span><span class="p">,</span>
+                        <span class="s1">&#39;planId&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_plan_obj</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
                     <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">}</span>
@@ -2008,6 +2015,7 @@
                 <span class="s1">&#39;102&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;Plan not eligible to be associated with the backupset&#39;</span>
             <span class="p">)</span>
+
 
 <div class="viewcode-block" id="Backupset.set_default_backupset"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.set_default_backupset">[docs]</a>    <span class="k">def</span> <span class="nf">set_default_backupset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the backupset represented by this Backupset class instance as the default backupset</span>
@@ -2066,6 +2074,8 @@
             <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">return_list</span></div>
+
+
 
 <div class="viewcode-block" id="Backupset.browse"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.browse">[docs]</a>    <span class="k">def</span> <span class="nf">browse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Browses the content of the Backupset.</span>
@@ -2200,6 +2210,27 @@
             <span class="n">options</span><span class="p">[</span><span class="s1">&#39;filters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;FileSize&#39;</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;file_size_et&#39;</span><span class="p">],</span> <span class="s1">&#39;EQUALSBLAH&#39;</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_browse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="Backupset.create_subclient"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.create_subclient">[docs]</a>    <span class="k">def</span> <span class="nf">create_subclient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subclient</span><span class="p">,</span> <span class="n">storagepolicyname</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+
+            <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">            This is to create new subclient</span>
+<span class="sd">            </span>
+<span class="sd">            Args: </span>
+<span class="sd">                subclientname (str) - subclient name to be created</span>
+<span class="sd">                storagepolicyname  (str) - name of the storage policy associate to subclient</span>
+<span class="sd">                description (str) - Description for subclient which is to be created</span>
+<span class="sd">            Raise:</span>
+<span class="sd">                  Exception:</span>
+<span class="sd">                    If fail to create subclient</span>
+<span class="sd">    </span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">subclients</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subclient</span><span class="p">,</span> <span class="n">storagepolicyname</span><span class="p">,</span><span class="n">description</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Exception while adding contents to subclient&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">err</span></div>
 
 <div class="viewcode-block" id="Backupset.delete_data"><a class="viewcode-back" href="../../source/cvpysdk.html#cvpysdk.backupset.Backupset.delete_data">[docs]</a>    <span class="k">def</span> <span class="nf">delete_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deletes items for the backupset in the Index and makes them unavailable for</span>

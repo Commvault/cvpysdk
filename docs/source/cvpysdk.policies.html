@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>cvpysdk.policies package &mdash; Developer SDK - Python 11.22 documentation</title>
+  <title>cvpysdk.policies package &mdash; Developer SDK - Python 11.23 documentation</title>
   
 
   
@@ -1642,6 +1642,7 @@ returns the job object</p>
 <p>add_ddb_partition()                     –  Adds a new DDB partition</p>
 <p>move_dedupe_store()                     –  Moves a deduplication store</p>
 <p>run_ddb_verification()                  –  Runs DDB verification job</p>
+<p>run_data_verification()                 –  Runs Data Verification Job</p>
 <p>get_copy()                              –  Returns the StoragePolicyCopy class object of the input copy</p>
 <p>mark_for_recovery()                     –  Marks Deduplication store for recovery</p>
 <p>run_recon()                             –  Runs non-mem DB Reconstruction job</p>
@@ -2031,6 +2032,12 @@ default : None</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.description">
+<em class="property">property </em><code class="sig-name descname">description</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Storage Policy Description Field</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing">
 <code class="sig-name descname">enable_content_indexing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cloud_id</span></em>, <em class="sig-param"><span class="n">include_doc_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_doc_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">min_doc_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">exclude_doc_type</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.enable_content_indexing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing" title="Permalink to this definition">¶</a></dt>
 <dd><p>configures offline CI for this storage policy</p>
@@ -2241,7 +2248,7 @@ Default Value:
 
 <dl class="py method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy">
-<code class="sig-name descname">run_aux_copy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">storage_policy_copy_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">media_agent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">use_scale</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">streams</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">all_copies</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">total_jobs_to_process</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.run_aux_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run_aux_copy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">storage_policy_copy_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">media_agent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">use_scale</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">streams</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">all_copies</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">total_jobs_to_process</span><span class="o">=</span><span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.run_aux_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the aux copy job from the commcell.
 Args:</p>
 <blockquote>
@@ -2304,6 +2311,35 @@ Args:</p>
 <p>if response is not success</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification">
+<code class="sig-name descname">run_data_verification</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">media_agent_name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">copy_name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">streams</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">jobs_to_verify</span><span class="o">=</span><span class="default_value">'NEW'</span></em>, <em class="sig-param"><span class="n">use_scalable</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicy.run_data_verification"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs Data verification job</p>
+<dl>
+<dt>Args:</dt><dd><p>media_agent_name    (str)  : name of the mediaAgent to use for data reading</p>
+<dl class="simple">
+<dt>copy_name           (str)<span class="classifier">name of Copy</span></dt><dd><p>(default - verifies jobs on all copies)</p>
+</dd>
+<dt>streams             (int)<span class="classifier">number of streams to use</span></dt><dd><p>(default - use Maximum)</p>
+</dd>
+<dt>jobs_to_verify      (str)<span class="classifier">jobs to be Verified</span></dt><dd><p>(NEW/ VERF_EXPIRED/ ALL)</p>
+</dd>
+</dl>
+<p>use_scalable       (bool) : True/False to use Scalable Resource Allocation</p>
+<dl class="simple">
+<dt>kwargs              (dict)<span class="classifier">optional arguments</span></dt><dd><dl class="simple">
+<dt>Available kwargs Options:</dt><dd><p>job_description     (str): Description for Job</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>object - instance of the Job class for this Data Verification Job</p>
+<p>errorMessage - If Data Verification Job fails to Start</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2591,6 +2627,12 @@ Returns:</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.media_agent">
+<em class="property">property </em><code class="sig-name descname">media_agent</code><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.media_agent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the media agent name of the copy</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs">
 <code class="sig-name descname">recopy_jobs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cvpysdk/policies/storage_policies.html#StoragePolicyCopy.recopy_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs" title="Permalink to this definition">¶</a></dt>
 <dd><p>recopies a job on a secondary copy</p>
@@ -2670,6 +2712,7 @@ Args:</p>
 </div>
 <div class="section" id="module-cvpysdk.policies">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cvpysdk.policies" title="Permalink to this headline">¶</a></h2>
+<p>Initialize Policies APIs, and Classes for the SDK.</p>
 </div>
 </div>
 
