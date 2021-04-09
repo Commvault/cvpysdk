@@ -240,7 +240,10 @@ class VsaLiveSync:
                 return live_sync_pairs_dict
             elif response.json() and 'siteInfo' in response.json():
                 for dictionary in response.json()['siteInfo']:
-                    temp_name = dictionary['subTask']['subtaskName']
+                    if dictionary["replicationGroup"]["replicationGroupName"] != "":
+                        temp_name = dictionary["replicationGroup"]["replicationGroupName"]
+                    else:
+                        temp_name = dictionary['subTask']['subtaskName']
                     temp_id = str(dictionary['subTask']['taskId'])
                     live_sync_pairs_dict[temp_name] = {
                         'id': temp_id

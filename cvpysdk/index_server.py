@@ -870,6 +870,8 @@ class IndexServer(object):
                 for item in attr_list:
                     field_query += f'{str(item)},'
                 field_query = field_query[:-1]
+            if attr_list and 'content' in attr_list:
+                field_query = f"{field_query}&exclude=false"
 
             ex_query = ""
             if not op_params:

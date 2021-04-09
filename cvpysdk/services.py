@@ -152,6 +152,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
+    'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
@@ -394,6 +395,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'RETIRE': '{0}Client/%s/Retire',
 
+    'DATASOURCE_ACTIONS': '{0}EDiscoveryClients/Datasources/Actions',
     'CLOUD_CREATE': '{0}cloud/create',
     'CLOUD_MODIFY': '{0}cloud/modify',
     'CLOUD_DELETE': '{0}cloud/delete',

@@ -113,6 +113,10 @@ Subclient:
 
     disble_backup()             --  disables the backup for the subclient
 
+    set_proxy_for_snap()        --  method to set Use proxy option for intellisnap subclient
+
+    unset_proxy_for_snap()      --  method to unset Use proxy option for intellisnap subclient
+
     backup()                    --  run a backup job for the subclient
 
     browse()                    --  gets the content of the backup for this subclient
@@ -2273,6 +2277,34 @@ c
             "_commonProperties['snapCopyInfo']['isSnapBackupEnabled']", False
         )
 
+    def set_proxy_for_snap(self, proxy_name):
+        """ method to set Use proxy option for intellisnap subclient 
+
+        Args:
+            proxy_name(str) -- Name of the proxy to be used
+
+        """
+        if not isinstance(proxy_name, basestring):
+            raise SDKException("Subclient", "101")
+
+        properties_dict = {
+            "clientName": proxy_name
+        }
+
+        update_properties = self.properties
+        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        self.update_properties(update_properties)
+
+    def unset_proxy_for_snap(self):
+        """ method to unset Use proxy option for intellisnap subclient """
+
+        properties_dict = {
+            "clientName": 'NO CLIENT'
+        }
+        update_properties = self.properties
+        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        self.update_properties(update_properties)
+
     def backup(self,
                backup_level="Incremental",
                incremental_backup=False,
@@ -3006,7 +3038,7 @@ c
         if 'planEntity' in self._subclient_properties:
             planEntity = self._subclient_properties['planEntity']
 
-            if bool(planEntity):
+            if bool(planEntity) and 'planName' in planEntity:
                 return planEntity['planName']
             else:
                 return None

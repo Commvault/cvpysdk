@@ -96,6 +96,8 @@ MediaAgent:
 
     mark_for_maintenance() -- marks/unmarks media agent offline for maintenance
 
+    set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
+
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
 
@@ -864,7 +866,55 @@ class MediaAgent(object):
         else:
             raise SDKException('Response', '101')
 
+    def set_ransomware_protection(self, status):
+        """Enables / Disables the ransomware protection on Windows MediaAgent.
 
+        Args:
+            status    (bool)        --  True or False value to turn it on/off
+                                        True - ransomware protection on MediaAgent - ON
+                                        False - ransomware protection on MediaAgent - OFF
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            Exception(Exception_Code, Exception_Message):
+                - if there is failure in executing the operation
+        """
+        # this works only on WINDOWS MA
+        if self._platform != 'WINDOWS':
+            raise SDKException('Storage', '101')
+
+        if type(status) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "isRansomwareProtected": status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     @property
     def name(self):
@@ -1200,11 +1250,13 @@ class DiskLibraries(object):
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', _stdout.format(library_name, _stderr))
 
-    def get(self, library_name):
+    def get(self, library_name, library_details=None):
         """Returns a DiskLibrary object of the specified disk library name.
 
             Args:
                 library_name (str)  --  name of the disk library
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
 
             Returns:
                 object - instance of the DiskLibrary class for the given library name
@@ -1223,7 +1275,7 @@ class DiskLibraries(object):
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
                                    library_name,
-                                   self._libraries[library_name])
+                                   self._libraries[library_name], library_details)
 
             raise SDKException(
                 'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
@@ -1246,6 +1298,9 @@ class DiskLibrary(object):
                 library_name     (str)     --  name of the disk library
 
                 library_id       (str)     --  id of the disk library
+                    default: None
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
                     default: None
 
             Returns:

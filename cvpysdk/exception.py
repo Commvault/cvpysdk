@@ -242,6 +242,10 @@ EXCEPTION_DICT = {
         '105': 'Unable to delete regex entity in the commcell',
         '106': 'Unable to modify regex entity in the commcell'
     },
+    'EntityManager': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'GlobalFilter': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''

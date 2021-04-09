@@ -52,16 +52,19 @@ FSBackupset:
     index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
                                             the index database
 
+    create_replica_copy()               --  Triggers Replica Copy for live Replication.
+
+    delete_replication_pair()           --  Delete Replication Pair
+
+    get_mount_path_guid()               --  Get the mount path volume's GUID
+
+    get_recovery_points()               --  Gets all the valid recovery points from the RPStore for the BLR pair
 
     create_fsblr_replication_pair()     --  Create Live/Granular Replication Pair
 
-    create_replica_copy()               --  Triggers Replica Copy for live Replication.
+    create_granular_replica_copy()      --  Triggers  Granular replication permanent mount
 
-    delete_replication_pair()           --   Delete Replication Pair
-
-    create_granular_replica_copy()      --   Triggers  Granular replication permanent mount
-
-    get_browse_volume_guid()             --   It returns browse volume guid
+    get_browse_volume_guid()            --  It returns browse volume guid
 
 """
 
@@ -1134,13 +1137,13 @@ class FSBackupset(Backupset):
                                 "blockOperation": {
                                     "operations": [
                                         {
-                                            "appId": scid,
+                                            "appId": int(scid),
                                             "opType": 8,
-                                            "dstProxyClientId": destclientid,
+                                            "dstProxyClientId": int(destclientid),
                                             "fsMountInfo": {
                                                 "doLiveMount": True,
                                                 "lifeTimeInSec": 7200,
-                                                "blrPairId": blrid,
+                                                "blrPairId": int(blrid),
                                                 "mountPathPairs": [
                                                     {
                                                         "mountPath": restorepath,
@@ -1196,24 +1199,70 @@ class FSBackupset(Backupset):
         if response.status_code != 200 and flag == False:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def get_mount_path_guid(self, volume):
+        """
+        Gets the mount points for the BLR pairs
+        Args:
+            volume (str): volume name eg: "E:"
+        """
+        volume_list = self.get_browse_volume_guid()
+        for mount_path in volume_list['mountPathInfo']:
+            if mount_path['accessPathList'][0] == volume:
+                return mount_path['guid']
+        return ''
+
+    def get_recovery_points(self, client_id, subclient_id):
+        """ Get all recovery points for the BLR pair from the associated RPStore.
+        These recovery points are those to which BLR pairs can failover/permanent mount to
+        Args:
+            client_id       (int): The ID of the source client machine
+            subclient_id    (int): The ID of the subclient associated with the BLR pair
+
+        Returns:
+            List of dictionary of recovery points in the format: {'timestamp': 12323, 'dataChangedSize': 1200,
+            'sequenceNumber': 898}
+        """
+        client_name = [key for key, value in self._commcell_object.clients.all_clients.items()
+                       if value['id'] == client_id]
+        if not client_name:
+            raise SDKException(f'Client not found with client id [{client_id}]')
+        client = self._commcell_object.clients.get(client_name[0])
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GRANULAR_BLR_POINTS']
+                                                           %(client_id, subclient_id, client.client_guid))
+        if not flag or response.status_code != 200:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        if 'vmScale' not in response.json():
+            return []
+        return response.json()['vmScale']['restorePoints']
+
+
     def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                       rpstoreid=None, replicationtype=None, **replication_options):
-        """"Create granular replication pair  json
-
+        """"
+        Create FSBLR continuous replication pair
         Args:
-            srcclientid   (int)  --  Source client id.
+            srcclientid   (int)  --  Source client id
 
-            destclientid   (dict)  -- Destintion client id .
+            destclientid   (dict)  -- Destintion client id
 
-            srcguid        (str) -- Browse guid of source
+            srcguid        (str) -- Browse guid of source volume
 
             dstguid        (str) -- Browse guid of destination volume
 
             rpstoreid      (str) -- Rp store id for replication
 
-            replicationtype (str) -- Replication pair  type to create
+            replicationtype (int) -- Replication pair  type to create (1 for live, 4 for granular pairs)
 
-            **replication_options (dict) -- object instance
+            **replication_options (dict) --
+            {
+                srcvol          (str): Source volume name
+                destvol         (str): Destination volume name
+                srcclient       (str): Source volume name
+                srcclient       (str): Destination volume name
+                rpstore         (int): RPStore ID,
+                ccrp            (str): Time in minutes for crash consistent recovery point
+                arcp            (str): Time in minutes for app consistent recovery point
+            }
 
 
         """
@@ -1221,11 +1270,12 @@ class FSBackupset(Backupset):
         destvol = replication_options.get('destvol')
         destclient = replication_options.get('destclient')
         srcclient = replication_options.get('srcclient')
-        rpstore = replication_options.get('RPStore')
+        rpstore = replication_options.get('rpstore')
+        ccrp = replication_options.get('ccrp', "120")
+        acrp = replication_options.get('acrp', "180")
 
         if replicationtype == 4:
-            blr_options = "<?xml version='1.0' encoding='UTF-8'?><BlockReplication_BLRRecoveryOptions recoveryType=\"4\"><granularV2 ccrpInterval=\"120\" acrpInterval=\"300\" maxRpInterval=\"21600\" rpMergeDelay=\"172800\" rpRetention=\"604800\" maxRpStoreOfflineTime=\"0\" useOffPeakSchedule=\"0\" rpStoreId=\"{0}\" rpStoreName=\"{1}\"/></BlockReplication_BLRRecoveryOptions>".format(
-                rpstoreid, rpstore)
+            blr_options = f"<?xml version='1.0' encoding='UTF-8'?><BlockReplication_BLRRecoveryOptions recoveryType=\"4\"><granularV2 ccrpInterval=\"{ccrp}\" acrpInterval=\"{acrp}\" maxRpInterval=\"21600\" rpMergeDelay=\"172800\" rpRetention=\"604800\" maxRpStoreOfflineTime=\"0\" useOffPeakSchedule=\"0\" rpStoreId=\"{rpstoreid}\" rpStoreName=\"{rpstore}\"/></BlockReplication_BLRRecoveryOptions>"
 
         else:
             blr_options = "<?xml version='1.0' encoding='UTF-8'?><BlockReplication_BLRRecoveryOptions recoveryType=\"1\"><granularV2 ccrpInterval=\"300\" acrpInterval=\"0\" maxRpInterval=\"21600\" rpMergeDelay=\"172800\" rpRetention=\"604800\" maxRpStoreOfflineTime=\"0\" useOffPeakSchedule=\"0\"/></BlockReplication_BLRRecoveryOptions>"
@@ -1244,13 +1294,13 @@ class FSBackupset(Backupset):
             ],
             "destEntity": {
                 "client": {
-                    "clientId": destclientid,
+                    "clientId": int(destclientid),
                     "clientName": destclient
                 }
             },
             "sourceEntity": {
                 "client": {
-                    "clientId": srcclientid,
+                    "clientId": int(srcclientid),
                     "clientName": srcclient
                 }
             }
@@ -1294,19 +1344,13 @@ class FSBackupset(Backupset):
 
         """
 
-        import re
-
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GRANULAR_BLR_POINTS']
-                                                           %(destclientid, scid, srcguid))
-        replicapoints = response.content
-        temp = replicapoints.split(b"},")
-        list_rp = temp[len(temp) - 1]
-        list_rp = str(list_rp, 'utf-8')
-        result = re.sub(r'[\W_]+', '', list_rp)
-        numbers = re.findall(r'\d+', result)
-        timestamp = int(numbers[0])
-        sequence_number = int(numbers[1])
-        data_changed_size = int(numbers[3])
+        replicapoints = self.get_recovery_points(destclientid, scid)
+        timestamp = replication_options.get('timestamp')
+        if timestamp:
+            restore_point = [replica_point for replica_point in replicapoints
+                             if int(replica_point['timeStamp']) == timestamp]
+        else:
+            restore_point = replicapoints[-1]
 
         srcvol = replication_options.get('srcvol')
         restorepath = replication_options.get('RestorePath')
@@ -1343,13 +1387,13 @@ class FSBackupset(Backupset):
                                 "blockOperation": {
                                     "operations": [
                                         {
-                                            "appId": scid,
+                                            "appId": int(scid),
                                             "opType": 8,
-                                            "dstProxyClientId": destclientid,
+                                            "dstProxyClientId": int(destclientid),
                                             "fsMountInfo": {
                                                 "doLiveMount": False,
                                                 "lifeTimeInSec": 7200,
-                                                "blrPairId": blrid,
+                                                "blrPairId": int(blrid),
                                                 "mountPathPairs": [
                                                     {
                                                         "mountPath": restorepath,
@@ -1359,11 +1403,11 @@ class FSBackupset(Backupset):
                                                     }
                                                 ],
                                                 "rp": {
-                                                    "timeStamp": timestamp,
-                                                    "sequenceNumber": sequence_number,
+                                                    "timeStamp": int(restore_point['timeStamp']),
+                                                    "sequenceNumber": int(restore_point['sequenceNumber']),
                                                     "rpType": 1,
                                                     "appConsistent": False,
-                                                    "dataChangedSize": data_changed_size
+                                                    "dataChangedSize": int(restore_point['dataChangedSize'])
                                                 }
                                             }
                                         }

@@ -124,6 +124,10 @@ StoragePolicy:
 
     run_content_indexing()                  --  start the content indexing job for this storage policy
 
+    start_over()                            --  performs start over operation on storage policy/gdsp
+
+    run_data_forecast()                     -- runs granular data forecast operation for given storage policy
+
 
 StoragePolicyCopy:
     __init__(self, commcell_object,
@@ -1346,7 +1350,7 @@ class StoragePolicy(object):
             )
 
         for entity in entity_names:
-            entity_obj = self._commcell_object.activate_entity.get(entity)
+            entity_obj = self._commcell_object.activate.entity_manager().get(entity)
             request_xml = request_xml + """<entities enabled="1" entityId="{0}" entityName="{1}"/>"""\
                 .format(entity_obj.entity_id, entity)
 
@@ -2527,7 +2531,7 @@ class StoragePolicy(object):
                                     "auxcopyJobOption": {
                                         "maxNumberOfStreams": streams,
                                         "useMaximumStreams": not bool(streams),
-                                        "useScallableResourceManagement": use_scallable,
+                                        "useScallableResourceManagement": use_scalable,
                                         "mediaAgent": {
                                             "mediaAgentName": media_agent_name
                                         }
@@ -2863,6 +2867,167 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def start_over(self):
+        """
+        performs a start over operation on the specified storage policy/gdsp
+
+            Args:
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+        returns None
+        """
+        dependent_flag = self.storage_policy_properties["copy"][0]["dedupeFlags"].get("useGlobalDedupStore", 0)
+        if dependent_flag == 1:
+            raise Exception("Dependent policy cannot be started over ...")
+
+        request = {
+            "MediaManager_MMStartOverReq": {
+                    "bSealDDB": True,
+                    "storagePolicy": {
+                        "storagePolicyName": self.storage_policy_name
+                    }
+                }
+            }
+
+        startover = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', startover, request
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json()['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to Start Over"
+                        raise SDKException('Storage', '102', error_message)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def run_data_forecast(self, **kwargs):
+        """runs data forecast and retention report generation operation
+
+            Args:
+
+                **kwargs    --  dict of keyword arguments as follows:
+
+                    localeName      str     localeName for report [defaults to "en-us"]
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+            Returns None
+                """
+        request = {
+                    "processinginstructioninfo": {},
+                    "taskInfo": {
+                        "task": {
+                            "taskType": 1,
+                            "initiatedFrom": 2,
+                            "taskFlags": {
+                                "disabled": False
+                            }
+                        },
+                        "appGroup": {},
+                        "subTasks": [
+                            {
+                                "subTaskOperation": 1,
+                                "subTask": {
+                                    "subTaskName": "",
+                                    "subTaskType": 1,
+                                    "operationType": 4004
+                                },
+                                "options": {
+                                    "adminOpts": {
+                                        "reportOption": {
+                                            "showHiddenStoragePolicies": False,
+                                            "showGlobalStoragePolicies": False,
+                                            "storagePolicyCopyList": [
+                                                {
+                                                    "storagePolicyName": self.storage_policy_name
+                                                }
+                                            ],
+                                            "mediaInfoReport": {
+                                                "mediaLocIn": True,
+                                                "mediaLocOut": True
+                                            },
+                                            "commonOpt": {
+                                                "dateFormat": "mm/dd/yyyy",
+                                                "overrideDateTimeFormat": 0,
+                                                "reportType": 7738,
+                                                "summaryOnly": False,
+                                                "reportCustomName": "",
+                                                "timeFormat": "hh:mm:ss am/pm",
+                                                "onCS": True,
+                                                "locale": {
+                                                    "country": "English",
+                                                    "language": "UnitedStates",
+                                                    "localeName": kwargs.get("localeName", "en-us")
+                                                },
+                                                "outputFormat": {
+                                                    "outputType": 1,
+                                                    "isNetworkDrive": False
+                                                }
+                                            },
+                                            "computerSelectionList": {
+                                                "includeAll": True
+                                            },
+                                            "jobSummaryReport": {
+                                                "subclientFilter": False
+                                            },
+                                            "dataRetentionForecastReport": {
+                                                "pruneData": True,
+                                                "retainedBeyondBasicRet": False,
+                                                "forecastDays": 0,
+                                                "unPrunableData": True,
+                                                "sortByOption": 2
+                                            },
+                                            "agentList": [
+                                                {
+                                                    "type": 0,
+                                                    "flags": {
+                                                        "include": True
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+
+        forecast = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', forecast, request)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Failed to Run Data Forecast\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    raise SDKException('Storage', '108')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
 class StoragePolicyCopy(object):
     """Class for performing storage policy copy operations for a specific storage policy copy"""

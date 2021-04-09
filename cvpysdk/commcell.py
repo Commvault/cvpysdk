@@ -195,8 +195,8 @@ Commcell instance Attributes
     **content_analyzers**       --  returns the instance of the `ContentAnalyzers` class,
     to interact with the CA cloud deployed on the Commcell
 
-    **activate_entity**         --  returns the instance of the `ActivateEntities` class,
-    to interact with the regex entity on the Commcell
+    **activate**                --  returns the instance of the `Activate` class,
+    to interact with activate apps on the Commcell
 
     **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
@@ -295,6 +295,7 @@ from requests.exceptions import Timeout
 # ConnectionError is a built-in exception, do not override it
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
+from .activate import Activate
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
@@ -309,7 +310,6 @@ from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .content_analyzer import ContentAnalyzers
-from .activate_entity import ActivateEntities
 from .plan import Plans
 from .job import JobController
 from .security.user import Users, User
@@ -543,7 +543,7 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
-        self._activate_entity = None
+        self._activate = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -640,7 +640,7 @@ class Commcell(object):
         del self._client_groups
         del self._global_filters
         del self._datacube
-        del self._activate_entity
+        del self._activate
         del self._content_analyzers
         del self._plans
         del self._job_controller
@@ -1182,13 +1182,13 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def activate_entity(self):
+    def activate(self):
         """Returns the instance of the ContentAnalyzers class."""
         try:
-            if self._activate_entity is None:
-                self._activate_entity = ActivateEntities(self)
+            if self._activate is None:
+                self._activate = Activate(self)
 
-            return self._activate_entity
+            return self._activate
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -1602,7 +1602,7 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
-        self._activate_entity = None
+        self._activate = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -1888,7 +1888,8 @@ class Commcell(object):
                           os_list=None,
                           service_pack=None,
                           cu_number=0,
-                          sync_cache=True):
+                          sync_cache=True,
+                          schedule_pattern=None):
         """Downloads the os packages on the commcell
 
             Args:
@@ -1962,7 +1963,8 @@ class Commcell(object):
             os_list=os_list,
             service_pack=service_pack,
             cu_number=cu_number,
-            sync_cache=sync_cache
+            sync_cache=sync_cache,
+            schedule_pattern=schedule_pattern
         )
 
     def push_servicepack_and_hotfix(
