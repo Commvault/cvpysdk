@@ -1801,6 +1801,7 @@ class Clients(object):
                         1: user mailbox
                         2: journal mailbox
                         3: content store mailbox
+                    Default Value: 1 (user mailbox)
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -1887,11 +1888,6 @@ class Clients(object):
                     "recallService": recall_service_url,
                     "onePassProp": {
                         "environmentType": environment_type,
-                        "azureDetails": {
-                            "azureAppKeySecret": azure_app_key_secret,
-                            "azureTenantName": azure_tenant_name,
-                            "azureAppKeyID": azure_app_key_id
-                        },
                         "servers": exchange_servers,
                         "accounts": {
                             "adminAccounts": account_list
@@ -1912,6 +1908,25 @@ class Clients(object):
                 "clientName": client_name
             }
         }
+
+        if int(self._commcell_object.version.split(".")[1]) >=23:
+            azure_app_dict = {
+                            "azureApps": [
+                                {
+                                    "azureDirectoryId": azure_tenant_name,
+                                    "azureAppKeyValue": azure_app_key_secret,
+                                    "azureAppId": azure_app_key_id
+                                }
+                            ]
+                        }
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureAppList"] = azure_app_dict
+        else:
+            azure_app_dict = {
+                            "azureAppKeySecret": azure_app_key_secret,
+                            "azureTenantName": azure_tenant_name,
+                            "azureAppKeyID": azure_app_key_id
+                        }
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureDetails"] = azure_app_dict
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_EXCHANGE_CLIENT, request_json

@@ -48,7 +48,6 @@ ArrayManagement:
 """
 
 from __future__ import unicode_literals
-import json
 from .job import Job
 from .exception import SDKException
 
@@ -78,29 +77,45 @@ class ArrayManagement(object):
                         do_vssprotection=True,
                         control_host=None,
                         flags=None,
-                        reconcile=False):
+                        reconcile=False,
+                        user_credentials=None,
+                        server_name=None,
+                        instance_details=None):
         """ Common Method for Snap Operations
 
             Args :
 
-                operation    (int)        -- snap Operation value
+                operation    (int)         -- snap Operation value
+                                              0- mount, 1-unmount, 2-delete, 3-revert
 
                 volume_id    (list)        -- volume id's of the snap backup job
 
-                client_name  (str)        -- name of the destination client, default: None
+                client_name  (str)         -- name of the destination client, default: None
 
-                MountPath    (str)        -- MountPath for Snap operation, default: None
+                MountPath    (str)         -- MountPath for Snap operation, default: None
 
-                do_vssprotection  (int)   -- Performs VSS protected snapshot mount
+                do_vssprotection  (bool)   -- Performs VSS protected snapshot mount
 
-                control_host (int)        -- Control host for the Snap recon operation,
+                control_host (int)         -- Control host for the Snap recon operation,
                 defaullt: None
 
-                flags        (int)       -- value to define when snap operation to be forced
+                flags        (int)         -- value to define when snap operation to be forced
                 1 - to force unmount
                 2 - to force delete
 
-                reconcile    (bool)       -- Uses Reconcile json if true
+                reconcile    (bool)        -- Uses Reconcile json if true
+
+                user_credentials  (dict)   -- dict containing userName of vcenter
+                eg: user_credentials = {"userName":"vcentername"}
+
+                server_name      (str)     -- vcenter name for mount operation
+
+                instance_details (dict)    -- dict containing apptypeId, InstanceId, InstanceName
+                eg: instance_details = {
+                "apptypeId": 106,
+                "instanceId": 7,
+                "instanceName": "VMWare"
+                }
 
             Return :
 
@@ -114,6 +129,14 @@ class ArrayManagement(object):
 
         if flags is None:
             flags = 0
+
+        if user_credentials is None:
+            user_credentials = {}
+            server_name = ""
+            server_type = 0
+            instance_details = {}
+        else:
+            server_type = 1
 
         if reconcile:
             request_json = {
@@ -138,17 +161,18 @@ class ArrayManagement(object):
                 "serverType": 0,
                 "operation": operation,
                 "userCredentials": {},
-                "volumes": []
+                "volumes": [],
+                "appId": instance_details
             }
             for i in range(len(volume_id)):
                 if i == 0:
                     request_json['volumes'].append({'doVSSProtection': int(do_vssprotection),
                                                     'destClientId': client_id,
                                                     'destPath': mountpath,
-                                                    'serverType':0,
+                                                    'serverType': server_type,
                                                     'flags': flags,
-                                                    'serverName':"",
-                                                    'userCredentials': {},
+                                                    'serverName': server_name,
+                                                    'userCredentials': user_credentials,
                                                     'volumeId':int(volume_id[i][0]),
                                                     'CommCellId': self._commcell_object.commcell_id})
 
@@ -171,7 +195,8 @@ class ArrayManagement(object):
         else:
             raise SDKException('Snap', '102')
 
-    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
+    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
+              user_credentials=None, server_name=None, instance_details=None):
         """ Mounts Snap of the given volume id
 
             Args:
@@ -183,8 +208,20 @@ class ArrayManagement(object):
                 MountPath    (str)        -- MountPath for Snap operation, default: None
 
                 do_vssprotection (int)    -- Performs VSS protected mount
+
+                user_credentials (dict)   -- dict containing userName of vcenter
+
+                server_name   (str)       -- vcenter name for mount operation
+
+                instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
         """
-        return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)
+        return self._snap_operation(0, volume_id,
+                                    client_name,
+                                    mountpath,
+                                    do_vssprotection,
+                                    user_credentials=user_credentials,
+                                    server_name=server_name,
+                                    instance_details=instance_details)
 
     def unmount(self, volume_id):
         """ UnMounts Snap of the given volume id
