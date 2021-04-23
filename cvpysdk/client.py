@@ -1533,75 +1533,100 @@ class Clients(object):
         tenant_url = kwargs.get('tenant_url')
         global_administrator = kwargs.get('global_administrator')
         if tenant_url:
-            azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
             user_password = b64encode(kwargs.get('user_password').encode()).decode()
-
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"] = {
-                    "tenantUrlItem": tenant_url,
-                    "cloudRegion": 1,
-                    "infraStructurePoolEnabled": False,
-                    "serviceAccounts": {
-                        "accounts": [
-                            {
-                                "serviceType": service_type["Sharepoint Online"],
-                                "userAccount": {
-                                    "password": user_password,
-                                    "userName": kwargs.get('user_username')
-                                }
-                            },
-                            {
-                                "serviceType": service_type["Sharepoint Azure Storage"],
-                                "userAccount": {
-                                    "password": azure_secret,
-                                    "userName": kwargs.get('azure_username')
-                                }
+                "tenantUrlItem": tenant_url,
+                "cloudRegion": 1,
+                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
+                "infraStructurePoolEnabled": False,
+                "serviceAccounts": {
+                    "accounts": [
+                        {
+                            "serviceType": service_type["Sharepoint Online"],
+                            "userAccount": {
+                                "password": user_password,
+                                "userName": kwargs.get('user_username')
                             }
-                        ]
-                    },
-                    "office365Credentials": {
-                        "userName": ""
-                    },
-                    "azureAppList": {
-                        "azureApps": [
-                            {
-                                "azureDirectoryId": "",
-                                "azureAppId": ""
-                            }
-                        ]
-                    }
+                        }
+                    ]
+                },
+                "office365Credentials": {
+                    "userName": ""
+                },
+                "azureAppList": {
+                    "azureApps": [
+                        {
+                            "azureDirectoryId": "",
+                            "azureAppId": ""
+                        }
+                    ]
                 }
+            }
+            if kwargs.get('is_modern_auth_enabled'):
+                azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+                request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                    "spOffice365BackupSetProp"]["azureAppList"]["azureApps"][0] = {
+                            "azureAppId": kwargs.get('azure_app_id'),
+                            "azureAppKeyValue": azure_app_key_id,
+                            "azureDirectoryId": kwargs.get('azure_directory_id')
+                        }
         elif global_administrator:
             azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
             global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
 
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"] = {
-                    "cloudRegion": 1,
-                    "infraStructurePoolEnabled": False,
-                    "serviceAccounts": {
-                        "accounts": [
-                            {
-                                "serviceType": service_type["Sharepoint Global Administrator"],
-                                "userAccount": {
-                                    "userName": global_administrator,
-                                    "password": global_administrator_password
-                                }
+                "cloudRegion": 1,
+                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
+                "infraStructurePoolEnabled": False,
+                "serviceAccounts": {
+                    "accounts": [
+                        {
+                            "serviceType": service_type["Sharepoint Global Administrator"],
+                            "userAccount": {
+                                "userName": global_administrator,
+                                "password": global_administrator_password
                             }
-                        ]
-                    },
-                    "office365Credentials": {},
-                    "azureAppList": {
-                        "azureApps": [
-                            {
-                                "azureAppId": kwargs.get('azure_app_id'),
-                                "azureAppKeyValue": azure_app_key_id,
-                                "azureDirectoryId": kwargs.get('azure_directory_id')
-                            }
-                        ]
+                        }
+                    ]
+                },
+                "office365Credentials": {},
+                "azureAppList": {
+                    "azureApps": [
+                        {
+                            "azureAppId": kwargs.get('azure_app_id'),
+                            "azureAppKeyValue": azure_app_key_id,
+                            "azureDirectoryId": kwargs.get('azure_directory_id')
+                        }
+                    ]
+                }
+            }
+        if kwargs.get('azure_username'):
+            azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["serviceAccounts"]["accounts"].append(
+                {
+                    "serviceType": service_type["Sharepoint Azure Storage"],
+                    "userAccount": {
+                        "password": azure_secret,
+                        "userName": kwargs.get('azure_username')
                     }
                 }
-
+            )
+        if len(access_nodes_list) > 1:
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["jobResultsDir"] = {
+                "path": kwargs.get('shared_jr_directory').get('Path')
+            }
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["serviceAccounts"]["accounts"].append(
+                {
+                    "serviceType": 3,
+                    "userAccount": {
+                        "userName": kwargs.get('shared_jr_directory').get('Username'),
+                        "password": b64encode(kwargs.get('shared_jr_directory').get('Password').encode()).decode()
+                    }
+                })
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_SHAREPOINT_CLIENT, request_json
         )
@@ -4658,30 +4683,30 @@ class Client(object):
     def change_exchange_job_results_directory(
             self, new_directory_path, username=None, password=None):
         """
-                Change the Job Result Directory of an Exchange Online Client
+            Change the Job Result Directory of an Exchange Online Client
 
-                Arguments:
-                    new_directory   (str)   -- The new JR directory
-                        Example:
-                            C:\ JR
-                            or
-                            <UNC-PATH>
+            Arguments:
+                new_directory   (str)   -- The new JR directory
+                    Example:
+                        C:\ JR
+                        or
+                        <UNC-PATH>
 
 
-                    username    (str)   --
-                        username of the machine, if new JobResults directory is a shared/ UNC path.
+                username    (str)   --
+                    username of the machine, if new JobResults directory is a shared/ UNC path.
 
-                    password    (str)   --
-                        Password of the machine, if new JobResults directory is a shared/ UNC path.
+                password    (str)   --
+                    Password of the machine, if new JobResults directory is a shared/ UNC path.
 
-                Raises
-                    SDKException   (object)
-                        Error in moving the job results directory
+            Raises
+                SDKException   (object)
+                    Error in moving the job results directory
         """
-        if self.client_type != 25:
+        if self.client_type not in [25, 37, 15]:
             raise SDKException(
                 'Client', '109',
-                ' Method is application for an Exchange Mailbox Client only')
+                ' Method is application for O365 Client only')
 
         if new_directory_path.startswith(r'\\') and (
                 username is None or password is None):
@@ -4691,9 +4716,14 @@ class Client(object):
 
         prop_dict = {
             "clientId": int(self.client_id),
-            "appType": 137,
             "jobResultDirectory": new_directory_path
         }
+        if self.client_type == 25:
+            prop_dict["appType"] = 137
+        elif self.client_type == 37:
+            prop_dict["appType"] = 78
+        else:
+            prop_dict["appType"] = 134
         if username is not None:
             import base64
             password = base64.b64encode(password.encode()).decode()
@@ -4704,7 +4734,6 @@ class Client(object):
                     "password": password
                 }
             }
-
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['OFFICE365_MOVE_JOB_RESULT_DIRECTORY'], prop_dict
         )
@@ -4729,6 +4758,31 @@ class Client(object):
                 'Response',
                 '101',
                 'Unable to move the job result directory')
+
+    def change_o365_client_job_results_directory(
+            self, new_directory_path, username=None, password=None):
+        """
+                Change the Job Result Directory of a O365 Client
+
+                Arguments:
+                    new_directory   (str)   -- The new JR directory
+                        Example:
+                            C:\ JR
+                            or
+                            <UNC-PATH>
+
+
+                    username    (str)   --
+                        username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                    password    (str)   --
+                        Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+                Raises
+                    SDKException   (object)
+                        Error in moving the job results directory
+        """
+        self.change_exchange_job_results_directory(new_directory_path, username, password)
 
     def push_network_config(self):
         """Performs a push network configuration on the client

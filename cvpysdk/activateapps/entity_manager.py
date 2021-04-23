@@ -16,15 +16,108 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Main file for performing operations on Activate regex Entities, and a single Activate regex Entity in the commcell.
+"""Main file for performing operations on entity manager app under Activate.
 
-'EntityManagerTypes' , `ActivateEntities`, and `ActivateEntity` are 3 classes defined in this file.
+'Tags' , 'TagSet', 'Tag', 'EntityManagerTypes' , `ActivateEntities`, and `ActivateEntity` are 6 classes defined in this file.
 
 ActivateEntities:   Class for representing all the regex entities in the commcell.
 
 ActivateEntity:     Class for representing a single regex entity in the commcell.
 
 EntityManagerTypes: Class to represent different entity types in entity manager
+
+Tags:   Class to represent TagSets in the commcell
+
+TagSet: Class to represent single Tagset entity in the commcell
+
+Tag:  Class to represent tag inside a TagSet
+
+Tags:
+
+    __init__()                          --  initialise object of the Tags class
+
+     _response_not_success()            --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the TagSet associated with the commcell
+
+    _get_tag_sets_from_collections()    --  gets all the TagSet details from collection response
+
+    _get_all_tag_sets()                 --  Returns dict consisting all TagSets associated with commcell
+
+    get_properties()                    --  Returns the properties for the given TagSet name
+
+    has_tag_set()                       --  Checks whether tagset with given name exists in commcell or not
+
+    add()                               --  Creates new TagSet in the commcell
+
+    delete()                            --  Deletes the Tagset in the commcell
+
+    get()                               --  Returns the TagSet object for given tagset name
+
+
+TagSet:
+
+     __init__()                         --  initialize an object of TagSet Class with the given tagset
+                                                name and id
+
+     _response_not_success()            --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the properties of the TagSet
+
+    modify()                            --  Modifies the tagset in the commcell
+
+    share()                             --  Shares tagset with user or group in the commcell
+
+    add_tag()                           --  Creates new tag inside this tagset container in commcell
+
+    get()                               --  Returns the Tag class object for given tag name
+
+    has_tag()                           --  checks whether given tag exists in tagset or not
+
+    get_tag_id()                        --  Returns the tag id for given tag name
+
+    _get_tag_set_id()                   --  Gets tag set container id for the given Tagset name
+
+    _get_tag_set_properties()           --  Gets all the details of associated Tagset
+
+TagSet Attributes
+-----------------
+
+    **guid**            --  returns container GUID of this tagset
+
+    **full_name**       --  returns the full name of tagset container
+
+    **comment**         --  returns the comment for this tagset
+
+    **owner**           --  returns the owner user name for this tagset
+
+    **tags**            --  returns the tags present in this tagset
+
+    **tag_set_id**      --  returns the tagset id
+
+Tag:
+
+    __init__()                  --  Initialise object of the Tag class
+
+    _response_not_success()     --  parses through the exception response, and raises SDKException
+
+    _get_tag_id()               --  Returns the tag id of the given tag name
+
+    _get_tag_properties()       --  Returns the properties of Tag
+
+    refresh()                   --  refresh the tag details
+
+    modify()                    --  modifies the name of the tag
+
+Tag Attributes
+-----------------
+
+    **guid**            --  returns tag GUID of this tag
+
+    **full_name**       --  returns the full name of this tag
+
+    **tag_id**          --  returns the id of the tag
+
 
 ActivateEntities:
 
@@ -89,11 +182,15 @@ ActivateEntity Attributes
     **entity_xml**        --  returns the entity xml associated with this entity
 
 """
+import copy
 from enum import Enum
 
 from past.builtins import basestring
+
+
 from ..exception import SDKException
-from ..datacube.constants import ActivateEntityConstants
+from .constants import ActivateEntityConstants
+from .constants import TagConstants
 
 
 class EntityManagerTypes(Enum):
@@ -635,3 +732,802 @@ class ActivateEntity(object):
     def refresh(self):
         """Refresh the regex entity details for associated object"""
         self._get_entity_properties()
+
+
+class Tags(object):
+    """Class for representing all the Tagsets in the commcell."""
+
+    def __init__(self, commcell_object):
+        """Initializes an instance of the Tags class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the Tags class
+
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._tag_set_entities = None
+        self._api_get_all_tag_sets = self._services['GET_TAGS']
+        self._api_add_tag_set = self._services['ADD_CONTAINER']
+        self._api_delete_tag_set = self._services['DELETE_CONTAINER']
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @staticmethod
+    def _get_tag_sets_from_collections(collections):
+        """Extracts all the tagsets, and their details from the list of collections given,
+            and returns the dictionary of all tagsets
+
+            Args:
+                collections     (list)  --  list of all tagsets
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single tagset
+
+        """
+        _tag_set_entity = {}
+        for tagset in collections['listOftagSetList']:
+            tagset = tagset['tagSetsAndItems']
+            container = tagset[0]['container']
+            owner_info = tagset[0]['container']['ownerInfo']
+            tagset_dict = {}
+            tagset_dict['containerName'] = container.get('containerName', "")
+            tagset_dict['containerFullName'] = container.get('containerFullName', "")
+            tagset_dict['containerId'] = container.get('containerId', "")
+            tagset_dict['containerGuid'] = container.get('containerGuid', "")
+            tagset_dict['comment'] = container.get('comment', "")
+            tagset_dict['owneruserName'] = owner_info.get('userName', "")
+            tagset_dict['owneruserGuid'] = owner_info.get('userGuid', "")
+            tagset_dict['owneraliasName'] = owner_info.get('aliasName', "")
+            container_tags = []
+            tag_ids = []
+            tag_dict = {}
+            # process tags only if it is present
+            if 'tags' in tagset[0]:
+                tags = tagset[0]['tags']
+                for tag in tags:
+                    tag_dict[tag['name'].lower()] = tag
+                    container_tags.append(tag['name'].lower())
+                    tag_ids.append(tag['tagId'])
+            tagset_dict['tags'] = container_tags
+            tagset_dict['tagsIds'] = tag_ids
+            tagset_dict['tagsDetails'] = tag_dict
+            _tag_set_entity[tagset_dict['containerName'].lower()] = tagset_dict
+        return _tag_set_entity
+
+    def _get_all_tag_sets(self):
+        """Gets the list of all tagsets associated with this commcell.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single tagset entity
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_all_tag_sets
+        )
+
+        if flag:
+            if response.json() and 'listOftagSetList' in response.json():
+                return self._get_tag_sets_from_collections(response.json())
+            raise SDKException('Tags', '103')
+        self._response_not_success(response)
+
+    def get(self, tag_set_name):
+        """Returns a TagSet object for the given Tagset name.
+
+            Args:
+                tag_set_name (str)  --  name of the TagSet
+
+            Returns:
+
+                obj                 -- Object of TagSet class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if tag_set_name is not of type string
+
+
+        """
+        if not isinstance(tag_set_name, basestring):
+            raise SDKException('Tags', '101')
+
+        if self.has_tag_set(tag_set_name):
+            tag_set_id = self._tag_set_entities[tag_set_name]['containerId']
+            return TagSet(self._commcell_object, tag_set_name=tag_set_name, tag_set_id=tag_set_id)
+        raise SDKException('Tags', '102', "Unable to get TagSet class object")
+
+    def has_tag_set(self, tag_set_name):
+        """Checks if a tagset exists in the commcell with the input name or not
+
+            Args:
+                tag_set_name (str)  --  name of the TagSet
+
+            Returns:
+                bool - boolean output whether the TagSet exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the TagSet name argument is not string
+
+        """
+        if not isinstance(tag_set_name, basestring):
+            raise SDKException('Tags', '101')
+        return self._tag_set_entities and tag_set_name.lower() in map(str.lower, self._tag_set_entities)
+
+    def get_properties(self, tag_set_name):
+        """Returns a properties of the specified TagSet name.
+
+            Args:
+                tag_set_name (str)  --  name of the TagSet
+
+            Returns:
+                dict -  properties for the given TagSet name
+
+
+                Example : {
+                              "containerName": "cvpysdk1",
+                              "containerFullName": "cvpysdk1",
+                              "containerId": 65931,
+                              "containerGuid": "6B870271-543A-4B76-955D-CDEB3807D68E",
+                              "comment": "Created from CvPySDK",
+                              "owneruserName": "xxx",
+                              "owneruserGuid": "C31C1194-AA5C-47C3-B5B0-9087EF429B6B",
+                              "owneraliasName": "xx",
+                              "tags": [
+                                "p10"
+                              ],
+                              "tagsIds": [
+                                15865
+                              ],
+                              "tagsDetails": {
+                                "p10": {
+                                  "tagOwnerType": 1,
+                                  "tagId": 15865,
+                                  "name": "p10",
+                                  "flags": 0,
+                                  "fullName": "cvpysdk1\\p10",
+                                  "description": "",
+                                  "id": "C9E229D0-B895-4653-9DA7-C9C6BD999121",
+                                  "attribute": {}
+                                }
+                              }
+                            }
+
+
+        """
+        return self._tag_set_entities[tag_set_name.lower()]
+
+    def delete(self, tag_set_name):
+        """Deletes the specified tagset from the commcell
+
+                Args:
+
+                    tag_set_name    (str)       --  Name of the Tagset
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if response is empty
+
+                                if response is not success
+
+                                if unable to delete TagSet entity in commcell
+
+                                if input data type is not valid
+        """
+        if not isinstance(tag_set_name, basestring):
+            raise SDKException('Tags', '101')
+        request_json = copy.deepcopy(TagConstants.TAG_SET_DELETE_REQUEST_JSON)
+        request_json['containers'][0]['containerId'] = self._tag_set_entities[tag_set_name.lower()]['containerId']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_delete_tag_set, request_json
+        )
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if int(response.json()['errorCode']) != 0:
+                    raise SDKException('Tags', '102', response.json()['errorMessage'])
+            self.refresh()
+            return
+        self._response_not_success(response)
+
+    def add(self, tag_set_name, comment="Created from CvPySDK"):
+        """Adds the specified TagSet name in the commcell
+
+                    Args:
+                        tag_set_name (str)     --  name of the TagSet
+
+                        comment (str)         --  Comment for this TagSet
+
+                    Returns:
+
+                        object      --  Object of TagSet class
+
+                    Raises:
+                        SDKException:
+
+                                if response is empty
+
+                                if response is not success
+
+                                if unable to add TagSet entity in commcell
+
+                                if input data type is not valid
+                """
+        if not isinstance(tag_set_name, basestring) or not isinstance(comment, basestring):
+            raise SDKException('Tags', '101')
+        request_json = copy.deepcopy(TagConstants.TAG_SET_ADD_REQUEST_JSON)
+        request_json['container']['containerName'] = tag_set_name
+        request_json['container']['comment'] = comment
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_add_tag_set, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errList' in response.json():
+                    raise SDKException('Tags', '102', response.json()['errList'][0]['errLogMessage'])
+                elif 'container' in response.json():
+                    self.refresh()
+                    return TagSet(commcell_object=self._commcell_object, tag_set_name=tag_set_name)
+            raise SDKException('Tags', '104')
+        self._response_not_success(response)
+
+    def refresh(self):
+        """Refresh the TagSet entities associated with the commcell."""
+        self._tag_set_entities = self._get_all_tag_sets()
+
+
+class TagSet(object):
+    """Class for performing operations on a TagSet"""
+
+    def __init__(self, commcell_object, tag_set_name, tag_set_id=None):
+        """Initialize an object of the TagSet class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                tag_set_name     (str)          --  name of the TagSet
+
+                tag_set_id       (str)          --  Container id of the TagSet
+                                                        default: None
+
+            Returns:
+                object  -   instance of the Tagset class
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._services = commcell_object._services
+        self._cvpysdk_obj = self._commcell_object._cvpysdk_object
+        self._tag_set_name = tag_set_name
+        self._tag_set_id = None
+        self._tag_set_props = None
+        if tag_set_id is None:
+            self._tag_set_id = self._get_tag_set_id(tag_set_name)
+        else:
+            self._tag_set_id = tag_set_id
+        self._container_guid = None
+        self._owner = None
+        self._full_name = None
+        self._comment = None
+        self._tags = None
+        self._tag_ids = None
+        self._api_modify_tag_set = self._services['ADD_CONTAINER']
+        self._api_add_tag = self._services['GET_TAGS']
+        self._api_security = self._services['SECURITY_ASSOCIATION']
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def has_tag(self, tag_name):
+        """Returns whether tag exists with given name or not in tagset
+
+                    Args:
+                        tag_name (str)      --  name of the Tag
+
+                    Returns:
+
+                        bool    --  True if it exists or else false
+
+                    Raises:
+                        SDKException:
+
+                            if tag_name is not of type string
+
+
+        """
+        if not isinstance(tag_name, basestring):
+            raise SDKException('Tags', '101')
+        if tag_name.lower() in self.tags:
+            return True
+        return False
+
+    def get(self, tag_name):
+        """Returns a Tag object for the given Tag name.
+
+            Args:
+                tag_name (str)      --  name of the Tag
+
+            Returns:
+
+                obj                 -- Object of Tag class
+
+            Raises:
+                SDKException:
+
+                    if unable to create Tag object
+
+                    if tag_name is not of type string
+
+
+        """
+        if not isinstance(tag_name, basestring):
+            raise SDKException('Tags', '101')
+        if self.has_tag(tag_name):
+            return Tag(self._commcell_object, tag_set_name=self._tag_set_name, tag_name=tag_name)
+        raise SDKException('Tags', '102', "Unable to get Tag class object")
+
+    def get_tag_id(self, tag_name):
+        """Returns the tag id for the given tag name
+
+                Args:
+
+                    tag_name        (str)       --  Name of the tag
+
+                Returns:
+
+                    int     --  Tag id
+
+                Raises:
+
+                    SDKExeption:
+
+                        if input tag name is not found in this tagset
+
+        """
+        if tag_name.lower() not in self.tags:
+            raise SDKException('Tags', '106')
+        index = self.tags.index(tag_name.lower())
+        return self._tag_ids[index]
+
+    def add_tag(self, tag_name):
+        """Adds the specified tag name in the tagset container in commcell
+
+                           Args:
+                               tag_name (str)     --  name of the Tag
+
+                           Returns:
+
+                               object      --  Object of Tag class
+
+                           Raises:
+                               SDKException:
+
+                                       if response is empty
+
+                                       if response is not success
+
+                                       if unable to add Tag inside Tagset in commcell
+
+                                       if input data type is not valid
+                       """
+        if not isinstance(tag_name, basestring):
+            raise SDKException('Tags', '101')
+        request_json = copy.deepcopy(TagConstants.TAG_ADD_REQUEST_JSON)
+        request_json['container']['containerId'] = self._tag_set_id
+        request_json['tags'][0]['name'] = tag_name
+        flag, response = self._cvpysdk_obj.make_request(
+            'POST', self._api_add_tag, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errList' in response.json():
+                    raise SDKException('Tags', '102', response.json()['errList'][0]['errLogMessage'])
+                elif 'tag' in response.json():
+                    self.refresh()
+                    return Tag(commcell_object=self._commcell_object, tag_set_name=self._tag_set_name,
+                               tag_name=tag_name)
+            raise SDKException('Tags', '104')
+        self._response_not_success(response)
+
+    def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
+        """Shares tagset with given user or group in commcell
+
+                Args:
+
+                    user_or_group_name      (str)       --  Name of user or group
+
+                    is_user                 (bool)      --  Denotes whether this is user or group name
+                                                                default : True(User)
+
+                    allow_edit_permission   (bool)      --  whether to give edit permission or not to user or group
+
+                    ops_type                (int)       --  Operation type
+
+                                                            Default : 1 (Add)
+
+                                                            Supported : 1 (Add)
+                                                                        2 (Modify)
+                                                                        3 (Delete)
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                            if unable to update security associations
+
+                            if response is empty or not success
+        """
+        if not isinstance(user_or_group_name, basestring):
+            raise SDKException('Tags', '101')
+        request_json = copy.deepcopy(TagConstants.TAG_SET_SHARE_REQUEST_JSON)
+        external_user = False
+        if '\\' not in user_or_group_name:
+            user_or_group_name = f"\\{user_or_group_name}"
+        else:
+            external_user = True
+        if is_user:
+            user_obj = self._commcell_object.users.get(user_or_group_name)
+            user_id = user_obj.user_id
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "13"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
+        elif external_user:
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "62"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['externalGroupName'] = user_or_group_name
+        else:
+            grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
+            grp_id = grp_obj.user_group_id
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "15"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupName'] = user_or_group_name
+
+        request_json['entityAssociated']['entity'][0]['tagId'] = self._tag_set_id
+        request_json['securityAssociations']['associationsOperationType'] = ops_type
+
+        if allow_edit_permission:
+            request_json['securityAssociations']['associations'][0]['properties']['permissions'].append(
+                TagConstants.ADD_PERMISSION)
+        flag, response = self._cvpysdk_obj.make_request(
+            'POST', self._api_security, request_json
+        )
+        if flag:
+            if response.json() and 'response' in response.json():
+                response_json = response.json()['response'][0]
+                error_code = response_json['errorCode']
+                if error_code != 0:
+                    error_message = response_json['errorString']
+                    raise SDKException(
+                        'Tags',
+                        '102', error_message)
+            else:
+                raise SDKException('Tags', '107')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def modify(self, new_name=None, comment="Modified from CvPySDK"):
+        """Modifies the specified tagset in the commcell
+
+                Args:
+
+                    new_name        (str)       --  New name for Tagset
+
+                    comment         (str)       --  New comment which needs to be added for Tagset
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if response is empty
+
+                                if response is not success
+
+                                if unable to modify TagSet entity in commcell
+
+                                if input is not a valid data type of string
+
+        """
+        if not isinstance(new_name, basestring) or not isinstance(comment, basestring):
+            raise SDKException('Tags', '101')
+        request_json = copy.deepcopy(TagConstants.TAG_SET_MODIFY_REQUEST_JSON)
+        request_json['container']['containerName'] = new_name
+        request_json['container']['comment'] = comment
+        request_json['container']['containerId'] = self._tag_set_id
+        flag, response = self._cvpysdk_obj.make_request(
+            'POST', self._api_modify_tag_set, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errList' in response.json():
+                    raise SDKException('Tags', '102', response.json()['errList'][0]['errLogMessage'])
+                elif 'container' in response.json():
+                    self._tag_set_name = new_name
+                    self.refresh()
+                    return
+            raise SDKException('Tags', '105')
+        self._response_not_success(response)
+
+    def refresh(self):
+        """Refresh the TagSet details for associated object"""
+        self._tag_set_props = self._get_tag_set_properties()
+
+    def _get_tag_set_properties(self):
+        """ Get TagSet properties for this associated object
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict    --  Containing tagset properties
+
+        """
+        tags = self._commcell_object.activate.entity_manager(
+            EntityManagerTypes.TAGS)
+        # call refresh before fetching properties
+        tags.refresh()
+        tag_set_dict = tags.get_properties(self._tag_set_name)
+        self._full_name = tag_set_dict['containerFullName']
+        self._owner = tag_set_dict['owneruserName']
+        self._comment = tag_set_dict['comment']
+        self._container_guid = tag_set_dict['containerGuid']
+        self._tags = tag_set_dict['tags']
+        self._tag_ids = tag_set_dict['tagsIds']
+        return tag_set_dict
+
+    def _get_tag_set_id(self, tag_set_name):
+        """ Get TagSet container id for given tag set name
+                Args:
+
+                    tag_set_name (str)  -- Name of the TagSet
+
+                Returns:
+
+                    int                --  TagSet container Id
+
+        """
+
+        return self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.TAGS).get(tag_set_name).tag_set_id
+
+    @property
+    def guid(self):
+        """Returns the container guid of this Tagset"""
+        return self._container_guid
+
+    @property
+    def full_name(self):
+        """Returns the full name of this Tagset"""
+        return self._full_name
+
+    @property
+    def comment(self):
+        """Returns the comment provided for this Tagset"""
+        return self._comment
+
+    @property
+    def owner(self):
+        """Returns the owner username for this Tagset"""
+        return self._owner
+
+    @property
+    def tags(self):
+        """Returns the tags present in this tagset"""
+        return self._tags
+
+    @property
+    def tag_set_id(self):
+        """returns the container id for this tagset"""
+        return self._tag_set_id
+
+
+class Tag(object):
+    """Class for performing operations on a single Tag"""
+
+    def __init__(self, commcell_object, tag_set_name, tag_name, tag_id=None):
+        """Initialize an object of the Tag class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                tag_set_name     (str)          --  name of the TagSet
+
+                tag_name         (str)          --  Name of tag inside TagSet container
+
+                tag_id       (str)              --  id for tag
+                                                        default: None
+
+            Returns:
+                object  -   instance of the Tag class
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._services = commcell_object._services
+        self._cvpysdk_obj = self._commcell_object._cvpysdk_object
+        self._tag_name = tag_name
+        self._tag_set_name = tag_set_name
+        self._tag_id = None
+        self._tag_props = None
+        self._api_modify_tag = self._services['GET_TAGS']
+        if tag_id is None:
+            self._tag_id = self._get_tag_id(tag_set_name, tag_name)
+        else:
+            self._tag_id = tag_id
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_tag_id(self, tag_set_name, tag_name):
+        """ Get Tag id for given tag name
+                Args:
+
+                    tag_set_name    (str)   --  Name of the TagSet
+
+                    tag_name        (str)   --  Name of the Tag
+
+                Returns:
+
+                    int                --  Tag id
+
+        """
+        tags = self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.TAGS)
+        # we need this refresh so that tags gets refreshed after adding new tag inside tagset
+        tags.refresh()
+        tag_set = tags.get(tag_set_name)
+        return tag_set.get_tag_id(tag_name=tag_name)
+
+    def _get_tag_properties(self):
+        """ Get Tag properties for this associated tag object
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict    --  containing tag properties
+
+                        Example : {
+                                      "tagOwnerType": 1,
+                                      "tagId": 15865,
+                                      "name": "p10",
+                                      "flags": 0,
+                                      "fullName": "cvpysdk1\\p10",
+                                      "description": "",
+                                      "id": "C9E229D0-B895-4653-9DA7-C9C6BD999121",
+                                      "attribute": {}
+                                    }
+
+        """
+
+        tags = self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.TAGS)
+        # we need this refresh so that tags gets refreshed after adding new tag inside tagset
+        tags.refresh()
+        tag_set_dict = tags.get_properties(self._tag_set_name)
+        tag_dict = tag_set_dict['tagsDetails'][self._tag_name]
+        return tag_dict
+
+    def modify(self, new_name):
+        """Modifies the tag name in the tagset
+
+                Args:
+
+                    new_name        (str)       --  New name for Tag
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if response is empty
+
+                                if response is not success
+
+                                if unable to modify Tag name
+
+                                if input data type is not valid
+
+        """
+        if not isinstance(new_name, basestring):
+            raise SDKException('Tags', '101')
+        tags = self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.TAGS)
+        tag_set = tags.get(self._tag_set_name)
+        request_json = copy.deepcopy(TagConstants.TAG_MODIFY_REQUEST_JSON)
+        request_json['container']['containerId'] = tag_set.tag_set_id
+        request_json['tags'][0]['tagId'] = self._tag_id
+        request_json['tags'][0]['name'] = new_name
+        flag, response = self._cvpysdk_obj.make_request(
+            'PUT', self._api_modify_tag, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errList' in response.json():
+                    raise SDKException('Tags', '102', response.json()['errList'][0]['errLogMessage'])
+                elif 'tag' in response.json():
+                    self._tag_name = new_name
+                    self.refresh()
+                    return
+            raise SDKException('Tags', '105')
+        self._response_not_success(response)
+
+    def refresh(self):
+        """Refresh the TagSet details for associated object"""
+        self._tag_props = self._get_tag_properties()
+
+    @property
+    def full_name(self):
+        """Returns the full name of the tag inside tagset"""
+        return self._tag_props['fullName']
+
+    @property
+    def guid(self):
+        """Returns the tag guid value"""
+        return self._tag_props['id']
+
+    @property
+    def tag_id(self):
+        """Returns the id of the tag"""
+        return self._tag_id

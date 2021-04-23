@@ -20,6 +20,8 @@
 
 IndexServerConstants            -       Maintains constants for index server
 
+ContentAnalyzerConstants        -       Maintains constants for Content Analyzer
+
 """
 
 
@@ -91,19 +93,4 @@ class ContentAnalyzerConstants:
         "configureNodes": True,
         "cloudNodes": [],
         "cloudInfoEntity": {},
-    }
-
-
-class ActivateEntityConstants:
-    """Class to maintain all the Activate entity related constants"""
-
-    REQUEST_JSON = {
-        "regularExpression": "",
-        "flags": 0,
-        "enabled": True,
-        "entityName": "",
-        "entityXML": {
-            "keywords": "",
-            "isSystemDefinedEntity": False
-        }
     }

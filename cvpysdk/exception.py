@@ -242,6 +242,15 @@ EXCEPTION_DICT = {
         '105': 'Unable to delete regex entity in the commcell',
         '106': 'Unable to modify regex entity in the commcell'
     },
+    'Tags': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get TagSet details from commcell',
+        '104': 'Unable to create TagSet in the commcell',
+        '105': 'Unable to modify TagSet in the commcell',
+        '106': 'Unable to find given tag name in this tagset',
+        '107': 'Unable to do TagSet security association in the commcell'
+    },
     'EntityManager': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
