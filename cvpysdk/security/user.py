@@ -824,6 +824,14 @@ class User(object):
         """
         return self._properties.get('agePasswordDays')
 
+    @property
+    def user_company_name(self):
+        """
+        returns user associated company name
+        """
+
+        return self._properties.get('userEntity', {}).get('entityInfo', {}).get('companyName')
+
     @age_password_days.setter
     def age_password_days(self, days):
         """

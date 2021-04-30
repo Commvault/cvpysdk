@@ -49,6 +49,9 @@ class IndexServerConstants:
     SERVER_TYPE = 'serverType'
     INDEX_SERVER_CLIENT_ID = 'indexServerClientId'
 
+    FSINDEX = 'fsindex_'
+    MULTINODE = '_multinode'
+
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3

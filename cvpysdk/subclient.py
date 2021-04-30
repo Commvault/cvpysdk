@@ -263,6 +263,7 @@ class Subclients(object):
         from .subclients.informixsubclient import InformixSubclient
         from .subclients.adsubclient import ADSubclient
         from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.sharepointsubclient import SharepointV1Subclient
         from .subclients.vminstancesubclient import VMInstanceSubclient
         from .subclients.db2subclient import DB2Subclient
         from .subclients.casesubclient import CaseSubclient
@@ -289,6 +290,7 @@ class Subclients(object):
         globals()['InformixSubclient'] = InformixSubclient
         globals()['ADSubclient'] = ADSubclient
         globals()['SharepointSubclient'] = SharepointSubclient
+        globals()['SharepointV1Subclient'] = SharepointV1Subclient
         globals()['VMInstanceSubclient'] = VMInstanceSubclient
         globals()['CaseSubclient'] = CaseSubclient
         globals()['AzureADSubclient'] = AzureAdSubclient
@@ -317,7 +319,7 @@ class Subclients(object):
             'db2': DB2Subclient,
             'informix': InformixSubclient,
             'active directory': ADSubclient,
-            'sharepoint server': SharepointSubclient,
+            'sharepoint server': [SharepointV1Subclient,SharepointSubclient],
             "azure ad" : AzureAdSubclient
         }
 
@@ -621,6 +623,9 @@ class Subclients(object):
                             subclient = self._subclients_dict[agent_name][-1]
                         elif self._client_object.client_type and int(self._client_object.client_type) == 36:
                             # client type 36 is case manager client
+                            subclient = self._subclients_dict[agent_name][-1]
+                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
+                            # agent id 78 is sharepoint client
                             subclient = self._subclients_dict[agent_name][-1]
                         else:
                             subclient = self._subclients_dict[agent_name][0]
@@ -1278,6 +1283,9 @@ class Subclients(object):
                         subclient = self._subclients_dict[agent_name][-1]
                     elif self._client_object.client_type and int(self._client_object.client_type) == 36:
                         # client type 36 is case manager client
+                        subclient = self._subclients_dict[agent_name][-1]
+                    elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
+                        # agent id 78 is sharepoint client
                         subclient = self._subclients_dict[agent_name][-1]
                     else:
                         subclient = self._subclients_dict[agent_name][0]

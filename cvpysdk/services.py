@@ -98,6 +98,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
+    'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
+    'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -407,7 +409,15 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
-    'GET_SWAGGER': '{0}swagger/V3/swagger.json'
+    'GET_SWAGGER': '{0}swagger/V3/swagger.json',
+
+    'COMMCELL_METADATA': '{0}Commcell/MetaData',
+    'METALLIC_LINKING': '{0}CloudService/Subscription',
+    'CV_METALLIC_LINKING': '{0}/CloudService/Subscription/Details',
+    'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
+    'USER_MAPPINGS': '{0}GetUserMappings',
+    'METALLIC_REGISTERED': '{0}CloudServices/Registered',
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
 }
 
 

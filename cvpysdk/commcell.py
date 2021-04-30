@@ -116,6 +116,8 @@ Commcell:
 
     disable_tfa()                          --  Disables two factor authentication on this commcell
 
+    _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
+
 Commcell instance Attributes
 ============================
 
@@ -138,6 +140,8 @@ Commcell instance Attributes
     **version**                 --  returns the complete version info of the commserv
 
     **commcell_id**             --  returns the `CommCell` ID
+
+    **commser_metadata**        -- returns the commserv metadata of the commserv
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -167,6 +171,9 @@ Commcell instance Attributes
 
     **disk_libraries**          --  returns the instance of the `DiskLibraries` class,
     to interact with the disk libraries added on the Commcell
+
+    **tape_libraries**          --  returns the instance of the `TapeLibraries` class,
+    to interact with the tape libraries added on the Commcell
 
     **storage_policies**        --  returns the instance of the `StoragePolicies` class,
     to interact with the storage policies available on the Commcell
@@ -278,6 +285,8 @@ Commcell instance Attributes
     **is_linux_commserv**           -- boolean specifying if CommServer is installed on linux cs.
 
     **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.
+
+    **metallic**                 -- Returns the instance of CVMetallic class
 """
 
 from __future__ import absolute_import
@@ -302,6 +311,7 @@ from .client import Clients
 from .alert import Alerts
 from .storage import MediaAgents
 from .storage import DiskLibraries
+from .storage import TapeLibraries
 from .security.usergroup import UserGroups, UserGroup
 from .domains import Domains, Domain
 from .workflow import WorkFlows
@@ -344,6 +354,7 @@ from .index_server import IndexServers
 from .hac_clusters import HACClusters
 from .index_pools import IndexPools
 from .deduplication_engines import DeduplicationEngines
+from .metallic import Metallic
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -524,6 +535,7 @@ class Commcell(object):
         self._commserv_version = None
         self._version_info = None
         self._is_linux_commserv = None
+        self._commserv_metadata = None
 
         self._id = None
         self._clients = None
@@ -534,6 +546,7 @@ class Commcell(object):
         self._disaster_recovery = None
         self._alerts = None
         self._disk_libraries = None
+        self._tape_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
         self._schedules = None
@@ -574,6 +587,7 @@ class Commcell(object):
         self._deduplication_engines = None
         self._redirect_cc_idp = None
         self._tfa = None
+        self._metallic = None
         self.refresh()
 
         del self._password
@@ -629,6 +643,7 @@ class Commcell(object):
         del self._workflows
         del self._alerts
         del self._disk_libraries
+        del self._tape_libraries
         del self._storage_policies
         del self._schedule_policies
         del self._schedules
@@ -671,6 +686,7 @@ class Commcell(object):
         del self._is_service_commcell
         del self._master_saml_token
         del self._tfa
+        del self._metallic
         del self
 
     def _get_commserv_details(self):
@@ -1074,6 +1090,13 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def tape_libraries(self):
+        """Returns the instance of the TapeLibraries class"""
+        if self._tape_libraries is None:
+            self._tape_libraries = TapeLibraries(self)
+        return self._tape_libraries
+
+    @property
     def storage_policies(self):
         """Returns the instance of the StoragePolicies class."""
         return self.policies.storage_policies
@@ -1471,6 +1494,24 @@ class Commcell(object):
             self._redirect_cc_idp = self._commcells_for_user()
         return self._redirect_cc_idp
 
+    @property
+    def commserv_metadata(self):
+        """Returns the metadata of the commserv."""
+        if self._commserv_metadata is None:
+            self._commserv_metadata = self._get_commserv_metadata()
+        return self._commserv_metadata
+
+    @property
+    def metallic(self):
+        """Returns the instance of the Metallic class."""
+        try:
+            if self._metallic is None:
+                self._metallic = Metallic(self)
+
+            return self._metallic
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
     def logout(self):
         """Logs out the user associated with the current instance."""
         if self._headers['Authtoken'] is None:
@@ -1594,6 +1635,7 @@ class Commcell(object):
         self._workflows = None
         self._alerts = None
         self._disk_libraries = None
+        self._tape_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
         self._schedules = None
@@ -2860,6 +2902,8 @@ class Commcell(object):
                     if ser_comm.get('commcellName', False):
                         continue
                     redirect_cc_list.append(ser_comm['commcellName'])
+                if 'cloudServices' in response.json():
+                    redirect_cc_list.append(response.json['cloudServices'][0]['commcellName'])
                 return redirect_cc_list
             else:
                 raise SDKException('Response', '102')
@@ -3071,3 +3115,33 @@ class Commcell(object):
             None
         """
         self.two_factor_authentication.disable_tfa()
+
+    def _get_commserv_metadata(self):
+        """loads  the metadata of the CommServ, the Commcell class instance is initialized for,
+            and updates the class instance attributes.
+
+            Returns:
+                commserv_metadata (dict) : returns a dict containing commserv_redirect_url and commserv_certificate
+
+            Raises:
+                SDKException:
+                    if failed to get commserv details
+
+
+                    if response is not success
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['COMMCELL_METADATA'])
+
+        if flag:
+            if response.json():
+                    commserv_metadata = {
+                        'commserv_redirect_url': response.json()['redirectUrl'],
+                        'commserv_certificate': response.json()['certificate']
+                    }
+                    return commserv_metadata
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

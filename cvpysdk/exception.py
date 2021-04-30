@@ -431,7 +431,9 @@ EXCEPTION_DICT = {
         '105': 'Unsupported backup level specified. Please check',
         '106': 'Storage policy is not associated with subclient. Please associate',
         '107': 'Backup is not enabled for client/subclient',
-        '108': 'Client name not specified for solr cloud restore'
+        '108': 'Client name not specified for solr cloud restore',
+        '109': 'Provide the Index Server Node name for browse to work',
+        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',
@@ -442,6 +444,10 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': 'Index pool not found',
         '103': 'Index pool node not found',
+    },
+    'Metallic': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 

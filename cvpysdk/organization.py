@@ -74,6 +74,8 @@ Organizations Attributes
 
     **all_organizations**   --  returns the dict consisting of organizations and their details
 
+    **all_organizations_props** -- returns the dict consisting of organizations and their guid's
+
 
 Organization
 ============
@@ -299,13 +301,16 @@ class Organizations:
 
         if flag:
             organizations = {}
-
+            self._adv_config = {}
             if response.json() and 'providers' in response.json():
                 for provider in response.json()['providers']:
                     name = provider['connectName'].lower()
                     organization_id = provider['shortName']['id']
-
+                    organization_guid = provider['providerGUID']
                     organizations[name] = organization_id
+                    self._adv_config[name] = {
+                        'GUID': organization_guid
+                    }
 
             return organizations
         response_string = self._update_response_(response.text)
@@ -325,6 +330,27 @@ class Organizations:
 
         """
         return self._organizations
+
+    @property
+    def all_organizations_props(self):
+        """Returns the dictionary consisting of all the organizations guid info.
+
+            dict - consists of all the organizations configured on the commcell
+
+                {
+                    "organization1_name":
+                     {
+                     GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB28"
+                     },
+
+                    "organization2_name":
+                    {
+                    GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB27"
+                    }
+                }
+
+        """
+        return self._adv_config
 
     def has_organization(self, name):
         """Checks if an organization exists in the Commcell with the input organization name.
@@ -584,7 +610,9 @@ class Organizations:
 
     def refresh(self):
         """Refresh the list of organizations associated to the Commcell."""
+        self._adv_config = None
         self._organizations = self._get_organizations()
+
 
 class Organization:
     """Class for performing operations on an Organization."""

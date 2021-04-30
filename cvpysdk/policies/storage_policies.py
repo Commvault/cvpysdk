@@ -2054,7 +2054,7 @@ class StoragePolicy(object):
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=1000):
+                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None):
         """Runs the aux copy job from the commcell.
             Args:
 
@@ -2149,6 +2149,9 @@ class StoragePolicy(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         aux_copy = self._commcell_object._services['CREATE_TASK']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -2164,6 +2167,10 @@ class StoragePolicy(object):
 
                     o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
                     raise SDKException('Storage', '102', o_str)
+
+                elif "taskId" in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+
                 else:
                     raise SDKException('Storage', '102', 'Failed to run the aux copy job')
             else:
@@ -2472,7 +2479,7 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     def run_data_verification(self, media_agent_name='', copy_name='', streams=0,
-                              jobs_to_verify='NEW', use_scalable=False, **kwargs):
+                              jobs_to_verify='NEW', use_scalable=False, schedule_pattern=None, **kwargs):
         """Runs Data verification job
 
         Args:
@@ -2552,6 +2559,10 @@ class StoragePolicy(object):
             }
         }
 
+        if schedule_pattern:
+            request["taskInfo"]["task"] = {"taskType": 2}
+            request = SchedulePattern().create_schedule(request, schedule_pattern)
+
         data_verf = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', data_verf, request
@@ -2564,6 +2575,8 @@ class StoragePolicy(object):
                     error_message = response.json()['errorMessage']
                     o_str = 'Data verification Request failed. Error: "{0}"'.format(error_message)
                     raise SDKException('Storage', '102', o_str)
+                elif "taskId" in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
                 else:
                     raise SDKException('Storage', '109')
             else:

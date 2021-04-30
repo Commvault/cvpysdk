@@ -55,6 +55,8 @@ Backupsets:
     
     add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client
 
+    add_v1_sharepoint_client()      -- Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
     add_salesforce_backupset()      -- adds a new salesforce backupset
 
     get(backupset_name)             -- returns the Backupset class object
@@ -690,6 +692,116 @@ request_json['backupSetInfo'].update({
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_v1_sharepoint_client(
+            self,
+            backupset_name,
+            server_plan,
+            client_name,
+            **kwargs):
+        """
+        for sharepoint v1 client creation is a backupset
+        Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
+                Args:
+                    backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                    server_plan                 (str)   --  server_plan to associate with the client
+
+                    client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+                Kwargs :
+
+                    tenant_url                  (str)   --  url of sharepoint tenant
+
+                    azure_username              (str)   --  username of azure app
+
+                    azure_secret                (str)   --  secret key of azure app
+
+                    user_username        (str)   --  username of Sharepoint admin
+
+                    user_password           (str)  -- password of Sharepoint admin
+
+                    azure_app_id            (str)       --  azure app id for sharepoint online
+
+                    azure_app_key_id        (str)       --  app key for sharepoint online
+
+                    azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+                Returns:
+                    object  -   instance of the Client class for this new client
+
+                Raises:
+                    SDKException:
+                        if client with given name already exists
+
+                        if index_server is not found
+
+                        if server_plan is not found
+
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+
+        """
+        if self.has_backupset(backupset_name):
+            raise SDKException(
+                'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name))
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id)
+            }
+        else:
+            raise SDKException('Backupset', '102')
+        backup_set = {
+            "_type_": 6,
+            "applicationId": 78,
+            "backupsetName": backupset_name,
+            "clientId": int(self._client_object.client_id)
+        }
+        request_json = {
+            "backupSetInfo": {
+                "planEntity": server_plan_dict,
+                "backupSetEntity": backup_set,
+                "sharepointBackupSet": {
+                    "sharepointBackupSetType": 4
+                }
+            }
+        }
+        tenant_url = kwargs.get('tenant_url')
+        user_username = kwargs.get('user_username')
+        is_modern_auth_enabled = kwargs.get('is_modern_auth_enabled',False)
+        azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
+        azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+        user_password = b64encode(kwargs.get('user_password').encode()).decode()
+        request_json["backupSetInfo"]["sharepointBackupSet"][
+            "spOffice365BackupSetProp"] = {
+            "azureUserAccount": kwargs.get('azure_username'),
+            "azureAccountKey": azure_secret,
+            "tenantUrlItem": tenant_url,
+            "isModernAuthEnabled": is_modern_auth_enabled,
+            "office365Credentials": {
+                "userName": user_username,
+                "password": user_password
+            },
+        }
+        if is_modern_auth_enabled:
+            request_json["backupSetInfo"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["azureAppList"] = {
+                "azureApps": [
+                    {
+                        "azureAppId": kwargs.get('azure_app_id'),
+                        "azureAppKeyValue": azure_app_key_id,
+                        "azureDirectoryId": kwargs.get('azure_directory_id')
+                    }
+                ]
+            }
+
+        self._process_add_response(backupset_name, request_json)
 
     def add_salesforce_backupset(
             self,
@@ -2051,7 +2163,8 @@ class Backupset(object):
         else:
             options = kwargs
 
-        options['operation'] = 'find'
+        if 'operation' not in options:
+            options['operation'] = 'find'
 
         if 'path' not in options:
             options['path'] = '\\**\\*'

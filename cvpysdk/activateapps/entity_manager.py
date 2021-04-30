@@ -91,6 +91,8 @@ TagSet Attributes
 
     **owner**           --  returns the owner user name for this tagset
 
+    **owner_alias_name** -  returns the owner alias name for this tagset
+
     **tags**            --  returns the tags present in this tagset
 
     **tag_set_id**      --  returns the tagset id
@@ -859,7 +861,7 @@ class Tags(object):
             raise SDKException('Tags', '101')
 
         if self.has_tag_set(tag_set_name):
-            tag_set_id = self._tag_set_entities[tag_set_name]['containerId']
+            tag_set_id = self._tag_set_entities[tag_set_name.lower()]['containerId']
             return TagSet(self._commcell_object, tag_set_name=tag_set_name, tag_set_id=tag_set_id)
         raise SDKException('Tags', '102', "Unable to get TagSet class object")
 
@@ -946,9 +948,13 @@ class Tags(object):
                                 if unable to delete TagSet entity in commcell
 
                                 if input data type is not valid
+
+                                if unable to find TagSet entity in commcell
         """
         if not isinstance(tag_set_name, basestring):
             raise SDKException('Tags', '101')
+        if not self.has_tag_set(tag_set_name=tag_set_name):
+            raise SDKException('Tags', '102', "Tagset not found")
         request_json = copy.deepcopy(TagConstants.TAG_SET_DELETE_REQUEST_JSON)
         request_json['containers'][0]['containerId'] = self._tag_set_entities[tag_set_name.lower()]['containerId']
         flag, response = self._cvpysdk_object.make_request(
@@ -958,6 +964,8 @@ class Tags(object):
             if response.json() and 'errorCode' in response.json():
                 if int(response.json()['errorCode']) != 0:
                     raise SDKException('Tags', '102', response.json()['errorMessage'])
+            elif 'errList' in response.json():
+                raise SDKException('Tags', '102', response.json()['errList'][0]['errLogMessage'])
             self.refresh()
             return
         self._response_not_success(response)
@@ -1042,6 +1050,7 @@ class TagSet(object):
         self._comment = None
         self._tags = None
         self._tag_ids = None
+        self._owner_alias_name = None
         self._api_modify_tag_set = self._services['ADD_CONTAINER']
         self._api_add_tag = self._services['GET_TAGS']
         self._api_security = self._services['SECURITY_ASSOCIATION']
@@ -1205,13 +1214,13 @@ class TagSet(object):
             raise SDKException('Tags', '101')
         request_json = copy.deepcopy(TagConstants.TAG_SET_SHARE_REQUEST_JSON)
         external_user = False
-        if '\\' not in user_or_group_name:
-            user_or_group_name = f"\\{user_or_group_name}"
-        else:
+        if '\\' in user_or_group_name:
             external_user = True
+
         if is_user:
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
+            user_or_group_name = f"\\{user_or_group_name}"
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "13"
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
@@ -1322,6 +1331,7 @@ class TagSet(object):
         self._container_guid = tag_set_dict['containerGuid']
         self._tags = tag_set_dict['tags']
         self._tag_ids = tag_set_dict['tagsIds']
+        self._owner_alias_name = tag_set_dict['owneraliasName']
         return tag_set_dict
 
     def _get_tag_set_id(self, tag_set_name):
@@ -1358,6 +1368,11 @@ class TagSet(object):
     def owner(self):
         """Returns the owner username for this Tagset"""
         return self._owner
+
+    @property
+    def owner_alias_name(self):
+        """Returns the owner alias name for this Tagset"""
+        return self._owner_alias_name
 
     @property
     def tags(self):
@@ -1462,8 +1477,9 @@ class Tag(object):
             entity_type=EntityManagerTypes.TAGS)
         # we need this refresh so that tags gets refreshed after adding new tag inside tagset
         tags.refresh()
+        tags.get(self._tag_set_name).refresh()
         tag_set_dict = tags.get_properties(self._tag_set_name)
-        tag_dict = tag_set_dict['tagsDetails'][self._tag_name]
+        tag_dict = tag_set_dict['tagsDetails'][self._tag_name.lower()]
         return tag_dict
 
     def modify(self, new_name):

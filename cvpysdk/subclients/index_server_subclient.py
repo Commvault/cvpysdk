@@ -44,6 +44,7 @@ IndexServerSubClient:
 
 from past.builtins import basestring
 from ..exception import SDKException
+from ..index_server import IndexServerOSType
 from ..subclients.bigdataappssubclient import BigDataAppsSubclient
 
 
@@ -109,17 +110,25 @@ class IndexServerSubclient(BigDataAppsSubclient):
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException('IndexServers', '104', 'Given client name is not part of index server cloud')
+
+        path_delimiter = "\\"
+        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+            path_delimiter = "/"
+
         if core_name is None and roles is not None:
-            paths = [f"\\{role}\\{client}" for role in roles]
+            paths = [f"{path_delimiter}{role}{path_delimiter}{client}" for role in roles]
+
         elif roles is None and core_name is not None:
             for core in core_name:
-                core = core.replace("\\", f"\\{client}\\")
-                paths.append(f"\\{core}")
+                core = core.replace(path_delimiter, f"{path_delimiter}{client}{path_delimiter}")
+                paths.append(f"{path_delimiter}{core}")
+
         else:
             for role in self.content:
-                role = role.replace("\\\\", '')
+                role = role.replace("\\", '')
                 role = role.replace("%", '')
-                paths.append(f"\\{role}\\{client}")
+                paths.append(f"{path_delimiter}{role}{path_delimiter}{client}")
+
         return paths
 
     def do_restore_in_place(
@@ -277,7 +286,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
         """Gets files/folders details from index server backup job.
 
                     Args:
@@ -286,8 +295,12 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                         include_files       (bool)  --  whether to include files in response or not
                             default : True (Both files/folders from backup will be returned)
+                            Note : Works only in the case of Windows IS, does not work for Linux IS
 
                         job_id              (str)   --  job id to be used for browse
+
+                        index_server_node   (str)   --  index server client node name
+                            Note : Required compulsory in the case of unix IS when roles is not none.
 
 
                      Returns: (list, dict)
@@ -306,9 +319,23 @@ class IndexServerSubclient(BigDataAppsSubclient):
         find_options = {}
         if roles is None:
             find_options['path'] = '\\**\\*'
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                find_options['path'] = '/**/*'
+
         else:
-            roles = [f"\\{role}\\**\\*" for role in roles]
-            find_options['path'] = roles
+            roles_path = [f"\\{role}\\**\\*" for role in roles]
+            if index_server_node is not None:
+                roles_path = [f"\\{role}\\{index_server_node}\\**\\*" for role in roles]
+
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                if index_server_node is None:
+                    raise SDKException('IndexServers', '109')
+                if len(roles) > 1:
+                    raise SDKException('IndexServers', '110')
+                roles_path = [f"/{role}/{index_server_node}" for role in roles]
+                find_options['operation'] = 'browse'
+
+            find_options['path'] = roles_path
         if job_id != 0:
             find_options['job_id'] = job_id
         if include_files:

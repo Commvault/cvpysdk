@@ -85,6 +85,8 @@ FileSystemSubclient Instance Attributes:
 
     **generate_signature_on_ibmi**        --  enable or disable signature generation on ibmi
 
+    **backup_using_multiple_drives**      --  enable or disable VTL multiple drives for ibmi subclient.
+
     **object_level_backup**               --  enable or disable object level backup for ibmi subclient
 
     **global_filter_status**              --  returns the status whther to include global filters
@@ -1207,6 +1209,31 @@ class FileSystemSubclient(Subclient):
             "_fsSubClientProp['genSignatureOnIBMi']",
             generate_signature_value
         )
+
+    @property
+    def backup_using_multiple_drives(self):
+        """Gets the value of VTL multiple drives on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('backupUsingMultipleDrives',False))
+
+    @backup_using_multiple_drives.setter
+    def backup_using_multiple_drives(self, set_vtl_multiple_drives):
+        """Updates the VTL multiple drives property value on ibmi subclient.
+
+            Args:
+                set_vtl_multiple_drives (bool)  --  Enable or disable VTL multiple drives on IBMi
+        """
+        update_properties = self.properties
+        if isinstance(set_vtl_multiple_drives, bool):
+            update_properties['fsSubClientProp']['backupUsingMultipleDrives'] = set_vtl_multiple_drives
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
 
     @property
     def object_level_backup(self):
