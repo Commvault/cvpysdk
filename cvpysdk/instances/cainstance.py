@@ -69,6 +69,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.amazon_instance import AmazonDocumentDBInstance
         from .cloudapps.amazon_instance import AmazonRDSInstance
         from .cloudapps.amazon_instance import AmazonDynamoDBInstance
+        from .cloudapps.teams_instance import TeamsInstance
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
@@ -86,7 +87,8 @@ class CloudAppsInstance(Instance):
             27: AmazonDocumentDBInstance, # Amazon Document DB
             25: CloudStorageInstance,   #AliBaba
             24: CloudStorageInstance,   #IBM
-            22: AmazonDynamoDBInstance  # Amazon DynamoDB
+            22: AmazonDynamoDBInstance,  # Amazon DynamoDB
+            36: TeamsInstance # Office 365 Teams
         }
 
         commcell_object = agent_object._commcell_object

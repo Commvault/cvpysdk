@@ -2828,9 +2828,6 @@ class Instance(object):
                 destination_path = value.get("destination_path", "")
                 self._destination_restore_json["destPath"] = [destination_path] if destination_path != "" else []
 
-            if self._destination_restore_json["inPlace"]:
-                self._destination_restore_json["destPath"] = [""]
-
         # For Index server restore, we need to set proxy client & in-place flag
         elif value.get("proxy_client") is not None and \
                 (self._agent_object.agent_name).upper() == "BIG DATA APPS" and \

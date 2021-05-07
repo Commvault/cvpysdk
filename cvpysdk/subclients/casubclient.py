@@ -45,6 +45,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.google_subclient import GoogleSubclient
         from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
         from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
+        from .cloudapps.teams_subclient import TeamsSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -63,6 +64,7 @@ class CloudAppsSubclient(Subclient):
             25: CloudStorageSubclient,  # AliBaba
             24: CloudStorageSubclient,  #IBM
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
+            36: TeamsSubclient # Office 365 Teams
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
