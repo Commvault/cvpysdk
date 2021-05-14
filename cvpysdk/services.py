@@ -217,6 +217,10 @@ SERVICES_DICT_TEMPLATE = {
     'GET_TAGS': '{0}EDiscovery/Tags',
     'ADD_CONTAINER': '{0}PerformContainerOperation',
     'DELETE_CONTAINER': '{0}Containers/Action/Delete',
+    'CA_UPLOAD_FILE': '{0}ContentAnalyzer/%s/action/uploadFile',
+    'GET_CLASSIFIERS': '{0}dcube/classifiers?getDisabled=True',
+    'START_TRAINING': '{0}ContentAnalyzer/%s/%s/ml/action/train',
+    'CANCEL_TRAINING': '{0}ContentAnalyzer/%s/%s/training/cancel',
 
 
     'GLOBAL_FILTER': '{0}GlobalFilter',

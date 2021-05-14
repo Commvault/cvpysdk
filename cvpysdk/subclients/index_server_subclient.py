@@ -182,11 +182,10 @@ class IndexServerSubclient(BigDataAppsSubclient):
         """
 
         paths = self._get_path_for_restore(roles=roles, core_name=core_name, client=client)
-        proxy_client = None
-        if not self._index_server_obj.is_cloud:
-            proxy_client = self._index_server_obj.client_name[0]
-        else:
+        proxy_client = self._index_server_obj.client_name[0]
+        if self._index_server_obj.is_cloud or len(self._index_server_obj.client_name) > 1:
             proxy_client = client
+
         job_obj = self.restore_in_place(paths=paths, overwrite=overwrite,
                                         from_time=from_time, to_time=to_time,
                                         proxy_client=proxy_client,

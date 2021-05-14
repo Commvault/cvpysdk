@@ -5045,7 +5045,8 @@ class Client(object):
                            prop_name,
                            prop_value,
                            client_side_cache=None,
-                           max_cache_db=None):
+                           max_cache_db=None,
+                           high_latency_optimization=None):
         """
             Set DDB propeties
 
@@ -5059,17 +5060,22 @@ class Client(object):
                 ON_CLIENT, to enable client side deduplication
                 OFF, to disable client side deduplication
 
-                enableClientSideCache: True/False
-                maxCacheDB: Valid values are:
-                                1024
-                                2048
-                                4096
-                                8192
-                                16384
-                                32768
-                                65536
-                                131072
-
+                enableClientSideCache: To set usage of Client Side Cache
+                                Values - None(Default) - DoNot Modify the property value
+                                         True/False - Enable/Disable Cache respectively
+                    maxCacheDB: Size of Cache DB if enabled. Default Value: None (use default size)
+                                Valid values are:
+                                    1024
+                                    2048
+                                    4096
+                                    8192
+                                    16384
+                                    32768
+                                    65536
+                                    131072
+                    high_latency_optimization: To set Optimization for High latency Networks
+                                Values - None(Default) - DoNotModify the property value
+                                         True/False - Enable/Disable optimization respectively
         """
         if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
             raise SDKException('Client', '101')
@@ -5083,7 +5089,9 @@ class Client(object):
                         'maxCacheDb': max_cache_db
                     }
                 }
-
+                if high_latency_optimization is not None:
+                    dedupe_props['deDuplicationProperties'][
+                        'enableHighLatencyOptimization'] = high_latency_optimization
             else:
                 dedupe_props = {
                     'deDuplicationProperties': {
@@ -5091,7 +5099,6 @@ class Client(object):
                         'enableClientSideDiskCache': client_side_cache
                     }
                 }
-
         else:
             dedupe_props = {
                 'deDuplicationProperties': {

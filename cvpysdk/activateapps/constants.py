@@ -22,8 +22,49 @@ ActivateEntityConstants         -       Maintains constants for Regex custom ent
 
 TagConstants                    -       Maintains constants for Tags
 
+ClassifierConstants             -       Maintains constants for Classifiers
+
+TrainingStatus                  -       Enum class for classifier training status
+
 """
 import copy
+from enum import Enum
+
+
+class TrainingStatus(Enum):
+    """Class to maintain training status for classifier"""
+    NOT_APPLICABLE = 0
+    CREATED = 1
+    RUNNING = 2
+    FAILED = 3
+    COMPLETED = 4
+    CANCELLED = 5
+    NOT_USABLE = 6
+
+
+class ClassifierConstants:
+    """Class to maintain all the Classsifier related constants"""
+    CREATE_REQUEST_JSON = {
+        "description": "",
+        "enabled": True,
+        "entityName": "",
+        "entityType": 4,
+        "entityKey": "",
+        "entityXML": {
+            "classifierDetails": {
+                "datasetStorageType": 1,
+                "trainingStatus": 6,
+                "trainDatasetURI": "http://localhost:22000/solr",
+                "datasetType": "docs",
+                "CAUsedInTraining": {
+                    "caUrl": "",
+                    "clientId": 0,
+                    "cloudName": "",
+                    "cloudId": 0
+                }
+            }
+        }
+    }
 
 
 class ActivateEntityConstants:

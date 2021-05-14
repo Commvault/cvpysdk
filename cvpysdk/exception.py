@@ -242,6 +242,17 @@ EXCEPTION_DICT = {
         '105': 'Unable to delete regex entity in the commcell',
         '106': 'Unable to modify regex entity in the commcell'
     },
+    'Classifier': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get classifier details from commcell',
+        '104': 'Unable to create classifier in the commcell',
+        '105': 'Unable to delete classifier in the commcell',
+        '106': 'Unable to modify classifier in the commcell',
+        '107': 'Training model data zip file not exists in given path',
+        '108': 'Model Data Training failed on this classifier',
+        '109': 'Cancel Training failed on this classifier'
+    },
     'Tags': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',

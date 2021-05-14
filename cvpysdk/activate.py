@@ -33,7 +33,7 @@ Activate instance Attributes
 """
 from .exception import SDKException
 
-from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags
+from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
 
 
 class Activate(object):
@@ -52,11 +52,13 @@ class Activate(object):
         self._commcell_object = commcell_object
         self._entity = None
         self._tags = None
+        self._classifiers = None
 
     def __del__(self):
         """Destructor method to delete all instances of apps referenced by this class"""
         del self._entity
         del self._tags
+        del self._classifiers
 
     def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
         """Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
@@ -90,4 +92,8 @@ class Activate(object):
             if self._tags is None:
                 self._tags = Tags(self._commcell_object)
             return self._tags
+        elif entity_type.value == EntityManagerTypes.CLASSIFIERS.value:
+            if self._classifiers is None:
+                self._classifiers = Classifiers(self._commcell_object)
+            return self._classifiers
         raise SDKException('EntityManager', '102', 'Unsupported entity type specified')

@@ -164,6 +164,12 @@ StoragePolicyCopy:
 
     recopy_jobs()                           --  recopies a job on a secondary copy
 
+Attributes
+----------
+
+    **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
+
+    **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 """
 
 from __future__ import absolute_import
@@ -860,6 +866,8 @@ class StoragePolicies(object):
                             raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
+                        if 'errorCode' in response.text and 'errorMessage' in response.text:
+                            raise SDKException('Storage', '102', response.text.strip())
                         self.refresh()
                         return response.text.strip()
                     else:
@@ -3635,6 +3643,30 @@ class StoragePolicyCopy(object):
             raise SDKException('Storage', '101')
 
         self._copy_flags['enableParallelCopy'] = int(value)
+
+        self._set_copy_properties()
+
+    @property
+    def space_optimized_auxillary_copy(self):
+        """Treats the space optimized auxillary copy setting as a read-only attribute."""
+        if self._copy_properties.get('extendedFlags', {}).get('spaceOptimizedAuxCopy'):
+            return True
+        return False
+
+    @space_optimized_auxillary_copy.setter
+    def space_optimized_auxillary_copy(self, value):
+        """Sets the space optimized auxillary copy setting as the value provided as input.
+            Args:
+                value    (bool) --  Enable/Disable Space Optimized Auxillary Copy
+            Raises:
+                SDKException:
+                    if failed to update property
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+        self._copy_properties['extendedFlags']['spaceOptimizedAuxCopy'] = int(value)
 
         self._set_copy_properties()
 

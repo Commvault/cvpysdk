@@ -786,7 +786,7 @@ class IndexServer(object):
 
                 Args:
                     client_name     (str)       --  name of the client node
-                        ***Applicable only for solr cloud mode***
+                        ***Applicable only for solr cloud mode or multi node Index Server***
 
                 Returns:
                     (list,dict)     -- list containing core names
@@ -806,7 +806,7 @@ class IndexServer(object):
 
         """
         server_url = self.server_url[0]
-        if self.is_cloud:
+        if self.is_cloud or len(self.client_name) > 1:
             if client_name is None:
                 raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
             if client_name not in self.client_name:

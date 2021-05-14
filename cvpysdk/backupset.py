@@ -118,6 +118,9 @@ Backupset:
     delete_data()                   -- deletes items from the backupset and makes then unavailable
     to browse and restore
 
+    backed_up_files_count()         -- Returns the count of the total number of files present in the backed up data
+                                       of all the subclients of the given backupset.
+
 Backupset instance Attributes
 -----------------------------
 
@@ -2241,3 +2244,20 @@ class Backupset(object):
 
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
+
+    def backed_up_files_count(self):
+        """Returns the count of the total number of files present in the backed up data
+         of all the subclients of the given backupset.
+         """
+        options_dic = {"operation": "find", "opType": 1, "path": "\**\*",
+               "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
+                                    "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
+                       "criteria": {
+                           "field": "Flags",
+                           "dataOperator": "IN",
+                           "values": ["file"]
+                       }
+                   }]}], "_raw_response": True}
+
+        browse_response = self._do_browse(options_dic)
+        return browse_response[1]['browseResponses'][0]['browseResult']['aggrResultSet'][0]['count']

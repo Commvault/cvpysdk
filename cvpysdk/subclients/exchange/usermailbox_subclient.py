@@ -1066,6 +1066,33 @@ class UsermailboxSubclient(ExchangeSubclient):
                 "genericAssociations"]= subclient_content
         return task_dict
 
+    def browse_mailboxes(self,retry_attempts=0):
+        """
+        This function returns the mailboxes available for OOP restore
+        return: dictionary containing mailbox info
+        """
+        BROWSE_MAILBOXES = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
+            int(self._backupset_object.backupset_id), 'User'
+        )
+        flag,response = self._commcell_object._cvpysdk_object.make_request('GET',BROWSE_MAILBOXES)
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+                if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
+                    time.sleep(10)
+                    if retry_attempts > 10:
+                        raise SDKException('Subclient', '102', 'Failed to perform browse operation.')
+                    return self.browse_mailboxes(retry_attempts+1)
+                if 'discoverInfo' in discover_content.keys():
+                    if 'mailBoxes' in discover_content['discoverInfo']:
+                        mailboxes=discover_content["discoverInfo"]["mailBoxes"]
+                        return mailboxes
+            else:
+                raise SDKException("Response", "102")
+        else:
+            response_string=self.commcell._update_response_(response.text)
+            raise SDKException('Response','101',response_string)
+
     def backup_generic_items(self, subclient_content):
         """
             Backups the Generic Items for any Exchange Online Client
@@ -1348,8 +1375,9 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         _assocaition_json_ = self._association_json(subclient_content)
         _assocaition_json_["emailAssociation"]["emailStatus"] = 1
+        _assocaition_json_["emailAssociation"]["advanceOptions"]["enableAutoDiscovery"]=subclient_content["is_auto_discover_user"]
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
-        self._update_association_request(_assocaition_json_)
+        self._set_association_request(_assocaition_json_)
 
     def enable_allusers_associations(self, subclient_content):
         """Enable all users assocaition for UserMailboxSubclient.
@@ -1449,6 +1477,70 @@ class UsermailboxSubclient(ExchangeSubclient):
             }
         }
         self._set_association_request(_association_json)
+
+
+    def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
+        """
+            Delete all users association for UserMailboxSubclient.
+
+                    Args:
+                        association_name  (str)  --  Type of auto discover association
+                            Valid Values:
+                                "All Users"
+                                "All O365 Mailboxes"
+                                "All Public Folders"
+
+                        subclient_content (dict) - containing the information of users/groups
+
+                            if use_policies is True
+
+                                subclient_content={
+                                    "is_auto_dicover_user" (bool): True
+                                    "archive_policy" (obj): Archive Policy object
+                                    "cleanup_policy" (obj): Cleanup Policy Object
+                                    "retention_policy" (obj): Retention Policy Object
+                                }
+
+                            if use_policies is False
+
+                                subclient_content={
+                                    "is_auto_discover_user" (bool): True,
+                                    "plan_name" (str): Name of the exchange plan
+                                }
+
+
+        """
+        if not (isinstance(subclient_content, dict)):
+            raise SDKException("Subclient", "101")
+
+        association_dict = {"all users": 8,
+                            "all o365 group mailboxes": 11,
+                            "all public folders": 12
+                            }
+
+        if association_name.lower() not in association_dict:
+            raise SDKException("Subclient", "102","Invalid Association Name supplied")
+
+        if use_policies == True:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            planobject = self._commcell_object.plans.get(subclient_content["plan_name"])
+            _association_json_ = self._association_json_with_plan(plan_details=planobject)
+
+        
+        discover_info = {
+            "discoverByType": association_dict[association_name.lower()],
+            "genericAssociations": [
+                {
+                    "associationName": association_name,
+                    "associationType": association_dict[association_name.lower()]
+                }
+            ]
+        }
+        _association_json_["emailAssociation"]["advanceOptions"]["enableAutoDiscovery"] = True
+        _association_json_["emailAssociation"]["emailStatus"] = 1
+        _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        self._set_association_request(_association_json_)
 
     def backup_mailboxes(self, mailbox_alias_names):
         """
