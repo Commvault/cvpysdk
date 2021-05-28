@@ -60,6 +60,7 @@ class UnixDownloadFeatures(Enum):
     """
     list of Unix features supported
     """
+    COMMSERVE = 1020
     CASSANDRA = 1211
     CLOUD_APPS = 1140
     DOMINO_DATABASE = 1051
@@ -81,6 +82,7 @@ class WindowsDownloadFeatures(Enum):
     """
     list of Windows features supported
     """
+    COMMSERVE = 20
     ACTIVE_DIRECTORY = 703
     CLOUD_APPS = 730
     DOMINO_DATABASE = 201

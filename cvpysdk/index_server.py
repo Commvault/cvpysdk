@@ -469,8 +469,8 @@ class IndexServers(object):
             'LANGUAGE': '0'
         }
         node_meta_infos = {
-            'PORTNO': '20000',
-            'JVMMAXMEMORY': '8191'
+            'PORTNO': IndexServerConstants.DEFAULT_SOLR_PORT,
+            'JVMMAXMEMORY': IndexServerConstants.DEFAULT_JVM_MAX_MEMORY
         }
         role_meta_infos = {}
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)

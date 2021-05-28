@@ -2086,6 +2086,7 @@ class Commcell(object):
             log_file_loc=None,
             client_group_name=None,
             storage_policy_name=None,
+            sw_cache_client=None,
             **kwargs):
         """
         Installs the selected features in the selected clients
@@ -2128,6 +2129,10 @@ class Commcell(object):
 
                  default : None
 
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
+
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
             install_flags (dict)            -- dictionary of install flag values
@@ -2167,6 +2172,7 @@ class Commcell(object):
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
                                 storage_policy_name='My_Storage_Policy',
+                                sw_cache_client="remote_cache_client_name"
                                 install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
@@ -2184,6 +2190,7 @@ class Commcell(object):
             log_file_loc=log_file_loc,
             client_group_name=client_group_name,
             storage_policy_name=storage_policy_name,
+            sw_cache_client=sw_cache_client,
             **kwargs)
 
     def enable_auth_code(self):

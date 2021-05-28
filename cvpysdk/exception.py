@@ -196,7 +196,8 @@ EXCEPTION_DICT = {
         '102': 'Data type of the input(s) is not valid',
         '103': 'Invalid operation type passed to Schedules class',
         '104': 'Provided Option cannot be updated',
-        '105': 'Could not find the provided schedule name/id'
+        '105': 'Could not find the provided schedule name/id',
+        '106': ''
     },
     'ClientGroup': {
         '101': 'Data type of the input(s) is not valid',

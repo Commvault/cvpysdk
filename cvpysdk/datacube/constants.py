@@ -32,6 +32,7 @@ class IndexServerConstants:
     INDEX_SERVER_INSTANCE_NAME = "dynamicIndexInstance"
 
     ROLE_DATA_ANALYTICS = "Data Analytics"
+    ROLE_FILE_SYSTEM_INDEX = "FileSystem Index"
     ROLE_EXCHANGE_INDEX = "Exchange Index"
     ROLE_ONEDRIVE_INDEX = "OneDrive Index"
     ROLE_SYSTEM_DEFAULT = "System Default"
@@ -56,13 +57,16 @@ class IndexServerConstants:
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
+    DEFAULT_JVM_MAX_MEMORY = '8191'
+    DEFAULT_SOLR_PORT = '20000'
+
     SOLR_PORT_META_INFO = {
         "name": "PORTNO",
-        "value": None
+        "value": DEFAULT_SOLR_PORT
     }
     SOLR_JVM_META_INFO = {
         "name": "JVMMAXMEMORY",
-        "value": None
+        "value": DEFAULT_JVM_MAX_MEMORY
     }
 
     UPDATE_ADD_ROLE = {

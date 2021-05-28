@@ -755,14 +755,20 @@ class Clients(object):
         """
         return self._clients
 
-    def create_pseudo_client(self, client_name, client_hostname=None):
+    def create_pseudo_client(self, client_name, client_hostname=None, client_type="windows"):
         """ Creates a pseudo client
 
             Args:
-                client_name 	(str)   --  name of the client to be created
+                client_name     (str)   --  name of the client to be created
 
-				client_hostname (str) 	-- 	hostname of the client to be created
-					default:None
+                client_hostname (str)   --  hostname of the client to be created
+                    default:None
+
+                client_type(str)     --  OS/Type of client to be created
+                    default : "windows"
+
+                    Available Values for client_type : "windows"
+                                                       "unix"
 
             Returns:
                 client object for the created client.
@@ -779,12 +785,18 @@ class Clients(object):
         if not isinstance(client_name, str):
             raise SDKException('Client', '101')
 
+        if "windows" in client_type.lower():
+            os_id = 0
+
+        if "unix" in client_type.lower():
+            os_id = 1
+
         request_json = {
             'App_CreatePseudoClientRequest':
                 {
                     "registerClient": "false",
                     "clientInfo": {
-                        "clientType": 0,
+                        "clientType": os_id,
                         "openVMSProperties": {
                             "cvdPort": 0
                         },
@@ -1112,7 +1124,8 @@ class Clients(object):
                     ndmp_server_clientname,
                     ndmp_server_hostname,
                     username,
-                    password
+                    password,
+                    listenPort = 10000
                     ):
 
         """
@@ -1146,7 +1159,7 @@ class Clients(object):
                 }
             },
             "detectNDMPSrvReq": {
-                "listenPort": 10000,
+                "listenPort": listenPort,
                 "ndmpServerDetails": {
                     "ndmpServerHostName": ndmp_server_hostname,
                     "ndmpServerClientName": ndmp_server_clientname,
@@ -1164,7 +1177,7 @@ class Clients(object):
                 "clientInfo": {
                     "clientType": 2,
                     "nasClientProperties": {
-                        "listenPort": 10000,
+                        "listenPort": listenPort,
                         "ndmpServerDetails": {
                             "ndmpServerHostName": ndmp_server_hostname,
                             "ndmpServerClientName": ndmp_server_clientname,

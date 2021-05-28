@@ -35,6 +35,10 @@ FileSystemSubclient:
 
     _advanced_backup_options()          --  sets the advanced backup options
 
+    enable_content_indexing             --  Enables Content indexing and add the policy associations
+
+    disable_content_indexing            --  Disables Content indexing and disassociate the CI policy
+
     find_all_versions()                 --  returns the dict containing list of all the backed up
                                             versions of specified file
 
@@ -1896,6 +1900,17 @@ class FileSystemSubclient(Subclient):
                 schedule_pattern=schedule_pattern,
                 advanced_options=advanced_options
             )
+
+    def enable_content_indexing(self, policy_id):
+        """Enables Content indexing and add the policy associations"""
+        self._set_subclient_properties('enableContentIndexing', True)
+        self._set_subclient_properties('enableContentIndexing', int(policy_id))
+
+    def disable_content_indexing(self):
+        """Disables Content indexing and disassociate the CI policy"""
+        update_properties = self.properties
+        update_properties['fsSubClientProp']['enableContentIndexing'] = False
+        self.update_properties(update_properties)
 
     @property
     def catalog_acl(self):
