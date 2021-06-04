@@ -390,6 +390,7 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
     'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
+    'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s',
 
     'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
     'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',

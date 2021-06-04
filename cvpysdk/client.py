@@ -1058,7 +1058,7 @@ class Clients(object):
                     if response is not success
 
         """
-        host_name = "https://{0}:6443".format(master_node)
+        host_name = master_node
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
 

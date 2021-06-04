@@ -422,7 +422,10 @@ EXCEPTION_DICT = {
         '101': 'Failed to register commcell',
         '102': '',
         '103': 'Failed to unregister commcell',
-        '104': 'Datatype of the input is not valid'
+        '104': 'Datatype of the input is not valid',
+        '105': 'Failed to reach remote commcell.',
+        '106': 'Failed to authenticate remote commcell. Invalid user name and password.',
+        '107': 'Insufficient permissions'
     },
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',

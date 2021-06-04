@@ -90,6 +90,8 @@ Commcell:
 
     register_commcell()             -- registers a commcell
 
+    sync_service_commcell()         --  Sync a service commcell
+
     unregister_commcell()           -- unregisters a commcell
 
     is_commcell_registered()       -- checks if the commcell is registered
@@ -2770,14 +2772,66 @@ class Commcell(object):
 
                 if error_code != 0:
                     error_string = response.json()['resultMessage']
+                    if error_code == 1013:
+                        raise SDKException('CommcellRegistration', '105')
+
+                    elif error_code == 1007:
+                        raise SDKException('CommcellRegistration', '106')
+
+                    elif error_code == 1010:
+                        raise SDKException('CommcellRegistration', '107', '{0}'.format(error_string))
+
+                    else:
+                        raise SDKException(
+                            'CommcellRegistration', '101', 'Registration Failed\n Error: "{0}"'.format(
+                                error_string
+                            )
+                    )
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def service_commcell_sync(self, service_commcell):
+        """ Sync a service commcell
+
+        Args:
+
+        service_commcell    (object)    : Service commcell object
+
+        Raises:
+
+            if sync fails
+            if the response is empty
+            if there is no response
+
+        """
+        if not isinstance(service_commcell, Commcell):
+            raise SDKException('CommcellRegistration', '104')
+
+        guid = service_commcell.commserv_guid
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['SYNC_SERVICE_COMMCELL'] % guid
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['errorMessage']
                     raise SDKException(
                         'CommcellRegistration',
-                        '101',
-                        'Registration Failed\n Error: "{0}"'.format(
+                        '102',
+                        'Sync operation failed\n Error: "{0}"'.format(
                             error_string
                         )
                     )
                 self.refresh()
+
+                service_commcell.refresh()
             else:
                 raise SDKException('Response', '102')
         else:
