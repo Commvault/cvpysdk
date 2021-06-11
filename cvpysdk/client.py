@@ -2326,11 +2326,23 @@ class Clients(object):
                 client_name     (str)   -- amazon client name
                 access_node     (str)   -- cloud access node name
                 amazon_options   (dict)  -- dictionary for Amazon details:
+                AccessKey and Secretkey authentication
                                             Example:
                                                amazon_options = {
                                                     "accessKey": amazon_options.get("accessKey"),
                                                     "secretkey": amazon_options.get("secretkey")
                                                 }
+                IAM authentication ( pass the key value pair "useIamRole":True )
+                                            Example:
+                                               amazon_options = {
+                                                    "useIamRole": amazon_options.get("useIamRole"),
+                                                }
+                STS Role Authentication ( pass the Role arn Name in accessKey of amazon_options)
+                                            Example:
+                                               amazon_options = {
+                                                    "accessKey": amazon_options.get("accessKey"),
+                                                }
+
             Returns:
                 object  -   instance of the Client class for this new client
             Raises:
@@ -2352,6 +2364,19 @@ class Clients(object):
                 'Client', '102', 'Client "{0}" already exists.'.format(
                     client_name)
             )
+        
+        # IAM Authentication
+        if "useIamRole" in amazon_options:
+            amazon_options["accessKey"] = ''
+            amazon_options["secretkey"] = ''
+            amazon_options["useIamRole"] = True
+        # Accesskey and secretkey authentication
+        elif "secretkey" in amazon_options:
+            amazon_options["useIamRole"] = False
+        # STS Role ARN authentication
+        else:
+            amazon_options["secretkey"] = ''
+            amazon_options["useIamRole"] = False
 
         # encodes the plain text password using base64 encoding
         secretkey = b64encode(amazon_options.get("secretkey").encode()).decode()

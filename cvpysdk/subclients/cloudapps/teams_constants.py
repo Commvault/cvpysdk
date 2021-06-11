@@ -84,7 +84,7 @@ class TeamsConstants:
         "user": None
     }
 
-    BACKUP_SUBCLIENT_JSON = {
+    ASSOCIATIONS = {
         "subclientId": None,
         "applicationId": None,
         "clientName": None,

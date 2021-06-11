@@ -316,6 +316,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DR_GROUP': '{0}DRGroups/%s',
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+    'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
+
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',

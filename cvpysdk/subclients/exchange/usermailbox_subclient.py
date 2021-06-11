@@ -66,6 +66,8 @@ UsermailboxSubclient:
 
     delete_o365group_association()      --  delete O365 group association for UsermailboxSubclient
 
+    enable_ews_support()                -- Enables EWS Support for backup for ON_PREM Mailboxes
+
 """
 
 
@@ -1065,6 +1067,18 @@ class UsermailboxSubclient(ExchangeSubclient):
         task_dict["taskInfo"]["subTasks"][0]["options"]["backupOpts"]["exchOnePassOptions"][
                 "genericAssociations"]= subclient_content
         return task_dict
+
+    def enable_ews_support(self, service_url):
+        """This function provides support for EWS protocol to backup on-prem mailboxes
+            Args:
+                service_url (string) -- EWS Connection URL for your exchange server
+            Returns: None
+        """
+        self.agentproperties = self._agent_object.properties
+        self.agentproperties["onePassProperties"]["onePassProp"]["ewsDetails"]["bUseEWS"] = True
+        self.agentproperties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = service_url
+        self._agent_object.update_properties(self.agentproperties)
+
 
     def browse_mailboxes(self,retry_attempts=0):
         """

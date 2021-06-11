@@ -7,7 +7,104 @@
 """This file provides dicts.
 One is from job phase code to text, and the other is from enum to code.
 """
+from enum import Enum, unique
 
+
+@unique
+class DRJobPhases(Enum):
+    SCRIPT_EXECUTION = 0
+    POWER_ON = 1
+    POWER_OFF = 2
+    REBOOT = 3
+    GUEST_TOOLS_STATUS_CHECK = 4
+    CREATE_NETWORK_SWITCH = 5
+    DELETE_NETWORK_SWITCH = 6
+    REPLICATION = 7
+    BACKUP = 8
+    CONFIGURE_NETWORK_SWITCH = 9
+    EXTERNAL_PORT_CONFIG = 10
+    IP_MASQUERADE = 11
+    STATIC_IP_MAPPING = 12
+    INTIALIZATION = 13
+    WAIT_ON_IP_ASSIGNMENT = 14
+    DISABLE_SYNC = 15
+    ENABLE_SYNC = 16
+    CREATE_SNAPSHOT = 17
+    DELETE_SNAPSHOT = 18
+    REVERT_SNAPSHOT = 19
+    DISABLE_NETWORK_ADAPTER = 20
+    AUX_COPY = 21
+    POST_OPERATION = 22
+    SNAP_TO_TAPE = 23
+    SHUTDOWN = 24
+    STORAGE_OPERATION = 25
+    FINALIZE = 26
+    DR_APPROVAL = 27
+    DELETE_VM = 28
+    CREATE_VM = 29
+    GET_VM_INFO = 30
+    CREATE_DR_VM = 31
+    POST_VM_FAILOVER = 32
+    MOUNT_SNAP_PRIMARY = 33
+    DR_VM_SNAP_MOUNT = 34
+    BREAK_VOLUME_RELATIONSHIP = 35
+    RESYNC_VOLUME_RELATIONSHIP = 36
+    DR_VM_SNAP_UNMOUNT = 37
+    DR_TEST_VM_SNAP_MOUNT = 38
+    DR_TEST_VM_SNAP_UNMOUNT = 39
+    DELETE_DR_VM = 40
+    POST_VM_FAILOVER_SNAP = 41
+    CLONE_VM = 42
+    REFRESH_VM = 43
+
+
+class DRJobPhaseToText(Enum):
+    SCRIPT_EXECUTION = "Script Execution"
+    POWER_ON = "Power On"
+    POWER_OFF = "Power Off"
+    REBOOT = "Reboot"
+    GUEST_TOOLS_STATUS_CHECK = "Guest Tools Status Check"
+    CREATE_NETWORK_SWITCH = "Create Network Switch"
+    DELETE_NETWORK_SWITCH = "Delete Network Switch"
+    REPLICATION = "Replication"
+    BACKUP = "Backup"
+    CONFIGURE_NETWORK_SWITCH = "Configure Network Switch"
+    EXTERNAL_PORT_CONFIG = "Port Configuration"
+    IP_MASQUERADE = "IP Masquerading"
+    STATIC_IP_MAPPING = "Static IP Mapping"
+    INTIALIZATION = "Initialization"
+    WAIT_ON_IP_ASSIGNMENT = "Waiting on IP Assignment"
+    DISABLE_SYNC = "Disable Sync"
+    ENABLE_SYNC = "Enable Sync"
+    CREATE_SNAPSHOT = "Create Snapshot"
+    DELETE_SNAPSHOT = "Delete Snapshot"
+    REVERT_SNAPSHOT = "Revert Snapshot"
+    DISABLE_NETWORK_ADAPTER = "Disable Network Adapter"
+    AUX_COPY = "Auxiliary Copy"
+    POST_OPERATION = "Post Operation"
+    SNAP_TO_TAPE = "Backup Copy"
+    SHUTDOWN = "Shutdown"
+    STORAGE_OPERATION = "Storage Operation"
+    FINALIZE = "Finalize"
+    DR_APPROVAL = "DR Approval"
+    DELETE_VM = "Delete VM"
+    CREATE_VM = "Create VM"
+    GET_VM_INFO = "Get VM Information"
+    CREATE_DR_VM = "Create DR VM"
+    POST_VM_FAILOVER = "Post VM Failover"
+    MOUNT_SNAP_PRIMARY = "Mount Snap Primary"
+    DR_VM_SNAP_MOUNT = "DR VM Snap Mount"
+    BREAK_VOLUME_RELATIONSHIP = "Break Volume Relationship"
+    RESYNC_VOLUME_RELATIONSHIP = "Resync Volume Relationship"
+    DR_VM_SNAP_UNMOUNT = "DR VM Snap Unmount"
+    DR_TEST_VM_SNAP_MOUNT = "DR Test VM Snap Mount"
+    DR_TEST_VM_SNAP_UNMOUNT = "DR Test VM Snap Unmount"
+    DELETE_DR_VM = "Delete DR VM"
+    POST_VM_FAILOVER_SNAP = "Post VM Failover"
+    CLONE_VM = "Clone VM"
+    REFRESH_VM = "Refresh VM"
+
+# TODO: Remove after discussing with teams
 DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
     "0": "Script Execution",
     "1": "Power On",
@@ -55,6 +152,7 @@ DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
     "43": "Refresh VM"
 }
 
+# TODO: Remove after discussing with teams
 DR_ORCHESTRATION_JOB_PHASE_ENUM_TO_CODE = {
     "SCRIPT_EXECUTION": 0,
     "POWER_ON": 1,

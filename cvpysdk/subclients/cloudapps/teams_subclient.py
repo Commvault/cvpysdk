@@ -23,9 +23,10 @@ TeamsSubclient: Derived class from Subclient Base class, representing a Microsof
 and to perform operations on that subclient
 
 TeamsSubclient:
-    discover()  --  Launches Discovery and returns the discovered teams.
-    content()   --  Add teams, discover() must be called before teams added using this method.
-    backup()    --  Backup a team.
+    discover()              --  Launches Discovery and returns the discovered teams.
+    content()               --  Add teams, discover() must be called before teams added using this method.
+    backup()                --  Backup a single or mulitple teams.
+    out_of_place_restore()  --  Restore a single team or multiple teams.
 
 """
 
@@ -48,11 +49,11 @@ class TeamsSubclient(CloudAppsSubclient):
     def discover(self, refresh_cache=True):
         """Launches Discovery and returns the discovered teams.
 
-            Returns:
-
+            Args:
                 refresh_cache   --  Refreshes Discover cache information.
                     default:    True
 
+            Returns:
                 dict    --  Returns dictionary with team email ID as key and team properties as value.
 
             Raises:
@@ -63,51 +64,7 @@ class TeamsSubclient(CloudAppsSubclient):
 
         """
 
-        DISCOVERY_TYPE = 8
-        max_retries = 5
-
-        url = self._services['GET_CLOUDAPPS_USERS'] % (self._instance_object.instance_id, self._client_object.client_id, DISCOVERY_TYPE)
-        flag, response = self._cvpysdk_object.make_request('GET', f"{url}&refreshCache=1" if refresh_cache else url)
-
-        if flag:
-
-            if response.json():
-
-                while flag and 'userAccounts' not in response.json() and max_retries:
-
-                    time.sleep(30)
-                    flag, response = self._cvpysdk_object.make_request('GET', url)
-                    max_retries -= 1
-
-                discovered_teams = dict()
-
-                if flag:
-
-                    if response.json():
-
-                        if 'userAccounts' in response.json():
-
-                            for team in response.json()['userAccounts']:
-                                discovered_teams[team['smtpAddress']] = team
-                            return discovered_teams
-
-                        elif "errorCode" in response.json():
-                            error_message = response.json()['errorMessage']
-                            raise SDKException('Subclient', '102', f"Discovery failed, error message : {error_message}")
-
-                    else:
-                        raise SDKException('Response', '102')
-
-                else:
-                    response_string = self._commcell_object._update_response_(response.text)
-                    raise SDKException('Response', '101', response_string)
-
-            else:
-                raise SDKException('Response', '102')
-
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
+        return self._instance_object.discover(refresh_cache=refresh_cache)
 
     def content(self, teams, o365_plan):
         """Add teams, discover() must be called before teams added using this method.
@@ -123,7 +80,7 @@ class TeamsSubclient(CloudAppsSubclient):
 
         """
 
-        discovered_teams = self.discover()
+        discovered_teams = self._instance_object.discover()
         teams = [discovered_teams[team] for team in teams]
 
         url = self._services['SET_USER_POLICY_ASSOCIATION']
@@ -174,7 +131,7 @@ class TeamsSubclient(CloudAppsSubclient):
 
         """
 
-        discovered_teams = self.discover()
+        discovered_teams = self._instance_object.discover()
         teams = [discovered_teams[team] for team in teams]
 
         url = self._services['CREATE_TASK']
@@ -190,26 +147,26 @@ class TeamsSubclient(CloudAppsSubclient):
             team_json['user'] = {"userGUID": team['user']['userGUID']}
             team_json_list.append(team_json)
 
-        backup_entity_subclient_json = copy(const.BACKUP_SUBCLIENT_JSON)
-        backup_entity_subclient_json["subclientId"] = int(self._subclient_id)
-        backup_entity_subclient_json["applicationId"] = int(self.properties['subClientEntity']['applicationId'])
-        backup_entity_subclient_json["clientName"] = self.properties['subClientEntity']['clientName']
-        backup_entity_subclient_json["displayName"] = self.properties['subClientEntity']['displayName']
-        backup_entity_subclient_json["backupsetId"] = self.properties['subClientEntity']['backupsetId']
-        backup_entity_subclient_json["instanceId"] = self.properties['subClientEntity']['instanceId']
-        backup_entity_subclient_json["subclientGUID"] = self.subclient_guid
-        backup_entity_subclient_json["clientId"] = int(self._client_object.client_id)
-        backup_entity_subclient_json["clientGUID"] = self._client_object.client_guid
-        backup_entity_subclient_json["subclientName"] = self.subclient_name
-        backup_entity_subclient_json["backupsetName"] = self.properties['subClientEntity']['backupsetName']
-        backup_entity_subclient_json["instanceName"] = self.properties['subClientEntity']['instanceName']
-        backup_entity_subclient_json["_type_"] = self.properties['subClientEntity']['_type_']
+        associations = copy(const.ASSOCIATIONS)
+        associations["subclientId"] = int(self._subClientEntity['subclientId'])
+        associations["applicationId"] = int(self._subClientEntity['applicationId'])
+        associations["clientName"] = self._subClientEntity['clientName']
+        associations["displayName"] = self._subClientEntity['displayName']
+        associations["backupsetId"] = self._subClientEntity['backupsetId']
+        associations["instanceId"] = self._subClientEntity['instanceId']
+        associations["subclientGUID"] = self.subclient_guid
+        associations["clientId"] = int(self._client_object.client_id)
+        associations["clientGUID"] = self._client_object.client_guid
+        associations["subclientName"] = self.subclient_name
+        associations["backupsetName"] = self._subClientEntity['backupsetName']
+        associations["instanceName"] = self._subClientEntity['instanceName']
+        associations["_type_"] = self._subClientEntity['_type_']
 
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
         backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
 
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
-        request_json['taskInfo']['associations'].append(backup_entity_subclient_json)
+        request_json['taskInfo']['associations'].append(associations)
         request_json['taskInfo']['subTasks'].append(backup_subtask_json)
 
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
@@ -231,4 +188,26 @@ class TeamsSubclient(CloudAppsSubclient):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def out_of_place_restore(self, team, destination_team):
+        """Restore a team to another location.
+            Args:
+                team                (str)   --  The email ID of the team that needs to be restored.
+                destination_team    (str)   --  The email ID of the team to be restored to.
+
+            Returns:
+                obj   --  Instance of job.
+
+            Raises:
+                SDKException:
+
+                    If restore failed to run.
+                    If response is empty.
+                    If response is not success.
+
+        """
+
+        self._instance_object._restore_association = self._subClientEntity
+        return self._instance_object.restore_out_of_place(source_team=team, destination_team=destination_team)
+
 
