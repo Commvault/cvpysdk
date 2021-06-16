@@ -279,7 +279,7 @@ class Instances(object):
         else:
             try:
                 return list(
-                    filter(lambda x: x[1]['id'] == value, self.all_instances.items())
+                    filter(lambda x: x[1] == value, self.all_instances.items())
                 )[0][0]
             except IndexError:
                 raise IndexError('No instance exists with the given Name / Id')
@@ -1621,6 +1621,96 @@ class Instances(object):
         }
         self._process_add_response(request_json)
 
+    def add_oracle_instance(self, instance_name, **oracle_options):
+        """Adds new oracle instance for the given client
+            Args:
+                instance_name       (str)   --  instance_name (Oracle SID)
+                oracle_options      (dict)  --  dict of keyword arguments as follows:
+                                        log_storage_policy    (str)  -- log storage policy
+                                        cmdline_storage_policy (str) -- Commandline data storage policy
+                                        oracle_domain_name (str)   -- Domain name- only for windows
+                                        oracle_user_name   (str)   -- oracle OS user name
+                                        oracle_password    (str)   -- oracle OS user password
+                                        oracle_home        (str)   -- oracle home path
+                                        tns_admin          (str)   -- tns admin path
+                                        connect_string     (dict)  -- Credentials to connect to Oracle DB
+                                        {
+                                            "username": "", (str)         -- User to connect to Oracle DB
+                                            "password": "", (str)         -- Password
+                                            "service_name": ""  (str)     -- Oracle SID or service name
+                                        }
+                                        catalog_connect     (dict)--  Credentials to connect to catalog
+                                        {
+                                            "userName": "",  (str)        -- Catalog DB user name
+                                            "password"; "",  (str)        -- Password of catalog user
+                                            "domainName": ""    (str)     -- SID of catalog database
+                                        }
+            Returns:
+                object - instance of the Instance class
+            Raises:
+                SDKException:
+                            if instance with same name exists already
+                            if required options are not provided
+                            Given storage policies do not exist in Commcell
+        """
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+        required_options = ['oracle_user_name', 'oracle_home', 'cmdline_storage_policy',
+                            'log_storage_policy', 'connect_string']
+        for option in required_options:
+            if option not in oracle_options.keys():
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    "Required option: {0} is missing, Please provide all parameters:".format(option))
+        password = b64encode(oracle_options.get("oracle_password", "").encode()).decode()
+        connect_string_password = b64encode(
+            oracle_options.get("connect_string", {}).get("password", "").encode()
+        ).decode()
+
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": instance_name,
+                    "appName": "Oracle",
+                },
+                "oracleInstance": {
+                    "TNSAdminPath": oracle_options.get("tns_admin", ""),
+                    "oracleHome": oracle_options.get("oracle_home", ""),
+                    "oracleUser": {
+                        "userName": oracle_options.get("oracle_user_name", ""),
+                        "domainName": oracle_options.get("oracle_domain_name", ""),
+                        "password": password,
+                    },
+                    "sqlConnect": {
+                        "domainName": oracle_options.get("connect_string", {}).get("service_name", ""),
+                        "userName": oracle_options.get("connect_string", {}).get("username", "/"),
+                        "password": connect_string_password,
+                    },
+                    "oracleStorageDevice": {
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": oracle_options.get("cmdline_storage_policy", "")
+                        },
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": oracle_options.get("log_storage_policy", "")
+                        }
+                    },
+                }
+            }
+        }
+        if oracle_options.get("catalog_connect"):
+            catalog = {
+                'useCatalogConnect': True,
+                'catalogConnect': oracle_options.get("catalog_connect", "")
+            }
+            request_json['instanceProperties']['oracleInstance'].update(catalog)
+        self._process_add_response(request_json)
+
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
         self._instances = self._get_instances()
@@ -2086,6 +2176,12 @@ class Instance(object):
                 "backupLevel": restore_option.get('backup_level', 'Incremental')
             }
             request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"] = backup_opt_json
+
+        if restore_option.get('restore_acls_only', False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["restoreACLsType"] = 1
+
+        if restore_option.get('restore_data_only', False):
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["restoreACLsType"] = 2
 
         return request_json
 
@@ -2647,6 +2743,10 @@ class Instance(object):
                 'clientName': value.get("iscsi_server")
             }
 
+        # Add this option to enable restoring of troubleshooting folder
+        if value.get("include_metadata", False):
+            self._browse_restore_json["includeMetaData"] = True
+
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
 
@@ -2727,9 +2827,6 @@ class Instance(object):
             if value.get('destination_path'):
                 destination_path = value.get("destination_path", "")
                 self._destination_restore_json["destPath"] = [destination_path] if destination_path != "" else []
-
-            if self._destination_restore_json["inPlace"]:
-                self._destination_restore_json["destPath"] = [""]
 
         # For Index server restore, we need to set proxy client & in-place flag
         elif value.get("proxy_client") is not None and \

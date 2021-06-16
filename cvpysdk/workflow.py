@@ -1114,13 +1114,8 @@ class WorkFlow(object):
             }
 
             if workflow_engine is not None:
-                workflow_xml = {
-                    "Workflow_DeployWorkflow": {
-                        "client": {
-                            "clientName": workflow_engine
-                        }
-                    }
-                }
+                workflow_deploy_service='%s?clientName=%s'%(workflow_deploy_service,workflow_engine)
+
         elif os.path.isfile(workflow_xml):
             with open(workflow_xml, 'r', encoding='utf-8') as file_object:
                 workflow_xml = file_object.read()

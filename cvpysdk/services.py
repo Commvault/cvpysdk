@@ -98,6 +98,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
+    'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
+    'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -152,6 +154,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
+    'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
@@ -208,9 +211,17 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
     'SHARE_HANDLER': '{0}dcube/share/handler',
     'SHARE_DATASOURCE': '{0}dcube/share/datasource',
-    'GET_CONTENT_ANALYZER_CLOUD':'{0}getContentAnalyzerCloud',
-    'ACTIVATE_ENTITIES':'{0}dcube/entity',
-    'ACTIVATE_ENTITY':'{0}dcube/entity/%s',
+    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
+    'ACTIVATE_ENTITIES': '{0}dcube/entity',
+    'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
+    'GET_TAGS': '{0}EDiscovery/Tags',
+    'ADD_CONTAINER': '{0}PerformContainerOperation',
+    'DELETE_CONTAINER': '{0}Containers/Action/Delete',
+    'CA_UPLOAD_FILE': '{0}ContentAnalyzer/%s/action/uploadFile',
+    'GET_CLASSIFIERS': '{0}dcube/classifiers?getDisabled=True',
+    'START_TRAINING': '{0}ContentAnalyzer/%s/%s/ml/action/train',
+    'CANCEL_TRAINING': '{0}ContentAnalyzer/%s/%s/training/cancel',
+
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -235,6 +246,7 @@ SERVICES_DICT_TEMPLATE = {
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
+    'CVDRBACKUP_REQUEST': '{0}cvdrbackup/requests',
 
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
@@ -304,6 +316,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_DR_GROUP': '{0}DRGroups/%s',
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+    'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
+
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
@@ -320,6 +334,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
+    'GET_CONFIGURATION_POLICIES_FS': '{0}ConfigurationPolicies?policyType=filesytem',
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
@@ -377,6 +392,7 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
     'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
+    'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s',
 
     'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
     'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',
@@ -394,6 +410,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'RETIRE': '{0}Client/%s/Retire',
 
+    'DATASOURCE_ACTIONS': '{0}EDiscoveryClients/Datasources/Actions',
     'CLOUD_CREATE': '{0}cloud/create',
     'CLOUD_MODIFY': '{0}cloud/modify',
     'CLOUD_DELETE': '{0}cloud/delete',
@@ -401,7 +418,15 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
-    'GET_SWAGGER': '{0}swagger/V3/swagger.json'
+    'GET_SWAGGER': '{0}swagger/V3/swagger.json',
+
+    'COMMCELL_METADATA': '{0}Commcell/MetaData',
+    'METALLIC_LINKING': '{0}CloudService/Subscription',
+    'CV_METALLIC_LINKING': '{0}/CloudService/Subscription/Details',
+    'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
+    'USER_MAPPINGS': '{0}GetUserMappings',
+    'METALLIC_REGISTERED': '{0}CloudServices/Registered',
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
 }
 
 

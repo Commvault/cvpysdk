@@ -276,10 +276,16 @@ class OracleInstance(DatabaseInstance):
 
             })
 
-    def _get_live_sync_oracleopt_json(self):
+    def _get_live_sync_oracleopt_json(self, **kwargs):
         """
                Constructs JSON with oracle agent specific options
                for configuring live sync
+
+               Args:
+                    **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
         """
 
@@ -310,10 +316,14 @@ class OracleInstance(DatabaseInstance):
                                     "restoreInStandby":False
                                 }
                                 }
+        if kwargs.get('redirect_path', None) is not None:
+            self._oracle_options.update({"renamePathForAllTablespaces": kwargs.get('redirect_path'),
+                                         "redirectAllItemsSelected": True,
+                                         "redirectItemsPresent": True
+                                         })
 
-
-    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid,
-                                baseline_ref_time, schedule_name, source_backupset_id):
+    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid, baseline_ref_time,
+                                schedule_name, source_backupset_id, **kwargs):
         """
                Constructs oracle live sync restore JSON by combining common
                and agent specific options
@@ -333,6 +343,11 @@ class OracleInstance(DatabaseInstance):
                        source_backupset_id  (int)   --  The ID of the source backupset
                                                         of source oracle instance for which
                                                         live sync needs to be configured
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
                     Returns:
                         (str)  --   The live sync restore JSON that is constructed
@@ -356,7 +371,7 @@ class OracleInstance(DatabaseInstance):
         else:
             restore_option.update(restore_json)
 
-        self._get_live_sync_oracleopt_json()
+        self._get_live_sync_oracleopt_json(**kwargs)
         restore_json['taskInfo']['associations'][0]['subclientId'] = -1
         restore_json['taskInfo']['associations'][0]['backupsetId'] = source_backupset_id
         restore_json['taskInfo']['associations'][0]['subclientName'] = ""
@@ -379,8 +394,8 @@ class OracleInstance(DatabaseInstance):
             "restoreOptions"]["oracleOpt"] = self._oracle_options
         return restore_json
 
-
-    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name):
+    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name,
+                                  **kwargs):
         """
                Runs full backup on source oracle instance and
                Creates live sync schdule for the given destination oracle instance
@@ -391,6 +406,11 @@ class OracleInstance(DatabaseInstance):
                        dest_instance    (str)   --  The destination instance name for live sync
 
                        schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                            redirect_path   (str) --  Path on destination client
+                                                            to redirect tablespaces and datafiles
 
                    Returns:
                         (object)  --   The job object of the baseline backup that will be replicated
@@ -404,7 +424,8 @@ class OracleInstance(DatabaseInstance):
         baseline_ref_time = baseline_job_object.summary['jobStartTime']
         baseline_jobid = int(baseline_job_object.job_id)
         request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
-                                                    baseline_ref_time, schedule_name, source_backupset_id)
+                                                    baseline_ref_time, schedule_name,
+                                                    source_backupset_id, **kwargs)
         flag, response = self._cvpysdk_object.make_request('POST', self._LIVE_SYNC, request_json)
         if flag:
             if response.json():
@@ -421,7 +442,6 @@ class OracleInstance(DatabaseInstance):
                 raise SDKException('Instance', '102')
         else:
             raise SDKException('Instance', '101', self._update_response_(response.text))
-
 
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
         """Configures data masking policy with given parameters

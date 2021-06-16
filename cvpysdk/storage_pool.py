@@ -596,6 +596,16 @@ class StoragePool(object):
     def storage_pool_id(self):
         """Treats id as a read only attribute"""
         return self._storage_pool_id
+
+    @property
+    def storage_pool_properties(self):
+        """Treats the storage_pool_properties as a read only attribute"""
+        return self._storage_pool_properties
+
+    @property
+    def global_policy_name(self):
+        """Returns the global policy corresponding to the storage pool"""
+        return self._storage_pool_properties["storagePoolDetails"]["copyInfo"]["StoragePolicyCopy"]["storagePolicyName"]
     
     def hyperscale_add_nodes(self, media_agents):
         """

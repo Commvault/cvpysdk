@@ -236,7 +236,8 @@ class Datasources(object):
                     datasource_dict['description'] = datasource['description']
                 if 'status' in datasource:
                     datasource_dict['total_count'] = datasource['status']['totalcount']
-                    datasource_dict['state'] = datasource['status']['state']
+                    if 'state' in datasource['status']:
+                        datasource_dict['state']= datasource['status']['state']
                 _datasources[datasource['datasourceName']] = datasource_dict
         return _datasources
 
