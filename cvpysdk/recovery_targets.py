@@ -325,15 +325,23 @@ class RecoveryTarget:
                 self._policy_type = self._recovery_target_properties["entity"]["policyType"]
 
                 if self._policy_type == 1:
-                    self._availability_zone = (self._recovery_target_properties['amazonPolicy']['availabilityZones']
-                                               [0]['availabilityZoneName'])
-                    self._volume_type = self._recovery_target_properties['amazonPolicy']['volumeType']
+                    self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
+                    self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
                     # TODO: Encryption key support for SDK
                     self._encryption_key = None
-                    self._destination_network = self._recovery_target_properties['networkList'][0]['networkName']
-                    self._security_group = self._recovery_target_properties['securityGroups'][0]['name']
-                    self._instance_type = (self._recovery_target_properties['amazonPolicy']['instanceType']
-                                           [0]['instanceType']['vmInstanceTypeName'])
+                    self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('networkName', None)
+                    self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
+                    self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
+                    
+                    expiry_hours = self._recovery_target_properties.get("minutesRetainUntil", None)
+                    expiry_days = self._recovery_target_properties.get("daysRetainUntil", None)
+                    if expiry_hours:
+                        self._expiration_time = f'{expiry_hours} hours'
+                    elif expiry_days:
+                        self._expiration_time = f'{expiry_days} days'
+                    self._test_virtual_network = self._recovery_target_properties.get('networkInfo', [{}])[0].get('label', None)
+                    self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
+                    
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties['dataStores'][0]['dataStoreName']
                     self._destination_network = self._recovery_target_properties['networkList'][0]['networkName']

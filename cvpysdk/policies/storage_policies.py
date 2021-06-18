@@ -112,6 +112,11 @@ StoragePolicy:
 
     get_copy()                              --  Returns the StoragePolicyCopy class object of the input copy
 
+    get_primary_copy()                      --  Returns the primary copy of the storage policy
+
+    get_secondary_copies()                  --  Returns all the secondary copies in the storage policy sorted
+    by copy precedence
+
     mark_for_recovery()                     --  Marks Deduplication store for recovery
 
     run_recon()                             --  Runs non-mem DB Reconstruction job
@@ -986,14 +991,16 @@ class StoragePolicy(object):
                 except:
                     library_name = None
                 copy_precedence = copy['copyPrecedence']
-                is_snap = bool(int(copy['isSnapCopy']))
+                is_snap_copy = bool(int(copy['isSnapCopy']))
+                is_default_copy = bool(int(copy.get('isDefault', 0)))
                 temp = {
                     "copyType": copy_type,
                     "active": active,
                     "copyId": copy_id,
                     "libraryName": library_name,
                     "copyPrecedence": copy_precedence,
-                    "isSnapCopy": is_snap
+                    "isSnapCopy": is_snap_copy,
+                    "isDefault": is_default_copy
                 }
                 self._copies[copy_name] = temp
 
@@ -2767,6 +2774,42 @@ class StoragePolicy(object):
                 'Storage', '102', 'No copy exists with name: {0}'.format(copy_name)
             )
 
+    def get_primary_copy(self):
+        """Returns the primary copy of the storage policy
+
+            Returns:
+                object  -   Instance of the StoragePolicyCopy class of the primary copy
+
+            Raises:
+               SDKException:
+                   if unable to find a primary copy in the storage policy
+
+        """
+
+        for copy_name, copy_info in self.copies.items():
+            if copy_info['isDefault']:
+                return self.get_copy(copy_name)
+
+        raise SDKException('Storage', '102', 'Unable to find a primary copy in the storage policy')
+
+    def get_secondary_copies(self):
+        """Returns all the secondary copies in the storage policy sorted by copy precedence
+
+            Returns:
+                list    -   A list of storage policy copy instances.
+
+        """
+
+        sorted_copies = sorted(self.copies.items(), key=lambda x: x[1]['copyPrecedence'])  # Sort by copy precedence
+        result = []
+
+        for copy_name, copy_info in sorted_copies:
+            if not copy_info['isDefault'] and not copy_info['isSnapCopy']:  # Skip primary copy and snap primary copies
+                copy_obj = self.get_copy(copy_name)
+                result.append(copy_obj)
+
+        return result
+
     def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
         """ Marks Deduplication store for recovery
 
@@ -3423,6 +3466,11 @@ class StoragePolicyCopy(object):
                 raise SDKException('Response', '110')
 
         self._set_copy_properties()
+
+    @property
+    def copy_precedence(self):
+        """Gets the copy precedence of the copy"""
+        return self.all_copies["copyPrecedence"]
 
     @property
     def media_agent(self):

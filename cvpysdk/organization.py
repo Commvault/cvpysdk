@@ -832,7 +832,7 @@ class Organization:
 
                 job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
                 if job_time_enabled:
-                    job_time_epoch = organization_properties.get('jobStartTime')
+                    job_time_epoch = organization_properties.get('jobStartTime', None)
                     self._job_start_time = job_time_epoch
                 else:
                     self._job_start_time = 'System default'

@@ -73,6 +73,8 @@ PostgreSQLInstance instance Attributes
 
     **use_master_for_data_backup**       --  Returns True if master is used for data backup
 
+    **archive_delete**                   --  Returns True if archive delete is enabled for instance
+
 """
 
 from __future__ import absolute_import
@@ -207,6 +209,31 @@ class PostgreSQLInstance(Instance):
             'Instance',
             '105',
             "Could not fetch postgres version.")
+
+    @property
+    def archive_delete(self):
+        """Returns True if archive delete enabled. False if not
+
+            Return Type: bool
+
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('ArchiveDelete', False)
+
+    @archive_delete.setter
+    def archive_delete(self, value):
+        """ Setter for archive delete instance property
+
+            Args:
+
+                value (bool)  -- True to enable archive delete
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['ArchiveDelete'] = value
+        self.update_properties(properties)
+
     @property
     def standby_instance_name(self):
         """Returns the standby instance name
