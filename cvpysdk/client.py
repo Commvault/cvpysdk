@@ -443,14 +443,18 @@ class Clients(object):
 
                             "id": client1_id,
 
-                            "hostname": client1_hostname
+                            "hostname": client1_hostname,
+
+                            "displayName": client1_displayname
                         },
 
                         "client2_name": {
 
                             "id": client2_id,
 
-                            "hostname": client2_hostname
+                            "hostname": client2_hostname.
+
+                            "displayName": client1_displayname
                         }
                     }
 
@@ -471,9 +475,11 @@ class Clients(object):
                     temp_name = dictionary['client']['clientEntity']['clientName'].lower()
                     temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
                     temp_hostname = dictionary['client']['clientEntity']['hostName'].lower()
+                    temp_display_name = dictionary['client']['clientEntity']['displayName'].lower()
                     clients_dict[temp_name] = {
                         'id': temp_id,
-                        'hostname': temp_hostname
+                        'hostname': temp_hostname,
+                        'displayName': temp_display_name
                     }
 
                 return clients_dict
@@ -544,14 +550,18 @@ class Clients(object):
 
                             "id": client1_id,
 
-                            "hostname": client1_hostname
+                            "hostname": client1_hostname,
+
+                            "displayName": client1_displayname
                         },
 
                         "client2_name": {
 
                             "id": client2_id,
 
-                            "hostname": client2_hostname
+                            "hostname": client2_hostname,
+
+                            "displayName": client1_displayname
                         }
                     }
 
@@ -572,9 +582,11 @@ class Clients(object):
                     temp_name = dictionary['client']['clientEntity']['clientName'].lower()
                     temp_id = str(dictionary['client']['clientEntity']['clientId']).lower()
                     temp_hostname = dictionary['client']['clientEntity']['hostName'].lower()
+                    temp_display_name = dictionary['client']['clientEntity']['displayName'].lower()
                     all_clients_dict[temp_name] = {
                         'id': temp_id,
-                        'hostname': temp_hostname
+                        'hostname': temp_hostname,
+                        'displayName': temp_display_name
                     }
 
                 # hidden clients = all clients - true clients
@@ -5716,7 +5728,7 @@ class Client(object):
     def get_needs_attention_details(self):
         """
         Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
-        
+
         example output:
             {
             'CountOfAnomalousInfrastructureServers': {'commcell_name': count},

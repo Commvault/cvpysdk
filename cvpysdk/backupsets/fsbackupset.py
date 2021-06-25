@@ -737,7 +737,7 @@ class FSBackupset(Backupset):
                 vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VirtualizationClient')
 
 
-        if instance_name == 'azure resource manager':
+        if instance_name == 'azure resource manager' or 'azure stack':
 
             az_advanced_ops_json = self._azure_advancedopts_json()
 
@@ -775,6 +775,12 @@ class FSBackupset(Backupset):
 
             vm_option['vmInfo']['vmLocation']['datastore'][
                 'name'] = restore_options.get('StorageAccount', None)
+
+        if instance_name == 'azure stack':
+
+            vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('ManagementURL', None)
+
+            vm_option['vendor'] = 17
 
     # Additional options
 

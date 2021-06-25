@@ -187,7 +187,8 @@ class Backupsets(object):
         self._update_response_ = self._commcell_object._update_response_
 
         self._BACKUPSETS = self._services['GET_ALL_BACKUPSETS'] % (self._client_object.client_id)
-
+        if self._agent_object:
+            self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset

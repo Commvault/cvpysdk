@@ -91,6 +91,10 @@ FileSystemSubclient Instance Attributes:
 
     **backup_using_multiple_drives**      --  enable or disable VTL multiple drives for ibmi subclient.
 
+    **pending_record_changes**            --  Updates the pending record changes value on ibmi subclient.
+
+    **other_pending_changes**             --  Updates the other pending changes value on ibmi subclient.
+
     **object_level_backup**               --  enable or disable object level backup for ibmi subclient
 
     **global_filter_status**              --  returns the status whther to include global filters
@@ -198,7 +202,7 @@ class FileSystemSubclient(Subclient):
 
         """
         super(FileSystemSubclient, self)._get_subclient_properties()
-
+        self._impersonateUser={}
         if 'impersonateUser' in self._subclient_properties:
             self._impersonateUser = self._subclient_properties['impersonateUser']
 
@@ -1235,6 +1239,56 @@ class FileSystemSubclient(Subclient):
         update_properties = self.properties
         if isinstance(set_vtl_multiple_drives, bool):
             update_properties['fsSubClientProp']['backupUsingMultipleDrives'] = set_vtl_multiple_drives
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+    
+    @property
+    def pending_record_changes(self):
+        """Gets the value of pending record changes option for  IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('pendingRecordChange'))
+
+    @pending_record_changes.setter
+    def pending_record_changes(self, value):
+        """Updates the pending record changes value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set pending records changes value for backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['pendingRecordChange'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def other_pending_changes(self):
+        """Gets the value of other pending changes for IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('otherPendingChange'))
+
+    @other_pending_changes.setter
+    def other_pending_changes(self, value):
+        """Updates the other pending changes value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set other pending changes value for backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['otherPendingChange'] = value
         else:
             raise SDKException('Subclient', '101')
         self.update_properties(update_properties)

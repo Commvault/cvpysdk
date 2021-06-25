@@ -294,7 +294,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option['client'] = proxy_client
+            restore_option['client_name'] = proxy_client
 
         if restored_vm_name:
             if not (isinstance(vm_to_restore, basestring) or

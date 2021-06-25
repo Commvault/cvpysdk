@@ -130,6 +130,7 @@ from past.builtins import basestring
 
 from ....constants import HypervisorType as hv_type
 from ....constants import VSALiveSyncStatus as sync_status
+from ....constants import VSAFailOverStatus as failover_status
 from ....exception import SDKException
 from ....schedules import SchedulePattern
 
@@ -624,6 +625,7 @@ class LiveSyncVMPair:
         self._properties = None
         self._replication_guid = None
         self._status = None
+        self._failover_status = None
         self._source_vm = None
         self._destination_vm = None
         self._destination_client = None
@@ -667,6 +669,7 @@ class LiveSyncVMPair:
                 self._properties = response.json()['siteInfo'][0]
                 self._replication_guid = self._properties['replicationGuid']
                 self._status = self._properties['status']
+                self._failover_status = self._properties['FailoverStatus']
                 self._source_vm = self._properties['sourceName']
                 self._destination_vm = self._properties['destinationName']
                 self._destination_client = self._properties['destinationInstance'].get(
@@ -733,6 +736,11 @@ class LiveSyncVMPair:
     def status(self):
         """Treats the status as a read-only attribute."""
         return sync_status(self._status).name
+
+    @property
+    def failover_status(self):
+        """Treats the failover_status as a read-only attribute."""
+        return failover_status(self._failover_status).name
 
     @property
     def last_synced_backup_job(self):

@@ -395,9 +395,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
-            raise SDKException('Subclient', '101')
-        if vm_to_restore:
+        if vm_to_restore and isinstance(vm_to_restore, basestring):
             vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs

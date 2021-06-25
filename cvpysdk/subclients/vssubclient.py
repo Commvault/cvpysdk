@@ -1899,17 +1899,21 @@ class VirtualServerSubclient(Subclient):
         get the list of all the proxies on a selected subclient
 
         Returns:
-            associated_proxies   (LIST)  --  returns the proxies list
+            associated_proxies   (List)  --  returns the proxies list
         """
         associated_proxies = []
         try:
             available_subclient_proxies = self._vsaSubclientProp["proxies"]["memberServers"]
             if len(available_subclient_proxies) > 0:
-                for proxy in available_subclient_proxies:
-                    associated_proxies.append(proxy["client"]["clientName"])
+                for client in available_subclient_proxies:
+                    if 'clientName' in client['client']:
+                        associated_proxies.append(client["client"]["clientName"])
+                    elif 'clientGroupName' in client['client']:
+                        client_group = self._commcell_object.client_groups.get(client["client"]["clientGroupName"])
+                        associated_proxies.extend(client_group.associated_clients)
         except KeyError:
             pass
-        return associated_proxies
+        return list(dict.fromkeys(associated_proxies))
 
     def _set_restore_defaults(self, restore_option):
         """

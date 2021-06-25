@@ -98,8 +98,18 @@ class DRJob(Job):
         if flag:
             if response.json() and 'job' in response.json():
                 return response.json()['job'][0]
+            elif response.json() and 'errors' in response.json():
+                errors = response.json().get('errors', [{}])
+                error_list = errors[0].get('errList', [{}])
+                error_code = error_list[0].get('errorCode', 0)
+                error_message = error_list.get('errLogMessage', '').strip()
+                if error_code != 0:
+                    response_string = self._commcell_object._update_response_(
+                        error_message)
+                    raise SDKException('Response', '101', response_string)
             else:
-                raise SDKException('Response', '102')
+                if response.json():
+                    raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(
                 response.text)
@@ -126,7 +136,7 @@ class DRJob(Job):
         phases = []
         for phase in self._replication_job_stats.get('phase'):
             phases.append({
-                'phase_name': DRJobPhaseToText(DRJobPhases(phase.get('phase', '')))
+                'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
                 if phase.get('phase', '') else None,
                 'phase_status': phase.get('status', 1),
                 'start_time': phase.get('startTime', {}).get('time'),
@@ -135,46 +145,3 @@ class DRJob(Job):
                 'error_message': phase.get('phaseInfo', {}).get('job', [{}])[0].get('failure', {}).get('errorMessage'),
             })
         return phases
-
-    def get_vm_list(self):
-        """
-        Gets the list of all VMs associated to the job
-        Returns: list of VM dictionaries
-            VM: {
-               "Size":0,
-               "AverageThroughput":0,
-               "UsedSpace":0,
-               "ArchivedByCurrentJob":false,
-               "jobID":0,
-               "CBTStatus":"",
-               "BackupType":0,
-               "totalFiles":0,
-               "Status":2,
-               "CurrentThroughput":0,
-               "Agent":"proxy",
-               "lastSyncedBkpJob":0,
-               "GUID":"live sync pair guid",
-               "HardwareVersion":"vm h/w",
-               "restoredSize":1361912,
-               "FailureReason":"",
-               "BackupStartTime":0,
-               "TransportMode":"nbd",
-               "projectId":"",
-               "syncStatus":3,
-               "PoweredOffSince":0,
-               "OperatingSystem":"Microsoft Windows Server 2012 (64-bit)",
-               "backupLevel":0,
-               "destinationVMName":"drvm1",
-               "successfulCIedFiles":0,
-               "GuestSize":0,
-               "failedCIedFiles":0,
-               "vmName":"vm1",
-               "ToolsVersion":"Not running",
-               "clientId":3280,
-               "Host":"1.1.1.1",
-               "StubStatus":0,
-               "BackupEndTime":0,
-               "PoweredOffByCurrentJob":false
-            }
-        """
-        return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])

@@ -86,6 +86,8 @@ Store:
 
     get()                      - gets a substore class object for provided substore id
 
+    seal_deduplication_database() - Seals the deduplication database
+
     recover_deduplication_database()    - starts DDB Reconstruction job for store
 
     run_space_reclaimation()    - starts DDB space reclaimation job for store
@@ -120,8 +122,10 @@ from .job import Job
 
 install_aliases()
 
+
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
+
 
 class DeduplicationEngines(object):
     """Class for getting all the deduplication engines associated with the commcell."""
@@ -475,7 +479,6 @@ class Store(object):
         self._store_flags = None
         self.refresh()
 
-
     def __str__(self):
         """Representation string consisting of deduplication store.
 
@@ -712,6 +715,16 @@ class Store(object):
             }
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
+
+    def seal_deduplication_database(self):
+        """ Seals the deduplication database """
+
+        request_json = {
+                        "App_SealSIDBStoreReq":{
+                                "SidbStoreId": self.store_id
+                            }
+                        }
+        self._commcell_object._qoperation_execute(request_json)
 
     def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
         """

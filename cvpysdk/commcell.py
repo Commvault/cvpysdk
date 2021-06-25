@@ -714,7 +714,7 @@ class Commcell(object):
         if flag:
             if response.json():
                 try:
-                    self._commserv_guid = response.json()['commcell']['csGUID']
+                    self._commserv_guid = response.json()['commcell'].get('csGUID')
                     self._commserv_hostname = response.json()['hostName']
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
