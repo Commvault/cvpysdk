@@ -122,6 +122,8 @@ LiveSyncVMPair Attributes:
 
     **latest_replication_job** -- Returns the latest replication job ID
 
+    **last_replication_job**   -- Returns the last replication job ID
+
 """
 
 import uuid
@@ -682,10 +684,6 @@ class LiveSyncVMPair:
                     'instanceName') or self._agent_object.instances.get(
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
-                try:
-                    self._latest_replication_job = int(self._properties['VMReplInfoProperties'][1]['propertyValue'])
-                except Exception:
-                    self._latest_replication_job = self._properties['VMReplInfoProperties'][0]['propertyValue']
 
             else:
                 raise SDKException('Response', '102')
@@ -748,9 +746,21 @@ class LiveSyncVMPair:
         return self._last_backup_job
 
     @property
+    def last_replication_job(self):
+        """Returns (int): the last replication job that has been run for the Live sync VM pair"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2216:
+                return int(prop.get('propertyValue'))
+        return None
+
+    @property
     def latest_replication_job(self):
-        """Treats the latest replication job as a read-only attribute."""
-        return self._latest_replication_job
+        """Returns (int): the latest successful replication job for the Live sync VM pair"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2208:
+                self._latest_replication_job = int(prop.get('propertyValue'))
+                return self._latest_replication_job
+        return None
 
     def refresh(self):
         """Refreshes the properties of the live sync"""

@@ -345,12 +345,24 @@ class Domains(object):
                     "open ldap"
                     "ldap server"
 
-                **kwargs            --      required parameters for LDAP Server registration
+                **kwargs            --      required parameters for LDAP Server registration and other additional
+                                            settings can be passed
 
                     group_filter    (str)   --  group filter for ldap server
                     user_filter     (str)   --  user filter for ldap server
                     unique_identifier   (str)   --  unique identifier for ldap server
                     base_dn              (str)  --  base dn for ldap server
+
+                    additional_settings     (list)  --  additional settings for directory server.
+                        eg:-    [
+                                    {
+                                        "relativepath": "CommServDB.Console",
+                                        "keyName": "basedn",
+                                        "type": "STRING",
+                                        "value": "cn=automation_group2,dc=example,dc=com",
+                                        "enabled": 1
+                                    }
+                                ]
 
             Returns:
                 dict    -   properties of domain
@@ -442,10 +454,27 @@ class Domains(object):
                           "staticAttributeString": "baseDN",
                           "customAttributeString": kwargs.get('base_dn', ''),
                           "attrTypeFlags": 1
+                        },
+                        {
+                            "attrTypeFlags": 6,
+                            "customAttributeString": kwargs.get('email_attribute', 'mail'),
+                            "attrId": 3,
+                            "attributeName": "Email",
+                            "staticAttributeString": "mail"
+                        },
+                        {
+                            "attrTypeFlags": 6,
+                            "customAttributeString": kwargs.get('guid_attribute', 'objectGUID'),
+                            "attrId": 4,
+                            "attributeName": "GUID",
+                            "staticAttributeString": "objectGUID"
                         }
                     ]
                 }
             domain_create_request["provider"]["customProvider"] = custom_provider
+
+        if "additional_settings" in kwargs and kwargs.get('additional_settings'):
+            domain_create_request["provider"]['additionalSettings'] = kwargs.get('additional_settings')
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._DOMAIN_CONTROLER, domain_create_request

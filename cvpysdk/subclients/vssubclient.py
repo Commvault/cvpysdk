@@ -814,7 +814,7 @@ class VirtualServerSubclient(Subclient):
             }
 
             # setting nics for azureRM instance
-            if value['destination_instance'] == 'azure resource manager':
+            if value.get('destination_instance') == 'azure resource manager':
                 if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
@@ -2157,7 +2157,7 @@ class VirtualServerSubclient(Subclient):
         # If new_name is not given, it restores the VM with same name
         # with suffix Delete.
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
-        browse_result = self.vm_files_browse()
+        _ = self.vm_files_browse()
         # populate restore source item
         restore_option['name'] = vm_to_restore
         restore_option['guid'] = vm_ids[vm_to_restore]
@@ -2176,7 +2176,7 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             if self._instance_object.instance_name != 'openstack':
                 new_name = data["name"].replace("/", "_").replace(" ", "_")
-                new_name = "del_" + new_name  if new_name_prefix is None \
+                new_name = "del_" + new_name if new_name_prefix is None \
                     else new_name_prefix + "_" + new_name
             else:
                 new_name = data["name"]
@@ -2248,9 +2248,13 @@ class VirtualServerSubclient(Subclient):
         """
 
         browse_result = self.vm_files_browse()
-
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
+        if ('browseMetaData' not in _metadata['advanced_data']) or \
+                ('virtualServerMetaData' not in _metadata['advanced_data']['browseMetaData']) or \
+                ('nics' not in _metadata['advanced_data']['browseMetaData']['virtualServerMetaData']):
+            browse_result = self.vm_files_browse(operation='find')
+            _metadata = browse_result[1][('\\' + vm_to_restore)]
         vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
 
         restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']

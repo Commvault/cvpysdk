@@ -5759,6 +5759,43 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def get_mount_volumes(self, volume_names = None):
+        """"Gets mount volumes information for client
+            Args:
+                volume_names (list): List of volume names to be fetched (optional)
+            Returns:
+                volume_guids (list) : Returns list volume dictionaries
+            eg: [{
+                  "volumeTypeFlags": 1,
+                  "freeSize": 63669854208,
+                  "size": 106779639808,
+                  "guid": "8459b015-4c07-4312-8440-a64cb426203c",
+                  "accessPathList": ["C:"]
+                }]
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['BROWSE_MOUNT_POINTS']
+                                                           % self.client_id)
+        if flag:
+            if response.json() and 'mountPathInfo' in response.json():
+                volumes = response.json()['mountPathInfo']
+                volume_guids = []
+                if volume_names:
+                    for volume_name in volume_names:
+                        for volume in volumes:
+                            if volume_name in volume['accessPathList']:
+                                volume_guids.append(volume)
+                                break
+                        else:
+                            raise SDKException('Client', '102', f'No volume found for path {volume_name}')
+                    return volume_guids
+                else:
+                    return volumes
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
 class _Readiness:
     """ Class for checking the connection details of a client """
 

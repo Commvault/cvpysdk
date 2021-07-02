@@ -351,6 +351,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
 from .hac_clusters import HACClusters
@@ -582,6 +583,7 @@ class Commcell(object):
         self._backup_network_pairs = None
         self._reports = None
         self._recovery_targets = None
+        self._blr_pairs = None
         self._job_management = None
         self._index_servers = None
         self._hac_clusters = None
@@ -1454,6 +1456,18 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def blr_pairs(self):
+        """Returns the instance of BLRPairs class"""
+        try:
+            if self._blr_pairs is None:
+                self._blr_pairs = BLRPairs(self)
+
+            return self._blr_pairs
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def backup_network_pairs(self):
         """Returns the instance of BackupNetworkPairs class"""
         try:
@@ -1874,20 +1888,25 @@ class Commcell(object):
         """
         self.commserv_client.delete_additional_setting(category, key_name)
 
-    def protected_vms(self, days):
+    def protected_vms(self, days, limit=100):
         """
         Returns all the protected VMs for the particular client for passed days
         Args:
             days: Protected VMs for days
-                ex: if value is 30 , returns VM prtected in past 30 days
+                ex: if value is 30 , returns VM protected in past 30 days
+
+            limit: Number of Protected VMs
+                ex: if value is 50, returns 50 protected vms are returned
+                    if value is 0, all the protected vms are returned
+                    default value is 100
 
         Returns:
-                vm_dict -  all properties of VM prtotected for passed days
+                vm_dict -  all properties of VM protected for passed days
 
         """
 
         from_time, to_time = self._convert_days_to_epoch(days)
-        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time)
+        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time, limit)
         flag, response = self._cvpysdk_object.make_request(
             'GET',
             self._PROTECTED_VMS

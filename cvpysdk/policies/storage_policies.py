@@ -187,6 +187,7 @@ from future.standard_library import install_aliases
 
 from ..exception import SDKException
 from ..job import Job
+from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
@@ -475,8 +476,8 @@ class StoragePolicies(object):
 
     def add(self,
             storage_policy_name,
-            library,
-            media_agent,
+            library=None,
+            media_agent=None,
             dedup_path=None,
             incremental_sp=None,
             retention_period=5,
@@ -550,6 +551,8 @@ class StoragePolicies(object):
             'global_policy_name': None,
             'global_dedup_policy': True
         }
+        # if global_dedup_policy will always have some value
+        # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
@@ -562,6 +565,9 @@ class StoragePolicies(object):
             disk_library = library
         elif isinstance(library, basestring):
             disk_library = DiskLibrary(self._commcell_object, library)
+        elif extra_arguments["global_policy_name"] is not None:
+            pass
+            # when existing global_dedup_policy is used then library details not needed
         else:
             raise SDKException('Storage', '104')
 
@@ -569,61 +575,66 @@ class StoragePolicies(object):
             media_agent = media_agent
         elif isinstance(media_agent, basestring):
             media_agent = MediaAgent(self._commcell_object, media_agent)
+        elif extra_arguments["global_policy_name"] is not None:
+            pass
+            # when existing global_dedup_policy is used then MA details not needed
         else:
             raise SDKException('Storage', '103')
 
         sp_type = 2 if dr_sp else 1
 
-        request_json = {
-            "storagePolicyCopyInfo": {
-                "library": {
-                    "libraryId": int(disk_library.library_id)
-                },
-                "mediaAgent": {
-                    "mediaAgentId": int(media_agent.media_agent_id)
-                },
-                "retentionRules": {
-                    "retainBackupDataForDays": retention_period
-                }
-            },
-            "storagePolicyName": storage_policy_name,
-            "type": sp_type
-        }
-
-        if dedup_path:
-            if dedup_media_agent is None:
-                dedup_media_agent = media_agent
-            elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
-                dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
-            else:
-                raise SDKException('Storage', '103')
-
-            dedup_info = {
+        if extra_arguments["global_policy_name"] is None:
+            # then populate request json using supplied Library, MA and dedup path
+            request_json = {
                 "storagePolicyCopyInfo": {
-                    "dedupeFlags": {
-                        "enableDeduplication": 1
+                    "library": {
+                        "libraryId": int(disk_library.library_id)
                     },
-                    "DDBPartitionInfo": {
-                        "maInfoList": [{
-                            "mediaAgent": {
-                                "mediaAgentName": dedup_media_agent.media_agent_name
-                            },
-                            "subStoreList": [{
-                                "accessPath": {
-                                    "path": dedup_path
-                                }
-                            }]
-                        }]
+                    "mediaAgent": {
+                        "mediaAgentId": int(media_agent.media_agent_id)
+                    },
+                    "retentionRules": {
+                        "retainBackupDataForDays": retention_period
                     }
-                }
+                },
+                "storagePolicyName": storage_policy_name,
+                "type": sp_type
             }
 
-            request_json["storagePolicyCopyInfo"].update(dedup_info["storagePolicyCopyInfo"])
+            if dedup_path:
+                if dedup_media_agent is None:
+                    dedup_media_agent = media_agent
+                elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
+                    dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
+                else:
+                    raise SDKException('Storage', '103')
+
+                dedup_info = {
+                    "storagePolicyCopyInfo": {
+                        "dedupeFlags": {
+                            "enableDeduplication": 1
+                        },
+                        "DDBPartitionInfo": {
+                            "maInfoList": [{
+                                "mediaAgent": {
+                                    "mediaAgentName": dedup_media_agent.media_agent_name
+                                },
+                                "subStoreList": [{
+                                    "accessPath": {
+                                        "path": dedup_path
+                                    }
+                                }]
+                            }]
+                        }
+                    }
+                }
+
+                request_json["storagePolicyCopyInfo"].update(dedup_info["storagePolicyCopyInfo"])
 
         # since we are supplying a global policy thus there is no need of the
         # dedup store details and the library details which got included above,
         # it will take up the settings of the global storage policy
-        # thus redefining request_json
+        # thus defining request_json
 
         if extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is True:
             request_json = {
@@ -3247,6 +3258,11 @@ class StoragePolicyCopy(object):
                 raise SDKException('Response', '111')
         else:
             raise SDKException('Response', '101')
+
+    @property
+    def copy_name(self):
+        """Returns the name of the copy"""
+        return self._copy_name
 
     @property
     def copy_retention(self):
