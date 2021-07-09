@@ -299,6 +299,7 @@ SERVICES_DICT_TEMPLATE = {
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
     'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
     'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
+    'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',

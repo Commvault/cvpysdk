@@ -307,6 +307,7 @@ class Subclients(object):
             'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
+            'oracle rac': OracleSubclient,
             'notes database': LNDbSubclient,
             'notes document': LNDocSubclient,
             'domino mailbox archiver': LNDmSubclient,

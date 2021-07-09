@@ -213,6 +213,7 @@ class Instances(object):
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
             'oracle': OracleInstance,
+            'oracle rac': OracleInstance,
             'sybase': SybaseInstance,
             'sap for oracle': SAPOracleInstance,
             'mysql': MYSQLInstance,
