@@ -233,6 +233,10 @@ Client
 
     get_needs_attention_details()   -- Gets needs attention tile details from dashboard page
 
+    enable_content_indexing()   --  Enables the v1 content indexing on the client
+
+    disable_content_indexing()   --  Disables the v1 content indexing on the client
+
 
 Client Attributes
 -----------------
@@ -5794,6 +5798,18 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def enable_content_indexing(self):
+        """Enables the v1 content indexing on the client"""
+        update_properties = self.properties
+        update_properties['client']['EnableContentIndexing'] = 'true'
+        self.update_properties(update_properties)
+
+    def disable_content_indexing(self):
+        """Disables the v1 content indexing on the client"""
+        update_properties = self.properties
+        update_properties['client']['EnableContentIndexing'] = 'false'
+        self.update_properties(update_properties)
 
 
 class _Readiness:

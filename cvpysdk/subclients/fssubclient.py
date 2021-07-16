@@ -1957,8 +1957,10 @@ class FileSystemSubclient(Subclient):
 
     def enable_content_indexing(self, policy_id):
         """Enables Content indexing and add the policy associations"""
-        self._set_subclient_properties('enableContentIndexing', True)
-        self._set_subclient_properties('enableContentIndexing', int(policy_id))
+        update_properties = self.properties
+        update_properties['fsSubClientProp']['enableContentIndexing'] = True
+        update_properties['fsSubClientProp']['contentIndexingPolicy'] = int(policy_id)
+        self.update_properties(update_properties)
 
     def disable_content_indexing(self):
         """Disables Content indexing and disassociate the CI policy"""

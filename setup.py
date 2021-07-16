@@ -42,6 +42,7 @@ def readme():
     with open(os.path.join(ROOT, 'README.rst')) as file_object:
         return file_object.read()
 
+os.chdir(ROOT)
 
 setup(
     name='cvpysdk',
