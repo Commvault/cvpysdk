@@ -151,6 +151,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
     'LIVE_SYNC': '{0}Task',
+    'LIVE_SYNC_DETAILS': '{0}/Task/%s/Details',
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
@@ -316,6 +317,10 @@ SERVICES_DICT_TEMPLATE = {
     'RUN_MONITORING_POLICY': '{0}logmonitoring/Policy/%s/Action/Run',
 
     'LICENSE': '{0}CommcellRegistrationInformation',
+
+    'REPLICATION_GROUPS': '{0}ReplicationGroups',
+    'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
+    'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
 
     'DR_GROUPS': '{0}DRGroups',
     'GET_DR_GROUP': '{0}DRGroups/%s',

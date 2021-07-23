@@ -353,7 +353,10 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
     },
-
+    'ReplicationGroup': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'FailoverGroup': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''

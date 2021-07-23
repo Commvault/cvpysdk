@@ -351,6 +351,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .drorchestration.replication_groups import ReplicationGroups
 from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
@@ -582,6 +583,7 @@ class Commcell(object):
         self._redirect_rules_service = None
         self._backup_network_pairs = None
         self._reports = None
+        self._replication_groups = None
         self._recovery_targets = None
         self._blr_pairs = None
         self._job_management = None
@@ -667,6 +669,9 @@ class Commcell(object):
         del self._download_center
         del self._organizations
         del self._storage_pools
+        del self._recovery_targets
+        del self._replication_groups
+        del self._blr_pairs
         del self._activity_control
         del self._events
         del self._monitoring_policies
@@ -1442,6 +1447,17 @@ class Commcell(object):
         if self._redirect_rules_service is None:
             self._redirect_rules_service = self._get_redirect_rules_service_commcell()
         return self._redirect_rules_service
+
+    @property
+    def replication_groups(self):
+        """Returns the instance of ReplicationGroups class"""
+        try:
+            if self._replication_groups is None:
+                self._replication_groups = ReplicationGroups(self)
+            return self._replication_groups
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def recovery_targets(self):
