@@ -2308,7 +2308,7 @@ c
         """ method to unset Use proxy option for intellisnap subclient """
 
         properties_dict = {
-            "clientName": 'NO CLIENT'
+            "clientId": 0
         }
         update_properties = self.properties
         update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict

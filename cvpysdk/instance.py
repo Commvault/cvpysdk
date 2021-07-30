@@ -1750,6 +1750,9 @@ class Instance(object):
             self._instance_id = self._get_instance_id()
 
         self._INSTANCE = self._services['INSTANCE'] % (self._instance_id)
+        self._ALLINSTANCES = self._services['GET_ALL_INSTANCES'] % (
+            self._agent_object._client_object.client_id
+        )
         self._RESTORE = self._services['RESTORE']
 
         self._properties = None
@@ -1815,10 +1818,22 @@ class Instance(object):
         if flag:
             if response.json() and "instanceProperties" in response.json():
                 self._properties = response.json()["instanceProperties"][0]
-
-                self._instance = self._properties["instance"]
-                self._instance_name = self._properties["instance"]["instanceName"].lower()
-                self._instanceActivityControl = self._properties["instanceActivityControl"]
+                try:
+                    self._instance = self._properties["instance"]
+                    self._instance_name = self._properties["instance"]["instanceName"].lower()
+                    self._instanceActivityControl = self._properties["instanceActivityControl"]
+                except KeyError:
+                    instance_service = (
+                        "{0}&applicationId={1}".format(self._ALLINSTANCES, self._agent_object.agent_id))
+                    flag, response = self._cvpysdk_object.make_request('GET', instance_service)
+                    if flag:
+                        if response.json() and "instanceProperties" in response.json():
+                            self._properties = response.json()["instanceProperties"][0]
+                            self._instance = self._properties["instance"]
+                            self._instance_name = self._properties["instance"]["instanceName"].lower()
+                            self._instanceActivityControl = self._properties["instanceActivityControl"]
+                    else:
+                        raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
         else:
