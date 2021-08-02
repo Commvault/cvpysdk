@@ -191,7 +191,7 @@ Job
 
     _initialize_job_properties()--  initializes the properties of the job
 
-    _wait_for_status()          --  waits for 2 minutes or till the job status is changed
+    _wait_for_status()          --  waits for 6 minutes or till the job status is changed
     to given status, whichever is earlier
 
     wait_for_completion()       --  waits for the job to finish, (job.is_finished == True)
