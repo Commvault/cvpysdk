@@ -111,7 +111,7 @@ Subclient:
 
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    disble_backup()             --  disables the backup for the subclient
+    disable_backup()            --  disables the backup for the subclient
 
     set_proxy_for_snap()        --  method to set Use proxy option for intellisnap subclient
 
