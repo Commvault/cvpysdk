@@ -97,7 +97,7 @@ class DRJob(Job):
 
         if flag:
             if response.json() and 'job' in response.json():
-                return response.json()['job'][0]
+                return response.json()['job']
             elif response.json() and 'errors' in response.json():
                 errors = response.json().get('errors', [{}])
                 error_list = errors[0].get('errList', [{}])
@@ -123,25 +123,30 @@ class DRJob(Job):
     def get_phases(self):
         """
         Gets the DR phases of the job
-        Returns: list of phase dictionaries
-            Phase: {
+        Returns: dictionaries of phases for each source and destination VM pair
+            {"source_vm_1": [{
                 'phase_name': enum - Enum of phase short name and full name mapping,
                 'phase_status': int - 0 for success, 1 for failed,
                 'start_time': int - timestamp of start of job,
                 'end_time': int - timestamp of end of job,
                 'machine_name': str - The name of the machine Job is executing on,
                 'error_message': str - Error message, if any,
+            }],
             }
         """
-        phases = []
-        for phase in self._replication_job_stats.get('phase'):
-            phases.append({
-                'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
-                if phase.get('phase', '') else None,
-                'phase_status': phase.get('status', 1),
-                'start_time': phase.get('startTime', {}).get('time'),
-                'end_time': phase.get('endTime', {}).get('time'),
-                'machine_name': phase.get('entity', {}).get('clientName'),
-                'error_message': phase.get('phaseInfo', {}).get('job', [{}])[0].get('failure', {}).get('errorMessage'),
-            })
-        return phases
+        job_stats = {}
+        for pair_stats in self._replication_job_stats:
+            phases = []
+            for phase in pair_stats.get('phase', []):
+                phases.append({
+                    'phase_name': DRJobPhaseToText[DRJobPhases(phase.get('phase', '')).name]
+                    if phase.get('phase', '') else '',
+                    'phase_status': phase.get('status', 1),
+                    'start_time': phase.get('startTime', {}).get('time', ''),
+                    'end_time': phase.get('endTime', {}).get('time', ''),
+                    'machine_name': phase.get('entity', {}).get('clientName', ''),
+                    'error_message': phase.get('phaseInfo', {}).get('job', [{}])[0].get('failure', {})
+                                     .get('errorMessage', ''),
+                })
+            job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
+        return job_stats

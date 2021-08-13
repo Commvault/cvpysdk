@@ -104,6 +104,8 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from enum import Enum
+
+from cvpysdk.drorchestration.blr_pairs import BLRPairs
 from past.builtins import basestring
 from ..exception import SDKException
 
@@ -340,6 +342,7 @@ class ReplicationGroups:
 
 class ReplicationGroup:
     """Class for all Replication groups related SDK"""
+
     def __init__(self, commcell_object, replication_group_name):
         """Initialise the ReplicationGroup object for the given group name
             Args:
@@ -368,7 +371,8 @@ class ReplicationGroup:
     def __repr__(self):
         """String representation of the instance of the replication group"""
         representation_string = f'ReplicationGroup class instance for ' \
-                                f'{"Zeal" if self.zeal_group else "Backup based"} replication group: "{0}"'
+                                f'{"Zeal" if self.zeal_group else "Backup based"}' \
+                                f' replication group: "{self.group_name}"'
         return representation_string.format(self.group_name)
 
     def __str__(self):
@@ -419,6 +423,8 @@ class ReplicationGroup:
                 return response.json().get('replicationInfo', {}).get('replicationTargets', {}).get('taskInfo')[0]
             if response.json().get('taskInfo'):
                 return response.json().get('taskInfo')
+            if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
+                return response.json().get('replicationGroupDetails', {}).get('taskDetail')
             raise SDKException('Response', '102')
 
         response_string = self._commcell_object._update_response_(response.text)
@@ -441,7 +447,7 @@ class ReplicationGroup:
     @property
     def task_id(self):
         """Returns: (str) Returns the ID of the task associated to the replication group"""
-        return str(self._replication_group_properties.get('task').get('taskId'))
+        return str(self._replication_group_properties.get('task', {}).get('taskId'))
 
     @property
     def replication_type(self):
@@ -463,6 +469,16 @@ class ReplicationGroup:
         """
         return (self._replication_group_properties.get('subTasks', [{}])[0]
                 .get('options', {}).get('restoreOptions', {}))
+
+    @property
+    def is_dvdf_enabled(self):
+        """Returns: (bool) Whether deploy VM during failover is enabled or not"""
+        return self.restore_options.get('diskLevelVMRestoreOption', {}).get('deployVmWhenFailover', False)
+
+    @property
+    def is_warm_sync_enabled(self):
+        """Returns: (bool) Whether Warm sync is enabled or not"""
+        return self.restore_options.get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False)
 
     @property
     def source_client(self):
@@ -531,8 +547,15 @@ class ReplicationGroup:
         """
         if not self._vm_pairs:
             if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
-                self._vm_pairs = {source_vm: self.subclient.live_sync.get(source_vm)
-                                  for source_vm in self.subclient.live_sync.vm_pairs}
+                live_sync_name = self.group_name.replace('_ReplicationPlan__ReplicationGroup', '')
+                live_sync = self.subclient.live_sync.get(live_sync_name)
+                self._vm_pairs = {source_vm: live_sync.get(source_vm)
+                                  for source_vm in live_sync.vm_pairs}
+            elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
+                blr_pairs = BLRPairs(self._commcell_object, self.group_name)
+                self._vm_pairs = {pair_dict.get('sourceName'):
+                                  blr_pairs.get(pair_dict.get('sourceName'), pair_dict.get('destinationName'))
+                                  for pair_dict in blr_pairs.blr_pairs.values()}
             else:
                 raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'
                                                               ' of virtual server periodic')

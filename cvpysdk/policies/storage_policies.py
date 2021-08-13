@@ -169,12 +169,16 @@ StoragePolicyCopy:
 
     recopy_jobs()                           --  recopies a job on a secondary copy
 
+    set_key_management_server()             --  sets the Key Management Server to this copy
+
 Attributes
 ----------
 
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
+
+    **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
 """
 
 from __future__ import absolute_import
@@ -3385,6 +3389,31 @@ class StoragePolicyCopy(object):
         self._set_copy_properties()
 
     @property
+    def store_priming(self):
+        """Treats the copy store priming setting as a read-only attribute."""
+        return self._dedupe_flags.get('useDDBPrimingOption', 0) > 0
+
+    @store_priming.setter
+    def store_priming(self, value):
+        """Sets the copy store priming setting as the value provided as input.
+            Args:
+                value    (bool) --  store priming flag to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update deduplication values on copy
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._dedupe_flags['useDDBPrimingOption'] = int(value)
+
+        self._set_copy_properties()
+
+    @property
     def copy_client_side_dedup(self):
         """Treats the copy deduplication setting as a read-only attribute."""
         return 'enableClientSideDedup' in self._dedupe_flags
@@ -3835,3 +3864,25 @@ class StoragePolicyCopy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def set_key_management_server(self, kms_name):
+        """Sets the Key Management Server to this copy
+
+            Args:
+                kms_name  (str) -- The Key Management Server's name
+                
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+                
+        """
+        if not isinstance(kms_name, str):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties["dataEncryption"] = {
+            "keyProviderName": kms_name,
+            "rotateMasterKey": True
+        }
+        self._set_copy_properties()
+        

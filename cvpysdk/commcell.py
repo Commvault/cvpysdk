@@ -289,6 +289,8 @@ Commcell instance Attributes
     **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.
 
     **metallic**                 -- Returns the instance of CVMetallic class
+
+    **key_management_servers**      -- Returns the instance of `KeyManagementServers` class
 """
 
 from __future__ import absolute_import
@@ -359,6 +361,7 @@ from .hac_clusters import HACClusters
 from .index_pools import IndexPools
 from .deduplication_engines import DeduplicationEngines
 from .metallic import Metallic
+from .key_management_server import KeyManagementServers
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -594,6 +597,7 @@ class Commcell(object):
         self._redirect_cc_idp = None
         self._tfa = None
         self._metallic = None
+        self._kms = None
         self.refresh()
 
         del self._password
@@ -696,6 +700,7 @@ class Commcell(object):
         del self._master_saml_token
         del self._tfa
         del self._metallic
+        del self._kms
         del self
 
     def _get_commserv_details(self):
@@ -898,12 +903,21 @@ class Commcell(object):
         """ Updates GXGlobalParam table (Commcell level configuration parameters)
 
             Args:
-                request_json (str)   --  request json that is to be passed
+                request_json (dict)   --  request json that is to be passed
 
                     Sample: {
                                 "name": "",
                                 "value": ""
                             }
+                OR
+                request_json (list)   --  list of Global Param settings
+                    Sample: [
+                                {
+                                    "name": "",
+                                    "value": ""
+                                },
+                                ...
+                            ]
 
             Returns:
                 dict                --   json response received from the server
@@ -915,7 +929,19 @@ class Commcell(object):
                     if response is not success
 
         """
+        if  isinstance(request_json, list):
+            global_params_list = request_json
+            payload = {
+                "App_SetGlobalParamsReq": {
+                    "globalParams": global_params_list
+                }
+            }
+            return self.qoperation_execute(payload)
 
+        if not isinstance(request_json, dict):
+            message = f"Received: {type(request_json)}. Expected: dict, list"
+            raise SDKException('Commcell', 107, message)
+        
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['GLOBAL_PARAM'], request_json
         )
@@ -1541,6 +1567,17 @@ class Commcell(object):
                 self._metallic = Metallic(self)
 
             return self._metallic
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+    
+    @property
+    def key_management_servers(self):
+        """Returns the instance of the KeyManagementServers class."""
+        try:
+            if self._kms is None:
+                self._kms = KeyManagementServers(self)
+
+            return self._kms
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

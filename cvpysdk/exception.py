@@ -93,7 +93,8 @@ EXCEPTION_DICT = {
         '103': 'Failed to get the CommServ details',
         '104': 'Failed to send an email to specified user',
         '105': 'Failed to run the Data Aging job',
-        '106': 'Failed to get the SAML token'
+        '106': 'Failed to get the SAML token',
+        '107': 'Data type of the input(s) is not valid'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -466,6 +467,12 @@ EXCEPTION_DICT = {
     'Metallic': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'KeyManagementServer': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'Key Management Server not found',
+        '103': 'Key Management Server type is not valid',
+        '104': 'Key Management Server type not found',
     }
 }
 
@@ -487,6 +494,8 @@ class SDKException(Exception):
                 object  -   instance of the SDKException class of type Exception
 
         """
+        exception_id = str(exception_id)
+
         self.exception_module = exception_module
         self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]

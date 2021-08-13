@@ -80,6 +80,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
+    'VM_BACKUP': '{0}v2/vsa/vm/%s/backup?backupLevel=%s',
 
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
@@ -308,6 +309,9 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
+
+    'KEY_MANAGEMENT_SERVER_ADD_GET': '{0}CommCell/KeyManagementServers',
+    'KEY_MANAGEMENT_SERVER_DELETE': '{0}CommCell/KeyManagementServers/%s',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',

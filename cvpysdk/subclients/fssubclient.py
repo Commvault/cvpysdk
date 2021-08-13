@@ -397,6 +397,17 @@ class FileSystemSubclient(Subclient):
             else:
                 final_dict['dataOpt'] = multi_stream_opts
 
+        if 'start_new_media' in options and options['start_new_media']:
+
+            media_opts = {
+                'startNewMedia': options.get('start_new_media', False)
+            }
+
+            if 'mediaOpt' in final_dict and isinstance(final_dict['mediaOpt'], dict):
+                final_dict['mediaOpt'].update(media_opts)
+            else:
+                final_dict['mediaOpt'] = media_opts
+
         return final_dict
 
     @property

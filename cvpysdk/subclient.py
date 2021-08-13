@@ -111,7 +111,7 @@ Subclient:
 
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    disable_backup()            --  disables the backup for the subclient
+    disable_backup()             --  disables the backup for the subclient
 
     set_proxy_for_snap()        --  method to set Use proxy option for intellisnap subclient
 
@@ -126,6 +126,8 @@ Subclient:
     at the input path in the time range specified
 
     find()                      --  searches a given file/folder name in the subclient content
+
+    list_media()                --  List media required to browse and restore backed up data from the backupset
 
     restore_in_place()          --  Restores the files/folders specified in the
     input paths list to the same location
@@ -2503,6 +2505,57 @@ c
         options['_subclient_id'] = self._subclient_id
 
         return self._backupset_object.find(options)
+
+    def list_media(self, *args, **kwargs):
+        """List media required to browse and restore backed up data from the subclient
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2020-04-20 12:00:00',
+                            'to_time': '2021-04-19 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2020-04-20 12:00:00',
+                            to_time='2021-04-19 12:00:00'
+                        )
+
+            Note:
+                Refer `_default_browse_options` in backupset.py for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        """
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['_subclient_id'] = self._subclient_id
+
+        return self._backupset_object.list_media(options)
 
     def restore_in_place(
             self,
