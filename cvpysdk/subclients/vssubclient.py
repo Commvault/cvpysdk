@@ -623,7 +623,10 @@ class VirtualServerSubclient(Subclient):
             else:
                 display_name = child['displayName']
                 content_type = VSAObjects(child['type']).name
-                vm_id = child['name']
+                if 'name' in child:
+                    vm_id = child['name']
+                else:
+                    return content_list
                 temp_dict = {
                     'equal_value': child['equalsOrNotEquals'],
                     'allOrAnyChildren': child['allOrAnyChildren'],
