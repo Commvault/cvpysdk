@@ -473,7 +473,7 @@ class Domains(object):
                 }
             domain_create_request["provider"]["customProvider"] = custom_provider
 
-        if "additional_settings" in kwargs and kwargs.get('additional_settings'):
+        if kwargs.get('additional_settings'):
             domain_create_request["provider"]['additionalSettings'] = kwargs.get('additional_settings')
 
         flag, response = self._cvpysdk_object.make_request(

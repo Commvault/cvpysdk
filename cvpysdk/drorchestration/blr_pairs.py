@@ -502,6 +502,13 @@ class BLRPairs:
 
 
 class BLRPair:
+    class PairOperationsStatus(Enum):
+        SUSPEND = BLRPairs.PairStatus.SUSPENDED
+        START = BLRPairs.PairStatus.REPLICATING
+        RESUME = BLRPairs.PairStatus.REPLICATING
+        STOP = BLRPairs.PairStatus.STOPPED
+        RESYNC = BLRPairs.PairStatus.RESYNCING
+
     def __init__(self, commcell_object, source_name, destination_name):
         """Initialise the ReplicationGroup object for the given group name
             Args:
@@ -556,6 +563,35 @@ class BLRPair:
         if flag:
             if response.json() and 'siteInfo' in response.json():
                 self._pair_properties = response.json().get('siteInfo')[0]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _perform_action(self, operation_type):
+        """Performs an action on BLR pair
+            Args:
+                operation_type (PairOperations): An enum of pair operations of BLRPair class
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        status_to_be_set = operation_type.value
+        site_info = [self._pair_properties.copy()]
+        site_info[0]['status'] = status_to_be_set.value
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT',
+                                                                            self._services['GET_BLR_PAIRS'],
+                                                                            {'siteInfo': site_info})
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', -1)
+                if error_code != 0:
+                    raise SDKException('BLRPair', '101')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -750,13 +786,78 @@ class BLRPair:
                                                                              destination_client.client_guid))
         if flag:
             if response.json() and 'vmScale' in response.json():
-                return response.json().get('vmScale', [])
+                return response.json().get('vmScale', {}).get('restorePoints', [])
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    def stop(self):
+        """Stops the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.STOP)
+
+    def start(self):
+        """Starts the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.START)
+
+    def resume(self):
+        """Resumes the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.RESUME)
+
+    def resync(self):
+        """Resyncs the BLR pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.RESYNC)
+
+    def suspend(self):
+        """Suspends the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.SUSPEND)
 
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         """Perform the DR operation for the BLR pair

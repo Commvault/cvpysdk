@@ -473,12 +473,14 @@ class ReplicationGroup:
     @property
     def is_dvdf_enabled(self):
         """Returns: (bool) Whether deploy VM during failover is enabled or not"""
-        return self.restore_options.get('diskLevelVMRestoreOption', {}).get('deployVmWhenFailover', False)
+        return (self.restore_options.get('virtualServerRstOption', {})
+                .get('diskLevelVMRestoreOption', {}).get('deployVmWhenFailover', False))
 
     @property
     def is_warm_sync_enabled(self):
         """Returns: (bool) Whether Warm sync is enabled or not"""
-        return self.restore_options.get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False)
+        return (self.restore_options.get('virtualServerRstOption', {})
+                .get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False))
 
     @property
     def source_client(self):

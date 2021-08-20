@@ -235,7 +235,8 @@ class FileSystemSubclient(Subclient):
 
                     "content": self._content,
                     "commonProperties": self._commonProperties,
-                    "contentOperationType": 1
+                    "fsContentOperationType": "OVERWRITE",
+                    "fsExcludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsExcludeFilterOperationType') else self._fsExcludeFilterOperationType
                 }
         }
 
@@ -315,6 +316,8 @@ class FileSystemSubclient(Subclient):
             update_content.append(exception_dict)
 
         self._set_subclient_properties("_content", update_content)
+        self._fsExcludeFilterOperationType = "OVERWRITE"  # RESET THE OPERATION TYPE TO ITS DEFAULT
+
 
     def _common_backup_options(self, options):
         """
@@ -476,6 +479,7 @@ class FileSystemSubclient(Subclient):
     @filter_content.setter
     def filter_content(self, value):
         """Sets the filter content of the subclient as the value provided as input.
+            An empty list will clear all filters.
 
             example: ['*book*', 'file**']
 
@@ -485,15 +489,17 @@ class FileSystemSubclient(Subclient):
 
                     if the type of value input is not list
 
-                    if value list is empty
         """
-        if isinstance(value, list) and value != []:
+        if isinstance(value, list):
+            if value == []:
+                value = self.filter_content
+                self._fsExcludeFilterOperationType = "DELETE"
             self._set_content(filter_content=value)
         else:
             raise SDKException(
                 'Subclient',
                 '102',
-                'Subclient filter content should be a list value and not empty')
+                'Subclient filter content should be a list value')
 
     @property
     def exception_content(self):
