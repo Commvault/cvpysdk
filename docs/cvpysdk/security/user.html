@@ -1,0 +1,3151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.security.user API documentation</title>
+<meta name="description" content="Main file for managing users on this commcell …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.security.user</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for managing users on this commcell</p>
+<p>Users and User are only the two classes defined in this commcell</p>
+<h2 id="users">Users</h2>
+<p><strong>init</strong>()
+&ndash;
+initializes the users class object</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the users associated with the
+commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string for the instance of the
+Users class</p>
+<p>_get_users()
+&ndash;
+gets all the users on this commcell</p>
+<p>_process_add_or_delete_response()
+&ndash;
+process the add or delete users response</p>
+<p>add()
+&ndash;
+adds local/external user to commcell</p>
+<p>has_user()
+&ndash;
+checks if user with specified user exists
+on this commcell</p>
+<p>get()
+&ndash;
+returns the user class object for the
+specified user name</p>
+<p>delete()
+&ndash;
+deletes the user on this commcell</p>
+<p>refresh()
+&ndash;
+refreshes the list of users on this
+commcell</p>
+<p>all_users()
+&ndash;
+Returns all the users present in the commcell</p>
+<p>_get_users_on_service_commcell()
+&ndash; gets the users from service commcell</p>
+<p>User
+<strong>init</strong>()
+&ndash;
+initiaizes the user class object</p>
+<pre><code>__repr__()                          --  returns the string for the instance of the
+                                        User class
+
+_get_user_id()                      --  returns the user id associated with this
+                                        user
+
+_get_user_properties()              --  gets all the properties associated with
+                                        this user
+
+_update_user_props()                --  updates the properties associated with
+                                        this user
+
+_update_usergroup_request()         --  makes the request to update usergroups
+                                        associated with this user
+
+user_name()                         --  returns the name of this user
+
+user_id()                           --  returns the id of this user
+
+description()                       --  returns the description of this user
+
+email()                             --  returns the email of this user
+
+associated_usergroups()             --  returns the usergroups associated with
+                                        this user
+
+add_usergroups()                    --  associates the usergroups with this user
+
+remove_usergroups()                 --  disassociated the usergroups with this user
+
+overwrite_usergroups()              --  reassociates the usergroups with this user
+
+refresh()                           --  refreshes the properties of this user
+
+update_security_associations()      --  updates 3-way security associations on user
+
+request_OTP()                       --  fetches OTP for user
+
+user_security_associations()        --  returns sorted roles and custom roles present on the
+                                        different entities.
+
+status()                            --  returns the status of user
+
+update_user_password()              --  Updates new passwords of user
+
+user_guid()                         --  returns user GUID
+
+age_password_days()                 --  returns age password days for user
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L1-L1002" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for managing users on this commcell
+
+Users and User are only the two classes defined in this commcell
+
+Users:
+    __init__()                          --  initializes the users class object
+
+    __str__()                           --  returns all the users associated with the
+                                            commcell
+
+    __repr__()                          --  returns the string for the instance of the
+                                            Users class
+
+    _get_users()                        --  gets all the users on this commcell
+
+    _process_add_or_delete_response()   --  process the add or delete users response
+
+    add()                               --  adds local/external user to commcell
+
+    has_user()                          --  checks if user with specified user exists
+                                            on this commcell
+
+    get()                               --  returns the user class object for the
+                                            specified user name
+
+    delete()                            --  deletes the user on this commcell
+
+    refresh()                           --  refreshes the list of users on this
+                                            commcell
+
+    all_users()                         --  Returns all the users present in the commcell
+
+    _get_users_on_service_commcell()    -- gets the users from service commcell
+
+User
+    __init__()                          --  initiaizes the user class object
+
+    __repr__()                          --  returns the string for the instance of the
+                                            User class
+
+    _get_user_id()                      --  returns the user id associated with this
+                                            user
+
+    _get_user_properties()              --  gets all the properties associated with
+                                            this user
+
+    _update_user_props()                --  updates the properties associated with
+                                            this user
+
+    _update_usergroup_request()         --  makes the request to update usergroups
+                                            associated with this user
+
+    user_name()                         --  returns the name of this user
+
+    user_id()                           --  returns the id of this user
+
+    description()                       --  returns the description of this user
+
+    email()                             --  returns the email of this user
+
+    associated_usergroups()             --  returns the usergroups associated with
+                                            this user
+
+    add_usergroups()                    --  associates the usergroups with this user
+
+    remove_usergroups()                 --  disassociated the usergroups with this user
+
+    overwrite_usergroups()              --  reassociates the usergroups with this user
+
+    refresh()                           --  refreshes the properties of this user
+
+    update_security_associations()      --  updates 3-way security associations on user
+
+    request_OTP()                       --  fetches OTP for user
+
+    user_security_associations()        --  returns sorted roles and custom roles present on the
+                                            different entities.
+
+    status()                            --  returns the status of user
+
+    update_user_password()              --  Updates new passwords of user
+
+    user_guid()                         --  returns user GUID
+
+    age_password_days()                 --  returns age password days for user
+
+&#34;&#34;&#34;
+
+from base64 import b64encode
+from past.builtins import basestring
+from .security_association import SecurityAssociation
+from ..exception import SDKException
+
+
+class Users(object):
+    &#34;&#34;&#34;Class for maintaining all the configured users on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes the users class object for this commcell
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Clients class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._users = self._get_users()
+        self._users_on_service = None
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all users of the commcell.
+
+            Returns:
+                str - string of all the users configured on the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Users&#39;)
+
+        for index, user in enumerate(self._users):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, user)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Users class.&#34;&#34;&#34;
+        return &#34;Users class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_users(self):
+        &#34;&#34;&#34;Returns the list of users configured on this commcell
+
+            Returns:
+                dict of all the users on this commcell
+                    {
+                        &#39;user_name_1&#39;: user_id_1
+                    }
+
+        &#34;&#34;&#34;
+        get_all_user_service = self._commcell_object._services[&#39;USERS&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_all_user_service
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                users_dict = {}
+
+                for user in response.json()[&#39;users&#39;]:
+                    temp_name = user[&#39;userEntity&#39;][&#39;userName&#39;].lower()
+                    temp_id = user[&#39;userEntity&#39;][&#39;userId&#39;]
+                    users_dict[temp_name] = temp_id
+
+                return users_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _process_add_or_delete_response(self, flag, response):
+        &#34;&#34;&#34;Processes the flag and response received from the server during add delete request
+
+            Args:
+                request_object  (object)  --  request objects specifying the details
+                                              to request
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if reponse is not success
+        &#34;&#34;&#34;
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    if &#39;errorString&#39; in response_json:
+                        error_message = response_json[&#39;errorString&#39;]
+                elif &#39;errorCode&#39; in response.json():
+                    error_code = response.json()[&#39;errorCode&#39;]
+                    if &#39;errorMessage&#39; in response:
+                        error_message = response[&#39;errorMessage&#39;]
+
+                return error_code, error_message
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _add_user(self, create_user_request):
+        &#34;&#34;&#34;Makes the add user request on the server
+
+            Args:
+                create_user_request     (dict)  --  request json to create an user
+
+            Raises:
+                SDKException:
+                    if failed to add user
+        &#34;&#34;&#34;
+        add_user = self._commcell_object._services[&#39;USERS&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, add_user, create_user_request
+        )
+        error_code, error_message = self._process_add_or_delete_response(flag, response)
+
+        if not error_message:
+            error_message = &#39;Failed to add user. Please check logs for further details.&#39;
+
+        if error_code != 0:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, error_message)
+
+        self._users = self._get_users()
+
+    def add(self,
+            user_name,
+            email,
+            full_name=None,
+            domain=None,
+            password=None,
+            system_generated_password=False,
+            local_usergroups=None,
+            entity_dictionary=None):
+        &#34;&#34;&#34;Adds a local/external user to this commcell
+
+            Args:
+                user_name                     (str)     --  name of the user to be
+                                                            created
+
+                full_name                     (str)     --  full name of the user to be
+                                                            created
+
+                email                         (str)     --  email of the user to be
+                                                            created
+
+                domain                        (str)     --  Needed in case you are adding
+                                                            external user
+
+                password                      (str)     --  password of the user to be
+                                                            created
+                    default: None
+
+                local_usergroups              (str)     --  user can be member of
+                                                            these user groups
+
+                system_generated_password     (bool)    --  if set to true system
+                                                            defined password will be used
+                                                            default: False
+
+                entity_dictionary   --      combination of entity_type, entity names
+                                            and role
+
+                e.g.: security_dict={
+                                &#39;assoc1&#39;:
+                                    {
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                        &#39;role&#39;: [&#39;role1&#39;]
+                                    },
+                                &#39;assoc2&#39;:
+                                    {
+                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                        &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                        &#39;role&#39;: [&#39;New1&#39;]
+                                        }
+                                    }
+                entity_type         --      key for the entity present in dictionary
+                                            on which user will have access
+
+                entity_name         --      Value of the key
+
+                 role               --      key for role name you specify
+
+                e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+                entity_type:    clientName, mediaAgentName, libraryName, userName,
+                                userGroupName, storagePolicyName, clientGroupName,
+                                schedulePolicyName, locationName, providerDomainName,
+                                alertName, workflowName, policyName, roleName
+
+                entity_name:    client name for entity_type &#39;clientName&#39;
+                                Media agent name for entitytype &#39;mediaAgentName&#39;
+                                similar for other entity_typees
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+
+                    if user with specified name already exists
+
+                    if password or system_generated_password are not set
+
+                    if failed to add user to commcell
+        &#34;&#34;&#34;
+        if domain:
+            username = &#34;{0}\\{1}&#34;.format(domain, user_name)
+            password = &#34;&#34;
+            system_generated_password = False
+        else:
+            username = user_name
+            if not password:
+                system_generated_password = True
+
+        if not (isinstance(username, basestring) and
+                isinstance(email, basestring)):
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+        if self.has_user(username):
+            raise SDKException(&#39;User&#39;, &#39;103&#39;, &#39;User: {0}&#39;.format(username))
+
+        if password is not None:
+            password = b64encode(password.encode()).decode()
+        else:
+            password = &#39;&#39;
+
+        if local_usergroups:
+            groups_json = [{&#34;userGroupName&#34;: lname} for lname in local_usergroups]
+        else:
+            groups_json = [{}]
+
+        security_json = {}
+        if entity_dictionary:
+            security_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+            security_json = {
+                &#34;associationsOperationType&#34;: &#34;ADD&#34;,
+                &#34;associations&#34;: security_request
+                }
+
+        create_user_request = {
+            &#34;users&#34;: [{
+                &#34;password&#34;: password,
+                &#34;email&#34;: email,
+                &#34;fullName&#34;: full_name,
+                &#34;systemGeneratePassword&#34;: system_generated_password,
+                &#34;userEntity&#34;: {
+                    &#34;userName&#34;: username
+                },
+                &#34;securityAssociations&#34;: security_json,
+                &#34;associatedUserGroups&#34;: groups_json
+            }]
+        }
+        self._add_user(create_user_request)
+        return self.get(username)
+
+    def has_user(self, user_name):
+        &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
+
+            Args:
+                user_name         (str)     --     name of the user which has to be
+                                                   checked if exists
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+        &#34;&#34;&#34;
+        if not isinstance(user_name, basestring):
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+        return self._users and user_name.lower() in self._users
+
+    def get(self, user_name):
+        &#34;&#34;&#34;Returns the user object for the specified user name
+
+            Args:
+                user_name  (str)  --  name of the user for which the object has to be
+                                      created
+
+            Raises:
+                SDKException:
+                    if user doesn&#39;t exist with specified name
+        &#34;&#34;&#34;
+        if not self.has_user(user_name):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    user_name)
+            )
+
+        return User(self._commcell_object, user_name, self._users[user_name.lower()])
+
+    def delete(self, user_name, new_user=None, new_usergroup=None):
+        &#34;&#34;&#34;Deletes the specified user from the existing commcell users
+
+            Args:
+                user_name       (str)   --  name of the user which has to be deleted
+
+                new_user        (str)   --  name of the target user, whom the ownership
+                                            of entities should be transferred
+
+                new_usergroup   (str)   --  name of the user group, whom the ownership
+                                            of entities should be transferred
+
+                Note: either user or usergroup  should be provided for ownership
+                transfer not both.
+
+            Raises:
+                SDKException:
+                    if user doesn&#39;t exist
+
+                    if new user and new usergroup any of these is passed and these doesn&#39;t
+                    exist on commcell
+
+                    if both user and usergroup is passed for ownership transfer
+
+                    if both user and usergroup is not passed for ownership transfer
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not self.has_user(user_name):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    user_name)
+            )
+        if new_user and new_usergroup:
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;{0} and {1} both can not be set as owner!! &#34;
+                &#34;please send either new_user or new_usergroup&#34;.format(new_user, new_usergroup)
+            )
+        else:
+            if new_user:
+                if not self.has_user(new_user):
+                    raise SDKException(
+                        &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                            new_user)
+                    )
+                new_user_id = self._users[new_user.lower()]
+                new_group_id = 0
+            else:
+                if new_usergroup:
+                    if not self._commcell_object.user_groups.has_user_group(new_usergroup):
+                        raise SDKException(
+                            &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists &#34;
+                            &#34;on this commcell.&#34;.format(new_usergroup)
+                        )
+                else:
+                    raise SDKException(
+                        &#39;User&#39;, &#39;102&#39;,
+                        &#34;Ownership transfer is mondatory!! Please provide new owner information&#34;
+                    )
+                new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
+                new_user_id = 0
+
+        delete_user = self._commcell_object._services[&#39;DELETE_USER&#39;] %(
+            self._users[user_name.lower()], new_user_id, new_group_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, delete_user
+        )
+        error_code, error_message = self._process_add_or_delete_response(flag, response)
+        if not error_message:
+            error_message = &#39;Failed to delete user. Please check logs for further details.&#39;
+        if error_code != 0:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, error_message)
+        self._users = self._get_users()
+
+    def _get_users_on_service_commcell(self):
+        &#34;&#34;&#34;gets the userspace from service commcell
+
+        Returns:
+            list  - consisting of all users assciated with service commcell
+
+                    [&#39;user1&#39;, &#39;user2&#39;]
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        &#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;GET_USERSPACE_SERVICE&#39;]
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                users_space_dict = {}
+                for user in response.json()[&#39;users&#39;]:
+                    users_space_dict[user[&#39;userEntity&#39;][&#39;userName&#39;]] = user
+                return users_space_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def service_commcell_users_space(self):
+        &#34;&#34;&#34;Returns the user space from service commcell
+
+        list - consists of users space from service commcell
+            [&#39;user1&#39;,&#39;user2&#39;]
+        &#34;&#34;&#34;
+        if self._users_on_service is None:
+            self._users_on_service = self._get_users_on_service_commcell()
+        return self._users_on_service
+
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Users on this commcell.&#34;&#34;&#34;
+        self._users = self._get_users()
+        self._users_on_service = None
+
+    @property
+    def all_users(self):
+        &#34;&#34;&#34;Returns the dict of all the users on the commcell
+
+        dict of all the users on commcell
+                   {
+                      &#39;user_name_1&#39;: user_id_1
+                   }
+        &#34;&#34;&#34;
+        return self._users
+
+
+class User(object):
+    &#34;&#34;&#34;Class for representing a particular user configured on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, user_name, user_id=None):
+        &#34;&#34;&#34;Initialize the User class object for specified user
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+                user_name         (str)     --  name of the user
+
+                user_id           (str)     --  id of the user
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._user_name = user_name.lower()
+
+        if user_id is None:
+            self._user_id = self._get_user_id(self._user_name)
+        else:
+            self._user_id = user_id
+
+        self._user = self._commcell_object._services[&#39;USER&#39;] % (self._user_id)
+        self._user_status = None
+        self._email = None
+        self._description = None
+        self._associated_usergroups = None
+        self._properties = None
+        self._tfa_status = None
+        self._get_user_properties()
+        self._get_tfa_status()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;User class instance for User: &#34;{0}&#34;&#39;
+        return representation_string.format(self.user_name)
+
+    def _get_user_id(self, user_name):
+        &#34;&#34;&#34;Gets the user id associated with this user
+
+            Args:
+                user_name         (str)     --     name of the user whose
+
+            Returns:
+                int     -     id associated to the specified user
+        &#34;&#34;&#34;
+        users = Users(self._commcell_object)
+        return users.get(user_name).user_id
+
+    def _get_user_properties(self):
+        &#34;&#34;&#34;Gets the properties of this user&#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._user
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                self._properties = response.json()[&#39;users&#39;][0]
+                self._security_properties = self._properties.get(&#39;securityAssociations&#39;, {}).get(
+                    &#39;associations&#39;, {})
+                self._security_associations = SecurityAssociation.fetch_security_association(
+                    security_dict=self._security_properties)
+                if &#39;enableUser&#39; in self._properties:
+                    self._user_status = self._properties[&#39;enableUser&#39;]
+
+                if &#39;email&#39; in self._properties:
+                    self._email = self._properties[&#39;email&#39;]
+
+                if &#39;description&#39; in self._properties:
+                    self._description = self._properties[&#39;description&#39;]
+
+                if &#39;associatedUserGroups&#39; in self._properties:
+                    self._associated_usergroups = self._properties[&#39;associatedUserGroups&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_user_props(self, properties_dict):
+        &#34;&#34;&#34;Updates the properties of this user
+
+            Args:
+                properties_dict (dict)  --  user property dict which is to be updated
+                    e.g.: {
+                            &#34;description&#34;: &#34;My description&#34;
+                        }
+            Returns:
+                User Properties update dict
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;users&#34;: [{
+                &#34;userEntity&#34;: {
+                    &#34;userName&#34;: self.user_name
+                }
+            }]
+        }
+
+        request_json[&#39;users&#39;][0].update(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._user, request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def _update_usergroup_request(self, request_type, usergroups_list=None):
+        &#34;&#34;&#34;Updates the usergroups this user is associated to
+
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be updated
+
+                request_type         (str)     --     type of request to be done
+
+            Raises:
+                SDKException:
+
+                    if failed to update usergroups
+
+                    if usergroup is not list
+
+                    if usergroup doesn&#39;t exixt on this commcell
+
+        &#34;&#34;&#34;
+        update_usergroup_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3,
+        }
+
+        if not isinstance(usergroups_list, list):
+            raise SDKException(&#39;USER&#39;, &#39;101&#39;)
+
+        for usergroup in usergroups_list:
+            if not self._commcell_object.user_groups.has_user_group(usergroup):
+                raise SDKException(
+                    &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t &#34;
+                    &#34;exists on this commcell&#34;.format(usergroup)
+                )
+
+        associated_usergroups = []
+        if usergroups_list:
+            for usergroup in usergroups_list:
+                temp = {
+                    &#34;userGroupName&#34;: usergroup
+                }
+                associated_usergroups.append(temp)
+
+        update_usergroup_dict = {
+            &#34;associatedUserGroupsOperationType&#34;: update_usergroup_request[
+                request_type.upper()],
+            &#34;associatedUserGroups&#34;: associated_usergroups
+        }
+
+        self._update_user_props(update_usergroup_dict)
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+        return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]
+
+    @property
+    def user_name(self):
+        &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+        return self._user_name
+
+    @property
+    def user_id(self):
+        &#34;&#34;&#34;Returns the user id of this commcell user&#34;&#34;&#34;
+        return self._user_id
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Returns the description associated with this commcell user&#34;&#34;&#34;
+        return self._description
+
+    @property
+    def email(self):
+        &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
+        return self._email
+
+    @email.setter
+    def email(self, value):
+        &#34;&#34;&#34;&#34;&#34;Sets the description for this commcell user&#34;&#34;&#34;
+        props_dict = {
+            &#34;email&#34;: value
+        }
+        self._update_user_props(props_dict)
+
+    @description.setter
+    def description(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell user&#34;&#34;&#34;
+        props_dict = {
+            &#34;description&#34;: value
+        }
+        self._update_user_props(props_dict)
+
+    @property
+    def associated_usergroups(self):
+        &#34;&#34;&#34;Returns the list of associated usergroups&#34;&#34;&#34;
+        usergroups = []
+        if self._associated_usergroups is not None:
+            for usergroup in self._associated_usergroups:
+                usergroups.append(usergroup[&#39;userGroupName&#39;])
+        return usergroups
+
+    @property
+    def user_security_associations(self):
+        &#34;&#34;&#34;Returns security associations from properties of the User.&#34;&#34;&#34;
+        return self._security_associations
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;Returns the status of this commcell user&#34;&#34;&#34;
+        return self._user_status
+
+    @status.setter
+    def status(self, value):
+        &#34;&#34;&#34;Sets the status for this commcell user&#34;&#34;&#34;
+        request_json = {
+            &#34;users&#34;:[{
+                &#34;enableUser&#34;: value
+            }]
+        }
+        usergroup_request = self._commcell_object._services[&#39;USER&#39;]%(self._user_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, usergroup_request, request_json
+        )
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def user_guid(self):
+        &#34;&#34;&#34;
+        returns user guid
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;userGUID&#39;)
+
+    @property
+    def age_password_days(self):
+        &#34;&#34;&#34;
+        returns age password days
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;agePasswordDays&#39;)
+
+    @age_password_days.setter
+    def age_password_days(self, days):
+        &#34;&#34;&#34;
+        sets the age password days
+
+        Args:
+            days    (int) -- number of days password needs to be required
+        &#34;&#34;&#34;
+        if isinstance(days, int):
+            props_dict = {
+                &#34;agePasswordDays&#34;: days
+            }
+            self._update_user_props(props_dict)
+        else:
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+    def update_user_password(self, new_password, logged_in_user_password):
+        &#34;&#34;&#34;updates new passwords of user
+
+            Args:
+                new_password            (str)   --  new password for user
+
+                logged_in_user_password (str)   --  password of logged-in user(User who is changing
+                                                    the password) for validation.
+        &#34;&#34;&#34;
+        password = b64encode(new_password.encode()).decode()
+        validation_password = b64encode(logged_in_user_password.encode()).decode()
+        props_dict = {
+            &#34;password&#34;: password,
+            &#34;validationParameters&#34;:{
+                &#34;password&#34;: validation_password,
+                &#34;passwordOperationType&#34;: 2
+            }
+        }
+        self._update_user_props(props_dict)
+
+    def add_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be added
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;UPDATE&#39;, usergroups_list)
+
+    def remove_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be deleted
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;DELETE&#39;, usergroups_list)
+
+    def overwrite_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be overwritten
+
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;OVERWRITE&#39;, usergroups_list)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
+        self._get_user_properties()
+        self._get_tfa_status()
+
+    def update_security_associations(self, entity_dictionary, request_type):
+        &#34;&#34;&#34;handles three way associations (role-user-entities)
+
+            Args:
+                entity_dictionary   --      combination of entity_type, entity names
+                                            and role
+                e.g.: security_dict={
+                                &#39;assoc1&#39;:
+                                    {
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                        &#39;role&#39;: [&#39;role1&#39;]
+                                    },
+                                &#39;assoc2&#39;:
+                                    {
+                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                        &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                        &#39;role&#39;: [&#39;New1&#39;]
+                                        }
+                                    }
+
+                entity_type         --      key for the entity present in dictionary
+                                            on which user will have access
+
+                entity_name         --      Value of the key
+
+                role                --      key for role name you specify
+
+                e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+
+                Entity Types are:   clientName, mediaAgentName, libraryName, userName,
+                                    userGroupName, storagePolicyName, clientGroupName,
+                                    schedulePolicyName, locationName, providerDomainName,
+                                    alertName, workflowName, policyName, roleName
+
+                entity_name:        client name for entity_type &#39;clientName&#39;
+                                    Media agent name for entitytype &#39;mediaAgentName&#39;
+                                    similar for other entity_types
+
+                request_type        --      decides whether to ADD, DELETE or
+                                            OVERWRITE user security association.
+
+            Raises:
+                SDKException:
+
+                    if response is not success
+        &#34;&#34;&#34;
+        update_user_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3,
+        }
+
+        sec_request = {}
+        if entity_dictionary:
+            sec_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+
+        request_json = {
+            &#34;securityAssociations&#34;:{
+                &#34;associationsOperationType&#34;:update_user_request[request_type.upper()],
+                &#34;associations&#34;:sec_request
+                }
+        }
+        self._update_user_props(request_json)
+
+    def request_otp(self):
+        &#34;&#34;&#34;fetches OTP for user
+        Returns:
+            OTP generated for user
+        Raises:
+                Exception:
+                    if response is not successful
+        &#34;&#34;&#34;
+
+        if self._commcell_object.users.has_user(self.user_name):
+            get_otp = self._commcell_object._services[&#39;OTP&#39;] % (self.user_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_otp
+        )
+        if flag:
+            if response.json():
+                if &#39;value&#39; in response.json():
+                    return response.json()[&#39;value&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_tfa_status(self):
+        &#34;&#34;&#34;
+        Gets the status of two factor authentication for this user
+        &#34;&#34;&#34;
+        url = self._commcell_object._services[&#39;TFA_STATUS_OF_USER&#39;] % self._user_name
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, url=url
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json().get(&#39;errorCode&#39;) != 0:
+                    raise SDKException(&#39;User&#39;,
+                                       &#39;102&#39;,
+                                       &#34;Failed to get two factor authentication &#34;
+                                       &#34;status. error={0}&#34;.format(response.json().get(&#39;errorMessage&#39;)))
+            if response.json() and &#39;twoFactorInfo&#39; in response.json():
+                info = response.json().get(&#39;twoFactorInfo&#39;)
+                self._tfa_status = info.get(&#39;isTwoFactorAuthenticationEnabled&#39;, False)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        &#34;&#34;&#34;
+        Returns the status of two factor authentication for this user
+
+        bool    --  tfa status
+        &#34;&#34;&#34;
+        return self._tfa_status</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.security.user.User"><code class="flex name class">
+<span>class <span class="ident">User</span></span>
+<span>(</span><span>commcell_object, user_name, user_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing a particular user configured on this commcell</p>
+<p>Initialize the User class object for specified user</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<p>user_name
+(str)
+&ndash;
+name of the user</p>
+<p>user_id
+(str)
+&ndash;
+id of the user
+default: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L541-L1002" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class User(object):
+    &#34;&#34;&#34;Class for representing a particular user configured on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, user_name, user_id=None):
+        &#34;&#34;&#34;Initialize the User class object for specified user
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+                user_name         (str)     --  name of the user
+
+                user_id           (str)     --  id of the user
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._user_name = user_name.lower()
+
+        if user_id is None:
+            self._user_id = self._get_user_id(self._user_name)
+        else:
+            self._user_id = user_id
+
+        self._user = self._commcell_object._services[&#39;USER&#39;] % (self._user_id)
+        self._user_status = None
+        self._email = None
+        self._description = None
+        self._associated_usergroups = None
+        self._properties = None
+        self._tfa_status = None
+        self._get_user_properties()
+        self._get_tfa_status()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;User class instance for User: &#34;{0}&#34;&#39;
+        return representation_string.format(self.user_name)
+
+    def _get_user_id(self, user_name):
+        &#34;&#34;&#34;Gets the user id associated with this user
+
+            Args:
+                user_name         (str)     --     name of the user whose
+
+            Returns:
+                int     -     id associated to the specified user
+        &#34;&#34;&#34;
+        users = Users(self._commcell_object)
+        return users.get(user_name).user_id
+
+    def _get_user_properties(self):
+        &#34;&#34;&#34;Gets the properties of this user&#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._user
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                self._properties = response.json()[&#39;users&#39;][0]
+                self._security_properties = self._properties.get(&#39;securityAssociations&#39;, {}).get(
+                    &#39;associations&#39;, {})
+                self._security_associations = SecurityAssociation.fetch_security_association(
+                    security_dict=self._security_properties)
+                if &#39;enableUser&#39; in self._properties:
+                    self._user_status = self._properties[&#39;enableUser&#39;]
+
+                if &#39;email&#39; in self._properties:
+                    self._email = self._properties[&#39;email&#39;]
+
+                if &#39;description&#39; in self._properties:
+                    self._description = self._properties[&#39;description&#39;]
+
+                if &#39;associatedUserGroups&#39; in self._properties:
+                    self._associated_usergroups = self._properties[&#39;associatedUserGroups&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_user_props(self, properties_dict):
+        &#34;&#34;&#34;Updates the properties of this user
+
+            Args:
+                properties_dict (dict)  --  user property dict which is to be updated
+                    e.g.: {
+                            &#34;description&#34;: &#34;My description&#34;
+                        }
+            Returns:
+                User Properties update dict
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;users&#34;: [{
+                &#34;userEntity&#34;: {
+                    &#34;userName&#34;: self.user_name
+                }
+            }]
+        }
+
+        request_json[&#39;users&#39;][0].update(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._user, request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def _update_usergroup_request(self, request_type, usergroups_list=None):
+        &#34;&#34;&#34;Updates the usergroups this user is associated to
+
+            Args:
+                usergroups_list     (list)     --     list of usergroups to be updated
+
+                request_type         (str)     --     type of request to be done
+
+            Raises:
+                SDKException:
+
+                    if failed to update usergroups
+
+                    if usergroup is not list
+
+                    if usergroup doesn&#39;t exixt on this commcell
+
+        &#34;&#34;&#34;
+        update_usergroup_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3,
+        }
+
+        if not isinstance(usergroups_list, list):
+            raise SDKException(&#39;USER&#39;, &#39;101&#39;)
+
+        for usergroup in usergroups_list:
+            if not self._commcell_object.user_groups.has_user_group(usergroup):
+                raise SDKException(
+                    &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t &#34;
+                    &#34;exists on this commcell&#34;.format(usergroup)
+                )
+
+        associated_usergroups = []
+        if usergroups_list:
+            for usergroup in usergroups_list:
+                temp = {
+                    &#34;userGroupName&#34;: usergroup
+                }
+                associated_usergroups.append(temp)
+
+        update_usergroup_dict = {
+            &#34;associatedUserGroupsOperationType&#34;: update_usergroup_request[
+                request_type.upper()],
+            &#34;associatedUserGroups&#34;: associated_usergroups
+        }
+
+        self._update_user_props(update_usergroup_dict)
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+        return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]
+
+    @property
+    def user_name(self):
+        &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+        return self._user_name
+
+    @property
+    def user_id(self):
+        &#34;&#34;&#34;Returns the user id of this commcell user&#34;&#34;&#34;
+        return self._user_id
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Returns the description associated with this commcell user&#34;&#34;&#34;
+        return self._description
+
+    @property
+    def email(self):
+        &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
+        return self._email
+
+    @email.setter
+    def email(self, value):
+        &#34;&#34;&#34;&#34;&#34;Sets the description for this commcell user&#34;&#34;&#34;
+        props_dict = {
+            &#34;email&#34;: value
+        }
+        self._update_user_props(props_dict)
+
+    @description.setter
+    def description(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell user&#34;&#34;&#34;
+        props_dict = {
+            &#34;description&#34;: value
+        }
+        self._update_user_props(props_dict)
+
+    @property
+    def associated_usergroups(self):
+        &#34;&#34;&#34;Returns the list of associated usergroups&#34;&#34;&#34;
+        usergroups = []
+        if self._associated_usergroups is not None:
+            for usergroup in self._associated_usergroups:
+                usergroups.append(usergroup[&#39;userGroupName&#39;])
+        return usergroups
+
+    @property
+    def user_security_associations(self):
+        &#34;&#34;&#34;Returns security associations from properties of the User.&#34;&#34;&#34;
+        return self._security_associations
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;Returns the status of this commcell user&#34;&#34;&#34;
+        return self._user_status
+
+    @status.setter
+    def status(self, value):
+        &#34;&#34;&#34;Sets the status for this commcell user&#34;&#34;&#34;
+        request_json = {
+            &#34;users&#34;:[{
+                &#34;enableUser&#34;: value
+            }]
+        }
+        usergroup_request = self._commcell_object._services[&#39;USER&#39;]%(self._user_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, usergroup_request, request_json
+        )
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def user_guid(self):
+        &#34;&#34;&#34;
+        returns user guid
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;userGUID&#39;)
+
+    @property
+    def age_password_days(self):
+        &#34;&#34;&#34;
+        returns age password days
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;agePasswordDays&#39;)
+
+    @age_password_days.setter
+    def age_password_days(self, days):
+        &#34;&#34;&#34;
+        sets the age password days
+
+        Args:
+            days    (int) -- number of days password needs to be required
+        &#34;&#34;&#34;
+        if isinstance(days, int):
+            props_dict = {
+                &#34;agePasswordDays&#34;: days
+            }
+            self._update_user_props(props_dict)
+        else:
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+    def update_user_password(self, new_password, logged_in_user_password):
+        &#34;&#34;&#34;updates new passwords of user
+
+            Args:
+                new_password            (str)   --  new password for user
+
+                logged_in_user_password (str)   --  password of logged-in user(User who is changing
+                                                    the password) for validation.
+        &#34;&#34;&#34;
+        password = b64encode(new_password.encode()).decode()
+        validation_password = b64encode(logged_in_user_password.encode()).decode()
+        props_dict = {
+            &#34;password&#34;: password,
+            &#34;validationParameters&#34;:{
+                &#34;password&#34;: validation_password,
+                &#34;passwordOperationType&#34;: 2
+            }
+        }
+        self._update_user_props(props_dict)
+
+    def add_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be added
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;UPDATE&#39;, usergroups_list)
+
+    def remove_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be deleted
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;DELETE&#39;, usergroups_list)
+
+    def overwrite_usergroups(self, usergroups_list):
+        &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
+
+            Args:
+                usergroups_list     (list)  --     list of usergroups to be overwritten
+
+        &#34;&#34;&#34;
+        self._update_usergroup_request(&#39;OVERWRITE&#39;, usergroups_list)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
+        self._get_user_properties()
+        self._get_tfa_status()
+
+    def update_security_associations(self, entity_dictionary, request_type):
+        &#34;&#34;&#34;handles three way associations (role-user-entities)
+
+            Args:
+                entity_dictionary   --      combination of entity_type, entity names
+                                            and role
+                e.g.: security_dict={
+                                &#39;assoc1&#39;:
+                                    {
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                        &#39;role&#39;: [&#39;role1&#39;]
+                                    },
+                                &#39;assoc2&#39;:
+                                    {
+                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                        &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                        &#39;role&#39;: [&#39;New1&#39;]
+                                        }
+                                    }
+
+                entity_type         --      key for the entity present in dictionary
+                                            on which user will have access
+
+                entity_name         --      Value of the key
+
+                role                --      key for role name you specify
+
+                e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+
+                Entity Types are:   clientName, mediaAgentName, libraryName, userName,
+                                    userGroupName, storagePolicyName, clientGroupName,
+                                    schedulePolicyName, locationName, providerDomainName,
+                                    alertName, workflowName, policyName, roleName
+
+                entity_name:        client name for entity_type &#39;clientName&#39;
+                                    Media agent name for entitytype &#39;mediaAgentName&#39;
+                                    similar for other entity_types
+
+                request_type        --      decides whether to ADD, DELETE or
+                                            OVERWRITE user security association.
+
+            Raises:
+                SDKException:
+
+                    if response is not success
+        &#34;&#34;&#34;
+        update_user_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3,
+        }
+
+        sec_request = {}
+        if entity_dictionary:
+            sec_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+
+        request_json = {
+            &#34;securityAssociations&#34;:{
+                &#34;associationsOperationType&#34;:update_user_request[request_type.upper()],
+                &#34;associations&#34;:sec_request
+                }
+        }
+        self._update_user_props(request_json)
+
+    def request_otp(self):
+        &#34;&#34;&#34;fetches OTP for user
+        Returns:
+            OTP generated for user
+        Raises:
+                Exception:
+                    if response is not successful
+        &#34;&#34;&#34;
+
+        if self._commcell_object.users.has_user(self.user_name):
+            get_otp = self._commcell_object._services[&#39;OTP&#39;] % (self.user_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_otp
+        )
+        if flag:
+            if response.json():
+                if &#39;value&#39; in response.json():
+                    return response.json()[&#39;value&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_tfa_status(self):
+        &#34;&#34;&#34;
+        Gets the status of two factor authentication for this user
+        &#34;&#34;&#34;
+        url = self._commcell_object._services[&#39;TFA_STATUS_OF_USER&#39;] % self._user_name
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, url=url
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json().get(&#39;errorCode&#39;) != 0:
+                    raise SDKException(&#39;User&#39;,
+                                       &#39;102&#39;,
+                                       &#34;Failed to get two factor authentication &#34;
+                                       &#34;status. error={0}&#34;.format(response.json().get(&#39;errorMessage&#39;)))
+            if response.json() and &#39;twoFactorInfo&#39; in response.json():
+                info = response.json().get(&#39;twoFactorInfo&#39;)
+                self._tfa_status = info.get(&#39;isTwoFactorAuthenticationEnabled&#39;, False)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def is_tfa_enabled(self):
+        &#34;&#34;&#34;
+        Returns the status of two factor authentication for this user
+
+        bool    --  tfa status
+        &#34;&#34;&#34;
+        return self._tfa_status</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.security.user.User.age_password_days"><code class="name">var <span class="ident">age_password_days</span></code></dt>
+<dd>
+<div class="desc"><p>returns age password days</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L805-L810" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def age_password_days(self):
+    &#34;&#34;&#34;
+    returns age password days
+    &#34;&#34;&#34;
+    return self._properties.get(&#39;agePasswordDays&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.associated_usergroups"><code class="name">var <span class="ident">associated_usergroups</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the list of associated usergroups</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L753-L760" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def associated_usergroups(self):
+    &#34;&#34;&#34;Returns the list of associated usergroups&#34;&#34;&#34;
+    usergroups = []
+    if self._associated_usergroups is not None:
+        for usergroup in self._associated_usergroups:
+            usergroups.append(usergroup[&#39;userGroupName&#39;])
+    return usergroups</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.description"><code class="name">var <span class="ident">description</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the description associated with this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L727-L730" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def description(self):
+    &#34;&#34;&#34;Returns the description associated with this commcell user&#34;&#34;&#34;
+    return self._description</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.email"><code class="name">var <span class="ident">email</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the email associated with this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L732-L735" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def email(self):
+    &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
+    return self._email</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.is_tfa_enabled"><code class="name">var <span class="ident">is_tfa_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the status of two factor authentication for this user</p>
+<p>bool
+&ndash;
+tfa status</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L995-L1002" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_tfa_enabled(self):
+    &#34;&#34;&#34;
+    Returns the status of two factor authentication for this user
+
+    bool    --  tfa status
+    &#34;&#34;&#34;
+    return self._tfa_status</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the User display name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L712-L715" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def name(self):
+    &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+    return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.status"><code class="name">var <span class="ident">status</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the status of this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L767-L770" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def status(self):
+    &#34;&#34;&#34;Returns the status of this commcell user&#34;&#34;&#34;
+    return self._user_status</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.user_guid"><code class="name">var <span class="ident">user_guid</span></code></dt>
+<dd>
+<div class="desc"><p>returns user guid</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L798-L803" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_guid(self):
+    &#34;&#34;&#34;
+    returns user guid
+    &#34;&#34;&#34;
+    return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;userGUID&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.user_id"><code class="name">var <span class="ident">user_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the user id of this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L722-L725" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_id(self):
+    &#34;&#34;&#34;Returns the user id of this commcell user&#34;&#34;&#34;
+    return self._user_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.user_name"><code class="name">var <span class="ident">user_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the user name of this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L717-L720" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_name(self):
+    &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+    return self._user_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.user_security_associations"><code class="name">var <span class="ident">user_security_associations</span></code></dt>
+<dd>
+<div class="desc"><p>Returns security associations from properties of the User.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L762-L765" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_security_associations(self):
+    &#34;&#34;&#34;Returns security associations from properties of the User.&#34;&#34;&#34;
+    return self._security_associations</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.security.user.User.add_usergroups"><code class="name flex">
+<span>def <span class="ident">add_usergroups</span></span>(<span>self, usergroups_list)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>UPDATE the specified usergroups to this commcell user</p>
+<h2 id="args">Args</h2>
+<p>usergroups_list
+(list)
+&ndash;
+list of usergroups to be added</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L848-L854" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_usergroups(self, usergroups_list):
+    &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
+
+        Args:
+            usergroups_list     (list)  --     list of usergroups to be added
+    &#34;&#34;&#34;
+    self._update_usergroup_request(&#39;UPDATE&#39;, usergroups_list)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.overwrite_usergroups"><code class="name flex">
+<span>def <span class="ident">overwrite_usergroups</span></span>(<span>self, usergroups_list)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>OVERWRITE the specified usergroups to this commcell user</p>
+<h2 id="args">Args</h2>
+<p>usergroups_list
+(list)
+&ndash;
+list of usergroups to be overwritten</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L864-L871" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def overwrite_usergroups(self, usergroups_list):
+    &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
+
+        Args:
+            usergroups_list     (list)  --     list of usergroups to be overwritten
+
+    &#34;&#34;&#34;
+    self._update_usergroup_request(&#39;OVERWRITE&#39;, usergroups_list)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the properties of the User.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L873-L876" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
+    self._get_user_properties()
+    self._get_tfa_status()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.remove_usergroups"><code class="name flex">
+<span>def <span class="ident">remove_usergroups</span></span>(<span>self, usergroups_list)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>DELETE the specified usergroups to this commcell user</p>
+<h2 id="args">Args</h2>
+<p>usergroups_list
+(list)
+&ndash;
+list of usergroups to be deleted</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L856-L862" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def remove_usergroups(self, usergroups_list):
+    &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
+
+        Args:
+            usergroups_list     (list)  --     list of usergroups to be deleted
+    &#34;&#34;&#34;
+    self._update_usergroup_request(&#39;DELETE&#39;, usergroups_list)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.request_otp"><code class="name flex">
+<span>def <span class="ident">request_otp</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>fetches OTP for user</p>
+<h2 id="returns">Returns</h2>
+<p>OTP generated for user</p>
+<h2 id="raises">Raises</h2>
+<p>Exception:
+if response is not successful</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L945-L968" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def request_otp(self):
+    &#34;&#34;&#34;fetches OTP for user
+    Returns:
+        OTP generated for user
+    Raises:
+            Exception:
+                if response is not successful
+    &#34;&#34;&#34;
+
+    if self._commcell_object.users.has_user(self.user_name):
+        get_otp = self._commcell_object._services[&#39;OTP&#39;] % (self.user_id)
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, get_otp
+    )
+    if flag:
+        if response.json():
+            if &#39;value&#39; in response.json():
+                return response.json()[&#39;value&#39;]
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.update_security_associations"><code class="name flex">
+<span>def <span class="ident">update_security_associations</span></span>(<span>self, entity_dictionary, request_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>handles three way associations (role-user-entities)</p>
+<h2 id="args">Args</h2>
+<p>entity_dictionary
+&ndash;
+combination of entity_type, entity names
+and role
+e.g.: security_dict={
+'assoc1':
+{
+'entity_type':['entity_name'],
+'entity_type':['entity_name', 'entity_name'],
+'role': ['role1']
+},
+'assoc2':
+{
+'mediaAgentName': ['networktestcs', 'standbycs'],
+'clientName': ['Linux1'],
+'role': ['New1']
+}
+}</p>
+<p>entity_type
+&ndash;
+key for the entity present in dictionary
+on which user will have access</p>
+<p>entity_name
+&ndash;
+Value of the key</p>
+<p>role
+&ndash;
+key for role name you specify</p>
+<p>e.g.: {"clientName":"Linux1"}</p>
+<p>Entity Types are:
+clientName, mediaAgentName, libraryName, userName,
+userGroupName, storagePolicyName, clientGroupName,
+schedulePolicyName, locationName, providerDomainName,
+alertName, workflowName, policyName, roleName</p>
+<dl>
+<dt><strong><code>entity_name</code></strong></dt>
+<dd>
+<p>client name for entity_type 'clientName'
+Media agent name for entitytype 'mediaAgentName'
+similar for other entity_types</p>
+</dd>
+</dl>
+<p>request_type
+&ndash;
+decides whether to ADD, DELETE or
+OVERWRITE user security association.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L878-L943" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
+    &#34;&#34;&#34;handles three way associations (role-user-entities)
+
+        Args:
+            entity_dictionary   --      combination of entity_type, entity names
+                                        and role
+            e.g.: security_dict={
+                            &#39;assoc1&#39;:
+                                {
+                                    &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                    &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                    &#39;role&#39;: [&#39;role1&#39;]
+                                },
+                            &#39;assoc2&#39;:
+                                {
+                                    &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                    &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                    &#39;role&#39;: [&#39;New1&#39;]
+                                    }
+                                }
+
+            entity_type         --      key for the entity present in dictionary
+                                        on which user will have access
+
+            entity_name         --      Value of the key
+
+            role                --      key for role name you specify
+
+            e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+
+            Entity Types are:   clientName, mediaAgentName, libraryName, userName,
+                                userGroupName, storagePolicyName, clientGroupName,
+                                schedulePolicyName, locationName, providerDomainName,
+                                alertName, workflowName, policyName, roleName
+
+            entity_name:        client name for entity_type &#39;clientName&#39;
+                                Media agent name for entitytype &#39;mediaAgentName&#39;
+                                similar for other entity_types
+
+            request_type        --      decides whether to ADD, DELETE or
+                                        OVERWRITE user security association.
+
+        Raises:
+            SDKException:
+
+                if response is not success
+    &#34;&#34;&#34;
+    update_user_request = {
+        &#34;NONE&#34;: 0,
+        &#34;OVERWRITE&#34;: 1,
+        &#34;UPDATE&#34;: 2,
+        &#34;DELETE&#34;: 3,
+    }
+
+    sec_request = {}
+    if entity_dictionary:
+        sec_request = SecurityAssociation._security_association_json(
+            entity_dictionary=entity_dictionary)
+
+    request_json = {
+        &#34;securityAssociations&#34;:{
+            &#34;associationsOperationType&#34;:update_user_request[request_type.upper()],
+            &#34;associations&#34;:sec_request
+            }
+    }
+    self._update_user_props(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.update_user_password"><code class="name flex">
+<span>def <span class="ident">update_user_password</span></span>(<span>self, new_password, logged_in_user_password)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>updates new passwords of user</p>
+<h2 id="args">Args</h2>
+<p>new_password
+(str)
+&ndash;
+new password for user</p>
+<p>logged_in_user_password (str)
+&ndash;
+password of logged-in user(User who is changing
+the password) for validation.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L828-L846" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_user_password(self, new_password, logged_in_user_password):
+    &#34;&#34;&#34;updates new passwords of user
+
+        Args:
+            new_password            (str)   --  new password for user
+
+            logged_in_user_password (str)   --  password of logged-in user(User who is changing
+                                                the password) for validation.
+    &#34;&#34;&#34;
+    password = b64encode(new_password.encode()).decode()
+    validation_password = b64encode(logged_in_user_password.encode()).decode()
+    props_dict = {
+        &#34;password&#34;: password,
+        &#34;validationParameters&#34;:{
+            &#34;password&#34;: validation_password,
+            &#34;passwordOperationType&#34;: 2
+        }
+    }
+    self._update_user_props(props_dict)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.security.user.Users"><code class="flex name class">
+<span>class <span class="ident">Users</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for maintaining all the configured users on this commcell</p>
+<p>Initializes the users class object for this commcell</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Clients class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L113-L538" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Users(object):
+    &#34;&#34;&#34;Class for maintaining all the configured users on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes the users class object for this commcell
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Clients class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._users = self._get_users()
+        self._users_on_service = None
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all users of the commcell.
+
+            Returns:
+                str - string of all the users configured on the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Users&#39;)
+
+        for index, user in enumerate(self._users):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, user)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Users class.&#34;&#34;&#34;
+        return &#34;Users class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_users(self):
+        &#34;&#34;&#34;Returns the list of users configured on this commcell
+
+            Returns:
+                dict of all the users on this commcell
+                    {
+                        &#39;user_name_1&#39;: user_id_1
+                    }
+
+        &#34;&#34;&#34;
+        get_all_user_service = self._commcell_object._services[&#39;USERS&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_all_user_service
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                users_dict = {}
+
+                for user in response.json()[&#39;users&#39;]:
+                    temp_name = user[&#39;userEntity&#39;][&#39;userName&#39;].lower()
+                    temp_id = user[&#39;userEntity&#39;][&#39;userId&#39;]
+                    users_dict[temp_name] = temp_id
+
+                return users_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _process_add_or_delete_response(self, flag, response):
+        &#34;&#34;&#34;Processes the flag and response received from the server during add delete request
+
+            Args:
+                request_object  (object)  --  request objects specifying the details
+                                              to request
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if reponse is not success
+        &#34;&#34;&#34;
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    if &#39;errorString&#39; in response_json:
+                        error_message = response_json[&#39;errorString&#39;]
+                elif &#39;errorCode&#39; in response.json():
+                    error_code = response.json()[&#39;errorCode&#39;]
+                    if &#39;errorMessage&#39; in response:
+                        error_message = response[&#39;errorMessage&#39;]
+
+                return error_code, error_message
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _add_user(self, create_user_request):
+        &#34;&#34;&#34;Makes the add user request on the server
+
+            Args:
+                create_user_request     (dict)  --  request json to create an user
+
+            Raises:
+                SDKException:
+                    if failed to add user
+        &#34;&#34;&#34;
+        add_user = self._commcell_object._services[&#39;USERS&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, add_user, create_user_request
+        )
+        error_code, error_message = self._process_add_or_delete_response(flag, response)
+
+        if not error_message:
+            error_message = &#39;Failed to add user. Please check logs for further details.&#39;
+
+        if error_code != 0:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, error_message)
+
+        self._users = self._get_users()
+
+    def add(self,
+            user_name,
+            email,
+            full_name=None,
+            domain=None,
+            password=None,
+            system_generated_password=False,
+            local_usergroups=None,
+            entity_dictionary=None):
+        &#34;&#34;&#34;Adds a local/external user to this commcell
+
+            Args:
+                user_name                     (str)     --  name of the user to be
+                                                            created
+
+                full_name                     (str)     --  full name of the user to be
+                                                            created
+
+                email                         (str)     --  email of the user to be
+                                                            created
+
+                domain                        (str)     --  Needed in case you are adding
+                                                            external user
+
+                password                      (str)     --  password of the user to be
+                                                            created
+                    default: None
+
+                local_usergroups              (str)     --  user can be member of
+                                                            these user groups
+
+                system_generated_password     (bool)    --  if set to true system
+                                                            defined password will be used
+                                                            default: False
+
+                entity_dictionary   --      combination of entity_type, entity names
+                                            and role
+
+                e.g.: security_dict={
+                                &#39;assoc1&#39;:
+                                    {
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                        &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                        &#39;role&#39;: [&#39;role1&#39;]
+                                    },
+                                &#39;assoc2&#39;:
+                                    {
+                                        &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                        &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                        &#39;role&#39;: [&#39;New1&#39;]
+                                        }
+                                    }
+                entity_type         --      key for the entity present in dictionary
+                                            on which user will have access
+
+                entity_name         --      Value of the key
+
+                 role               --      key for role name you specify
+
+                e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+                entity_type:    clientName, mediaAgentName, libraryName, userName,
+                                userGroupName, storagePolicyName, clientGroupName,
+                                schedulePolicyName, locationName, providerDomainName,
+                                alertName, workflowName, policyName, roleName
+
+                entity_name:    client name for entity_type &#39;clientName&#39;
+                                Media agent name for entitytype &#39;mediaAgentName&#39;
+                                similar for other entity_typees
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+
+                    if user with specified name already exists
+
+                    if password or system_generated_password are not set
+
+                    if failed to add user to commcell
+        &#34;&#34;&#34;
+        if domain:
+            username = &#34;{0}\\{1}&#34;.format(domain, user_name)
+            password = &#34;&#34;
+            system_generated_password = False
+        else:
+            username = user_name
+            if not password:
+                system_generated_password = True
+
+        if not (isinstance(username, basestring) and
+                isinstance(email, basestring)):
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+        if self.has_user(username):
+            raise SDKException(&#39;User&#39;, &#39;103&#39;, &#39;User: {0}&#39;.format(username))
+
+        if password is not None:
+            password = b64encode(password.encode()).decode()
+        else:
+            password = &#39;&#39;
+
+        if local_usergroups:
+            groups_json = [{&#34;userGroupName&#34;: lname} for lname in local_usergroups]
+        else:
+            groups_json = [{}]
+
+        security_json = {}
+        if entity_dictionary:
+            security_request = SecurityAssociation._security_association_json(
+                entity_dictionary=entity_dictionary)
+            security_json = {
+                &#34;associationsOperationType&#34;: &#34;ADD&#34;,
+                &#34;associations&#34;: security_request
+                }
+
+        create_user_request = {
+            &#34;users&#34;: [{
+                &#34;password&#34;: password,
+                &#34;email&#34;: email,
+                &#34;fullName&#34;: full_name,
+                &#34;systemGeneratePassword&#34;: system_generated_password,
+                &#34;userEntity&#34;: {
+                    &#34;userName&#34;: username
+                },
+                &#34;securityAssociations&#34;: security_json,
+                &#34;associatedUserGroups&#34;: groups_json
+            }]
+        }
+        self._add_user(create_user_request)
+        return self.get(username)
+
+    def has_user(self, user_name):
+        &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
+
+            Args:
+                user_name         (str)     --     name of the user which has to be
+                                                   checked if exists
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+        &#34;&#34;&#34;
+        if not isinstance(user_name, basestring):
+            raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+        return self._users and user_name.lower() in self._users
+
+    def get(self, user_name):
+        &#34;&#34;&#34;Returns the user object for the specified user name
+
+            Args:
+                user_name  (str)  --  name of the user for which the object has to be
+                                      created
+
+            Raises:
+                SDKException:
+                    if user doesn&#39;t exist with specified name
+        &#34;&#34;&#34;
+        if not self.has_user(user_name):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    user_name)
+            )
+
+        return User(self._commcell_object, user_name, self._users[user_name.lower()])
+
+    def delete(self, user_name, new_user=None, new_usergroup=None):
+        &#34;&#34;&#34;Deletes the specified user from the existing commcell users
+
+            Args:
+                user_name       (str)   --  name of the user which has to be deleted
+
+                new_user        (str)   --  name of the target user, whom the ownership
+                                            of entities should be transferred
+
+                new_usergroup   (str)   --  name of the user group, whom the ownership
+                                            of entities should be transferred
+
+                Note: either user or usergroup  should be provided for ownership
+                transfer not both.
+
+            Raises:
+                SDKException:
+                    if user doesn&#39;t exist
+
+                    if new user and new usergroup any of these is passed and these doesn&#39;t
+                    exist on commcell
+
+                    if both user and usergroup is passed for ownership transfer
+
+                    if both user and usergroup is not passed for ownership transfer
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not self.has_user(user_name):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    user_name)
+            )
+        if new_user and new_usergroup:
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;{0} and {1} both can not be set as owner!! &#34;
+                &#34;please send either new_user or new_usergroup&#34;.format(new_user, new_usergroup)
+            )
+        else:
+            if new_user:
+                if not self.has_user(new_user):
+                    raise SDKException(
+                        &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                            new_user)
+                    )
+                new_user_id = self._users[new_user.lower()]
+                new_group_id = 0
+            else:
+                if new_usergroup:
+                    if not self._commcell_object.user_groups.has_user_group(new_usergroup):
+                        raise SDKException(
+                            &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists &#34;
+                            &#34;on this commcell.&#34;.format(new_usergroup)
+                        )
+                else:
+                    raise SDKException(
+                        &#39;User&#39;, &#39;102&#39;,
+                        &#34;Ownership transfer is mondatory!! Please provide new owner information&#34;
+                    )
+                new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
+                new_user_id = 0
+
+        delete_user = self._commcell_object._services[&#39;DELETE_USER&#39;] %(
+            self._users[user_name.lower()], new_user_id, new_group_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, delete_user
+        )
+        error_code, error_message = self._process_add_or_delete_response(flag, response)
+        if not error_message:
+            error_message = &#39;Failed to delete user. Please check logs for further details.&#39;
+        if error_code != 0:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, error_message)
+        self._users = self._get_users()
+
+    def _get_users_on_service_commcell(self):
+        &#34;&#34;&#34;gets the userspace from service commcell
+
+        Returns:
+            list  - consisting of all users assciated with service commcell
+
+                    [&#39;user1&#39;, &#39;user2&#39;]
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        &#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;GET_USERSPACE_SERVICE&#39;]
+        )
+
+        if flag:
+            if response.json() and &#39;users&#39; in response.json():
+                users_space_dict = {}
+                for user in response.json()[&#39;users&#39;]:
+                    users_space_dict[user[&#39;userEntity&#39;][&#39;userName&#39;]] = user
+                return users_space_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def service_commcell_users_space(self):
+        &#34;&#34;&#34;Returns the user space from service commcell
+
+        list - consists of users space from service commcell
+            [&#39;user1&#39;,&#39;user2&#39;]
+        &#34;&#34;&#34;
+        if self._users_on_service is None:
+            self._users_on_service = self._get_users_on_service_commcell()
+        return self._users_on_service
+
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Users on this commcell.&#34;&#34;&#34;
+        self._users = self._get_users()
+        self._users_on_service = None
+
+    @property
+    def all_users(self):
+        &#34;&#34;&#34;Returns the dict of all the users on the commcell
+
+        dict of all the users on commcell
+                   {
+                      &#39;user_name_1&#39;: user_id_1
+                   }
+        &#34;&#34;&#34;
+        return self._users</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.security.user.Users.all_users"><code class="name">var <span class="ident">all_users</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dict of all the users on the commcell</p>
+<p>dict of all the users on commcell
+{
+'user_name_1': user_id_1
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L529-L538" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_users(self):
+    &#34;&#34;&#34;Returns the dict of all the users on the commcell
+
+    dict of all the users on commcell
+               {
+                  &#39;user_name_1&#39;: user_id_1
+               }
+    &#34;&#34;&#34;
+    return self._users</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.Users.service_commcell_users_space"><code class="name">var <span class="ident">service_commcell_users_space</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the user space from service commcell</p>
+<p>list - consists of users space from service commcell
+['user1','user2']</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L512-L521" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def service_commcell_users_space(self):
+    &#34;&#34;&#34;Returns the user space from service commcell
+
+    list - consists of users space from service commcell
+        [&#39;user1&#39;,&#39;user2&#39;]
+    &#34;&#34;&#34;
+    if self._users_on_service is None:
+        self._users_on_service = self._get_users_on_service_commcell()
+    return self._users_on_service</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.security.user.Users.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, user_name, email, full_name=None, domain=None, password=None, system_generated_password=False, local_usergroups=None, entity_dictionary=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a local/external user to this commcell</p>
+<h2 id="args">Args</h2>
+<p>user_name
+(str)
+&ndash;
+name of the user to be
+created</p>
+<p>full_name
+(str)
+&ndash;
+full name of the user to be
+created</p>
+<p>email
+(str)
+&ndash;
+email of the user to be
+created</p>
+<p>domain
+(str)
+&ndash;
+Needed in case you are adding
+external user</p>
+<p>password
+(str)
+&ndash;
+password of the user to be
+created
+default: None</p>
+<p>local_usergroups
+(str)
+&ndash;
+user can be member of
+these user groups</p>
+<p>system_generated_password
+(bool)
+&ndash;
+if set to true system
+defined password will be used
+default: False</p>
+<p>entity_dictionary
+&ndash;
+combination of entity_type, entity names
+and role</p>
+<p>e.g.: security_dict={
+'assoc1':
+{
+'entity_type':['entity_name'],
+'entity_type':['entity_name', 'entity_name'],
+'role': ['role1']
+},
+'assoc2':
+{
+'mediaAgentName': ['networktestcs', 'standbycs'],
+'clientName': ['Linux1'],
+'role': ['New1']
+}
+}
+entity_type
+&ndash;
+key for the entity present in dictionary
+on which user will have access</p>
+<p>entity_name
+&ndash;
+Value of the key</p>
+<p>role
+&ndash;
+key for role name you specify</p>
+<dl>
+<dt _clientName_:_Linux1_="&quot;clientName&quot;:&quot;Linux1&quot;">e.g.:</dt>
+<dt><strong><code>entity_type</code></strong></dt>
+<dd>clientName, mediaAgentName, libraryName, userName,
+userGroupName, storagePolicyName, clientGroupName,
+schedulePolicyName, locationName, providerDomainName,
+alertName, workflowName, policyName, roleName</dd>
+<dt><strong><code>entity_name</code></strong></dt>
+<dd>client name for entity_type 'clientName'
+Media agent name for entitytype 'mediaAgentName'
+similar for other entity_typees</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if data type of input is invalid</p>
+<pre><code>if user with specified name already exists
+
+if password or system_generated_password are not set
+
+if failed to add user to commcell
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L241-L369" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self,
+        user_name,
+        email,
+        full_name=None,
+        domain=None,
+        password=None,
+        system_generated_password=False,
+        local_usergroups=None,
+        entity_dictionary=None):
+    &#34;&#34;&#34;Adds a local/external user to this commcell
+
+        Args:
+            user_name                     (str)     --  name of the user to be
+                                                        created
+
+            full_name                     (str)     --  full name of the user to be
+                                                        created
+
+            email                         (str)     --  email of the user to be
+                                                        created
+
+            domain                        (str)     --  Needed in case you are adding
+                                                        external user
+
+            password                      (str)     --  password of the user to be
+                                                        created
+                default: None
+
+            local_usergroups              (str)     --  user can be member of
+                                                        these user groups
+
+            system_generated_password     (bool)    --  if set to true system
+                                                        defined password will be used
+                                                        default: False
+
+            entity_dictionary   --      combination of entity_type, entity names
+                                        and role
+
+            e.g.: security_dict={
+                            &#39;assoc1&#39;:
+                                {
+                                    &#39;entity_type&#39;:[&#39;entity_name&#39;],
+                                    &#39;entity_type&#39;:[&#39;entity_name&#39;, &#39;entity_name&#39;],
+                                    &#39;role&#39;: [&#39;role1&#39;]
+                                },
+                            &#39;assoc2&#39;:
+                                {
+                                    &#39;mediaAgentName&#39;: [&#39;networktestcs&#39;, &#39;standbycs&#39;],
+                                    &#39;clientName&#39;: [&#39;Linux1&#39;],
+                                    &#39;role&#39;: [&#39;New1&#39;]
+                                    }
+                                }
+            entity_type         --      key for the entity present in dictionary
+                                        on which user will have access
+
+            entity_name         --      Value of the key
+
+             role               --      key for role name you specify
+
+            e.g.: {&#34;clientName&#34;:&#34;Linux1&#34;}
+            entity_type:    clientName, mediaAgentName, libraryName, userName,
+                            userGroupName, storagePolicyName, clientGroupName,
+                            schedulePolicyName, locationName, providerDomainName,
+                            alertName, workflowName, policyName, roleName
+
+            entity_name:    client name for entity_type &#39;clientName&#39;
+                            Media agent name for entitytype &#39;mediaAgentName&#39;
+                            similar for other entity_typees
+
+        Raises:
+            SDKException:
+                if data type of input is invalid
+
+                if user with specified name already exists
+
+                if password or system_generated_password are not set
+
+                if failed to add user to commcell
+    &#34;&#34;&#34;
+    if domain:
+        username = &#34;{0}\\{1}&#34;.format(domain, user_name)
+        password = &#34;&#34;
+        system_generated_password = False
+    else:
+        username = user_name
+        if not password:
+            system_generated_password = True
+
+    if not (isinstance(username, basestring) and
+            isinstance(email, basestring)):
+        raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+    if self.has_user(username):
+        raise SDKException(&#39;User&#39;, &#39;103&#39;, &#39;User: {0}&#39;.format(username))
+
+    if password is not None:
+        password = b64encode(password.encode()).decode()
+    else:
+        password = &#39;&#39;
+
+    if local_usergroups:
+        groups_json = [{&#34;userGroupName&#34;: lname} for lname in local_usergroups]
+    else:
+        groups_json = [{}]
+
+    security_json = {}
+    if entity_dictionary:
+        security_request = SecurityAssociation._security_association_json(
+            entity_dictionary=entity_dictionary)
+        security_json = {
+            &#34;associationsOperationType&#34;: &#34;ADD&#34;,
+            &#34;associations&#34;: security_request
+            }
+
+    create_user_request = {
+        &#34;users&#34;: [{
+            &#34;password&#34;: password,
+            &#34;email&#34;: email,
+            &#34;fullName&#34;: full_name,
+            &#34;systemGeneratePassword&#34;: system_generated_password,
+            &#34;userEntity&#34;: {
+                &#34;userName&#34;: username
+            },
+            &#34;securityAssociations&#34;: security_json,
+            &#34;associatedUserGroups&#34;: groups_json
+        }]
+    }
+    self._add_user(create_user_request)
+    return self.get(username)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.Users.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, user_name, new_user=None, new_usergroup=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the specified user from the existing commcell users</p>
+<h2 id="args">Args</h2>
+<p>user_name
+(str)
+&ndash;
+name of the user which has to be deleted</p>
+<p>new_user
+(str)
+&ndash;
+name of the target user, whom the ownership
+of entities should be transferred</p>
+<p>new_usergroup
+(str)
+&ndash;
+name of the user group, whom the ownership
+of entities should be transferred</p>
+<dl>
+<dt><strong><code>Note</code></strong></dt>
+<dd>either user or usergroup
+should be provided for ownership</dd>
+</dl>
+<p>transfer not both.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if user doesn't exist</p>
+<pre><code>if new user and new usergroup any of these is passed and these doesn't
+exist on commcell
+
+if both user and usergroup is passed for ownership transfer
+
+if both user and usergroup is not passed for ownership transfer
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L406-L479" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, user_name, new_user=None, new_usergroup=None):
+    &#34;&#34;&#34;Deletes the specified user from the existing commcell users
+
+        Args:
+            user_name       (str)   --  name of the user which has to be deleted
+
+            new_user        (str)   --  name of the target user, whom the ownership
+                                        of entities should be transferred
+
+            new_usergroup   (str)   --  name of the user group, whom the ownership
+                                        of entities should be transferred
+
+            Note: either user or usergroup  should be provided for ownership
+            transfer not both.
+
+        Raises:
+            SDKException:
+                if user doesn&#39;t exist
+
+                if new user and new usergroup any of these is passed and these doesn&#39;t
+                exist on commcell
+
+                if both user and usergroup is passed for ownership transfer
+
+                if both user and usergroup is not passed for ownership transfer
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if not self.has_user(user_name):
+        raise SDKException(
+            &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                user_name)
+        )
+    if new_user and new_usergroup:
+        raise SDKException(
+            &#39;User&#39;, &#39;102&#39;, &#34;{0} and {1} both can not be set as owner!! &#34;
+            &#34;please send either new_user or new_usergroup&#34;.format(new_user, new_usergroup)
+        )
+    else:
+        if new_user:
+            if not self.has_user(new_user):
+                raise SDKException(
+                    &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                        new_user)
+                )
+            new_user_id = self._users[new_user.lower()]
+            new_group_id = 0
+        else:
+            if new_usergroup:
+                if not self._commcell_object.user_groups.has_user_group(new_usergroup):
+                    raise SDKException(
+                        &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists &#34;
+                        &#34;on this commcell.&#34;.format(new_usergroup)
+                    )
+            else:
+                raise SDKException(
+                    &#39;User&#39;, &#39;102&#39;,
+                    &#34;Ownership transfer is mondatory!! Please provide new owner information&#34;
+                )
+            new_group_id = self._commcell_object.user_groups.get(new_usergroup).user_group_id
+            new_user_id = 0
+
+    delete_user = self._commcell_object._services[&#39;DELETE_USER&#39;] %(
+        self._users[user_name.lower()], new_user_id, new_group_id)
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;DELETE&#39;, delete_user
+    )
+    error_code, error_message = self._process_add_or_delete_response(flag, response)
+    if not error_message:
+        error_message = &#39;Failed to delete user. Please check logs for further details.&#39;
+    if error_code != 0:
+        raise SDKException(&#39;User&#39;, &#39;102&#39;, error_message)
+    self._users = self._get_users()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.Users.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, user_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the user object for the specified user name</p>
+<h2 id="args">Args</h2>
+<p>user_name
+(str)
+&ndash;
+name of the user for which the object has to be
+created</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if user doesn't exist with specified name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L387-L404" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, user_name):
+    &#34;&#34;&#34;Returns the user object for the specified user name
+
+        Args:
+            user_name  (str)  --  name of the user for which the object has to be
+                                  created
+
+        Raises:
+            SDKException:
+                if user doesn&#39;t exist with specified name
+    &#34;&#34;&#34;
+    if not self.has_user(user_name):
+        raise SDKException(
+            &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(
+                user_name)
+        )
+
+    return User(self._commcell_object, user_name, self._users[user_name.lower()])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.Users.has_user"><code class="name flex">
+<span>def <span class="ident">has_user</span></span>(<span>self, user_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if any user with specified name exists on this commcell</p>
+<h2 id="args">Args</h2>
+<p>user_name
+(str)
+&ndash;
+name of the user which has to be
+checked if exists</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if data type of input is invalid</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L371-L385" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_user(self, user_name):
+    &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
+
+        Args:
+            user_name         (str)     --     name of the user which has to be
+                                               checked if exists
+
+        Raises:
+            SDKException:
+                if data type of input is invalid
+    &#34;&#34;&#34;
+    if not isinstance(user_name, basestring):
+        raise SDKException(&#39;User&#39;, &#39;101&#39;)
+
+    return self._users and user_name.lower() in self._users</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.Users.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of Users on this commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L524-L527" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the list of Users on this commcell.&#34;&#34;&#34;
+    self._users = self._get_users()
+    self._users_on_service = None</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.security" href="index.html">cvpysdk.security</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.security.user.User" href="#cvpysdk.security.user.User">User</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.security.user.User.add_usergroups" href="#cvpysdk.security.user.User.add_usergroups">add_usergroups</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.age_password_days" href="#cvpysdk.security.user.User.age_password_days">age_password_days</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.associated_usergroups" href="#cvpysdk.security.user.User.associated_usergroups">associated_usergroups</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.description" href="#cvpysdk.security.user.User.description">description</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.email" href="#cvpysdk.security.user.User.email">email</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.is_tfa_enabled" href="#cvpysdk.security.user.User.is_tfa_enabled">is_tfa_enabled</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.name" href="#cvpysdk.security.user.User.name">name</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.overwrite_usergroups" href="#cvpysdk.security.user.User.overwrite_usergroups">overwrite_usergroups</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.refresh" href="#cvpysdk.security.user.User.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.remove_usergroups" href="#cvpysdk.security.user.User.remove_usergroups">remove_usergroups</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.request_otp" href="#cvpysdk.security.user.User.request_otp">request_otp</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.status" href="#cvpysdk.security.user.User.status">status</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.update_security_associations" href="#cvpysdk.security.user.User.update_security_associations">update_security_associations</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.update_user_password" href="#cvpysdk.security.user.User.update_user_password">update_user_password</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.user_guid" href="#cvpysdk.security.user.User.user_guid">user_guid</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.user_id" href="#cvpysdk.security.user.User.user_id">user_id</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.user_name" href="#cvpysdk.security.user.User.user_name">user_name</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.user_security_associations" href="#cvpysdk.security.user.User.user_security_associations">user_security_associations</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.security.user.Users" href="#cvpysdk.security.user.Users">Users</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.security.user.Users.add" href="#cvpysdk.security.user.Users.add">add</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.all_users" href="#cvpysdk.security.user.Users.all_users">all_users</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.delete" href="#cvpysdk.security.user.Users.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.get" href="#cvpysdk.security.user.Users.get">get</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.has_user" href="#cvpysdk.security.user.Users.has_user">has_user</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.refresh" href="#cvpysdk.security.user.Users.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.service_commcell_users_space" href="#cvpysdk.security.user.Users.service_commcell_users_space">service_commcell_users_space</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

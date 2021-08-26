@@ -1,0 +1,1398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.content_analyzer API documentation</title>
+<meta name="description" content="Main file for performing operations on content analyzers, and a single content analyzer cloud in the commcell …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.content_analyzer</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing operations on content analyzers, and a single content analyzer cloud in the commcell.</p>
+<p><code><a title="cvpysdk.content_analyzer.ContentAnalyzers" href="#cvpysdk.content_analyzer.ContentAnalyzers">ContentAnalyzers</a></code>, and <code><a title="cvpysdk.content_analyzer.ContentAnalyzer" href="#cvpysdk.content_analyzer.ContentAnalyzer">ContentAnalyzer</a></code> are 2 classes defined in this file.</p>
+<p>ContentAnalyzers:
+Class for representing all the Content analyzers in the commcell.</p>
+<p>ContentAnalyzer:
+Class for representing a single content analyzer cloud in the commcell.</p>
+<h2 id="contentanalyzers">Contentanalyzers</h2>
+<p><strong>init</strong>(commcell_object)
+&ndash;
+initialise object of the ContentAnalyzers class</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
+<p>refresh()
+&ndash;
+refresh the content analyzers associated with the commcell</p>
+<p>get()
+&ndash;
+Returns an instance of ContentAnalyzer class for the given CAcloud name</p>
+<p>get_properties()
+&ndash;
+Returns the properties for the given content analyzer cloud name</p>
+<p>_get_all_contentanalyzers()
+&ndash;
+Returns dict consisting all content analyzers associated with commcell</p>
+<p>_get_cloud_from_collections()
+&ndash;
+gets all the content analyzer details from collection response</p>
+<p>has_cloud()
+&ndash;
+Checks whether given CA cloud exists in commcell or not</p>
+<p>create()
+&ndash;
+Creates the content analyzer cloud for the given client name</p>
+<p>delete()
+&ndash;
+deletes the content analyzer cloud for the given cloud name</p>
+<h2 id="contentanalyzer">Contentanalyzer</h2>
+<p><strong>init</strong>(
+commcell_object,
+cloud_name,
+cloud_id=None)
+&ndash;
+initialize an object of ContentAnalyzer Class with the given CACloud
+name and id associated to the commcell</p>
+<p>refresh()
+&ndash;
+refresh the properties of the CAcloud</p>
+<p>_get_cloud_id()
+&ndash;
+Gets content analyzer cloud id for the given CA cloud name</p>
+<p>_get_cloud_properties()
+&ndash;
+Gets all the details of associated content analyzer cloud</p>
+<h2 id="contentanalyzer-attributes">Contentanalyzer Attributes</h2>
+<pre><code>**cloud_id**    --  returns the cloudid of the content analyzer
+
+**cloud_url**   --  returns the url of the content analyzer
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L1-L421" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing operations on content analyzers, and a single content analyzer cloud in the commcell.
+
+`ContentAnalyzers`, and `ContentAnalyzer` are 2 classes defined in this file.
+
+ContentAnalyzers:    Class for representing all the Content analyzers in the commcell.
+
+ContentAnalyzer:     Class for representing a single content analyzer cloud in the commcell.
+
+
+ContentAnalyzers:
+
+    __init__(commcell_object)           --  initialise object of the ContentAnalyzers class
+
+     _response_not_success()            --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the content analyzers associated with the commcell
+
+    get()                               --  Returns an instance of ContentAnalyzer class for the given CAcloud name
+
+    get_properties()                    --  Returns the properties for the given content analyzer cloud name
+
+    _get_all_contentanalyzers()         --  Returns dict consisting all content analyzers associated with commcell
+
+    _get_cloud_from_collections()       --  gets all the content analyzer details from collection response
+
+    has_cloud()                         --  Checks whether given CA cloud exists in commcell or not
+
+    create()                            --  Creates the content analyzer cloud for the given client name
+
+    delete()                            --  deletes the content analyzer cloud for the given cloud name
+
+ContentAnalyzer:
+
+    __init__(
+        commcell_object,
+        cloud_name,
+        cloud_id=None)                  --  initialize an object of ContentAnalyzer Class with the given CACloud
+                                                name and id associated to the commcell
+
+    refresh()                           --  refresh the properties of the CAcloud
+
+    _get_cloud_id()                     --  Gets content analyzer cloud id for the given CA cloud name
+
+    _get_cloud_properties()             --  Gets all the details of associated content analyzer cloud
+
+
+ContentAnalyzer Attributes
+-----------------
+
+    **cloud_id**    --  returns the cloudid of the content analyzer
+
+    **cloud_url**   --  returns the url of the content analyzer
+
+&#34;&#34;&#34;
+from past.builtins import basestring
+from .exception import SDKException
+from .datacube.constants import ContentAnalyzerConstants
+
+
+class ContentAnalyzers(object):
+    &#34;&#34;&#34;Class for representing all the ContentAnalyzers in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the ContentAnalyzers class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the ContentAnalyzers class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._content_analyzers = None
+        self._api_get_content_analyzer_cloud = self._services[&#39;GET_CONTENT_ANALYZER_CLOUD&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_properties(self, cacloud_name):
+        &#34;&#34;&#34;Returns a properties of the specified content analyzer cloud name.
+
+            Args:
+                cacloud_name (str)  --  name of the content analyzer cloud
+
+            Returns:
+                dict -  properties for the given content analyzer cloud name
+
+
+        &#34;&#34;&#34;
+        return self._content_analyzers[cacloud_name]
+
+    def _get_all_content_analyzers(self):
+        &#34;&#34;&#34;Gets the list of all content analyzers associated with this commcell.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single content analyzer
+
+                    {
+                        &#34;contentAnalyzerList&#34;: [
+                                {
+                                    &#34;caUrl&#34;: &#34;http://V11LotusClient.idx.commvault.com:22005&#34;,
+                                     &#34;cloudName&#34;: &#34;V11lotusClientCloud&#34;,
+                                     &#34;cloudId&#34;: 1010
+                                },
+                                {
+                                      &#34;caUrl&#34;: &#34;http://imsolrscale1.sna.commvault.com:22001&#34;,
+                                      &#34;cloudName&#34;: &#34;Imsolrcloud&#34;,
+                                      &#34;cloudId&#34;: 1026
+                                }
+                        ]
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._api_get_content_analyzer_cloud
+        )
+        if flag:
+            if response.json() and &#39;contentAnalyzerList&#39; in response.json():
+                return self._get_cloud_from_collections(response.json())
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;103&#39;)
+        self._response_not_success(response)
+
+    @staticmethod
+    def _get_cloud_from_collections(collections):
+        &#34;&#34;&#34;Extracts all the content analyzers, and their details from the list of collections given,
+            and returns the dictionary of all content analyzers.
+
+            Args:
+                collections     (list)  --  list of all collections
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single content analyzer
+
+        &#34;&#34;&#34;
+        _cacloud = {}
+        for cacloud in collections[&#39;contentAnalyzerList&#39;]:
+            cacloud_dict = {}
+            cacloud_dict[&#39;caUrl&#39;] = cacloud.get(&#39;caUrl&#39;, &#34;&#34;)
+            cacloud_dict[&#39;cloudName&#39;] = cacloud.get(&#39;cloudName&#39;, &#34;&#34;)
+            cacloud_dict[&#39;cloudId&#39;] = cacloud.get(&#39;cloudId&#39;, 0)
+            cacloud_dict[&#39;clientId&#39;] = cacloud.get(&#39;clientId&#39;, 0)
+            _cacloud[cacloud[&#39;cloudName&#39;]] = cacloud_dict
+        return _cacloud
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the content analyzers associated with the commcell.&#34;&#34;&#34;
+        self._content_analyzers = self._get_all_content_analyzers()
+
+    def create(self, client_name, content_analyzer_name, temp_directory):
+        &#34;&#34;&#34;Creates an content analyzer cloud within the commcell
+
+                Args:
+                    client_name            (str)    --  Name of the client where content analyzer package is installed
+                    content_analyzer_name  (str)    --  name for the content analyzer cloud
+                    temp_directory        (str)     --  temp location for the content extractor
+                    cloud_param           (list)    --  list of custom parameters to be parsed
+                                                    into the json for content analyser meta info
+                                                    [
+                                                        {
+                                                            &#34;name&#34;: &lt;name&gt;,
+                                                            &#34;value&#34;: &lt;value&gt;
+                                                        }
+                                                    ]
+                Returns:
+                    None
+
+                Raises:
+                    SDKException:
+                        Data type of the input(s) is not valid.
+
+                        Response was not success.
+
+                        Response was empty.
+        &#34;&#34;&#34;
+        if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+        client = self._commcell_object.clients.get(client_name)
+        req_json = ContentAnalyzerConstants.REQUEST_JSON
+        req_json[&#39;cloudNodes&#39;] = [
+            {
+                &#34;opType&#34;: ContentAnalyzerConstants.OPERATION_ADD,
+                &#34;nodeClientEntity&#34;: {
+                    &#34;hostName&#34;: client.client_hostname,
+                    &#34;clientId&#34;: int(client.client_id),
+                    &#34;clientName&#34;: client.client_name,
+                    &#34;_type_&#34;: 3
+                },
+                &#34;nodeMetaInfos&#34;: [
+                    {
+                        &#34;name&#34;: &#34;PORTNO&#34;,
+                        &#34;value&#34;: &#34;22000&#34;
+                    },
+                    {
+                        &#34;name&#34;: &#34;JVMMAXMEMORY&#34;,
+                        &#34;value&#34;: &#34;4096&#34;
+                    },
+                    {
+                        &#34;name&#34;: &#34;INDEXLOCATION&#34;,
+                        &#34;value&#34;: temp_directory
+                    }
+                ]
+            }
+        ]
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudName&#39;] = content_analyzer_name
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudDisplayName&#39;] = content_analyzer_name
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;INDEX_SERVER_CREATION&#39;], req_json)
+        if flag:
+            if response.json():
+                error_code = response.json()[&#39;genericResp&#39;][&#39;errorCode&#39;]
+                error_string = response.json()[&#39;genericResp&#39;][&#39;errorMessage&#39;]
+                if error_code == 0:
+                    self.refresh()
+                else:
+                    o_str = &#39;Failed to create content analyzer cloud. Error: &#34;{0}&#34;&#39;.format(
+                        error_string)
+                    raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        self._response_not_success(response)
+
+    def delete(self, cloud_name):
+        &#34;&#34;&#34;Deletes / removes an content analyzer from the commcell
+
+                Args:
+                    cloud_name      (str)   --  cloud name of content analyzer to be deleted from the commcell
+
+                Raises:
+                    SDKException:
+                        Data type of the input(s) is not valid.
+
+                        Response was not success.
+
+                        Response was empty.
+        &#34;&#34;&#34;
+        if cloud_name is None or not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        cloud_id = self.get(cloud_name).cloud_id
+        req_json = ContentAnalyzerConstants.REQUEST_JSON
+        req_json[&#34;opType&#34;] = ContentAnalyzerConstants.OPERATION_DELETE
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;] = cloud_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;INDEX_SERVER_DELETION&#39;], req_json
+        )
+        if flag:
+            if response.json() and &#39;genericResp&#39; in response.json(
+            ) and &#39;errorCode&#39; not in response.json()[&#39;genericResp&#39;]:
+                self.refresh()
+                return
+            if response.json() and &#39;genericResp&#39; in response.json():
+                raise SDKException(
+                    &#39;Response&#39;, &#39;102&#39;, response.json()[&#39;genericResp&#39;].get(
+                        &#39;errorMessage&#39;, &#39;&#39;))
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        self._response_not_success(response)
+
+    def get(self, cloud_name):
+        &#34;&#34;&#34;Returns a ContentAnalyzer object for the given CA cloud name.
+
+            Args:
+                cloud_name (str)    --  name of the Content analyzer cloud
+
+            Returns:
+
+                obj                 -- Object of ContentAnalyzer class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if cacloud_name is not of type string
+
+
+        &#34;&#34;&#34;
+        if not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        if self.has_cloud(cloud_name):
+            cloud_id = self._content_analyzers[cloud_name][&#39;cloudId&#39;]
+            return ContentAnalyzer(self._commcell_object, cloud_name, cloud_id)
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, &#34;Unable to get ContentAnalyzer class object&#34;)
+
+    def has_cloud(self, cloud_name):
+        &#34;&#34;&#34;Checks if a content analyzer cloud exists in the commcell with the input name.
+
+            Args:
+                cloud_name (str)    --  name of the content analyzer
+
+            Returns:
+                bool - boolean output whether the CA cloud exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the CA cloud name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)
+
+
+class ContentAnalyzer(object):
+    &#34;&#34;&#34;Class for performing operations on a single content analyzer cloud&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, cloud_name, cloud_id=None):
+        &#34;&#34;&#34;Initialize an object of the ContentAnalyzer class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                cloud_name     (str)            --  name of the content analyzer cloud
+
+                cloud_id       (str)            --  id of the content analyzer cloud
+                    default: None
+
+            Returns:
+                object  -   instance of the ContentAnalyzer class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cloud_name = cloud_name
+        self._cloud_url = None
+        self._cloud_id = None
+        self._client_id = None
+        if cloud_id is None:
+            self._cloud_id = self._get_cloud_id(cloud_name)
+        else:
+            self._cloud_id = cloud_id
+        self.refresh()
+
+    def _get_cloud_id(self, cloud_name):
+        &#34;&#34;&#34; Get CA cloud id for given CA cloud name
+                Args:
+
+                    cloud_name (str)   -- Name of the content analyzer cloud
+
+                Returns:
+
+                    int                -- Content analyzer cloud id
+
+        &#34;&#34;&#34;
+
+        return self._commcell_object.content_analyzers.get(cloud_name).cloud_id
+
+    def _get_cloud_properties(self):
+        &#34;&#34;&#34; Get CA cloud properties for all content analyzers cloud in the commcell
+                Args:
+
+                    None
+
+                Returns:
+
+                    None
+
+        &#34;&#34;&#34;
+        content_analyzers_dict = self._commcell_object.content_analyzers.get_properties(self._cloud_name)
+        self._cloud_url = content_analyzers_dict[&#39;caUrl&#39;]
+        self._cloud_id = content_analyzers_dict[&#39;cloudId&#39;]
+        self._client_id = content_analyzers_dict[&#39;clientId&#39;]
+        return content_analyzers_dict
+
+    @property
+    def client_id(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer client id attribute.&#34;&#34;&#34;
+        return self._client_id
+
+    @property
+    def cloud_id(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer cloud id attribute.&#34;&#34;&#34;
+        return self._cloud_id
+
+    @property
+    def cloud_url(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer cloud url attribute.&#34;&#34;&#34;
+        return self._cloud_url
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the content analyzer details associated with this commcell&#34;&#34;&#34;
+        self._get_cloud_properties()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzer"><code class="flex name class">
+<span>class <span class="ident">ContentAnalyzer</span></span>
+<span>(</span><span>commcell_object, cloud_name, cloud_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing operations on a single content analyzer cloud</p>
+<p>Initialize an object of the ContentAnalyzer class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<p>cloud_name
+(str)
+&ndash;
+name of the content analyzer cloud</p>
+<p>cloud_id
+(str)
+&ndash;
+id of the content analyzer cloud
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the ContentAnalyzer class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L345-L421" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ContentAnalyzer(object):
+    &#34;&#34;&#34;Class for performing operations on a single content analyzer cloud&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, cloud_name, cloud_id=None):
+        &#34;&#34;&#34;Initialize an object of the ContentAnalyzer class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                cloud_name     (str)            --  name of the content analyzer cloud
+
+                cloud_id       (str)            --  id of the content analyzer cloud
+                    default: None
+
+            Returns:
+                object  -   instance of the ContentAnalyzer class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cloud_name = cloud_name
+        self._cloud_url = None
+        self._cloud_id = None
+        self._client_id = None
+        if cloud_id is None:
+            self._cloud_id = self._get_cloud_id(cloud_name)
+        else:
+            self._cloud_id = cloud_id
+        self.refresh()
+
+    def _get_cloud_id(self, cloud_name):
+        &#34;&#34;&#34; Get CA cloud id for given CA cloud name
+                Args:
+
+                    cloud_name (str)   -- Name of the content analyzer cloud
+
+                Returns:
+
+                    int                -- Content analyzer cloud id
+
+        &#34;&#34;&#34;
+
+        return self._commcell_object.content_analyzers.get(cloud_name).cloud_id
+
+    def _get_cloud_properties(self):
+        &#34;&#34;&#34; Get CA cloud properties for all content analyzers cloud in the commcell
+                Args:
+
+                    None
+
+                Returns:
+
+                    None
+
+        &#34;&#34;&#34;
+        content_analyzers_dict = self._commcell_object.content_analyzers.get_properties(self._cloud_name)
+        self._cloud_url = content_analyzers_dict[&#39;caUrl&#39;]
+        self._cloud_id = content_analyzers_dict[&#39;cloudId&#39;]
+        self._client_id = content_analyzers_dict[&#39;clientId&#39;]
+        return content_analyzers_dict
+
+    @property
+    def client_id(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer client id attribute.&#34;&#34;&#34;
+        return self._client_id
+
+    @property
+    def cloud_id(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer cloud id attribute.&#34;&#34;&#34;
+        return self._cloud_id
+
+    @property
+    def cloud_url(self):
+        &#34;&#34;&#34;Returns the value of the Content analyzer cloud url attribute.&#34;&#34;&#34;
+        return self._cloud_url
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the content analyzer details associated with this commcell&#34;&#34;&#34;
+        self._get_cloud_properties()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzer.client_id"><code class="name">var <span class="ident">client_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the Content analyzer client id attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L404-L407" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def client_id(self):
+    &#34;&#34;&#34;Returns the value of the Content analyzer client id attribute.&#34;&#34;&#34;
+    return self._client_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzer.cloud_id"><code class="name">var <span class="ident">cloud_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the Content analyzer cloud id attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L409-L412" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def cloud_id(self):
+    &#34;&#34;&#34;Returns the value of the Content analyzer cloud id attribute.&#34;&#34;&#34;
+    return self._cloud_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzer.cloud_url"><code class="name">var <span class="ident">cloud_url</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the Content analyzer cloud url attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L414-L417" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def cloud_url(self):
+    &#34;&#34;&#34;Returns the value of the Content analyzer cloud url attribute.&#34;&#34;&#34;
+    return self._cloud_url</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzer.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the content analyzer details associated with this commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L419-L421" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the content analyzer details associated with this commcell&#34;&#34;&#34;
+    self._get_cloud_properties()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers"><code class="flex name class">
+<span>class <span class="ident">ContentAnalyzers</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the ContentAnalyzers in the commcell.</p>
+<p>Initializes an instance of the ContentAnalyzers class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the ContentAnalyzers class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L78-L342" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ContentAnalyzers(object):
+    &#34;&#34;&#34;Class for representing all the ContentAnalyzers in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the ContentAnalyzers class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the ContentAnalyzers class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._content_analyzers = None
+        self._api_get_content_analyzer_cloud = self._services[&#39;GET_CONTENT_ANALYZER_CLOUD&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_properties(self, cacloud_name):
+        &#34;&#34;&#34;Returns a properties of the specified content analyzer cloud name.
+
+            Args:
+                cacloud_name (str)  --  name of the content analyzer cloud
+
+            Returns:
+                dict -  properties for the given content analyzer cloud name
+
+
+        &#34;&#34;&#34;
+        return self._content_analyzers[cacloud_name]
+
+    def _get_all_content_analyzers(self):
+        &#34;&#34;&#34;Gets the list of all content analyzers associated with this commcell.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single content analyzer
+
+                    {
+                        &#34;contentAnalyzerList&#34;: [
+                                {
+                                    &#34;caUrl&#34;: &#34;http://V11LotusClient.idx.commvault.com:22005&#34;,
+                                     &#34;cloudName&#34;: &#34;V11lotusClientCloud&#34;,
+                                     &#34;cloudId&#34;: 1010
+                                },
+                                {
+                                      &#34;caUrl&#34;: &#34;http://imsolrscale1.sna.commvault.com:22001&#34;,
+                                      &#34;cloudName&#34;: &#34;Imsolrcloud&#34;,
+                                      &#34;cloudId&#34;: 1026
+                                }
+                        ]
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._api_get_content_analyzer_cloud
+        )
+        if flag:
+            if response.json() and &#39;contentAnalyzerList&#39; in response.json():
+                return self._get_cloud_from_collections(response.json())
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;103&#39;)
+        self._response_not_success(response)
+
+    @staticmethod
+    def _get_cloud_from_collections(collections):
+        &#34;&#34;&#34;Extracts all the content analyzers, and their details from the list of collections given,
+            and returns the dictionary of all content analyzers.
+
+            Args:
+                collections     (list)  --  list of all collections
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single content analyzer
+
+        &#34;&#34;&#34;
+        _cacloud = {}
+        for cacloud in collections[&#39;contentAnalyzerList&#39;]:
+            cacloud_dict = {}
+            cacloud_dict[&#39;caUrl&#39;] = cacloud.get(&#39;caUrl&#39;, &#34;&#34;)
+            cacloud_dict[&#39;cloudName&#39;] = cacloud.get(&#39;cloudName&#39;, &#34;&#34;)
+            cacloud_dict[&#39;cloudId&#39;] = cacloud.get(&#39;cloudId&#39;, 0)
+            cacloud_dict[&#39;clientId&#39;] = cacloud.get(&#39;clientId&#39;, 0)
+            _cacloud[cacloud[&#39;cloudName&#39;]] = cacloud_dict
+        return _cacloud
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the content analyzers associated with the commcell.&#34;&#34;&#34;
+        self._content_analyzers = self._get_all_content_analyzers()
+
+    def create(self, client_name, content_analyzer_name, temp_directory):
+        &#34;&#34;&#34;Creates an content analyzer cloud within the commcell
+
+                Args:
+                    client_name            (str)    --  Name of the client where content analyzer package is installed
+                    content_analyzer_name  (str)    --  name for the content analyzer cloud
+                    temp_directory        (str)     --  temp location for the content extractor
+                    cloud_param           (list)    --  list of custom parameters to be parsed
+                                                    into the json for content analyser meta info
+                                                    [
+                                                        {
+                                                            &#34;name&#34;: &lt;name&gt;,
+                                                            &#34;value&#34;: &lt;value&gt;
+                                                        }
+                                                    ]
+                Returns:
+                    None
+
+                Raises:
+                    SDKException:
+                        Data type of the input(s) is not valid.
+
+                        Response was not success.
+
+                        Response was empty.
+        &#34;&#34;&#34;
+        if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+        client = self._commcell_object.clients.get(client_name)
+        req_json = ContentAnalyzerConstants.REQUEST_JSON
+        req_json[&#39;cloudNodes&#39;] = [
+            {
+                &#34;opType&#34;: ContentAnalyzerConstants.OPERATION_ADD,
+                &#34;nodeClientEntity&#34;: {
+                    &#34;hostName&#34;: client.client_hostname,
+                    &#34;clientId&#34;: int(client.client_id),
+                    &#34;clientName&#34;: client.client_name,
+                    &#34;_type_&#34;: 3
+                },
+                &#34;nodeMetaInfos&#34;: [
+                    {
+                        &#34;name&#34;: &#34;PORTNO&#34;,
+                        &#34;value&#34;: &#34;22000&#34;
+                    },
+                    {
+                        &#34;name&#34;: &#34;JVMMAXMEMORY&#34;,
+                        &#34;value&#34;: &#34;4096&#34;
+                    },
+                    {
+                        &#34;name&#34;: &#34;INDEXLOCATION&#34;,
+                        &#34;value&#34;: temp_directory
+                    }
+                ]
+            }
+        ]
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudName&#39;] = content_analyzer_name
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudDisplayName&#39;] = content_analyzer_name
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;INDEX_SERVER_CREATION&#39;], req_json)
+        if flag:
+            if response.json():
+                error_code = response.json()[&#39;genericResp&#39;][&#39;errorCode&#39;]
+                error_string = response.json()[&#39;genericResp&#39;][&#39;errorMessage&#39;]
+                if error_code == 0:
+                    self.refresh()
+                else:
+                    o_str = &#39;Failed to create content analyzer cloud. Error: &#34;{0}&#34;&#39;.format(
+                        error_string)
+                    raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        self._response_not_success(response)
+
+    def delete(self, cloud_name):
+        &#34;&#34;&#34;Deletes / removes an content analyzer from the commcell
+
+                Args:
+                    cloud_name      (str)   --  cloud name of content analyzer to be deleted from the commcell
+
+                Raises:
+                    SDKException:
+                        Data type of the input(s) is not valid.
+
+                        Response was not success.
+
+                        Response was empty.
+        &#34;&#34;&#34;
+        if cloud_name is None or not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        cloud_id = self.get(cloud_name).cloud_id
+        req_json = ContentAnalyzerConstants.REQUEST_JSON
+        req_json[&#34;opType&#34;] = ContentAnalyzerConstants.OPERATION_DELETE
+        req_json[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;] = cloud_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;INDEX_SERVER_DELETION&#39;], req_json
+        )
+        if flag:
+            if response.json() and &#39;genericResp&#39; in response.json(
+            ) and &#39;errorCode&#39; not in response.json()[&#39;genericResp&#39;]:
+                self.refresh()
+                return
+            if response.json() and &#39;genericResp&#39; in response.json():
+                raise SDKException(
+                    &#39;Response&#39;, &#39;102&#39;, response.json()[&#39;genericResp&#39;].get(
+                        &#39;errorMessage&#39;, &#39;&#39;))
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        self._response_not_success(response)
+
+    def get(self, cloud_name):
+        &#34;&#34;&#34;Returns a ContentAnalyzer object for the given CA cloud name.
+
+            Args:
+                cloud_name (str)    --  name of the Content analyzer cloud
+
+            Returns:
+
+                obj                 -- Object of ContentAnalyzer class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if cacloud_name is not of type string
+
+
+        &#34;&#34;&#34;
+        if not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        if self.has_cloud(cloud_name):
+            cloud_id = self._content_analyzers[cloud_name][&#39;cloudId&#39;]
+            return ContentAnalyzer(self._commcell_object, cloud_name, cloud_id)
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, &#34;Unable to get ContentAnalyzer class object&#34;)
+
+    def has_cloud(self, cloud_name):
+        &#34;&#34;&#34;Checks if a content analyzer cloud exists in the commcell with the input name.
+
+            Args:
+                cloud_name (str)    --  name of the content analyzer
+
+            Returns:
+                bool - boolean output whether the CA cloud exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the CA cloud name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(cloud_name, basestring):
+            raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+        return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>self, client_name, content_analyzer_name, temp_directory)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates an content analyzer cloud within the commcell</p>
+<h2 id="args">Args</h2>
+<p>client_name
+(str)
+&ndash;
+Name of the client where content analyzer package is installed
+content_analyzer_name
+(str)
+&ndash;
+name for the content analyzer cloud
+temp_directory
+(str)
+&ndash;
+temp location for the content extractor
+cloud_param
+(list)
+&ndash;
+list of custom parameters to be parsed
+into the json for content analyser meta info
+[
+{
+"name": <name>,
+"value": <value>
+}
+]</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+Data type of the input(s) is not valid.</p>
+<pre><code>Response was not success.
+
+Response was empty.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L188-L258" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def create(self, client_name, content_analyzer_name, temp_directory):
+    &#34;&#34;&#34;Creates an content analyzer cloud within the commcell
+
+            Args:
+                client_name            (str)    --  Name of the client where content analyzer package is installed
+                content_analyzer_name  (str)    --  name for the content analyzer cloud
+                temp_directory        (str)     --  temp location for the content extractor
+                cloud_param           (list)    --  list of custom parameters to be parsed
+                                                into the json for content analyser meta info
+                                                [
+                                                    {
+                                                        &#34;name&#34;: &lt;name&gt;,
+                                                        &#34;value&#34;: &lt;value&gt;
+                                                    }
+                                                ]
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    Data type of the input(s) is not valid.
+
+                    Response was not success.
+
+                    Response was empty.
+    &#34;&#34;&#34;
+    if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+    client = self._commcell_object.clients.get(client_name)
+    req_json = ContentAnalyzerConstants.REQUEST_JSON
+    req_json[&#39;cloudNodes&#39;] = [
+        {
+            &#34;opType&#34;: ContentAnalyzerConstants.OPERATION_ADD,
+            &#34;nodeClientEntity&#34;: {
+                &#34;hostName&#34;: client.client_hostname,
+                &#34;clientId&#34;: int(client.client_id),
+                &#34;clientName&#34;: client.client_name,
+                &#34;_type_&#34;: 3
+            },
+            &#34;nodeMetaInfos&#34;: [
+                {
+                    &#34;name&#34;: &#34;PORTNO&#34;,
+                    &#34;value&#34;: &#34;22000&#34;
+                },
+                {
+                    &#34;name&#34;: &#34;JVMMAXMEMORY&#34;,
+                    &#34;value&#34;: &#34;4096&#34;
+                },
+                {
+                    &#34;name&#34;: &#34;INDEXLOCATION&#34;,
+                    &#34;value&#34;: temp_directory
+                }
+            ]
+        }
+    ]
+    req_json[&#39;cloudInfoEntity&#39;][&#39;cloudName&#39;] = content_analyzer_name
+    req_json[&#39;cloudInfoEntity&#39;][&#39;cloudDisplayName&#39;] = content_analyzer_name
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;INDEX_SERVER_CREATION&#39;], req_json)
+    if flag:
+        if response.json():
+            error_code = response.json()[&#39;genericResp&#39;][&#39;errorCode&#39;]
+            error_string = response.json()[&#39;genericResp&#39;][&#39;errorMessage&#39;]
+            if error_code == 0:
+                self.refresh()
+            else:
+                o_str = &#39;Failed to create content analyzer cloud. Error: &#34;{0}&#34;&#39;.format(
+                    error_string)
+                raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, o_str)
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, cloud_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes / removes an content analyzer from the commcell</p>
+<h2 id="args">Args</h2>
+<p>cloud_name
+(str)
+&ndash;
+cloud name of content analyzer to be deleted from the commcell</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+Data type of the input(s) is not valid.</p>
+<pre><code>Response was not success.
+
+Response was empty.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L260-L295" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, cloud_name):
+    &#34;&#34;&#34;Deletes / removes an content analyzer from the commcell
+
+            Args:
+                cloud_name      (str)   --  cloud name of content analyzer to be deleted from the commcell
+
+            Raises:
+                SDKException:
+                    Data type of the input(s) is not valid.
+
+                    Response was not success.
+
+                    Response was empty.
+    &#34;&#34;&#34;
+    if cloud_name is None or not isinstance(cloud_name, basestring):
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+    cloud_id = self.get(cloud_name).cloud_id
+    req_json = ContentAnalyzerConstants.REQUEST_JSON
+    req_json[&#34;opType&#34;] = ContentAnalyzerConstants.OPERATION_DELETE
+    req_json[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;] = cloud_id
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;INDEX_SERVER_DELETION&#39;], req_json
+    )
+    if flag:
+        if response.json() and &#39;genericResp&#39; in response.json(
+        ) and &#39;errorCode&#39; not in response.json()[&#39;genericResp&#39;]:
+            self.refresh()
+            return
+        if response.json() and &#39;genericResp&#39; in response.json():
+            raise SDKException(
+                &#39;Response&#39;, &#39;102&#39;, response.json()[&#39;genericResp&#39;].get(
+                    &#39;errorMessage&#39;, &#39;&#39;))
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, cloud_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a ContentAnalyzer object for the given CA cloud name.</p>
+<h2 id="args">Args</h2>
+<p>cloud_name (str)
+&ndash;
+name of the Content analyzer cloud</p>
+<h2 id="returns">Returns</h2>
+<p>obj
+&ndash; Object of ContentAnalyzer class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+
+if cacloud_name is not of type string
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L297-L323" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, cloud_name):
+    &#34;&#34;&#34;Returns a ContentAnalyzer object for the given CA cloud name.
+
+        Args:
+            cloud_name (str)    --  name of the Content analyzer cloud
+
+        Returns:
+
+            obj                 -- Object of ContentAnalyzer class
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if cacloud_name is not of type string
+
+
+    &#34;&#34;&#34;
+    if not isinstance(cloud_name, basestring):
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+    if self.has_cloud(cloud_name):
+        cloud_id = self._content_analyzers[cloud_name][&#39;cloudId&#39;]
+        return ContentAnalyzer(self._commcell_object, cloud_name, cloud_id)
+    raise SDKException(&#39;ContentAnalyzer&#39;, &#39;102&#39;, &#34;Unable to get ContentAnalyzer class object&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.get_properties"><code class="name flex">
+<span>def <span class="ident">get_properties</span></span>(<span>self, cacloud_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a properties of the specified content analyzer cloud name.</p>
+<h2 id="args">Args</h2>
+<p>cacloud_name (str)
+&ndash;
+name of the content analyzer cloud</p>
+<h2 id="returns">Returns</h2>
+<p>dict -
+properties for the given content analyzer cloud name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L110-L121" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_properties(self, cacloud_name):
+    &#34;&#34;&#34;Returns a properties of the specified content analyzer cloud name.
+
+        Args:
+            cacloud_name (str)  --  name of the content analyzer cloud
+
+        Returns:
+            dict -  properties for the given content analyzer cloud name
+
+
+    &#34;&#34;&#34;
+    return self._content_analyzers[cacloud_name]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.has_cloud"><code class="name flex">
+<span>def <span class="ident">has_cloud</span></span>(<span>self, cloud_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a content analyzer cloud exists in the commcell with the input name.</p>
+<h2 id="args">Args</h2>
+<p>cloud_name (str)
+&ndash;
+name of the content analyzer</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the CA cloud exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the CA cloud name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L325-L342" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_cloud(self, cloud_name):
+    &#34;&#34;&#34;Checks if a content analyzer cloud exists in the commcell with the input name.
+
+        Args:
+            cloud_name (str)    --  name of the content analyzer
+
+        Returns:
+            bool - boolean output whether the CA cloud exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the CA cloud name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(cloud_name, basestring):
+        raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
+
+    return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.content_analyzer.ContentAnalyzers.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the content analyzers associated with the commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/content_analyzer.py#L184-L186" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the content analyzers associated with the commcell.&#34;&#34;&#34;
+    self._content_analyzers = self._get_all_content_analyzers()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#contentanalyzer-attributes">ContentAnalyzer Attributes</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.content_analyzer.ContentAnalyzer" href="#cvpysdk.content_analyzer.ContentAnalyzer">ContentAnalyzer</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzer.client_id" href="#cvpysdk.content_analyzer.ContentAnalyzer.client_id">client_id</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzer.cloud_id" href="#cvpysdk.content_analyzer.ContentAnalyzer.cloud_id">cloud_id</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzer.cloud_url" href="#cvpysdk.content_analyzer.ContentAnalyzer.cloud_url">cloud_url</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzer.refresh" href="#cvpysdk.content_analyzer.ContentAnalyzer.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.content_analyzer.ContentAnalyzers" href="#cvpysdk.content_analyzer.ContentAnalyzers">ContentAnalyzers</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.create" href="#cvpysdk.content_analyzer.ContentAnalyzers.create">create</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.delete" href="#cvpysdk.content_analyzer.ContentAnalyzers.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.get" href="#cvpysdk.content_analyzer.ContentAnalyzers.get">get</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.get_properties" href="#cvpysdk.content_analyzer.ContentAnalyzers.get_properties">get_properties</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.has_cloud" href="#cvpysdk.content_analyzer.ContentAnalyzers.has_cloud">has_cloud</a></code></li>
+<li><code><a title="cvpysdk.content_analyzer.ContentAnalyzers.refresh" href="#cvpysdk.content_analyzer.ContentAnalyzers.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

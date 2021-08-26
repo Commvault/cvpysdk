@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.recovery_targets API documentation</title>
+<meta name="description" content="Main file for performing Recovery Target specific operations …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.recovery_targets</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing Recovery Target specific operations.</p>
+<p>RecoveryTargets and RecoveryTarget are 2 classes defined in this file.</p>
+<p>RecoveryTargets:
+Class for representing all the recovery targets</p>
+<p>RecoveryTarget:
+Class for a single recovery target selected, and to perform operations on that recovery target</p>
+<h2 id="recoverytargets">Recoverytargets</h2>
+<p><strong>init</strong>()
+&ndash;
+initialize object of RecoveryTargets class</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the Recovery Targets</p>
+<p>_get_recovery_targets()
+&ndash; Gets all the recovery targets</p>
+<p>has_recovery_target()
+&ndash; Checks if a target is present in the commcell.</p>
+<p>get()
+&ndash;
+returns the recovery target class object of the input target name</p>
+<p>refresh()
+&ndash;
+refresh the targets present in the client</p>
+<h2 id="recoverytargets-attributes">Recoverytargets Attributes</h2>
+<pre><code>**all_targets**             --  returns the dictioanry consisting of all the targets that are
+present in the commcell and their information such as id and name
+</code></pre>
+<h2 id="recoverytarget">Recoverytarget</h2>
+<p><strong>init</strong>()
+&ndash;
+initialize object of RecoveryTarget with the specified recovery target name</p>
+<p>_get_recovery_target_id()
+&ndash;
+method to get the recovery target id</p>
+<p>_get_recovery_target_properties()
+&ndash;
+get the properties of this ecovery target</p>
+<p>refresh()
+&ndash;
+refresh the object properties</p>
+<h2 id="recoverytarget-attributes">Recoverytarget Attributes</h2>
+<pre><code>**recovery_target_id**      -- Returns the id of the recovery target
+**recovery_target_name**    -- Returns the name of the Recovery Target
+**destination_hypervisor**  -- Returns the name of destination hypervisor
+**vm_prefix**               -- Returns the prefix of the vm name
+**destination_host**        -- Returns the destination host
+** def datastore**          -- Returns the datastore host
+**resource_pool**           -- Returns the resource_pool host
+**destination_network**     -- Returns the destination_network host
+**no_of_cpu**               -- Returns the no_of_cpu host
+**no_of_vm**                -- Returns the no_of_vm hos
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L1-L352" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing Recovery Target specific operations.
+
+RecoveryTargets and RecoveryTarget are 2 classes defined in this file.
+
+RecoveryTargets:     Class for representing all the recovery targets
+
+RecoveryTarget:      Class for a single recovery target selected, and to perform operations on that recovery target
+
+
+RecoveryTargets:
+    __init__()                   --  initialize object of RecoveryTargets class
+
+    __str__()                   --  returns all the Recovery Targets
+
+    _get_recovery_targets()     -- Gets all the recovery targets
+
+    has_recovery_target()       -- Checks if a target is present in the commcell.
+
+    get()                        --  returns the recovery target class object of the input target name
+
+    refresh()                   --  refresh the targets present in the client
+
+RecoveryTargets Attributes
+--------------------------
+
+    **all_targets**             --  returns the dictioanry consisting of all the targets that are
+    present in the commcell and their information such as id and name
+
+RecoveryTarget:
+    __init__()                   --   initialize object of RecoveryTarget with the specified recovery target name
+
+    _get_recovery_target_id()   --   method to get the recovery target id
+
+    _get_recovery_target_properties()  --   get the properties of this ecovery target
+
+    refresh()                   --   refresh the object properties
+
+RecoveryTarget Attributes
+--------------------------
+
+    **recovery_target_id**      -- Returns the id of the recovery target
+    **recovery_target_name**    -- Returns the name of the Recovery Target
+    **destination_hypervisor**  -- Returns the name of destination hypervisor
+    **vm_prefix**               -- Returns the prefix of the vm name
+    **destination_host**        -- Returns the destination host
+    ** def datastore**          -- Returns the datastore host
+    **resource_pool**           -- Returns the resource_pool host
+    **destination_network**     -- Returns the destination_network host
+    **no_of_cpu**               -- Returns the no_of_cpu host
+    **no_of_vm**                -- Returns the no_of_vm hos
+
+&#34;&#34;&#34;
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
+
+
+class RecoveryTargets:
+
+    &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Clients class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._RECOVERY_TARGETS = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
+
+        self._recovery_targets = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all targets .
+
+            Returns:
+                str     -   string of all the targets
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoverTargets&#39;)
+
+        for index, recovery_target in enumerate(self._recovery_targets):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(
+                index + 1,
+                recovery_target
+            )
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+
+    def _get_recovery_targets(self):
+        &#34;&#34;&#34;Gets all the recovery targets.
+
+            Returns:
+                dict - consists of all targets in the client
+                    {
+                         &#34;target1_name&#34;: target1_id,
+                         &#34;target2_name&#34;: target2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS)
+
+        if flag:
+            if response.json() and &#39;policy&#39; in response.json():
+
+                recovery_target_dict = {}
+
+                for dictionary in response.json()[&#39;policy&#39;]:
+                    temp_name = dictionary[&#39;entity&#39;][&#39;vmAllocPolicyName&#39;].lower()
+                    recovery_target_dict[temp_name] = str(dictionary[&#39;entity&#39;][&#39;vmAllocPolicyId&#39;])
+
+                return recovery_target_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_targets(self):
+        &#34;&#34;&#34;Returns dict of all the targets.
+
+         Returns dict    -   consists of all targets
+
+                {
+                    &#34;target1_name&#34;: target1_id,
+
+                    &#34;target2_name&#34;: target2_id
+                }
+
+        &#34;&#34;&#34;
+        return self._recovery_targets
+
+    def has_recovery_target(self, target_name):
+        &#34;&#34;&#34;Checks if a target is present in the commcell.
+
+            Args:
+                target_name (str)  --  name of the target
+
+            Returns:
+                bool - boolean output whether the target is present in commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the target name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(target_name, basestring):
+            raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+
+        return self._recovery_targets and target_name.lower() in self._recovery_targets
+
+    def get(self, recovery_target_name):
+        &#34;&#34;&#34;Returns a target object.
+
+            Args:
+                target_name (str)  --  name of the target
+
+            Returns:
+                object - instance of the target class for the given target name
+
+            Raises:
+                SDKException:
+                    if type of the target name argument is not string
+
+                    if no target exists with the given name
+
+        &#34;&#34;&#34;
+        if not isinstance(recovery_target_name, basestring):
+            raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+        else:
+            recovery_target_name = recovery_target_name.lower()
+
+            if self.has_recovery_target(recovery_target_name):
+                return RecoveryTarget(
+                    self._commcell_object, recovery_target_name, self.all_targets[recovery_target_name])
+
+            raise SDKException(&#39;RecoveryTarget&#39;, &#39;102&#39;, &#39;No target exists with name: {0}&#39;.format(target_name))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the recovery targets&#34;&#34;&#34;
+        self._recovery_targets = self._get_recovery_targets()
+
+
+class RecoveryTarget:
+
+    &#34;&#34;&#34;Class for performing target operations&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
+        &#34;&#34;&#34;Initialize the instance of the RecoveryTarget class.
+
+            Args:
+                commcell_object   (object)    --  instance of the Commcell class
+
+                target_name      (str)       --  name of the target
+
+                target_id        (str)       --  id of the target
+
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._recovery_target_name = recovery_target_name.lower()
+
+        if recovery_target_id:
+            # Use the target id mentioned in the arguments
+            self._recovery_target_id = str(recovery_target_id)
+        else:
+            # Get the target id if target id is not provided
+            self._recovery_target_id = self._get_recovery_target_id()
+        self._RECOVERY_TARGET = self._services[&#39;GET_RECOVERY_TARGET&#39;] %(self._recovery_target_id)
+
+        self._recovery_target_properties = None
+
+        self._destination_hypervisor = None
+        self._vm_prefix = &#39;&#39;
+        self._destination_host = None
+        self._datastore = None
+        self._resource_pool = None
+        self._destination_network = None
+        self._no_of_cpu = None
+        self._no_of_vm = None
+        self.refresh()
+
+    def _get_recovery_target_id(self):
+        &#34;&#34;&#34;Gets the target id associated with this target.
+
+            Returns:
+                str - id associated with this target
+
+        &#34;&#34;&#34;
+        target = RecoveryTargets(self._commcell_object)
+        return target.get(self._recovery_target_name)
+
+    def _get_recovery_target_properties(self):
+        &#34;&#34;&#34;Gets the target properties of this target.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET)
+
+        if flag:
+            if response.json() and &#39;policy&#39; in response.json():
+                self._recovery_target_properties = response.json()[&#39;policy&#39;][0]
+                self._destination_hypervisor = self._recovery_target_properties[&#39;destinationHyperV&#39;][&#39;clientName&#39;]
+                if &#39;vmNameEditString&#39; in self._recovery_target_properties.keys():
+                    self._vm_prefix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
+                self._destination_host = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
+                self._datastore = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
+                self._resource_pool = self._recovery_target_properties[&#39;resourcePoolPath&#39;]
+                self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
+                self._no_of_cpu = self._recovery_target_properties[&#39;maxCores&#39;]
+                self._no_of_vm = self._recovery_target_properties[&#39;maxVMQuota&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def recovery_target_id(self):
+        &#34;&#34;&#34;Returns the id of the recovery target.&#34;&#34;&#34;
+        return self._recovery_target_id
+
+    @property
+    def recovery_target_name(self):
+        &#34;&#34;&#34;Returns the name of the Recovery Target.&#34;&#34;&#34;
+        return self._recovery_target_name
+
+    @property
+    def destination_hypervisor(self):
+        &#34;&#34;&#34;Returns the name of destination hypervisor&#34;&#34;&#34;
+        return self._destination_hypervisor
+
+    @property
+    def vm_prefix(self):
+        &#34;&#34;&#34;Returns the prefix of the vm name&#34;&#34;&#34;
+        return self._vm_prefix
+
+    @property
+    def destination_host(self):
+        &#34;&#34;&#34;Returns the destination host&#34;&#34;&#34;
+        return self._destination_host
+
+    @property
+    def datastore(self):
+        &#34;&#34;&#34;Returns the datastore host&#34;&#34;&#34;
+        return self._datastore
+
+    @property
+    def resource_pool(self):
+        &#34;&#34;&#34;Returns the resource_pool host&#34;&#34;&#34;
+        return self._resource_pool
+
+    @property
+    def destination_network(self):
+        &#34;&#34;&#34;Returns the destination_network host&#34;&#34;&#34;
+        return self._destination_network
+
+    @property
+    def no_of_cpu(self):
+        &#34;&#34;&#34;Returns the no_of_cpu host&#34;&#34;&#34;
+        return self._no_of_cpu
+
+    @property
+    def no_of_vm(self):
+        &#34;&#34;&#34;Returns the no_of_vm host&#34;&#34;&#34;
+        return self._no_of_vm
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Recovery Target.&#34;&#34;&#34;
+        self._get_recovery_target_properties()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget"><code class="flex name class">
+<span>class <span class="ident">RecoveryTarget</span></span>
+<span>(</span><span>commcell_object, recovery_target_name, recovery_target_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing target operations</p>
+<p>Initialize the instance of the RecoveryTarget class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the Commcell class</p>
+<p>target_name
+(str)
+&ndash;
+name of the target</p>
+<p>target_id
+(str)
+&ndash;
+id of the target</p>
+<pre><code>default: None
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L217-L352" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class RecoveryTarget:
+
+    &#34;&#34;&#34;Class for performing target operations&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
+        &#34;&#34;&#34;Initialize the instance of the RecoveryTarget class.
+
+            Args:
+                commcell_object   (object)    --  instance of the Commcell class
+
+                target_name      (str)       --  name of the target
+
+                target_id        (str)       --  id of the target
+
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._recovery_target_name = recovery_target_name.lower()
+
+        if recovery_target_id:
+            # Use the target id mentioned in the arguments
+            self._recovery_target_id = str(recovery_target_id)
+        else:
+            # Get the target id if target id is not provided
+            self._recovery_target_id = self._get_recovery_target_id()
+        self._RECOVERY_TARGET = self._services[&#39;GET_RECOVERY_TARGET&#39;] %(self._recovery_target_id)
+
+        self._recovery_target_properties = None
+
+        self._destination_hypervisor = None
+        self._vm_prefix = &#39;&#39;
+        self._destination_host = None
+        self._datastore = None
+        self._resource_pool = None
+        self._destination_network = None
+        self._no_of_cpu = None
+        self._no_of_vm = None
+        self.refresh()
+
+    def _get_recovery_target_id(self):
+        &#34;&#34;&#34;Gets the target id associated with this target.
+
+            Returns:
+                str - id associated with this target
+
+        &#34;&#34;&#34;
+        target = RecoveryTargets(self._commcell_object)
+        return target.get(self._recovery_target_name)
+
+    def _get_recovery_target_properties(self):
+        &#34;&#34;&#34;Gets the target properties of this target.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET)
+
+        if flag:
+            if response.json() and &#39;policy&#39; in response.json():
+                self._recovery_target_properties = response.json()[&#39;policy&#39;][0]
+                self._destination_hypervisor = self._recovery_target_properties[&#39;destinationHyperV&#39;][&#39;clientName&#39;]
+                if &#39;vmNameEditString&#39; in self._recovery_target_properties.keys():
+                    self._vm_prefix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
+                self._destination_host = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
+                self._datastore = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
+                self._resource_pool = self._recovery_target_properties[&#39;resourcePoolPath&#39;]
+                self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
+                self._no_of_cpu = self._recovery_target_properties[&#39;maxCores&#39;]
+                self._no_of_vm = self._recovery_target_properties[&#39;maxVMQuota&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def recovery_target_id(self):
+        &#34;&#34;&#34;Returns the id of the recovery target.&#34;&#34;&#34;
+        return self._recovery_target_id
+
+    @property
+    def recovery_target_name(self):
+        &#34;&#34;&#34;Returns the name of the Recovery Target.&#34;&#34;&#34;
+        return self._recovery_target_name
+
+    @property
+    def destination_hypervisor(self):
+        &#34;&#34;&#34;Returns the name of destination hypervisor&#34;&#34;&#34;
+        return self._destination_hypervisor
+
+    @property
+    def vm_prefix(self):
+        &#34;&#34;&#34;Returns the prefix of the vm name&#34;&#34;&#34;
+        return self._vm_prefix
+
+    @property
+    def destination_host(self):
+        &#34;&#34;&#34;Returns the destination host&#34;&#34;&#34;
+        return self._destination_host
+
+    @property
+    def datastore(self):
+        &#34;&#34;&#34;Returns the datastore host&#34;&#34;&#34;
+        return self._datastore
+
+    @property
+    def resource_pool(self):
+        &#34;&#34;&#34;Returns the resource_pool host&#34;&#34;&#34;
+        return self._resource_pool
+
+    @property
+    def destination_network(self):
+        &#34;&#34;&#34;Returns the destination_network host&#34;&#34;&#34;
+        return self._destination_network
+
+    @property
+    def no_of_cpu(self):
+        &#34;&#34;&#34;Returns the no_of_cpu host&#34;&#34;&#34;
+        return self._no_of_cpu
+
+    @property
+    def no_of_vm(self):
+        &#34;&#34;&#34;Returns the no_of_vm host&#34;&#34;&#34;
+        return self._no_of_vm
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Recovery Target.&#34;&#34;&#34;
+        self._get_recovery_target_properties()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.datastore"><code class="name">var <span class="ident">datastore</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the datastore host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L325-L328" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def datastore(self):
+    &#34;&#34;&#34;Returns the datastore host&#34;&#34;&#34;
+    return self._datastore</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.destination_host"><code class="name">var <span class="ident">destination_host</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the destination host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L320-L323" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def destination_host(self):
+    &#34;&#34;&#34;Returns the destination host&#34;&#34;&#34;
+    return self._destination_host</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.destination_hypervisor"><code class="name">var <span class="ident">destination_hypervisor</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the name of destination hypervisor</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L310-L313" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def destination_hypervisor(self):
+    &#34;&#34;&#34;Returns the name of destination hypervisor&#34;&#34;&#34;
+    return self._destination_hypervisor</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.destination_network"><code class="name">var <span class="ident">destination_network</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the destination_network host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L335-L338" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def destination_network(self):
+    &#34;&#34;&#34;Returns the destination_network host&#34;&#34;&#34;
+    return self._destination_network</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.no_of_cpu"><code class="name">var <span class="ident">no_of_cpu</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the no_of_cpu host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L340-L343" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def no_of_cpu(self):
+    &#34;&#34;&#34;Returns the no_of_cpu host&#34;&#34;&#34;
+    return self._no_of_cpu</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.no_of_vm"><code class="name">var <span class="ident">no_of_vm</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the no_of_vm host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L345-L348" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def no_of_vm(self):
+    &#34;&#34;&#34;Returns the no_of_vm host&#34;&#34;&#34;
+    return self._no_of_vm</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.recovery_target_id"><code class="name">var <span class="ident">recovery_target_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the id of the recovery target.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L300-L303" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def recovery_target_id(self):
+    &#34;&#34;&#34;Returns the id of the recovery target.&#34;&#34;&#34;
+    return self._recovery_target_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.recovery_target_name"><code class="name">var <span class="ident">recovery_target_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the name of the Recovery Target.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L305-L308" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def recovery_target_name(self):
+    &#34;&#34;&#34;Returns the name of the Recovery Target.&#34;&#34;&#34;
+    return self._recovery_target_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.resource_pool"><code class="name">var <span class="ident">resource_pool</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the resource_pool host</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L330-L333" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool(self):
+    &#34;&#34;&#34;Returns the resource_pool host&#34;&#34;&#34;
+    return self._resource_pool</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.vm_prefix"><code class="name">var <span class="ident">vm_prefix</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the prefix of the vm name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L315-L318" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_prefix(self):
+    &#34;&#34;&#34;Returns the prefix of the vm name&#34;&#34;&#34;
+    return self._vm_prefix</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the properties of the Recovery Target.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L350-L352" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the properties of the Recovery Target.&#34;&#34;&#34;
+    self._get_recovery_target_properties()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTargets"><code class="flex name class">
+<span>class <span class="ident">RecoveryTargets</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the clients associated with the commcell.</p>
+<p>Initialize object of the Clients class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L77-L214" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class RecoveryTargets:
+
+    &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Clients class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._RECOVERY_TARGETS = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
+
+        self._recovery_targets = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all targets .
+
+            Returns:
+                str     -   string of all the targets
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoverTargets&#39;)
+
+        for index, recovery_target in enumerate(self._recovery_targets):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(
+                index + 1,
+                recovery_target
+            )
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+
+    def _get_recovery_targets(self):
+        &#34;&#34;&#34;Gets all the recovery targets.
+
+            Returns:
+                dict - consists of all targets in the client
+                    {
+                         &#34;target1_name&#34;: target1_id,
+                         &#34;target2_name&#34;: target2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS)
+
+        if flag:
+            if response.json() and &#39;policy&#39; in response.json():
+
+                recovery_target_dict = {}
+
+                for dictionary in response.json()[&#39;policy&#39;]:
+                    temp_name = dictionary[&#39;entity&#39;][&#39;vmAllocPolicyName&#39;].lower()
+                    recovery_target_dict[temp_name] = str(dictionary[&#39;entity&#39;][&#39;vmAllocPolicyId&#39;])
+
+                return recovery_target_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_targets(self):
+        &#34;&#34;&#34;Returns dict of all the targets.
+
+         Returns dict    -   consists of all targets
+
+                {
+                    &#34;target1_name&#34;: target1_id,
+
+                    &#34;target2_name&#34;: target2_id
+                }
+
+        &#34;&#34;&#34;
+        return self._recovery_targets
+
+    def has_recovery_target(self, target_name):
+        &#34;&#34;&#34;Checks if a target is present in the commcell.
+
+            Args:
+                target_name (str)  --  name of the target
+
+            Returns:
+                bool - boolean output whether the target is present in commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the target name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(target_name, basestring):
+            raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+
+        return self._recovery_targets and target_name.lower() in self._recovery_targets
+
+    def get(self, recovery_target_name):
+        &#34;&#34;&#34;Returns a target object.
+
+            Args:
+                target_name (str)  --  name of the target
+
+            Returns:
+                object - instance of the target class for the given target name
+
+            Raises:
+                SDKException:
+                    if type of the target name argument is not string
+
+                    if no target exists with the given name
+
+        &#34;&#34;&#34;
+        if not isinstance(recovery_target_name, basestring):
+            raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+        else:
+            recovery_target_name = recovery_target_name.lower()
+
+            if self.has_recovery_target(recovery_target_name):
+                return RecoveryTarget(
+                    self._commcell_object, recovery_target_name, self.all_targets[recovery_target_name])
+
+            raise SDKException(&#39;RecoveryTarget&#39;, &#39;102&#39;, &#39;No target exists with name: {0}&#39;.format(target_name))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the recovery targets&#34;&#34;&#34;
+        self._recovery_targets = self._get_recovery_targets()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.recovery_targets.RecoveryTargets.all_targets"><code class="name">var <span class="ident">all_targets</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dict of all the targets.</p>
+<p>Returns dict
+-
+consists of all targets</p>
+<pre><code>   {
+       "target1_name": target1_id,
+
+       "target2_name": target2_id
+   }
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L151-L164" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_targets(self):
+    &#34;&#34;&#34;Returns dict of all the targets.
+
+     Returns dict    -   consists of all targets
+
+            {
+                &#34;target1_name&#34;: target1_id,
+
+                &#34;target2_name&#34;: target2_id
+            }
+
+    &#34;&#34;&#34;
+    return self._recovery_targets</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.recovery_targets.RecoveryTargets.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, recovery_target_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a target object.</p>
+<h2 id="args">Args</h2>
+<p>target_name (str)
+&ndash;
+name of the target</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the target class for the given target name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the target name argument is not string</p>
+<pre><code>if no target exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L185-L210" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, recovery_target_name):
+    &#34;&#34;&#34;Returns a target object.
+
+        Args:
+            target_name (str)  --  name of the target
+
+        Returns:
+            object - instance of the target class for the given target name
+
+        Raises:
+            SDKException:
+                if type of the target name argument is not string
+
+                if no target exists with the given name
+
+    &#34;&#34;&#34;
+    if not isinstance(recovery_target_name, basestring):
+        raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+    else:
+        recovery_target_name = recovery_target_name.lower()
+
+        if self.has_recovery_target(recovery_target_name):
+            return RecoveryTarget(
+                self._commcell_object, recovery_target_name, self.all_targets[recovery_target_name])
+
+        raise SDKException(&#39;RecoveryTarget&#39;, &#39;102&#39;, &#39;No target exists with name: {0}&#39;.format(target_name))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTargets.has_recovery_target"><code class="name flex">
+<span>def <span class="ident">has_recovery_target</span></span>(<span>self, target_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a target is present in the commcell.</p>
+<h2 id="args">Args</h2>
+<p>target_name (str)
+&ndash;
+name of the target</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the target is present in commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the target name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L166-L183" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_recovery_target(self, target_name):
+    &#34;&#34;&#34;Checks if a target is present in the commcell.
+
+        Args:
+            target_name (str)  --  name of the target
+
+        Returns:
+            bool - boolean output whether the target is present in commcell or not
+
+        Raises:
+            SDKException:
+                if type of the target name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(target_name, basestring):
+        raise SDKException(&#39;Target&#39;, &#39;101&#39;)
+
+    return self._recovery_targets and target_name.lower() in self._recovery_targets</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTargets.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the recovery targets</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/recovery_targets.py#L212-L214" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the recovery targets&#34;&#34;&#34;
+    self._recovery_targets = self._get_recovery_targets()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#recoverytargets-attributes">RecoveryTargets Attributes</a></li>
+<li><a href="#recoverytarget-attributes">RecoveryTarget Attributes</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.recovery_targets.RecoveryTarget" href="#cvpysdk.recovery_targets.RecoveryTarget">RecoveryTarget</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.datastore" href="#cvpysdk.recovery_targets.RecoveryTarget.datastore">datastore</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.destination_host" href="#cvpysdk.recovery_targets.RecoveryTarget.destination_host">destination_host</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.destination_hypervisor" href="#cvpysdk.recovery_targets.RecoveryTarget.destination_hypervisor">destination_hypervisor</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.destination_network" href="#cvpysdk.recovery_targets.RecoveryTarget.destination_network">destination_network</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.no_of_cpu" href="#cvpysdk.recovery_targets.RecoveryTarget.no_of_cpu">no_of_cpu</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.no_of_vm" href="#cvpysdk.recovery_targets.RecoveryTarget.no_of_vm">no_of_vm</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.recovery_target_id" href="#cvpysdk.recovery_targets.RecoveryTarget.recovery_target_id">recovery_target_id</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.recovery_target_name" href="#cvpysdk.recovery_targets.RecoveryTarget.recovery_target_name">recovery_target_name</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.refresh" href="#cvpysdk.recovery_targets.RecoveryTarget.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.resource_pool" href="#cvpysdk.recovery_targets.RecoveryTarget.resource_pool">resource_pool</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_prefix" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_prefix">vm_prefix</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.recovery_targets.RecoveryTargets" href="#cvpysdk.recovery_targets.RecoveryTargets">RecoveryTargets</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTargets.all_targets" href="#cvpysdk.recovery_targets.RecoveryTargets.all_targets">all_targets</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTargets.get" href="#cvpysdk.recovery_targets.RecoveryTargets.get">get</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTargets.has_recovery_target" href="#cvpysdk.recovery_targets.RecoveryTargets.has_recovery_target">has_recovery_target</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTargets.refresh" href="#cvpysdk.recovery_targets.RecoveryTargets.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

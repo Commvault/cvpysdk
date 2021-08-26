@@ -1,0 +1,3131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.datacube.datasource API documentation</title>
+<meta name="description" content="Main file for performing operations on Datasources, and a single Datasource in the Datacube …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.datacube.datasource</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing operations on Datasources, and a single Datasource in the Datacube.</p>
+<p><code><a title="cvpysdk.datacube.datasource.Datasources" href="#cvpysdk.datacube.datasource.Datasources">Datasources</a></code>, and <code><a title="cvpysdk.datacube.datasource.Datasource" href="#cvpysdk.datacube.datasource.Datasource">Datasource</a></code> are 2 classes defined in this file.</p>
+<p>Datasources:
+Class for representing all the Datasources in the Datacube.</p>
+<p>Datasource:
+Class for representing a single Datasource in the Datacube.</p>
+<h2 id="datasources">Datasources</h2>
+<p><strong>init</strong>(datacube_object)
+&ndash;
+initialise object of the Datasources class</p>
+<p><strong>str</strong>()
+&ndash;
+prints all the datasources</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string representation of this instance</p>
+<p>_get_datasources_from_collections() &ndash;
+gets all the datasources from a list of collections</p>
+<p>_get_all_datasources()
+&ndash;
+gets the collections, and all datasources in it</p>
+<p>has_datasource()
+&ndash;
+checks if a datasource exists with the given name</p>
+<p>get(datasource_name)
+&ndash;
+returns an instance of the Datasource class,
+for the input datasource name</p>
+<p>add(datasource_name,
+analytics_engine,
+datasource_type)
+&ndash;
+adds new datasource to the datacube</p>
+<p>delete(datasource_name)
+&ndash;
+deletes the give datasource to the datacube</p>
+<p>refresh()
+&ndash;
+refresh the datasources associated with the datacube</p>
+<h2 id="datasource">Datasource</h2>
+<p><strong>init</strong>(
+datacube_object,
+datasource_name,
+datasource_id=None)
+&ndash;
+initialize an object of Class with the given datasource
+name and id, and associated to the datacube</p>
+<p><strong>repr</strong>()
+&ndash;
+return the datasource name, the instance is
+associated with</p>
+<p>_get_datasource_id()
+&ndash;
+method to get the data source id, if not specified
+in <strong>init</strong></p>
+<p>_get_datasource_properties()
+&ndash;
+get the properties of this data source</p>
+<p>get_datasource_properties()
+&ndash;
+get the properties of this data source</p>
+<p>get_crawl_history()
+&ndash;
+get the crawl history of the data source.</p>
+<p>get_datasource_schema()
+&ndash;
+returns information about the schema of a data source</p>
+<p>update_datasource_schema(schema)
+&ndash;
+updates the schema for the given data source</p>
+<p>import_data(data)
+&ndash;
+imports/pumps given data into data source.</p>
+<p>delete_content()
+&ndash;
+deletes the contents of the data source.</p>
+<p>refresh()
+&ndash;
+refresh the properties of the datasource</p>
+<p>start_job()
+&ndash;
+Starts crawl job for the datasource</p>
+<p>get_status()
+&ndash;
+Gets the status of the datasource</p>
+<p>share()
+&ndash; Share the datasource with user or usergroup</p>
+<p>delete_datasource()
+&ndash; deletes the datasource associated with this</p>
+<h2 id="datasource-attributes">Datasource Attributes</h2>
+<pre><code>**computed_core_name**              --  Data source core name in index server
+
+**datasource_id**                   --  data source id
+
+**datasource_name**                 --  name of the data source
+
+**data_source_type**                --  data source type value
+
+**properties**                                              --      returns the properties of the data source
+
+**index_server_cloud_id**           --  index server cloudid associated to this data source
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L1-L958" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing operations on Datasources, and a single Datasource in the Datacube.
+
+`Datasources`, and `Datasource` are 2 classes defined in this file.
+
+Datasources:    Class for representing all the Datasources in the Datacube.
+
+Datasource:     Class for representing a single Datasource in the Datacube.
+
+
+Datasources:
+
+    __init__(datacube_object)           --  initialise object of the Datasources class
+
+    __str__()                           --  prints all the datasources
+
+    __repr__()                          --  returns the string representation of this instance
+
+    _get_datasources_from_collections() --  gets all the datasources from a list of collections
+
+    _get_all_datasources()              --  gets the collections, and all datasources in it
+
+    has_datasource()                    --  checks if a datasource exists with the given name
+
+    get(datasource_name)                --  returns an instance of the Datasource class,
+                                                for the input datasource name
+
+    add(datasource_name,
+        analytics_engine,
+        datasource_type)                --  adds new datasource to the datacube
+
+    delete(datasource_name)             --  deletes the give datasource to the datacube
+
+    refresh()                           --  refresh the datasources associated with the datacube
+
+
+Datasource:
+
+    __init__(
+        datacube_object,
+        datasource_name,
+        datasource_id=None)             --  initialize an object of Class with the given datasource
+                                                name and id, and associated to the datacube
+
+    __repr__()                          --  return the datasource name, the instance is
+                                                associated with
+
+    _get_datasource_id()                --  method to get the data source id, if not specified
+                                                in __init__
+
+    _get_datasource_properties()        --  get the properties of this data source
+
+    get_datasource_properties()         --  get the properties of this data source
+
+    get_crawl_history()                 --  get the crawl history of the data source.
+
+    get_datasource_schema()             --  returns information about the schema of a data source
+
+    update_datasource_schema(schema)    --  updates the schema for the given data source
+
+    import_data(data)                   --  imports/pumps given data into data source.
+
+    delete_content()                    --  deletes the contents of the data source.
+
+    refresh()                           --  refresh the properties of the datasource
+
+    start_job()                          --  Starts crawl job for the datasource
+
+    get_status()                         --  Gets the status of the datasource
+
+    share()                              -- Share the datasource with user or usergroup
+
+    delete_datasource()                  -- deletes the datasource associated with this
+
+DataSource Attributes
+----------------------
+
+    **computed_core_name**              --  Data source core name in index server
+
+    **datasource_id**                   --  data source id
+
+    **datasource_name**                 --  name of the data source
+
+    **data_source_type**                --  data source type value
+
+    **properties**                                              --      returns the properties of the data source
+
+    **index_server_cloud_id**           --  index server cloudid associated to this data source
+
+&#34;&#34;&#34;
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
+
+from .handler import Handlers
+from .sedstype import SEDS_TYPE_DICT
+
+from ..exception import SDKException
+
+
+class Datasources(object):
+    &#34;&#34;&#34;Class for representing all the Datasources in the Datacube.&#34;&#34;&#34;
+
+    def __init__(self, datacube_object):
+        &#34;&#34;&#34;Initializes an instance of the Datasources class.
+
+            Args:
+                datacube_object     (object)    --  instance of the Datacube class
+
+            Returns:
+                object  -   instance of the Datasources class
+
+        &#34;&#34;&#34;
+        self._datacube_object = datacube_object
+        self.commcell_obj = self._datacube_object._commcell_object
+        self._all_datasources = self.commcell_obj._services[
+            &#39;GET_ALL_DATASOURCES&#39;]
+
+        self._create_datasource = self.commcell_obj._services[
+            &#39;CREATE_DATASOURCE&#39;]
+
+        self._datasources = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all datasources in datacube.
+
+            Returns:
+                str - string of all the datasources associated with the datacube
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:30}\n\n&#39;.format(
+            &#39;ID&#39;, &#39;Data Source Name&#39;)
+        for datasource in self._datasources.values():
+            sub_str = &#39;{:^5}\t{:30}\n&#39;.format(
+                datasource[&#39;data_source_id&#39;], datasource[&#39;data_source_name&#39;]
+            )
+            representation_string += sub_str
+
+        return representation_string
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Datasources class.&#34;&#34;&#34;
+        return &#34;Datasources class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._datacube_object._commcell_object.commserv_name
+        )
+
+    def get_datasource_properties(self, data_source_name):
+        &#34;&#34;&#34;Returns the properties of datasources.
+
+            Args:
+
+                data_source_name    (str)       -- Name of the data source
+
+            Returns:
+                dict - dictionary consisting of the properties of  datasources
+
+        &#34;&#34;&#34;
+        return self._datasources[data_source_name]
+
+    @staticmethod
+    def _get_datasources_from_collections(collections):
+        &#34;&#34;&#34;Extracts all the datasources, and their details from the list of collections given,
+            and returns the dictionary of all datasources.
+
+            Args:
+                collections     (list)  --  list of all collections
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single datasource
+
+                    {
+                        &#39;data_source_1_name&#39;: {
+
+                            &#39;data_source_id&#39;: 21,
+
+                            &#39;data_source_name&#39;: &#39;&#39;,
+
+                            &#39;description&#39;: &#39;&#39;,
+
+                            &#39;data_source_type&#39;: &#39;&#39;,
+
+                            &#39;total_count&#39;: 1234,
+
+                            &#39;state&#39;: 1
+                        },
+
+                        &#39;data_source_2_name&#39;: {},
+
+                        &#39;data_source_3_name&#39;: {}
+                        ...
+                    }
+
+        &#34;&#34;&#34;
+        _datasources = {}
+        for collection in collections:
+            core_name = None
+            cloud_id = None
+            if &#39;computedCoreName&#39; in collection:
+                core_name = collection[&#39;computedCoreName&#39;]
+            if &#39;cloudId&#39; in collection:
+                cloud_id = collection[&#39;cloudId&#39;]
+            for datasource in collection[&#39;datasources&#39;]:
+                datasource_dict = {}
+                if core_name:
+                    datasource_dict[&#39;computedCoreName&#39;] = core_name
+                if cloud_id:
+                    datasource_dict[&#39;cloudId&#39;] = cloud_id
+                datasource_dict[&#39;data_source_id&#39;] = datasource[&#39;datasourceId&#39;]
+                datasource_dict[&#39;data_source_name&#39;] = datasource[&#39;datasourceName&#39;]
+                datasource_dict[&#39;data_source_type&#39;] = SEDS_TYPE_DICT[
+                    datasource[&#39;datasourceType&#39;]]
+                if &#39;coreId&#39; in datasource:
+                    datasource_dict[&#39;coreId&#39;] = datasource[&#39;coreId&#39;]
+                if &#39;description&#39; in datasource:
+                    datasource_dict[&#39;description&#39;] = datasource[&#39;description&#39;]
+                if &#39;status&#39; in datasource:
+                    datasource_dict[&#39;total_count&#39;] = datasource[&#39;status&#39;][&#39;totalcount&#39;]
+                    datasource_dict[&#39;state&#39;] = datasource[&#39;status&#39;][&#39;state&#39;]
+                _datasources[datasource[&#39;datasourceName&#39;]] = datasource_dict
+        return _datasources
+
+    def _get_all_datasources(self):
+        &#34;&#34;&#34;Gets the list of all datasources associated with this Datacube instance.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single datasource
+
+                    {
+                        &#39;data_source_1_name&#39;: {
+
+                            &#39;data_source_id&#39;: 21,
+
+                            &#39;data_source_name&#39;: &#39;&#39;,
+
+                            &#39;description&#39;: &#39;&#39;,
+
+                            &#39;data_source_type&#39;: &#39;&#39;,
+
+                            &#39;total_count&#39;: 1234,
+
+                            &#39;state&#39;: 1
+                        },
+
+                        &#39;data_source_2_name&#39;: {},
+
+                        &#39;data_source_3_name&#39;: {}
+                        ...
+                    }
+
+        &#34;&#34;&#34;
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._all_datasources
+        )
+
+        if flag:
+            if response.json() and &#39;collections&#39; in response.json():
+                collections = response.json()[&#39;collections&#39;]
+                return self._get_datasources_from_collections(collections)
+            elif &#39;error&#39; in response.json():
+                raise SDKException(&#39;Datacube&#39;, &#39;104&#39;)
+            else:
+                response = {}
+                return response
+        self._datacube_object._response_not_success(response)
+
+    def has_datasource(self, datasource_name):
+        &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Returns:
+                bool    -   boolean output whether the datasource exists in the datacube or not
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        return self._datasources and datasource_name in self._datasources
+
+    def get(self, datasource_name):
+        &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Returns:
+                object  -   instance of the Datasource class for the given datasource name
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if no datasource exists with the given name
+
+        &#34;&#34;&#34;
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if self.has_datasource(datasource_name):
+            datasource = self._datasources[datasource_name]
+
+            return Datasource(
+                self._datacube_object, datasource_name, datasource[&#39;data_source_id&#39;]
+            )
+
+        raise SDKException(
+            &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+                datasource_name)
+        )
+
+    def add(self, datasource_name, analytics_engine, datasource_type, input_param):
+        &#34;&#34;&#34;Add a datasource.
+
+            Args:
+                datasource_name (str)   --  name of the datasource to add to the datacube
+
+                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
+                                                datacube.
+
+                datasource_type (str)  --  type of datasource to add
+
+                                            Valid values are:
+                                            1: Database
+                                            2: Web site
+                                            3: CSV
+                                            4: File system
+                                            5: NAS
+                                            6: Eloqua
+                                            8: Salesforce
+                                            9: LDAP
+                                            10: Federated Search
+                                            11: Open data source
+                                            12: HTTP
+                input_param(list)      -- properties for datasource
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if type of the analytics_engine  argument is not string
+
+                    if type of the datasource_type  argument is not string
+
+                    if failed to add datasource
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not isinstance(analytics_engine, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not isinstance(datasource_type, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        engine_index = None
+        for engine in self._datacube_object.analytics_engines:
+            if engine[&#34;clientName&#34;] == analytics_engine or engine[&#39;engineName&#39;] == analytics_engine:
+                engine_index = self._datacube_object.analytics_engines.index(engine)
+
+        if engine_index is None:
+            raise Exception(&#34;Unable to find Index server for client&#34;)
+
+        request_json = {
+            &#34;collectionReq&#34;: {
+                &#34;collectionName&#34;: datasource_name,
+                &#34;ciserver&#34;: {
+                    &#34;cloudID&#34;: self._datacube_object.analytics_engines[engine_index][
+                        &#34;cloudID&#34;]
+                }
+            },
+            &#34;dataSource&#34;: {
+                &#34;description&#34;: &#34;&#34;,
+                &#34;datasourceType&#34;: datasource_type,
+                &#34;attribute&#34;: 0,
+                &#34;datasourceName&#34;: datasource_name
+
+            }
+        }
+        if input_param is not None:
+            request_json[&#39;dataSource&#39;][&#39;properties&#39;] = input_param
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._create_datasource, request_json
+        )
+        if flag and response.json():
+            if &#39;error&#39; in response.json():
+                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                if error_code == 0:
+                    self.refresh()  # reload new list.
+                    return
+
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to create datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            elif &#39;collections&#39; in response.json():
+                self.refresh()  # reload new list.
+                return
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self.commcell_obj._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete(self, datasource_name):
+        &#34;&#34;&#34;Deletes specified datasource from data cube .
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if no datasource exists with the given name
+
+        &#34;&#34;&#34;
+
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not self.has_datasource(datasource_name):
+            raise SDKException(
+                &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+                    datasource_name)
+            )
+
+        self._delete_datasource = self.commcell_obj._services[
+            &#39;DELETE_DATASOURCE&#39;] % (self.get(datasource_name).datasource_id)
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource)
+        if flag:
+            if &#39;errLogMessage&#39; in response.json():
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            else:
+                return True
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+        self._datasources = self._get_all_datasources()
+
+
+class Datasource(object):
+    &#34;&#34;&#34;Class for performing operations on a single datasource&#34;&#34;&#34;
+
+    def __init__(self, datacube_object, datasource_name, datasource_id=None):
+        &#34;&#34;&#34;Initialize an object of the Datasource class.
+
+            Args:
+                datacube_object     (object)    --  instance of the Datacube class
+
+                datasource_name     (str)       --  name of the datasource
+
+                datasource_id       (str)       --  id of the datasource
+                    default: None
+
+            Returns:
+                object  -   instance of the Datasource class
+        &#34;&#34;&#34;
+        self._datacube_object = datacube_object
+        self._datasource_name = datasource_name
+        self._commcell_object = self._datacube_object._commcell_object
+
+        if datasource_id is not None:
+            self._datasource_id = str(datasource_id)
+        else:
+            self._datasource_id = self._get_datasource_id()
+
+        self._DATASOURCE = self._datacube_object._commcell_object._services[&#39;GET_DATASOURCE&#39;] % (
+            self._datasource_id
+        )
+        self._crawl_history = self._datacube_object._commcell_object._services[&#39;GET_CRAWL_HISTORY&#39;] % (
+            self._datasource_id)
+
+        self._get_datasource_schema = self._datacube_object._commcell_object._services[
+            &#39;GET_DATASOURCE_SCHEMA&#39;] % (self.datasource_id)
+
+        self._delete_datasource_contents = self._datacube_object._commcell_object._services[
+            &#39;DELETE_DATASOURCE_CONTENTS&#39;] % (self.datasource_id)
+
+        self._datacube_import_data = self._datacube_object._commcell_object._services[
+            &#39;DATACUBE_IMPORT_DATA&#39;] % (&#34;json&#34;, self.datasource_id)
+
+        self._update_datasource_schema = self._datacube_object._commcell_object._services[
+            &#39;UPDATE_DATASOURCE_SCHEMA&#39;]
+
+        self._start_job_datasource = self._datacube_object._commcell_object._services[
+            &#39;START_JOB_DATASOURCE&#39;]
+
+        self._get_status_datasource = self._datacube_object._commcell_object._services[
+            &#39;GET_STATUS_DATASOURCE&#39;]
+
+        self._delete_datasource = self._datacube_object._commcell_object._services[
+            &#39;DELETE_DATASOURCE&#39;]
+
+        self._share_datasource = self._datacube_object._commcell_object._services[&#39;SHARE_DATASOURCE&#39;]
+
+        self.handlers = None
+        self._handlers_obj = None
+        self._computed_core_name = None
+        self._cloud_id = None
+        self._data_source_type = None
+        self._properties = None
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Datasource class instance for Commcell: &#34;{0}&#34;&#39;
+
+        return representation_string.format(
+            self._datacube_object._commcell_object.commserv_name
+        )
+
+    def _get_datasource_id(self):
+        &#34;&#34;&#34;Gets the datasource id associated with this datasource.
+
+            Returns:
+                str     -   id associated with this datasource
+
+        &#34;&#34;&#34;
+        datasources = Datasources(self._datacube_object)
+        return datasources.get(self.datasource_name).datasource_id
+
+    def _get_datasource_properties(self):
+        &#34;&#34;&#34;Gets the properties of this datasource.
+
+            Returns:
+                dict - dictionary consisting of the properties of this datasource
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
+        if &#39;computedCoreName&#39; in data_source_dict:
+            self._computed_core_name = data_source_dict[&#39;computedCoreName&#39;]
+        if &#39;cloudId&#39; in data_source_dict:
+            self._cloud_id = data_source_dict[&#39;cloudId&#39;]
+        self._data_source_type = data_source_dict[&#39;data_source_type&#39;]
+        return data_source_dict
+
+    def start_job(self):
+        &#34;&#34;&#34;Starts the crawl job for the datasource
+
+                Returns:
+                    Str  -   Job id of crawl job
+
+                Raises:
+                    Exception:
+                        failed to start job
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._start_job_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to start job on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif response.json() and &#39;status&#39; in response.json():
+                return response.json()[&#39;status&#39;][&#39;jobId&#39;]
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def delete_datasource(self):
+        &#34;&#34;&#34;deletes the datasource
+
+                    Returns:
+                        true  -   if success
+
+                    Raises:
+                        Exception:
+                            Error message for failed ops
+
+                &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;errLogMessage&#39; in response.json():
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            else:
+                return True
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def get_status(self):
+        &#34;&#34;&#34;Gets status of the datasource.
+
+                Returns:
+                    dict - containing all status information of datasource
+
+                Raises:
+                    Exception:
+                            Failure to find datasource details
+
+        &#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_status_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to Get status on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif response.json() and &#39;status&#39; in response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def get_crawl_history(self, last_crawl_history=False):
+        &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+
+            Args:
+                last_crawl_history (bool)    -- if set to True , returns
+                the status of and information about the most recent crawling
+                operation for a data source in Data Cube
+
+            Returns:
+                list - list consisting of key value pair for history details of this datasource
+
+                 [
+                    {
+                        &#34;numFailed&#34;: ,
+                        &#34;totalcount&#34;: ,
+                        &#34;endUTCTime&#34;: ,
+                        &#34;numAccessDenied&#34;: ,
+                        &#34;numAdded&#34;: ,
+                        &#34;startUTCTime&#34;: ,
+                        &#34;state&#34;:
+                    }
+                ]
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._crawl_history
+        )
+
+        if flag:
+            if response.json():
+                return response.json()[&#34;status&#34;]
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def datasource_id(self):
+        &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+        return self._datasource_id
+
+    @property
+    def properties(self):
+        &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+        return self._properties
+
+    @property
+    def datasource_name(self):
+        &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+        return self._datasource_name
+
+    @property
+    def computed_core_name(self):
+        &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+        return self._computed_core_name
+
+    @property
+    def index_server_cloud_id(self):
+        &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+        return self._cloud_id
+
+    @property
+    def data_source_type(self):
+        &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+        return self._data_source_type
+
+    def get_datasource_schema(self):
+        &#34;&#34;&#34;returns information about the schema of a data source.
+
+            Returns:
+                dict - dict consisting of all schema fields of this datasource grouped
+                under dynSchemaFields and schemaFields
+
+                {
+                &#34;uniqueKey&#34;: &#34;contentid&#34;,
+                &#34;schemaFields&#34;: [{properties of field},list of fields]
+               &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_datasource_schema
+        )
+
+        if flag:
+            if response.json():
+                return response.json()[&#34;collections&#34;][0][&#34;schema&#34;]
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def update_datasource_schema(self, schema):
+        &#34;&#34;&#34;updates the schema of a data source.
+
+            Args:
+                schema (list)   -- list of  properties of schemas represented as key value pair.
+                [{
+                                    &#34;fieldName&#34;: &#34;&#34;,
+                                    &#34;indexed&#34;: &#34;&#34;,
+                                    &#34;autocomplete&#34;: &#34;&#34;,
+                                    &#34;type&#34;: &#34;&#34;,
+                                    &#34;searchDefault&#34;: &#34;&#34;,
+                                    &#34;multiValued&#34;: &#34;&#34;
+                                }]
+                Valid values for type are as follows:
+                    [string, int, float, long, double, date, longstring]
+                indexed, autocomplete, searchDefault, multiValued takes 0/1
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if type of the schema argument is not list
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not isinstance(schema, list):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        for element in schema:
+            if not isinstance(element, dict):
+                raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        request_json = {
+            &#34;datasourceId&#34;: int(self.datasource_id),
+            &#34;schema&#34;: {
+                &#34;schemaFields&#34;: schema
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._update_datasource_schema, request_json
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+                if error_code == 0:
+                    return
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to update schema\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def import_data(self, data):
+        &#34;&#34;&#34;imports/pumps given data into data source.
+
+            Args:
+                data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._datacube_import_data, data
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+                if error_code == 0:
+                    return
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to import data\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete_content(self):
+        &#34;&#34;&#34;deletes the content of a data source from Data Cube.
+           The data source itself is not deleted using this API.
+
+            Raises:
+                SDKException:
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource_contents
+        )
+
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to do soft delete on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            return
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+        self._properties = self._get_datasource_properties()
+        self.handlers = Handlers(self)
+
+    @property
+    def ds_handlers(self):
+        &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+        try:
+            if self._handlers_obj is None:
+                self._handlers_obj = Handlers(self)
+            return self._handlers_obj
+        except BaseException:
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)
+
+    def share(self, permission_list, operation_type, user_id, user_name, user_type):
+        &#34;&#34;&#34; Share datasource with user/usergroup
+                Args:
+                    permission_list (list)-- List of permission
+
+                    operation_type (int)  -- Operation type (2-add / 3- delete)
+
+                    user_id (int)         -- User id of share user
+
+                    user_name (str)       -- Share user name
+
+                    user_type (int)       -- Share user type (Ex : 13- User)
+
+                Returns:
+                    None
+
+                Raises:
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if failed to share the datasource with User/userGroup
+        &#34;&#34;&#34;
+        category_permission_list = []
+        for permission in permission_list:
+            category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+        request_json = {
+            &#34;entityAssociated&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;_type_&#34;: 132,
+                        &#34;seaDataSourceId&#34;: int(self.datasource_id)
+                    }
+                ]
+            },
+            &#34;securityAssociations&#34;: {
+                &#34;processHiddenPermission&#34;: 1,
+                &#34;associationsOperationType&#34;: operation_type,
+                &#34;associations&#34;: [
+                    {
+                        &#34;userOrGroup&#34;: [
+                            {
+                                &#34;userId&#34;: user_id,
+                                &#34;_type_&#34;: user_type,
+                                &#34;userName&#34;: user_name
+                            }
+                        ],
+                        &#34;properties&#34;: {
+                            &#34;categoryPermission&#34;: {
+                                &#34;categoriesPermissionList&#34;: category_permission_list
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._share_datasource, request_json)
+
+        if flag:
+            if &#39;response&#39; in response.json():
+                resp = response.json()[&#39;response&#39;]
+                resp = resp[0]
+                if resp.get(&#39;errorCode&#39;) is not None and resp.get(&#39;errorCode&#39;) != 0:
+                    error_message = resp[&#39;errorString&#39;]
+                    o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+                elif resp.get(&#39;errorCode&#39;) is None:
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No errorCode mentioned in response&#34;)
+                return
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.datacube.datasource.Datasource"><code class="flex name class">
+<span>class <span class="ident">Datasource</span></span>
+<span>(</span><span>datacube_object, datasource_name, datasource_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing operations on a single datasource</p>
+<p>Initialize an object of the Datasource class.</p>
+<h2 id="args">Args</h2>
+<p>datacube_object
+(object)
+&ndash;
+instance of the Datacube class</p>
+<p>datasource_name
+(str)
+&ndash;
+name of the datasource</p>
+<p>datasource_id
+(str)
+&ndash;
+id of the datasource
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Datasource class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L479-L958" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Datasource(object):
+    &#34;&#34;&#34;Class for performing operations on a single datasource&#34;&#34;&#34;
+
+    def __init__(self, datacube_object, datasource_name, datasource_id=None):
+        &#34;&#34;&#34;Initialize an object of the Datasource class.
+
+            Args:
+                datacube_object     (object)    --  instance of the Datacube class
+
+                datasource_name     (str)       --  name of the datasource
+
+                datasource_id       (str)       --  id of the datasource
+                    default: None
+
+            Returns:
+                object  -   instance of the Datasource class
+        &#34;&#34;&#34;
+        self._datacube_object = datacube_object
+        self._datasource_name = datasource_name
+        self._commcell_object = self._datacube_object._commcell_object
+
+        if datasource_id is not None:
+            self._datasource_id = str(datasource_id)
+        else:
+            self._datasource_id = self._get_datasource_id()
+
+        self._DATASOURCE = self._datacube_object._commcell_object._services[&#39;GET_DATASOURCE&#39;] % (
+            self._datasource_id
+        )
+        self._crawl_history = self._datacube_object._commcell_object._services[&#39;GET_CRAWL_HISTORY&#39;] % (
+            self._datasource_id)
+
+        self._get_datasource_schema = self._datacube_object._commcell_object._services[
+            &#39;GET_DATASOURCE_SCHEMA&#39;] % (self.datasource_id)
+
+        self._delete_datasource_contents = self._datacube_object._commcell_object._services[
+            &#39;DELETE_DATASOURCE_CONTENTS&#39;] % (self.datasource_id)
+
+        self._datacube_import_data = self._datacube_object._commcell_object._services[
+            &#39;DATACUBE_IMPORT_DATA&#39;] % (&#34;json&#34;, self.datasource_id)
+
+        self._update_datasource_schema = self._datacube_object._commcell_object._services[
+            &#39;UPDATE_DATASOURCE_SCHEMA&#39;]
+
+        self._start_job_datasource = self._datacube_object._commcell_object._services[
+            &#39;START_JOB_DATASOURCE&#39;]
+
+        self._get_status_datasource = self._datacube_object._commcell_object._services[
+            &#39;GET_STATUS_DATASOURCE&#39;]
+
+        self._delete_datasource = self._datacube_object._commcell_object._services[
+            &#39;DELETE_DATASOURCE&#39;]
+
+        self._share_datasource = self._datacube_object._commcell_object._services[&#39;SHARE_DATASOURCE&#39;]
+
+        self.handlers = None
+        self._handlers_obj = None
+        self._computed_core_name = None
+        self._cloud_id = None
+        self._data_source_type = None
+        self._properties = None
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Datasource class instance for Commcell: &#34;{0}&#34;&#39;
+
+        return representation_string.format(
+            self._datacube_object._commcell_object.commserv_name
+        )
+
+    def _get_datasource_id(self):
+        &#34;&#34;&#34;Gets the datasource id associated with this datasource.
+
+            Returns:
+                str     -   id associated with this datasource
+
+        &#34;&#34;&#34;
+        datasources = Datasources(self._datacube_object)
+        return datasources.get(self.datasource_name).datasource_id
+
+    def _get_datasource_properties(self):
+        &#34;&#34;&#34;Gets the properties of this datasource.
+
+            Returns:
+                dict - dictionary consisting of the properties of this datasource
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
+        if &#39;computedCoreName&#39; in data_source_dict:
+            self._computed_core_name = data_source_dict[&#39;computedCoreName&#39;]
+        if &#39;cloudId&#39; in data_source_dict:
+            self._cloud_id = data_source_dict[&#39;cloudId&#39;]
+        self._data_source_type = data_source_dict[&#39;data_source_type&#39;]
+        return data_source_dict
+
+    def start_job(self):
+        &#34;&#34;&#34;Starts the crawl job for the datasource
+
+                Returns:
+                    Str  -   Job id of crawl job
+
+                Raises:
+                    Exception:
+                        failed to start job
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._start_job_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to start job on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif response.json() and &#39;status&#39; in response.json():
+                return response.json()[&#39;status&#39;][&#39;jobId&#39;]
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def delete_datasource(self):
+        &#34;&#34;&#34;deletes the datasource
+
+                    Returns:
+                        true  -   if success
+
+                    Raises:
+                        Exception:
+                            Error message for failed ops
+
+                &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;errLogMessage&#39; in response.json():
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            else:
+                return True
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def get_status(self):
+        &#34;&#34;&#34;Gets status of the datasource.
+
+                Returns:
+                    dict - containing all status information of datasource
+
+                Raises:
+                    Exception:
+                            Failure to find datasource details
+
+        &#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_status_datasource % (self._datasource_id))
+
+        if flag:
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to Get status on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif response.json() and &#39;status&#39; in response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def get_crawl_history(self, last_crawl_history=False):
+        &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+
+            Args:
+                last_crawl_history (bool)    -- if set to True , returns
+                the status of and information about the most recent crawling
+                operation for a data source in Data Cube
+
+            Returns:
+                list - list consisting of key value pair for history details of this datasource
+
+                 [
+                    {
+                        &#34;numFailed&#34;: ,
+                        &#34;totalcount&#34;: ,
+                        &#34;endUTCTime&#34;: ,
+                        &#34;numAccessDenied&#34;: ,
+                        &#34;numAdded&#34;: ,
+                        &#34;startUTCTime&#34;: ,
+                        &#34;state&#34;:
+                    }
+                ]
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._crawl_history
+        )
+
+        if flag:
+            if response.json():
+                return response.json()[&#34;status&#34;]
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def datasource_id(self):
+        &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+        return self._datasource_id
+
+    @property
+    def properties(self):
+        &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+        return self._properties
+
+    @property
+    def datasource_name(self):
+        &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+        return self._datasource_name
+
+    @property
+    def computed_core_name(self):
+        &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+        return self._computed_core_name
+
+    @property
+    def index_server_cloud_id(self):
+        &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+        return self._cloud_id
+
+    @property
+    def data_source_type(self):
+        &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+        return self._data_source_type
+
+    def get_datasource_schema(self):
+        &#34;&#34;&#34;returns information about the schema of a data source.
+
+            Returns:
+                dict - dict consisting of all schema fields of this datasource grouped
+                under dynSchemaFields and schemaFields
+
+                {
+                &#34;uniqueKey&#34;: &#34;contentid&#34;,
+                &#34;schemaFields&#34;: [{properties of field},list of fields]
+               &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_datasource_schema
+        )
+
+        if flag:
+            if response.json():
+                return response.json()[&#34;collections&#34;][0][&#34;schema&#34;]
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def update_datasource_schema(self, schema):
+        &#34;&#34;&#34;updates the schema of a data source.
+
+            Args:
+                schema (list)   -- list of  properties of schemas represented as key value pair.
+                [{
+                                    &#34;fieldName&#34;: &#34;&#34;,
+                                    &#34;indexed&#34;: &#34;&#34;,
+                                    &#34;autocomplete&#34;: &#34;&#34;,
+                                    &#34;type&#34;: &#34;&#34;,
+                                    &#34;searchDefault&#34;: &#34;&#34;,
+                                    &#34;multiValued&#34;: &#34;&#34;
+                                }]
+                Valid values for type are as follows:
+                    [string, int, float, long, double, date, longstring]
+                indexed, autocomplete, searchDefault, multiValued takes 0/1
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if type of the schema argument is not list
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not isinstance(schema, list):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        for element in schema:
+            if not isinstance(element, dict):
+                raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        request_json = {
+            &#34;datasourceId&#34;: int(self.datasource_id),
+            &#34;schema&#34;: {
+                &#34;schemaFields&#34;: schema
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._update_datasource_schema, request_json
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+                if error_code == 0:
+                    return
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to update schema\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def import_data(self, data):
+        &#34;&#34;&#34;imports/pumps given data into data source.
+
+            Args:
+                data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._datacube_import_data, data
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+                if error_code == 0:
+                    return
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to import data\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(
+            response.text
+        )
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete_content(self):
+        &#34;&#34;&#34;deletes the content of a data source from Data Cube.
+           The data source itself is not deleted using this API.
+
+            Raises:
+                SDKException:
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource_contents
+        )
+
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to do soft delete on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            return
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+        self._properties = self._get_datasource_properties()
+        self.handlers = Handlers(self)
+
+    @property
+    def ds_handlers(self):
+        &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+        try:
+            if self._handlers_obj is None:
+                self._handlers_obj = Handlers(self)
+            return self._handlers_obj
+        except BaseException:
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)
+
+    def share(self, permission_list, operation_type, user_id, user_name, user_type):
+        &#34;&#34;&#34; Share datasource with user/usergroup
+                Args:
+                    permission_list (list)-- List of permission
+
+                    operation_type (int)  -- Operation type (2-add / 3- delete)
+
+                    user_id (int)         -- User id of share user
+
+                    user_name (str)       -- Share user name
+
+                    user_type (int)       -- Share user type (Ex : 13- User)
+
+                Returns:
+                    None
+
+                Raises:
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if failed to share the datasource with User/userGroup
+        &#34;&#34;&#34;
+        category_permission_list = []
+        for permission in permission_list:
+            category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+        request_json = {
+            &#34;entityAssociated&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;_type_&#34;: 132,
+                        &#34;seaDataSourceId&#34;: int(self.datasource_id)
+                    }
+                ]
+            },
+            &#34;securityAssociations&#34;: {
+                &#34;processHiddenPermission&#34;: 1,
+                &#34;associationsOperationType&#34;: operation_type,
+                &#34;associations&#34;: [
+                    {
+                        &#34;userOrGroup&#34;: [
+                            {
+                                &#34;userId&#34;: user_id,
+                                &#34;_type_&#34;: user_type,
+                                &#34;userName&#34;: user_name
+                            }
+                        ],
+                        &#34;properties&#34;: {
+                            &#34;categoryPermission&#34;: {
+                                &#34;categoriesPermissionList&#34;: category_permission_list
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._share_datasource, request_json)
+
+        if flag:
+            if &#39;response&#39; in response.json():
+                resp = response.json()[&#39;response&#39;]
+                resp = resp[0]
+                if resp.get(&#39;errorCode&#39;) is not None and resp.get(&#39;errorCode&#39;) != 0:
+                    error_message = resp[&#39;errorString&#39;]
+                    o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+                elif resp.get(&#39;errorCode&#39;) is None:
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No errorCode mentioned in response&#34;)
+                return
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.datacube.datasource.Datasource.computed_core_name"><code class="name">var <span class="ident">computed_core_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the computedcorename attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L713-L716" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def computed_core_name(self):
+    &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+    return self._computed_core_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.data_source_type"><code class="name">var <span class="ident">data_source_type</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the data source type attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L723-L726" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def data_source_type(self):
+    &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+    return self._data_source_type</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.datasource_id"><code class="name">var <span class="ident">datasource_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the data source id attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L698-L701" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def datasource_id(self):
+    &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+    return self._datasource_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.datasource_name"><code class="name">var <span class="ident">datasource_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the data source name attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L708-L711" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def datasource_name(self):
+    &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+    return self._datasource_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.ds_handlers"><code class="name">var <span class="ident">ds_handlers</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Handlers class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L876-L884" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ds_handlers(self):
+    &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+    try:
+        if self._handlers_obj is None:
+            self._handlers_obj = Handlers(self)
+        return self._handlers_obj
+    except BaseException:
+        raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.index_server_cloud_id"><code class="name">var <span class="ident">index_server_cloud_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the cloud id attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L718-L721" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def index_server_cloud_id(self):
+    &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+    return self._cloud_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.properties"><code class="name">var <span class="ident">properties</span></code></dt>
+<dd>
+<div class="desc"><p>Returns all the data source properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L703-L706" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def properties(self):
+    &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+    return self._properties</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.datacube.datasource.Datasource.delete_content"><code class="name flex">
+<span>def <span class="ident">delete_content</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>deletes the content of a data source from Data Cube.
+The data source itself is not deleted using this API.</p>
+<p>Raises:
+SDKException:</p>
+<pre><code>     if response is empty
+
+     if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L847-L869" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_content(self):
+    &#34;&#34;&#34;deletes the content of a data source from Data Cube.
+       The data source itself is not deleted using this API.
+
+        Raises:
+            SDKException:
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._delete_datasource_contents
+    )
+
+    if flag:
+        if response.json() and &#39;error&#39; in response.json():
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to do soft delete on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        return
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.delete_datasource"><code class="name flex">
+<span>def <span class="ident">delete_datasource</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>deletes the datasource</p>
+<h2 id="returns">Returns</h2>
+<p>true
+-
+if success</p>
+<h2 id="raises">Raises</h2>
+<p>Exception:
+Error message for failed ops</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L606-L627" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_datasource(self):
+    &#34;&#34;&#34;deletes the datasource
+
+                Returns:
+                    true  -   if success
+
+                Raises:
+                    Exception:
+                        Error message for failed ops
+
+            &#34;&#34;&#34;
+    flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
+
+    if flag:
+        if &#39;errLogMessage&#39; in response.json():
+            error_message = response.json()[&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        else:
+            return True
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.get_crawl_history"><code class="name flex">
+<span>def <span class="ident">get_crawl_history</span></span>(<span>self, last_crawl_history=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the Crawling
+history for this datasource.</p>
+<h2 id="args">Args</h2>
+<p>last_crawl_history (bool)
+&ndash; if set to True , returns
+the status of and information about the most recent crawling
+operation for a data source in Data Cube</p>
+<h2 id="returns">Returns</h2>
+<p>list - list consisting of key value pair for history details of this datasource</p>
+<p>[
+{
+"numFailed": ,
+"totalcount": ,
+"endUTCTime": ,
+"numAccessDenied": ,
+"numAdded": ,
+"startUTCTime": ,
+"state":
+}
+]</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L655-L696" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_crawl_history(self, last_crawl_history=False):
+    &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+
+        Args:
+            last_crawl_history (bool)    -- if set to True , returns
+            the status of and information about the most recent crawling
+            operation for a data source in Data Cube
+
+        Returns:
+            list - list consisting of key value pair for history details of this datasource
+
+             [
+                {
+                    &#34;numFailed&#34;: ,
+                    &#34;totalcount&#34;: ,
+                    &#34;endUTCTime&#34;: ,
+                    &#34;numAccessDenied&#34;: ,
+                    &#34;numAdded&#34;: ,
+                    &#34;startUTCTime&#34;: ,
+                    &#34;state&#34;:
+                }
+            ]
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._crawl_history
+    )
+
+    if flag:
+        if response.json():
+            return response.json()[&#34;status&#34;]
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(
+        response.text
+    )
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.get_datasource_schema"><code class="name flex">
+<span>def <span class="ident">get_datasource_schema</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>returns information about the schema of a data source.</p>
+<h2 id="returns">Returns</h2>
+<p>dict - dict consisting of all schema fields of this datasource grouped
+under dynSchemaFields and schemaFields</p>
+<p>{
+"uniqueKey": "contentid",
+"schemaFields": [{properties of field},list of fields]
+"dynSchemaFields":[{properties of field},list of fields]</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L728-L758" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_datasource_schema(self):
+    &#34;&#34;&#34;returns information about the schema of a data source.
+
+        Returns:
+            dict - dict consisting of all schema fields of this datasource grouped
+            under dynSchemaFields and schemaFields
+
+            {
+            &#34;uniqueKey&#34;: &#34;contentid&#34;,
+            &#34;schemaFields&#34;: [{properties of field},list of fields]
+           &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._get_datasource_schema
+    )
+
+    if flag:
+        if response.json():
+            return response.json()[&#34;collections&#34;][0][&#34;schema&#34;]
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(
+        response.text
+    )
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.get_status"><code class="name flex">
+<span>def <span class="ident">get_status</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets status of the datasource.</p>
+<h2 id="returns">Returns</h2>
+<p>dict - containing all status information of datasource</p>
+<h2 id="raises">Raises</h2>
+<p>Exception:
+Failure to find datasource details</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L629-L653" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_status(self):
+    &#34;&#34;&#34;Gets status of the datasource.
+
+            Returns:
+                dict - containing all status information of datasource
+
+            Raises:
+                Exception:
+                        Failure to find datasource details
+
+    &#34;&#34;&#34;
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._get_status_datasource % (self._datasource_id))
+
+    if flag:
+        if &#39;error&#39; in response.json():
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to Get status on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        elif response.json() and &#39;status&#39; in response.json():
+            return response.json()
+        else:
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.import_data"><code class="name flex">
+<span>def <span class="ident">import_data</span></span>(<span>self, data)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>imports/pumps given data into data source.</p>
+<h2 id="args">Args</h2>
+<p>data (list)
+&ndash; data to be indexed and pumped into
+solr.list of key value pairs.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L817-L845" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def import_data(self, data):
+    &#34;&#34;&#34;imports/pumps given data into data source.
+
+        Args:
+            data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._datacube_import_data, data
+    )
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            error_code = response.json()[&#39;errorCode&#39;]
+            if error_code == 0:
+                return
+            error_message = response.json()[&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to import data\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(
+        response.text
+    )
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the properties of the Datasource.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L871-L874" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+    self._properties = self._get_datasource_properties()
+    self.handlers = Handlers(self)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.share"><code class="name flex">
+<span>def <span class="ident">share</span></span>(<span>self, permission_list, operation_type, user_id, user_name, user_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Share datasource with user/usergroup</p>
+<h2 id="args">Args</h2>
+<p>permission_list (list)&ndash; List of permission</p>
+<p>operation_type (int)
+&ndash; Operation type (2-add / 3- delete)</p>
+<p>user_id (int)
+&ndash; User id of share user</p>
+<p>user_name (str)
+&ndash; Share user name</p>
+<p>user_type (int)
+&ndash; Share user type (Ex : 13- User)</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKExpception:</p>
+<pre><code>if response is empty
+
+if response is not success
+
+if failed to share the datasource with User/userGroup
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L886-L958" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def share(self, permission_list, operation_type, user_id, user_name, user_type):
+    &#34;&#34;&#34; Share datasource with user/usergroup
+            Args:
+                permission_list (list)-- List of permission
+
+                operation_type (int)  -- Operation type (2-add / 3- delete)
+
+                user_id (int)         -- User id of share user
+
+                user_name (str)       -- Share user name
+
+                user_type (int)       -- Share user type (Ex : 13- User)
+
+            Returns:
+                None
+
+            Raises:
+                SDKExpception:
+
+                    if response is empty
+
+                    if response is not success
+
+                    if failed to share the datasource with User/userGroup
+    &#34;&#34;&#34;
+    category_permission_list = []
+    for permission in permission_list:
+        category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+    request_json = {
+        &#34;entityAssociated&#34;: {
+            &#34;entity&#34;: [
+                {
+                    &#34;_type_&#34;: 132,
+                    &#34;seaDataSourceId&#34;: int(self.datasource_id)
+                }
+            ]
+        },
+        &#34;securityAssociations&#34;: {
+            &#34;processHiddenPermission&#34;: 1,
+            &#34;associationsOperationType&#34;: operation_type,
+            &#34;associations&#34;: [
+                {
+                    &#34;userOrGroup&#34;: [
+                        {
+                            &#34;userId&#34;: user_id,
+                            &#34;_type_&#34;: user_type,
+                            &#34;userName&#34;: user_name
+                        }
+                    ],
+                    &#34;properties&#34;: {
+                        &#34;categoryPermission&#34;: {
+                            &#34;categoriesPermissionList&#34;: category_permission_list
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._share_datasource, request_json)
+
+    if flag:
+        if &#39;response&#39; in response.json():
+            resp = response.json()[&#39;response&#39;]
+            resp = resp[0]
+            if resp.get(&#39;errorCode&#39;) is not None and resp.get(&#39;errorCode&#39;) != 0:
+                error_message = resp[&#39;errorString&#39;]
+                o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif resp.get(&#39;errorCode&#39;) is None:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No errorCode mentioned in response&#34;)
+            return
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.start_job"><code class="name flex">
+<span>def <span class="ident">start_job</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Starts the crawl job for the datasource</p>
+<h2 id="returns">Returns</h2>
+<p>Str
+-
+Job id of crawl job</p>
+<h2 id="raises">Raises</h2>
+<p>Exception:
+failed to start job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L581-L604" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def start_job(self):
+    &#34;&#34;&#34;Starts the crawl job for the datasource
+
+            Returns:
+                Str  -   Job id of crawl job
+
+            Raises:
+                Exception:
+                    failed to start job
+
+    &#34;&#34;&#34;
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._start_job_datasource % (self._datasource_id))
+
+    if flag:
+        if &#39;error&#39; in response.json():
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to start job on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        elif response.json() and &#39;status&#39; in response.json():
+            return response.json()[&#39;status&#39;][&#39;jobId&#39;]
+        else:
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasource.update_datasource_schema"><code class="name flex">
+<span>def <span class="ident">update_datasource_schema</span></span>(<span>self, schema)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>updates the schema of a data source.</p>
+<h2 id="args">Args</h2>
+<p>schema (list)
+&ndash; list of
+properties of schemas represented as key value pair.
+[{
+"fieldName": "",
+"indexed": "",
+"autocomplete": "",
+"type": "",
+"searchDefault": "",
+"multiValued": ""
+}]
+Valid values for type are as follows:
+[string, int, float, long, double, date, longstring]
+indexed, autocomplete, searchDefault, multiValued takes 0/1</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if type of the schema argument is not list
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L760-L815" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_datasource_schema(self, schema):
+    &#34;&#34;&#34;updates the schema of a data source.
+
+        Args:
+            schema (list)   -- list of  properties of schemas represented as key value pair.
+            [{
+                                &#34;fieldName&#34;: &#34;&#34;,
+                                &#34;indexed&#34;: &#34;&#34;,
+                                &#34;autocomplete&#34;: &#34;&#34;,
+                                &#34;type&#34;: &#34;&#34;,
+                                &#34;searchDefault&#34;: &#34;&#34;,
+                                &#34;multiValued&#34;: &#34;&#34;
+                            }]
+            Valid values for type are as follows:
+                [string, int, float, long, double, date, longstring]
+            indexed, autocomplete, searchDefault, multiValued takes 0/1
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if type of the schema argument is not list
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if not isinstance(schema, list):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    for element in schema:
+        if not isinstance(element, dict):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    request_json = {
+        &#34;datasourceId&#34;: int(self.datasource_id),
+        &#34;schema&#34;: {
+            &#34;schemaFields&#34;: schema
+        }
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._update_datasource_schema, request_json
+    )
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            error_code = response.json()[&#39;errorCode&#39;]
+            if error_code == 0:
+                return
+            error_message = response.json()[&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to update schema\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(
+        response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources"><code class="flex name class">
+<span>class <span class="ident">Datasources</span></span>
+<span>(</span><span>datacube_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the Datasources in the Datacube.</p>
+<p>Initializes an instance of the Datasources class.</p>
+<h2 id="args">Args</h2>
+<p>datacube_object
+(object)
+&ndash;
+instance of the Datacube class</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Datasources class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L120-L476" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Datasources(object):
+    &#34;&#34;&#34;Class for representing all the Datasources in the Datacube.&#34;&#34;&#34;
+
+    def __init__(self, datacube_object):
+        &#34;&#34;&#34;Initializes an instance of the Datasources class.
+
+            Args:
+                datacube_object     (object)    --  instance of the Datacube class
+
+            Returns:
+                object  -   instance of the Datasources class
+
+        &#34;&#34;&#34;
+        self._datacube_object = datacube_object
+        self.commcell_obj = self._datacube_object._commcell_object
+        self._all_datasources = self.commcell_obj._services[
+            &#39;GET_ALL_DATASOURCES&#39;]
+
+        self._create_datasource = self.commcell_obj._services[
+            &#39;CREATE_DATASOURCE&#39;]
+
+        self._datasources = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all datasources in datacube.
+
+            Returns:
+                str - string of all the datasources associated with the datacube
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:30}\n\n&#39;.format(
+            &#39;ID&#39;, &#39;Data Source Name&#39;)
+        for datasource in self._datasources.values():
+            sub_str = &#39;{:^5}\t{:30}\n&#39;.format(
+                datasource[&#39;data_source_id&#39;], datasource[&#39;data_source_name&#39;]
+            )
+            representation_string += sub_str
+
+        return representation_string
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Datasources class.&#34;&#34;&#34;
+        return &#34;Datasources class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._datacube_object._commcell_object.commserv_name
+        )
+
+    def get_datasource_properties(self, data_source_name):
+        &#34;&#34;&#34;Returns the properties of datasources.
+
+            Args:
+
+                data_source_name    (str)       -- Name of the data source
+
+            Returns:
+                dict - dictionary consisting of the properties of  datasources
+
+        &#34;&#34;&#34;
+        return self._datasources[data_source_name]
+
+    @staticmethod
+    def _get_datasources_from_collections(collections):
+        &#34;&#34;&#34;Extracts all the datasources, and their details from the list of collections given,
+            and returns the dictionary of all datasources.
+
+            Args:
+                collections     (list)  --  list of all collections
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single datasource
+
+                    {
+                        &#39;data_source_1_name&#39;: {
+
+                            &#39;data_source_id&#39;: 21,
+
+                            &#39;data_source_name&#39;: &#39;&#39;,
+
+                            &#39;description&#39;: &#39;&#39;,
+
+                            &#39;data_source_type&#39;: &#39;&#39;,
+
+                            &#39;total_count&#39;: 1234,
+
+                            &#39;state&#39;: 1
+                        },
+
+                        &#39;data_source_2_name&#39;: {},
+
+                        &#39;data_source_3_name&#39;: {}
+                        ...
+                    }
+
+        &#34;&#34;&#34;
+        _datasources = {}
+        for collection in collections:
+            core_name = None
+            cloud_id = None
+            if &#39;computedCoreName&#39; in collection:
+                core_name = collection[&#39;computedCoreName&#39;]
+            if &#39;cloudId&#39; in collection:
+                cloud_id = collection[&#39;cloudId&#39;]
+            for datasource in collection[&#39;datasources&#39;]:
+                datasource_dict = {}
+                if core_name:
+                    datasource_dict[&#39;computedCoreName&#39;] = core_name
+                if cloud_id:
+                    datasource_dict[&#39;cloudId&#39;] = cloud_id
+                datasource_dict[&#39;data_source_id&#39;] = datasource[&#39;datasourceId&#39;]
+                datasource_dict[&#39;data_source_name&#39;] = datasource[&#39;datasourceName&#39;]
+                datasource_dict[&#39;data_source_type&#39;] = SEDS_TYPE_DICT[
+                    datasource[&#39;datasourceType&#39;]]
+                if &#39;coreId&#39; in datasource:
+                    datasource_dict[&#39;coreId&#39;] = datasource[&#39;coreId&#39;]
+                if &#39;description&#39; in datasource:
+                    datasource_dict[&#39;description&#39;] = datasource[&#39;description&#39;]
+                if &#39;status&#39; in datasource:
+                    datasource_dict[&#39;total_count&#39;] = datasource[&#39;status&#39;][&#39;totalcount&#39;]
+                    datasource_dict[&#39;state&#39;] = datasource[&#39;status&#39;][&#39;state&#39;]
+                _datasources[datasource[&#39;datasourceName&#39;]] = datasource_dict
+        return _datasources
+
+    def _get_all_datasources(self):
+        &#34;&#34;&#34;Gets the list of all datasources associated with this Datacube instance.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single datasource
+
+                    {
+                        &#39;data_source_1_name&#39;: {
+
+                            &#39;data_source_id&#39;: 21,
+
+                            &#39;data_source_name&#39;: &#39;&#39;,
+
+                            &#39;description&#39;: &#39;&#39;,
+
+                            &#39;data_source_type&#39;: &#39;&#39;,
+
+                            &#39;total_count&#39;: 1234,
+
+                            &#39;state&#39;: 1
+                        },
+
+                        &#39;data_source_2_name&#39;: {},
+
+                        &#39;data_source_3_name&#39;: {}
+                        ...
+                    }
+
+        &#34;&#34;&#34;
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._all_datasources
+        )
+
+        if flag:
+            if response.json() and &#39;collections&#39; in response.json():
+                collections = response.json()[&#39;collections&#39;]
+                return self._get_datasources_from_collections(collections)
+            elif &#39;error&#39; in response.json():
+                raise SDKException(&#39;Datacube&#39;, &#39;104&#39;)
+            else:
+                response = {}
+                return response
+        self._datacube_object._response_not_success(response)
+
+    def has_datasource(self, datasource_name):
+        &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Returns:
+                bool    -   boolean output whether the datasource exists in the datacube or not
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        return self._datasources and datasource_name in self._datasources
+
+    def get(self, datasource_name):
+        &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Returns:
+                object  -   instance of the Datasource class for the given datasource name
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if no datasource exists with the given name
+
+        &#34;&#34;&#34;
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if self.has_datasource(datasource_name):
+            datasource = self._datasources[datasource_name]
+
+            return Datasource(
+                self._datacube_object, datasource_name, datasource[&#39;data_source_id&#39;]
+            )
+
+        raise SDKException(
+            &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+                datasource_name)
+        )
+
+    def add(self, datasource_name, analytics_engine, datasource_type, input_param):
+        &#34;&#34;&#34;Add a datasource.
+
+            Args:
+                datasource_name (str)   --  name of the datasource to add to the datacube
+
+                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
+                                                datacube.
+
+                datasource_type (str)  --  type of datasource to add
+
+                                            Valid values are:
+                                            1: Database
+                                            2: Web site
+                                            3: CSV
+                                            4: File system
+                                            5: NAS
+                                            6: Eloqua
+                                            8: Salesforce
+                                            9: LDAP
+                                            10: Federated Search
+                                            11: Open data source
+                                            12: HTTP
+                input_param(list)      -- properties for datasource
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if type of the analytics_engine  argument is not string
+
+                    if type of the datasource_type  argument is not string
+
+                    if failed to add datasource
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not isinstance(analytics_engine, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not isinstance(datasource_type, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        engine_index = None
+        for engine in self._datacube_object.analytics_engines:
+            if engine[&#34;clientName&#34;] == analytics_engine or engine[&#39;engineName&#39;] == analytics_engine:
+                engine_index = self._datacube_object.analytics_engines.index(engine)
+
+        if engine_index is None:
+            raise Exception(&#34;Unable to find Index server for client&#34;)
+
+        request_json = {
+            &#34;collectionReq&#34;: {
+                &#34;collectionName&#34;: datasource_name,
+                &#34;ciserver&#34;: {
+                    &#34;cloudID&#34;: self._datacube_object.analytics_engines[engine_index][
+                        &#34;cloudID&#34;]
+                }
+            },
+            &#34;dataSource&#34;: {
+                &#34;description&#34;: &#34;&#34;,
+                &#34;datasourceType&#34;: datasource_type,
+                &#34;attribute&#34;: 0,
+                &#34;datasourceName&#34;: datasource_name
+
+            }
+        }
+        if input_param is not None:
+            request_json[&#39;dataSource&#39;][&#39;properties&#39;] = input_param
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._create_datasource, request_json
+        )
+        if flag and response.json():
+            if &#39;error&#39; in response.json():
+                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                if error_code == 0:
+                    self.refresh()  # reload new list.
+                    return
+
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to create datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            elif &#39;collections&#39; in response.json():
+                self.refresh()  # reload new list.
+                return
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self.commcell_obj._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete(self, datasource_name):
+        &#34;&#34;&#34;Deletes specified datasource from data cube .
+
+            Args:
+                datasource_name     (str)   --  name of the datasource
+
+            Raises:
+                SDKException:
+                    if type of the datasource name argument is not string
+
+                    if no datasource exists with the given name
+
+        &#34;&#34;&#34;
+
+        if not isinstance(datasource_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if not self.has_datasource(datasource_name):
+            raise SDKException(
+                &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+                    datasource_name)
+            )
+
+        self._delete_datasource = self.commcell_obj._services[
+            &#39;DELETE_DATASOURCE&#39;] % (self.get(datasource_name).datasource_id)
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_datasource)
+        if flag:
+            if &#39;errLogMessage&#39; in response.json():
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            else:
+                return True
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+        self._datasources = self._get_all_datasources()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.datacube.datasource.Datasources.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, datasource_name, analytics_engine, datasource_type, input_param)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a datasource.</p>
+<h2 id="args">Args</h2>
+<p>datasource_name (str)
+&ndash;
+name of the datasource to add to the datacube</p>
+<p>analytics_engine (str)
+&ndash;
+name of the analytics engine or index server node to be associated with this
+datacube.</p>
+<p>datasource_type (str)
+&ndash;
+type of datasource to add</p>
+<pre><code>                        Valid values are:
+                        1: Database
+                        2: Web site
+                        3: CSV
+                        4: File system
+                        5: NAS
+                        6: Eloqua
+                        8: Salesforce
+                        9: LDAP
+                        10: Federated Search
+                        11: Open data source
+                        12: HTTP
+</code></pre>
+<p>input_param(list)
+&ndash; properties for datasource</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the datasource name argument is not string</p>
+<pre><code>if type of the analytics_engine  argument is not string
+
+if type of the datasource_type  argument is not string
+
+if failed to add datasource
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L338-L434" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self, datasource_name, analytics_engine, datasource_type, input_param):
+    &#34;&#34;&#34;Add a datasource.
+
+        Args:
+            datasource_name (str)   --  name of the datasource to add to the datacube
+
+            analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
+                                            datacube.
+
+            datasource_type (str)  --  type of datasource to add
+
+                                        Valid values are:
+                                        1: Database
+                                        2: Web site
+                                        3: CSV
+                                        4: File system
+                                        5: NAS
+                                        6: Eloqua
+                                        8: Salesforce
+                                        9: LDAP
+                                        10: Federated Search
+                                        11: Open data source
+                                        12: HTTP
+            input_param(list)      -- properties for datasource
+        Raises:
+            SDKException:
+                if type of the datasource name argument is not string
+
+                if type of the analytics_engine  argument is not string
+
+                if type of the datasource_type  argument is not string
+
+                if failed to add datasource
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    if not isinstance(datasource_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    if not isinstance(analytics_engine, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    if not isinstance(datasource_type, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    engine_index = None
+    for engine in self._datacube_object.analytics_engines:
+        if engine[&#34;clientName&#34;] == analytics_engine or engine[&#39;engineName&#39;] == analytics_engine:
+            engine_index = self._datacube_object.analytics_engines.index(engine)
+
+    if engine_index is None:
+        raise Exception(&#34;Unable to find Index server for client&#34;)
+
+    request_json = {
+        &#34;collectionReq&#34;: {
+            &#34;collectionName&#34;: datasource_name,
+            &#34;ciserver&#34;: {
+                &#34;cloudID&#34;: self._datacube_object.analytics_engines[engine_index][
+                    &#34;cloudID&#34;]
+            }
+        },
+        &#34;dataSource&#34;: {
+            &#34;description&#34;: &#34;&#34;,
+            &#34;datasourceType&#34;: datasource_type,
+            &#34;attribute&#34;: 0,
+            &#34;datasourceName&#34;: datasource_name
+
+        }
+    }
+    if input_param is not None:
+        request_json[&#39;dataSource&#39;][&#39;properties&#39;] = input_param
+
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._create_datasource, request_json
+    )
+    if flag and response.json():
+        if &#39;error&#39; in response.json():
+            error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+            if error_code == 0:
+                self.refresh()  # reload new list.
+                return
+
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to create datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+        elif &#39;collections&#39; in response.json():
+            self.refresh()  # reload new list.
+            return
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self.commcell_obj._update_response_(
+        response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, datasource_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes specified datasource from data cube .</p>
+<h2 id="args">Args</h2>
+<p>datasource_name
+(str)
+&ndash;
+name of the datasource</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the datasource name argument is not string</p>
+<pre><code>if no datasource exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L436-L472" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, datasource_name):
+    &#34;&#34;&#34;Deletes specified datasource from data cube .
+
+        Args:
+            datasource_name     (str)   --  name of the datasource
+
+        Raises:
+            SDKException:
+                if type of the datasource name argument is not string
+
+                if no datasource exists with the given name
+
+    &#34;&#34;&#34;
+
+    if not isinstance(datasource_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    if not self.has_datasource(datasource_name):
+        raise SDKException(
+            &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+                datasource_name)
+        )
+
+    self._delete_datasource = self.commcell_obj._services[
+        &#39;DELETE_DATASOURCE&#39;] % (self.get(datasource_name).datasource_id)
+
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._delete_datasource)
+    if flag:
+        if &#39;errLogMessage&#39; in response.json():
+            error_message = response.json()[&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to delete datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        else:
+            return True
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, datasource_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a datasource object of the specified datasource name.</p>
+<h2 id="args">Args</h2>
+<p>datasource_name
+(str)
+&ndash;
+name of the datasource</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Datasource class for the given datasource name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the datasource name argument is not string</p>
+<pre><code>if no datasource exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L307-L336" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, datasource_name):
+    &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+
+        Args:
+            datasource_name     (str)   --  name of the datasource
+
+        Returns:
+            object  -   instance of the Datasource class for the given datasource name
+
+        Raises:
+            SDKException:
+                if type of the datasource name argument is not string
+
+                if no datasource exists with the given name
+
+    &#34;&#34;&#34;
+    if not isinstance(datasource_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    if self.has_datasource(datasource_name):
+        datasource = self._datasources[datasource_name]
+
+        return Datasource(
+            self._datacube_object, datasource_name, datasource[&#39;data_source_id&#39;]
+        )
+
+    raise SDKException(
+        &#39;Datacube&#39;, &#39;102&#39;, &#39;No datasource exists with the name: {0}&#39;.format(
+            datasource_name)
+    )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources.get_datasource_properties"><code class="name flex">
+<span>def <span class="ident">get_datasource_properties</span></span>(<span>self, data_source_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the properties of datasources.</p>
+<h2 id="args">Args</h2>
+<p>data_source_name
+(str)
+&ndash; Name of the data source</p>
+<h2 id="returns">Returns</h2>
+<p>dict - dictionary consisting of the properties of
+datasources</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L167-L178" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_datasource_properties(self, data_source_name):
+    &#34;&#34;&#34;Returns the properties of datasources.
+
+        Args:
+
+            data_source_name    (str)       -- Name of the data source
+
+        Returns:
+            dict - dictionary consisting of the properties of  datasources
+
+    &#34;&#34;&#34;
+    return self._datasources[data_source_name]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources.has_datasource"><code class="name flex">
+<span>def <span class="ident">has_datasource</span></span>(<span>self, datasource_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a datasource exists in the Datacube with the input datasource name.</p>
+<h2 id="args">Args</h2>
+<p>datasource_name
+(str)
+&ndash;
+name of the datasource</p>
+<h2 id="returns">Returns</h2>
+<p>bool
+-
+boolean output whether the datasource exists in the datacube or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the datasource name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L288-L305" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_datasource(self, datasource_name):
+    &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+
+        Args:
+            datasource_name     (str)   --  name of the datasource
+
+        Returns:
+            bool    -   boolean output whether the datasource exists in the datacube or not
+
+        Raises:
+            SDKException:
+                if type of the datasource name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(datasource_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    return self._datasources and datasource_name in self._datasources</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.datasource.Datasources.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the datasources associated with the Datacube.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/datasource.py#L474-L476" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+    self._datasources = self._get_all_datasources()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#datasource-attributes">DataSource Attributes</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.datacube" href="index.html">cvpysdk.datacube</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.datacube.datasource.Datasource" href="#cvpysdk.datacube.datasource.Datasource">Datasource</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.computed_core_name" href="#cvpysdk.datacube.datasource.Datasource.computed_core_name">computed_core_name</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.data_source_type" href="#cvpysdk.datacube.datasource.Datasource.data_source_type">data_source_type</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.datasource_id" href="#cvpysdk.datacube.datasource.Datasource.datasource_id">datasource_id</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.datasource_name" href="#cvpysdk.datacube.datasource.Datasource.datasource_name">datasource_name</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.delete_content" href="#cvpysdk.datacube.datasource.Datasource.delete_content">delete_content</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.delete_datasource" href="#cvpysdk.datacube.datasource.Datasource.delete_datasource">delete_datasource</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.ds_handlers" href="#cvpysdk.datacube.datasource.Datasource.ds_handlers">ds_handlers</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.get_crawl_history" href="#cvpysdk.datacube.datasource.Datasource.get_crawl_history">get_crawl_history</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.get_datasource_schema" href="#cvpysdk.datacube.datasource.Datasource.get_datasource_schema">get_datasource_schema</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.get_status" href="#cvpysdk.datacube.datasource.Datasource.get_status">get_status</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.import_data" href="#cvpysdk.datacube.datasource.Datasource.import_data">import_data</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.index_server_cloud_id" href="#cvpysdk.datacube.datasource.Datasource.index_server_cloud_id">index_server_cloud_id</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.properties" href="#cvpysdk.datacube.datasource.Datasource.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.refresh" href="#cvpysdk.datacube.datasource.Datasource.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.share" href="#cvpysdk.datacube.datasource.Datasource.share">share</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.start_job" href="#cvpysdk.datacube.datasource.Datasource.start_job">start_job</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasource.update_datasource_schema" href="#cvpysdk.datacube.datasource.Datasource.update_datasource_schema">update_datasource_schema</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.datacube.datasource.Datasources" href="#cvpysdk.datacube.datasource.Datasources">Datasources</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.add" href="#cvpysdk.datacube.datasource.Datasources.add">add</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.delete" href="#cvpysdk.datacube.datasource.Datasources.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.get" href="#cvpysdk.datacube.datasource.Datasources.get">get</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.get_datasource_properties" href="#cvpysdk.datacube.datasource.Datasources.get_datasource_properties">get_datasource_properties</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.has_datasource" href="#cvpysdk.datacube.datasource.Datasources.has_datasource">has_datasource</a></code></li>
+<li><code><a title="cvpysdk.datacube.datasource.Datasources.refresh" href="#cvpysdk.datacube.datasource.Datasources.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

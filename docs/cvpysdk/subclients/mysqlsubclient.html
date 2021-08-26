@@ -1,0 +1,1722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.subclients.mysqlsubclient API documentation</title>
+<meta name="description" content="File for operating on a MYSQL Subclient …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.subclients.mysqlsubclient</code></h1>
+</header>
+<section id="section-intro">
+<p>File for operating on a MYSQL Subclient</p>
+<p>MYSQLSubclient is the only class defined in this file.</p>
+<p>MYSQLSubclient: Derived class from Subclient Base class, representing a MYSQL subclient,
+and to perform operations on that subclient</p>
+<h2 id="mysqlsubclient">Mysqlsubclient</h2>
+<p><strong>init</strong>()
+&ndash;
+constructor for the class</p>
+<p>is_failover_to_production()
+&ndash;
+Sets the isFailOverToProduction flag for the
+subclient as the value provided as input</p>
+<p>_backup_request_json()
+&ndash;
+prepares the json for the backup request</p>
+<p>_get_subclient_properties()
+&ndash;
+Gets the subclient related properties of MYSQL subclient</p>
+<p>_get_subclient_properties_json()
+&ndash;
+get the all subclient related properties of this
+subclient</p>
+<p>content()
+&ndash;
+Creates the list of content JSON to pass to the API to
+add/update content of a MYSQL Subclient</p>
+<p>backup()
+&ndash;
+Runs a backup job for the subclient of the level
+specified</p>
+<p>restore_in_place()
+&ndash;
+Restores the mysql data/log files specified in
+the input paths list to the same location</p>
+<h1 id="mysqlsubclient-instance-attributes">MYSQLSubclient instance Attributes:</h1>
+<pre><code>**is_blocklevel_backup_enabled**    --  Returns True if block level backup is
+enabled else returns false
+
+**is_proxy_enabled**                --  Returns True if proxy is enabled in the subclient
+
+**is_failover_to_production**       --  Returns the isFailOverToProduction flag of the subclient
+
+**content**                         --  Returns the appropriate content from
+the Subclient relevant to the user
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L1-L515" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;File for operating on a MYSQL Subclient
+
+MYSQLSubclient is the only class defined in this file.
+
+MYSQLSubclient: Derived class from Subclient Base class, representing a MYSQL subclient,
+                        and to perform operations on that subclient
+
+MYSQLSubclient:
+    __init__()                          --  constructor for the class
+
+    is_failover_to_production()         --  Sets the isFailOverToProduction flag for the
+    subclient as the value provided as input
+
+    _backup_request_json()              --  prepares the json for the backup request
+
+    _get_subclient_properties()         --  Gets the subclient related properties of MYSQL subclient
+
+    _get_subclient_properties_json()    --  get the all subclient related properties of this
+    subclient
+
+    content()                           --  Creates the list of content JSON to pass to the API to
+    add/update content of a MYSQL Subclient
+
+    backup()                            --  Runs a backup job for the subclient of the level
+    specified
+
+    restore_in_place()                  --  Restores the mysql data/log files specified in
+    the input paths list to the same location
+
+
+MYSQLSubclient instance Attributes:
+===================================
+
+    **is_blocklevel_backup_enabled**    --  Returns True if block level backup is
+    enabled else returns false
+
+    **is_proxy_enabled**                --  Returns True if proxy is enabled in the subclient
+
+    **is_failover_to_production**       --  Returns the isFailOverToProduction flag of the subclient
+
+    **content**                         --  Returns the appropriate content from
+    the Subclient relevant to the user
+
+&#34;&#34;&#34;
+
+from __future__ import unicode_literals
+from ..subclient import Subclient
+from ..exception import SDKException
+
+
+class MYSQLSubclient(Subclient):
+    &#34;&#34;&#34;Derived class from Subclient Base class, representing a MYSQL subclient,
+        and to perform operations on that subclient.&#34;&#34;&#34;
+
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Initialise the Subclient object.
+
+            Args:
+                backupset_object (object)  --  instance of the Backupset class
+
+                subclient_name   (str)     --  name of the subclient
+
+                subclient_id     (str)     --  id of the subclient
+                    default: None
+
+            Returns:
+                object - instance of the MYSQLSubclient class
+
+        &#34;&#34;&#34;
+        self.mysql_subclient_prop = None
+        self.dfs_subclient_prop = None
+        self.plan_entity = None
+        self.cassandra_props = None
+        self.analytics_subclient_prop = None
+        super(MYSQLSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+
+    @property
+    def is_blocklevel_backup_enabled(self):
+        &#34;&#34;&#34;returns True if block level backup is enabled else returns false
+
+        Returns:
+            (bool) - boolean value based on blocklevel enable status
+
+                    True if block level is enabled
+                    False if block level is not enabled
+
+        &#34;&#34;&#34;
+        return bool(self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(&#39;isUseBlockLevelBackup&#39;, False))
+
+    @property
+    def is_proxy_enabled(self):
+        &#34;&#34;&#34;Returns True if proxy is enabled in the subclient
+
+        Returns:
+            (bool) - boolean value based on proxy enable status
+
+                    True if proxy is enabled
+                    False if proxy is not enabled
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(&#39;proxySettings&#39;, {}).get(
+                &#39;isProxyEnabled&#39;, False)
+
+    @property
+    def is_failover_to_production(self):
+        &#34;&#34;&#34;Returns the isFailOverToProduction flag of the subclient.
+
+        Returns:
+
+            (bool)  --  True if flag is set
+                        False if the flag is not set
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(
+                &#39;proxySettings&#39;, {}).get(&#39;isFailOverToProduction&#39;, False)
+
+    @is_failover_to_production.setter
+    def is_failover_to_production(self, value):
+        &#34;&#34;&#34;Sets the isFailOverToProduction flag for the subclient as the value provided as input.
+
+        Args:
+
+            value   (bool)  --  Boolean value to set as flag
+
+            Raises:
+                SDKException:
+                    if failed to set isFailOverToProduction flag
+
+                    if the type of value input is not bool
+        &#34;&#34;&#34;
+        if isinstance(value, bool):
+            self._set_subclient_properties(
+                &#34;_subclient_properties[&#39;mySqlSubclientProp&#39;]\
+                [&#39;proxySettings&#39;][&#39;isFailOverToProduction&#39;]&#34;,
+                value)
+        else:
+            raise SDKException(
+                &#39;Subclient&#39;, &#39;102&#39;, &#39;Expecting a boolean value here&#39;
+            )
+
+    def _backup_request_json(
+            self,
+            backup_level,
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
+        &#34;&#34;&#34;
+        prepares the json for the backup request
+
+            Args:
+                backup_level            (list)  --  level of backup the user wish to run
+
+                    Accepted Values:
+                        Full / Incremental / Differential
+
+                inc_with_data           (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                dict - JSON request to pass to the API
+
+        &#34;&#34;&#34;
+        request_json = self._backup_json(backup_level, False, &#34;BEFORE_SYNTH&#34;, schedule_pattern=schedule_pattern)
+
+        backup_options = {
+            &#34;truncateLogsOnSource&#34;:truncate_logs_on_source,
+            &#34;sybaseSkipFullafterLogBkp&#34;:False,
+            &#34;notSynthesizeFullFromPrevBackup&#34;:False,
+            &#34;incrementalDataWithLogs&#34;:inc_with_data,
+            &#34;backupLevel&#34;:backup_level,
+            &#34;incLevel&#34;:&#34;NONE&#34;,
+            &#34;adHocBackup&#34;:False,
+            &#34;runIncrementalBackup&#34;:False,
+            &#34;doNotTruncateLog&#34;:do_not_truncate_logs,
+            &#34;dataOpt&#34;:{
+                &#34;skipCatalogPhaseForSnapBackup&#34;:True,
+                &#34;createBackupCopyImmediately&#34;:True,
+                &#34;useCatalogServer&#34;:True,
+                &#34;followMountPoints&#34;:False,
+                &#34;enforceTransactionLogUsage&#34;:False,
+                &#34;skipConsistencyCheck&#34;:False,
+                &#34;createNewIndex&#34;:False
+            },
+            &#34;mediaOpt&#34;:{
+
+            }
+        }
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;backupOpts&#34;] = backup_options
+
+        return request_json
+
+    def _get_subclient_properties(self):
+        &#34;&#34;&#34;Gets the subclient related properties of MYSQL subclient&#34;&#34;&#34;
+        super(MYSQLSubclient, self)._get_subclient_properties()
+        if &#39;mySqlSubclientProp&#39; in self._subclient_properties:
+            self.mysql_subclient_prop = self._subclient_properties[&#39;mySqlSubclientProp&#39;]
+        if &#39;dfsSubclientProp&#39; in self._subclient_properties:
+            self.dfs_subclient_prop = self._subclient_properties[&#39;dfsSubclientProp&#39;]
+        if &#39;planEntity&#39; in self._subclient_properties:
+            self.plan_entity = self._subclient_properties[&#39;planEntity&#39;]
+        if &#39;cassandraProps&#39; in self._subclient_properties:
+            self.cassandra_props = self._subclient_properties[&#39;cassandraProps&#39;]
+        if &#39;content&#39; in self._subclient_properties:
+            self._content = self._subclient_properties[&#39;content&#39;]
+        if &#39;analyticsSubclientProp&#39; in self._subclient_properties:
+            self.analytics_subclient_prop = self._subclient_properties[&#39;analyticsSubclientProp&#39;]
+
+    def _get_subclient_properties_json(self):
+        &#34;&#34;&#34;get the all subclient related properties of this subclient.
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        &#34;&#34;&#34;
+        subclient_json = {
+            &#34;subClientProperties&#34;:
+                {
+                    &#34;proxyClient&#34;: self._proxyClient,
+                    &#34;mySqlSubclientProp&#34;: self.mysql_subclient_prop,
+                    &#34;subClientEntity&#34;: self._subClientEntity,
+                    &#34;dfsSubclientProp&#34;: self.dfs_subclient_prop,
+                    &#34;planEntity&#34;: self.plan_entity,
+                    &#34;cassandraProps&#34;: self.cassandra_props,
+                    &#34;content&#34;: self._content,
+                    &#34;commonProperties&#34;: self._commonProperties,
+                    &#34;analyticsSubclientProp&#34;: self.analytics_subclient_prop,
+                    &#34;contentOperationType&#34;: 1
+                }
+        }
+        return subclient_json
+
+    @property
+    def content(self):
+        &#34;&#34;&#34;Returns the appropriate content from the Subclient relevant to the user.
+
+            Returns:
+                list - list of content associated with the subclient
+
+        &#34;&#34;&#34;
+        cont = []
+
+        # Getting the database names from subclient content details
+        for path in self._content:
+            for key, value in path.items():
+                if key == &#34;mySQLContent&#34;:
+                    cont.append(value[&#34;databaseName&#34;])
+        return cont
+
+    @content.setter
+    def content(self, subclient_content):
+        &#34;&#34;&#34;Creates the list of content JSON to pass to the API to add/update content of a
+            MYSQL Subclient.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+
+        &#34;&#34;&#34;
+        cont = []
+        for mysql_cont in subclient_content:
+            mysql_dict = {
+                &#34;mySQLContent&#34;: {
+                    &#34;databaseName&#34;: mysql_cont
+                }
+            }
+            cont.append(mysql_dict)
+
+        self._set_subclient_properties(&#34;_content&#34;, cont)
+
+
+    def backup(
+            self,
+            backup_level=&#34;Differential&#34;,
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
+        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+
+            Args:
+                backup_level        (str)   --  level of backup the user wish to run
+                        Full / Incremental / Differential / Synthetic_full
+
+                    default: Differential
+
+                inc_with_data       (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;, &#39;differential&#39;, &#39;synthetic_full&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern):
+            return super(MYSQLSubclient, self).backup(backup_level)
+        request_json = self._backup_request_json(
+            backup_level,
+            inc_with_data,
+            truncate_logs_on_source=truncate_logs_on_source,
+            do_not_truncate_logs=do_not_truncate_logs,
+            schedule_pattern=schedule_pattern
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;CREATE_TASK&#39;], request_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def restore_in_place(
+            self,
+            paths=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
+            overwrite=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None):
+        &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+
+            Args:
+                paths               (list)  --  list of database/databases to be restored
+
+                staging             (str)   --  staging location for mysql logs during restores
+
+                dest_client_name    (str)   --  destination client name where files are
+                                                        to be restored
+
+                dest_instance_name  (str)   --  destination mysql instance name of
+                                                        destination client
+
+                data_restore        (bool)  --  for data only/data+log restore
+
+                log_restore         (bool)  --  for log only/data+log restore
+
+                overwrite           (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                copy_precedence     (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                media_agent             (str)   --  media agent associated
+
+                    default: None
+
+                table_level_restore     (bool)  --  Table level restore flag
+
+                    default: False
+
+                clone_env               (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options           (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                                        &#34;forceCleanup&#34;: True,
+                                        &#34;port&#34;: &#34;5595&#34;,
+                                        &#34;libDirectory&#34;: &#34;&#34;,
+                                        &#34;isInstanceSelected&#34;: True,
+                                        &#34;reservationPeriodS&#34;: 3600,
+                                        &#34;user&#34;: &#34;&#34;,
+                                        &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+
+                                     }
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not (isinstance(paths, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        if paths == []:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+
+        instance_object = self._backupset_object._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
+        instance_object._restore_association = self._subClientEntity
+
+        return instance_object.restore_in_place(
+            path=paths,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path
+        )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient"><code class="flex name class">
+<span>class <span class="ident">MYSQLSubclient</span></span>
+<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Derived class from Subclient Base class, representing a MYSQL subclient,
+and to perform operations on that subclient.</p>
+<p>Initialise the Subclient object.</p>
+<h2 id="args">Args</h2>
+<p>backupset_object (object)
+&ndash;
+instance of the Backupset class</p>
+<p>subclient_name
+(str)
+&ndash;
+name of the subclient</p>
+<p>subclient_id
+(str)
+&ndash;
+id of the subclient
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the MYSQLSubclient class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L69-L515" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class MYSQLSubclient(Subclient):
+    &#34;&#34;&#34;Derived class from Subclient Base class, representing a MYSQL subclient,
+        and to perform operations on that subclient.&#34;&#34;&#34;
+
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Initialise the Subclient object.
+
+            Args:
+                backupset_object (object)  --  instance of the Backupset class
+
+                subclient_name   (str)     --  name of the subclient
+
+                subclient_id     (str)     --  id of the subclient
+                    default: None
+
+            Returns:
+                object - instance of the MYSQLSubclient class
+
+        &#34;&#34;&#34;
+        self.mysql_subclient_prop = None
+        self.dfs_subclient_prop = None
+        self.plan_entity = None
+        self.cassandra_props = None
+        self.analytics_subclient_prop = None
+        super(MYSQLSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+
+    @property
+    def is_blocklevel_backup_enabled(self):
+        &#34;&#34;&#34;returns True if block level backup is enabled else returns false
+
+        Returns:
+            (bool) - boolean value based on blocklevel enable status
+
+                    True if block level is enabled
+                    False if block level is not enabled
+
+        &#34;&#34;&#34;
+        return bool(self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(&#39;isUseBlockLevelBackup&#39;, False))
+
+    @property
+    def is_proxy_enabled(self):
+        &#34;&#34;&#34;Returns True if proxy is enabled in the subclient
+
+        Returns:
+            (bool) - boolean value based on proxy enable status
+
+                    True if proxy is enabled
+                    False if proxy is not enabled
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(&#39;proxySettings&#39;, {}).get(
+                &#39;isProxyEnabled&#39;, False)
+
+    @property
+    def is_failover_to_production(self):
+        &#34;&#34;&#34;Returns the isFailOverToProduction flag of the subclient.
+
+        Returns:
+
+            (bool)  --  True if flag is set
+                        False if the flag is not set
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(
+            &#39;mySqlSubclientProp&#39;, {}).get(
+                &#39;proxySettings&#39;, {}).get(&#39;isFailOverToProduction&#39;, False)
+
+    @is_failover_to_production.setter
+    def is_failover_to_production(self, value):
+        &#34;&#34;&#34;Sets the isFailOverToProduction flag for the subclient as the value provided as input.
+
+        Args:
+
+            value   (bool)  --  Boolean value to set as flag
+
+            Raises:
+                SDKException:
+                    if failed to set isFailOverToProduction flag
+
+                    if the type of value input is not bool
+        &#34;&#34;&#34;
+        if isinstance(value, bool):
+            self._set_subclient_properties(
+                &#34;_subclient_properties[&#39;mySqlSubclientProp&#39;]\
+                [&#39;proxySettings&#39;][&#39;isFailOverToProduction&#39;]&#34;,
+                value)
+        else:
+            raise SDKException(
+                &#39;Subclient&#39;, &#39;102&#39;, &#39;Expecting a boolean value here&#39;
+            )
+
+    def _backup_request_json(
+            self,
+            backup_level,
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
+        &#34;&#34;&#34;
+        prepares the json for the backup request
+
+            Args:
+                backup_level            (list)  --  level of backup the user wish to run
+
+                    Accepted Values:
+                        Full / Incremental / Differential
+
+                inc_with_data           (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                dict - JSON request to pass to the API
+
+        &#34;&#34;&#34;
+        request_json = self._backup_json(backup_level, False, &#34;BEFORE_SYNTH&#34;, schedule_pattern=schedule_pattern)
+
+        backup_options = {
+            &#34;truncateLogsOnSource&#34;:truncate_logs_on_source,
+            &#34;sybaseSkipFullafterLogBkp&#34;:False,
+            &#34;notSynthesizeFullFromPrevBackup&#34;:False,
+            &#34;incrementalDataWithLogs&#34;:inc_with_data,
+            &#34;backupLevel&#34;:backup_level,
+            &#34;incLevel&#34;:&#34;NONE&#34;,
+            &#34;adHocBackup&#34;:False,
+            &#34;runIncrementalBackup&#34;:False,
+            &#34;doNotTruncateLog&#34;:do_not_truncate_logs,
+            &#34;dataOpt&#34;:{
+                &#34;skipCatalogPhaseForSnapBackup&#34;:True,
+                &#34;createBackupCopyImmediately&#34;:True,
+                &#34;useCatalogServer&#34;:True,
+                &#34;followMountPoints&#34;:False,
+                &#34;enforceTransactionLogUsage&#34;:False,
+                &#34;skipConsistencyCheck&#34;:False,
+                &#34;createNewIndex&#34;:False
+            },
+            &#34;mediaOpt&#34;:{
+
+            }
+        }
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;backupOpts&#34;] = backup_options
+
+        return request_json
+
+    def _get_subclient_properties(self):
+        &#34;&#34;&#34;Gets the subclient related properties of MYSQL subclient&#34;&#34;&#34;
+        super(MYSQLSubclient, self)._get_subclient_properties()
+        if &#39;mySqlSubclientProp&#39; in self._subclient_properties:
+            self.mysql_subclient_prop = self._subclient_properties[&#39;mySqlSubclientProp&#39;]
+        if &#39;dfsSubclientProp&#39; in self._subclient_properties:
+            self.dfs_subclient_prop = self._subclient_properties[&#39;dfsSubclientProp&#39;]
+        if &#39;planEntity&#39; in self._subclient_properties:
+            self.plan_entity = self._subclient_properties[&#39;planEntity&#39;]
+        if &#39;cassandraProps&#39; in self._subclient_properties:
+            self.cassandra_props = self._subclient_properties[&#39;cassandraProps&#39;]
+        if &#39;content&#39; in self._subclient_properties:
+            self._content = self._subclient_properties[&#39;content&#39;]
+        if &#39;analyticsSubclientProp&#39; in self._subclient_properties:
+            self.analytics_subclient_prop = self._subclient_properties[&#39;analyticsSubclientProp&#39;]
+
+    def _get_subclient_properties_json(self):
+        &#34;&#34;&#34;get the all subclient related properties of this subclient.
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        &#34;&#34;&#34;
+        subclient_json = {
+            &#34;subClientProperties&#34;:
+                {
+                    &#34;proxyClient&#34;: self._proxyClient,
+                    &#34;mySqlSubclientProp&#34;: self.mysql_subclient_prop,
+                    &#34;subClientEntity&#34;: self._subClientEntity,
+                    &#34;dfsSubclientProp&#34;: self.dfs_subclient_prop,
+                    &#34;planEntity&#34;: self.plan_entity,
+                    &#34;cassandraProps&#34;: self.cassandra_props,
+                    &#34;content&#34;: self._content,
+                    &#34;commonProperties&#34;: self._commonProperties,
+                    &#34;analyticsSubclientProp&#34;: self.analytics_subclient_prop,
+                    &#34;contentOperationType&#34;: 1
+                }
+        }
+        return subclient_json
+
+    @property
+    def content(self):
+        &#34;&#34;&#34;Returns the appropriate content from the Subclient relevant to the user.
+
+            Returns:
+                list - list of content associated with the subclient
+
+        &#34;&#34;&#34;
+        cont = []
+
+        # Getting the database names from subclient content details
+        for path in self._content:
+            for key, value in path.items():
+                if key == &#34;mySQLContent&#34;:
+                    cont.append(value[&#34;databaseName&#34;])
+        return cont
+
+    @content.setter
+    def content(self, subclient_content):
+        &#34;&#34;&#34;Creates the list of content JSON to pass to the API to add/update content of a
+            MYSQL Subclient.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+            Returns:
+                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+
+        &#34;&#34;&#34;
+        cont = []
+        for mysql_cont in subclient_content:
+            mysql_dict = {
+                &#34;mySQLContent&#34;: {
+                    &#34;databaseName&#34;: mysql_cont
+                }
+            }
+            cont.append(mysql_dict)
+
+        self._set_subclient_properties(&#34;_content&#34;, cont)
+
+
+    def backup(
+            self,
+            backup_level=&#34;Differential&#34;,
+            inc_with_data=False,
+            truncate_logs_on_source=False,
+            do_not_truncate_logs=False,
+            schedule_pattern=None
+    ):
+        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+
+            Args:
+                backup_level        (str)   --  level of backup the user wish to run
+                        Full / Incremental / Differential / Synthetic_full
+
+                    default: Differential
+
+                inc_with_data       (bool)  --  flag to determine if the incremental backup
+                includes data or not
+
+                truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+                truncated on master client
+
+                    default: False
+
+                do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+                needs to be truncated or not
+
+                    default: False
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;, &#39;differential&#39;, &#39;synthetic_full&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+        if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern):
+            return super(MYSQLSubclient, self).backup(backup_level)
+        request_json = self._backup_request_json(
+            backup_level,
+            inc_with_data,
+            truncate_logs_on_source=truncate_logs_on_source,
+            do_not_truncate_logs=do_not_truncate_logs,
+            schedule_pattern=schedule_pattern
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;CREATE_TASK&#39;], request_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def restore_in_place(
+            self,
+            paths=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
+            overwrite=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None):
+        &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+
+            Args:
+                paths               (list)  --  list of database/databases to be restored
+
+                staging             (str)   --  staging location for mysql logs during restores
+
+                dest_client_name    (str)   --  destination client name where files are
+                                                        to be restored
+
+                dest_instance_name  (str)   --  destination mysql instance name of
+                                                        destination client
+
+                data_restore        (bool)  --  for data only/data+log restore
+
+                log_restore         (bool)  --  for log only/data+log restore
+
+                overwrite           (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                copy_precedence     (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                media_agent             (str)   --  media agent associated
+
+                    default: None
+
+                table_level_restore     (bool)  --  Table level restore flag
+
+                    default: False
+
+                clone_env               (bool)  --  boolean to specify whether the database
+                should be cloned or not
+
+                    default: False
+
+                clone_options           (dict)  --  clone restore options passed in a dict
+
+                    default: None
+
+                    Accepted format: {
+                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                                        &#34;forceCleanup&#34;: True,
+                                        &#34;port&#34;: &#34;5595&#34;,
+                                        &#34;libDirectory&#34;: &#34;&#34;,
+                                        &#34;isInstanceSelected&#34;: True,
+                                        &#34;reservationPeriodS&#34;: 3600,
+                                        &#34;user&#34;: &#34;&#34;,
+                                        &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+
+                                     }
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not (isinstance(paths, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        if paths == []:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+
+        instance_object = self._backupset_object._instance_object
+        if dest_client_name is None:
+            dest_client_name = instance_object._agent_object._client_object.client_name
+
+        if dest_instance_name is None:
+            dest_instance_name = instance_object.instance_name
+        instance_object._restore_association = self._subClientEntity
+
+        return instance_object.restore_in_place(
+            path=paths,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.content"><code class="name">var <span class="ident">content</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the appropriate content from the Subclient relevant to the user.</p>
+<h2 id="returns">Returns</h2>
+<p>list - list of content associated with the subclient</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L271-L286" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def content(self):
+    &#34;&#34;&#34;Returns the appropriate content from the Subclient relevant to the user.
+
+        Returns:
+            list - list of content associated with the subclient
+
+    &#34;&#34;&#34;
+    cont = []
+
+    # Getting the database names from subclient content details
+    for path in self._content:
+        for key, value in path.items():
+            if key == &#34;mySQLContent&#34;:
+                cont.append(value[&#34;databaseName&#34;])
+    return cont</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_blocklevel_backup_enabled"><code class="name">var <span class="ident">is_blocklevel_backup_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>returns True if block level backup is enabled else returns false</p>
+<h2 id="returns">Returns</h2>
+<p>(bool) - boolean value based on blocklevel enable status</p>
+<pre><code>    True if block level is enabled
+    False if block level is not enabled
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L95-L107" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_blocklevel_backup_enabled(self):
+    &#34;&#34;&#34;returns True if block level backup is enabled else returns false
+
+    Returns:
+        (bool) - boolean value based on blocklevel enable status
+
+                True if block level is enabled
+                False if block level is not enabled
+
+    &#34;&#34;&#34;
+    return bool(self._subclient_properties.get(
+        &#39;mySqlSubclientProp&#39;, {}).get(&#39;isUseBlockLevelBackup&#39;, False))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_failover_to_production"><code class="name">var <span class="ident">is_failover_to_production</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the isFailOverToProduction flag of the subclient.</p>
+<h2 id="returns">Returns</h2>
+<p>(bool)
+&ndash;
+True if flag is set
+False if the flag is not set</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L124-L136" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_failover_to_production(self):
+    &#34;&#34;&#34;Returns the isFailOverToProduction flag of the subclient.
+
+    Returns:
+
+        (bool)  --  True if flag is set
+                    False if the flag is not set
+
+    &#34;&#34;&#34;
+    return self._subclient_properties.get(
+        &#39;mySqlSubclientProp&#39;, {}).get(
+            &#39;proxySettings&#39;, {}).get(&#39;isFailOverToProduction&#39;, False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_proxy_enabled"><code class="name">var <span class="ident">is_proxy_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns True if proxy is enabled in the subclient</p>
+<h2 id="returns">Returns</h2>
+<p>(bool) - boolean value based on proxy enable status</p>
+<pre><code>    True if proxy is enabled
+    False if proxy is not enabled
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L109-L122" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_proxy_enabled(self):
+    &#34;&#34;&#34;Returns True if proxy is enabled in the subclient
+
+    Returns:
+        (bool) - boolean value based on proxy enable status
+
+                True if proxy is enabled
+                False if proxy is not enabled
+
+    &#34;&#34;&#34;
+    return self._subclient_properties.get(
+        &#39;mySqlSubclientProp&#39;, {}).get(&#39;proxySettings&#39;, {}).get(
+            &#39;isProxyEnabled&#39;, False)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.backup"><code class="name flex">
+<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Differential', inc_with_data=False, truncate_logs_on_source=False, do_not_truncate_logs=False, schedule_pattern=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
+<h2 id="args">Args</h2>
+<p>backup_level
+(str)
+&ndash;
+level of backup the user wish to run
+Full / Incremental / Differential / Synthetic_full</p>
+<pre><code>default: Differential
+</code></pre>
+<p>inc_with_data
+(bool)
+&ndash;
+flag to determine if the incremental backup
+includes data or not</p>
+<p>truncate_logs_on_source (bool)
+&ndash;
+flag to determine if the logs to be
+truncated on master client</p>
+<pre><code>default: False
+</code></pre>
+<p>do_not_truncate_logs
+(bool)
+&ndash;
+flag to determine if the proxy logs
+needs to be truncated or not</p>
+<pre><code>default: False
+</code></pre>
+<p>schedule_pattern (dict) &ndash; scheduling options to be included for the task</p>
+<pre><code>    Please refer schedules.schedulePattern.createSchedule()
+                                                doc for the types of Jsons
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this backup job if its an immediate Job</p>
+<pre><code>     instance of the Schedule class for the backup job if its a scheduled Job
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if backup level specified is not correct</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L312-L377" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backup(
+        self,
+        backup_level=&#34;Differential&#34;,
+        inc_with_data=False,
+        truncate_logs_on_source=False,
+        do_not_truncate_logs=False,
+        schedule_pattern=None
+):
+    &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+
+        Args:
+            backup_level        (str)   --  level of backup the user wish to run
+                    Full / Incremental / Differential / Synthetic_full
+
+                default: Differential
+
+            inc_with_data       (bool)  --  flag to determine if the incremental backup
+            includes data or not
+
+            truncate_logs_on_source (bool)  --  flag to determine if the logs to be
+            truncated on master client
+
+                default: False
+
+            do_not_truncate_logs    (bool)  --  flag to determine if the proxy logs
+            needs to be truncated or not
+
+                default: False
+
+            schedule_pattern (dict) -- scheduling options to be included for the task
+
+                    Please refer schedules.schedulePattern.createSchedule()
+                                                                doc for the types of Jsons
+
+        Returns:
+            object - instance of the Job class for this backup job if its an immediate Job
+
+                     instance of the Schedule class for the backup job if its a scheduled Job
+
+        Raises:
+            SDKException:
+                if backup level specified is not correct
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    backup_level = backup_level.lower()
+
+    if backup_level not in [&#39;full&#39;, &#39;incremental&#39;, &#39;differential&#39;, &#39;synthetic_full&#39;]:
+        raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+    if not (inc_with_data or truncate_logs_on_source or do_not_truncate_logs or schedule_pattern):
+        return super(MYSQLSubclient, self).backup(backup_level)
+    request_json = self._backup_request_json(
+        backup_level,
+        inc_with_data,
+        truncate_logs_on_source=truncate_logs_on_source,
+        do_not_truncate_logs=do_not_truncate_logs,
+        schedule_pattern=schedule_pattern
+    )
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._commcell_object._services[&#39;CREATE_TASK&#39;], request_json
+    )
+    return self._process_backup_response(flag, response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.restore_in_place"><code class="name flex">
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the mysql data/log files specified in the input paths list to the same location.</p>
+<h2 id="args">Args</h2>
+<p>paths
+(list)
+&ndash;
+list of database/databases to be restored</p>
+<p>staging
+(str)
+&ndash;
+staging location for mysql logs during restores</p>
+<p>dest_client_name
+(str)
+&ndash;
+destination client name where files are
+to be restored</p>
+<p>dest_instance_name
+(str)
+&ndash;
+destination mysql instance name of
+destination client</p>
+<p>data_restore
+(bool)
+&ndash;
+for data only/data+log restore</p>
+<p>log_restore
+(bool)
+&ndash;
+for log only/data+log restore</p>
+<p>overwrite
+(bool)
+&ndash;
+unconditional overwrite files during restore
+default: True</p>
+<p>copy_precedence
+(int)
+&ndash;
+copy precedence value of storage policy copy
+default: None</p>
+<p>from_time
+(str)
+&ndash;
+time to retore the contents after
+format: YYYY-MM-DD HH:MM:SS</p>
+<pre><code>default: None
+</code></pre>
+<p>to_time
+(str)
+&ndash;
+time to retore the contents before
+format: YYYY-MM-DD HH:MM:SS</p>
+<pre><code>default: None
+</code></pre>
+<p>media_agent
+(str)
+&ndash;
+media agent associated</p>
+<pre><code>default: None
+</code></pre>
+<p>table_level_restore
+(bool)
+&ndash;
+Table level restore flag</p>
+<pre><code>default: False
+</code></pre>
+<p>clone_env
+(bool)
+&ndash;
+boolean to specify whether the database
+should be cloned or not</p>
+<pre><code>default: False
+</code></pre>
+<p>clone_options
+(dict)
+&ndash;
+clone restore options passed in a dict</p>
+<pre><code>default: None
+
+Accepted format: {
+                    "stagingLocaion": "/gk_snap",
+                    "forceCleanup": True,
+                    "port": "5595",
+                    "libDirectory": "",
+                    "isInstanceSelected": True,
+                    "reservationPeriodS": 3600,
+                    "user": "",
+                    "binaryDirectory": "/usr/bin"
+
+                 }
+</code></pre>
+<p>redirect_enabled
+(bool)
+&ndash;
+boolean to specify if redirect restore is
+enabled</p>
+<pre><code>default: False
+</code></pre>
+<p>redirect_path
+(str)
+&ndash;
+Path specified in advanced restore options
+in order to perform redirect restore</p>
+<pre><code>default: None
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if paths is not a list</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/mysqlsubclient.py#L379-L515" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_in_place(
+        self,
+        paths=None,
+        staging=None,
+        dest_client_name=None,
+        dest_instance_name=None,
+        data_restore=True,
+        log_restore=False,
+        overwrite=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        media_agent=None,
+        table_level_restore=False,
+        clone_env=False,
+        clone_options=None,
+        redirect_enabled=False,
+        redirect_path=None):
+    &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+
+        Args:
+            paths               (list)  --  list of database/databases to be restored
+
+            staging             (str)   --  staging location for mysql logs during restores
+
+            dest_client_name    (str)   --  destination client name where files are
+                                                    to be restored
+
+            dest_instance_name  (str)   --  destination mysql instance name of
+                                                    destination client
+
+            data_restore        (bool)  --  for data only/data+log restore
+
+            log_restore         (bool)  --  for log only/data+log restore
+
+            overwrite           (bool)  --  unconditional overwrite files during restore
+                default: True
+
+            copy_precedence     (int)   --  copy precedence value of storage policy copy
+                default: None
+
+            from_time           (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            to_time             (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            media_agent             (str)   --  media agent associated
+
+                default: None
+
+            table_level_restore     (bool)  --  Table level restore flag
+
+                default: False
+
+            clone_env               (bool)  --  boolean to specify whether the database
+            should be cloned or not
+
+                default: False
+
+            clone_options           (dict)  --  clone restore options passed in a dict
+
+                default: None
+
+                Accepted format: {
+                                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                                    &#34;forceCleanup&#34;: True,
+                                    &#34;port&#34;: &#34;5595&#34;,
+                                    &#34;libDirectory&#34;: &#34;&#34;,
+                                    &#34;isInstanceSelected&#34;: True,
+                                    &#34;reservationPeriodS&#34;: 3600,
+                                    &#34;user&#34;: &#34;&#34;,
+                                    &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+
+                                 }
+
+            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+            enabled
+
+                default: False
+
+            redirect_path           (str)   --  Path specified in advanced restore options
+            in order to perform redirect restore
+
+                default: None
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if not (isinstance(paths, list) and
+            isinstance(overwrite, bool)):
+        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+    if paths == []:
+        raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+
+    instance_object = self._backupset_object._instance_object
+    if dest_client_name is None:
+        dest_client_name = instance_object._agent_object._client_object.client_name
+
+    if dest_instance_name is None:
+        dest_instance_name = instance_object.instance_name
+    instance_object._restore_association = self._subClientEntity
+
+    return instance_object.restore_in_place(
+        path=paths,
+        staging=staging,
+        dest_client_name=dest_client_name,
+        dest_instance_name=dest_instance_name,
+        data_restore=data_restore,
+        log_restore=log_restore,
+        overwrite=overwrite,
+        copy_precedence=copy_precedence,
+        from_time=from_time,
+        to_time=to_time,
+        media_agent=media_agent,
+        table_level_restore=table_level_restore,
+        clone_env=clone_env,
+        clone_options=clone_options,
+        redirect_enabled=redirect_enabled,
+        redirect_path=redirect_path
+    )</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.subclient.Subclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.disable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.disable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.disable_intelli_snap">disable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.display_name" href="../subclient.html#cvpysdk.subclient.Subclient.display_name">display_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.enable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup">enable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.enable_backup_at_time" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.enable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">enable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.enable_trueup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">enable_trueup</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.enable_trueup_days" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup_days">enable_trueup_days</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.encryption_flag" href="../subclient.html#cvpysdk.subclient.Subclient.encryption_flag">encryption_flag</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.exclude_from_sla" href="../subclient.html#cvpysdk.subclient.Subclient.exclude_from_sla">exclude_from_sla</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.find" href="../subclient.html#cvpysdk.subclient.Subclient.find">find</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.find_latest_job" href="../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">find_latest_job</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy" href="../subclient.html#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">get_ma_associated_storagepolicy</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.is_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.is_default_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_default_subclient">is_default_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.is_intelli_snap_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.plan" href="../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.storage_ma_id" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma_id">storage_ma_id</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.storage_policy" href="../subclient.html#cvpysdk.subclient.Subclient.storage_policy">storage_policy</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#mysqlsubclient-instance-attributes">MYSQLSubclient instance Attributes:</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.subclients" href="index.html">cvpysdk.subclients</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient">MYSQLSubclient</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.backup" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.content" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.content">content</a></code></li>
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_blocklevel_backup_enabled" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_blocklevel_backup_enabled">is_blocklevel_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_failover_to_production" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_failover_to_production">is_failover_to_production</a></code></li>
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_proxy_enabled" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_proxy_enabled">is_proxy_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.restore_in_place" href="#cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.restore_in_place">restore_in_place</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

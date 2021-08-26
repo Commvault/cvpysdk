@@ -1,0 +1,1697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.datacube.handler API documentation</title>
+<meta name="description" content="Main file for performing handler operations on a datasource …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.datacube.handler</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing handler operations on a datasource.</p>
+<p>Handlers and Handler are 2 classes defined in this file.</p>
+<p>Handlers: Class for representing all the Handlers associated with the datasource</p>
+<p>Handler: Class for a single Handler of the datasource</p>
+<h2 id="handlers">Handlers</h2>
+<p><strong>init</strong>()
+&ndash;
+initialize object of Handlers class associated with commcell</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the handlers associated with the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string representing instance of the Handlers class</p>
+<p>_get_handlers()
+&ndash;
+gets all the handlers associated with the commcell</p>
+<p>has_handler()
+&ndash;
+checks if a handler exists with the given name or not</p>
+<p>get_properties()
+&ndash;
+gets the properties of the given handler</p>
+<p>add()
+&ndash;
+adds a new handler to the datasource</p>
+<p>refresh()
+&ndash;
+refresh the handlers associated with the datasource</p>
+<p>get()
+&ndash; gets the object for the given handler name</p>
+<p>delete()
+&ndash; deletes the given handler name</p>
+<h2 id="handler">Handler</h2>
+<p><strong>init</strong>()
+&ndash; Initialize object for Handler</p>
+<p>get_handler_data()
+&ndash; Execute the handler</p>
+<p>share()
+&ndash; Share the handler with user or usergroup</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L1-L499" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing handler operations on a datasource.
+
+Handlers and Handler are 2 classes defined in this file.
+
+Handlers: Class for representing all the Handlers associated with the datasource
+
+Handler: Class for a single Handler of the datasource
+
+Handlers:
+
+    __init__()                  --  initialize object of Handlers class associated with commcell
+
+    __str__()                   --  returns all the handlers associated with the commcell
+
+    __repr__()                  --  returns the string representing instance of the Handlers class
+
+    _get_handlers()             --  gets all the handlers associated with the commcell
+
+    has_handler()               --  checks if a handler exists with the given name or not
+
+    get_properties()            --  gets the properties of the given handler
+
+    add()                       --  adds a new handler to the datasource
+
+    refresh()                   --  refresh the handlers associated with the datasource
+
+    get()                       -- gets the object for the given handler name
+
+    delete()                    -- deletes the given handler name
+
+Handler:
+
+    __init__()                  -- Initialize object for Handler
+
+    get_handler_data()          -- Execute the handler
+
+    share()                     -- Share the handler with user or usergroup
+
+&#34;&#34;&#34;
+
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from past.builtins import basestring
+
+from ..exception import SDKException
+
+
+class Handlers(object):
+    &#34;&#34;&#34;Class for representing all the handlers associated with the datasource.&#34;&#34;&#34;
+
+    def __init__(self, datasource_object):
+        &#34;&#34;&#34;Initialize object of the Handlers class.
+
+            Args:
+                _datasource_object (object)  --  instance of the datastore class
+
+            Returns:
+                object - instance of the Handlers class
+
+        &#34;&#34;&#34;
+
+        self._datasource_object = datasource_object
+        self.commcell_obj = self._datasource_object._commcell_object
+        self._create_handler = self.commcell_obj._services[&#39;CREATE_HANDLER&#39;]
+        self._get_handler = self.commcell_obj._services[&#39;GET_HANDLERS&#39;] % (
+            self._datasource_object.datasource_id
+        )
+
+        self._handlers = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all handlers of the datasource.
+
+            Returns:
+                str - string of all the handlers associated with the datasource
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Handler&#39;)
+        for index, handler in enumerate(self._handlers):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, handler)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Handlers class.&#34;&#34;&#34;
+        return &#34;Handlers class instance for Datasource: &#39;{0}&#39;&#34;.format(
+            self._datasource_object.datasource_name
+        )
+
+    def _get_handlers(self):
+        &#34;&#34;&#34;Gets all the handlers associated with the datasource
+
+            Returns:
+                dict - consists of all handlers in the datasource
+                    {
+                         &#34;handler1_name&#34;: dict of handler1 properties,
+                         &#34;handler2_name&#34;: dict of handler2 properties
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        flag, response = self._datasource_object._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_handler)
+        if flag:
+            if response.json() and &#39;handlerInfos&#39; in response.json():
+                handlers_dict = {}
+                for dictionary in response.json()[&#39;handlerInfos&#39;]:
+                    temp_name = dictionary[&#39;handlerName&#39;]
+                    handlers_dict[temp_name] = dictionary
+                return handlers_dict
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._datasource_object._commcell_object._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_handler(self, handler_name):
+        &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+                bool - boolean output whether the handler exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the handler name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(handler_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
+
+    def get_properties(self, handler_name):
+        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+                dict -  properties for the given handler name
+
+
+        &#34;&#34;&#34;
+        return self._handlers[handler_name]
+
+    def get(self, handler_name):
+        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+
+                obj                 -- Object of Handler class
+
+
+        &#34;&#34;&#34;
+        if not isinstance(handler_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if self.has_handler(handler_name):
+            handler_id = self.get_properties(handler_name)[&#39;handlerId&#39;]
+            return Handler(self._datasource_object, handler_name, handler_id)
+        raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Unable to get handler class object&#34;)
+
+    def delete(self, handler_name):
+        &#34;&#34;&#34; deletes the handler associated with this handler object
+                Args:
+
+                    handler_name (str)     -- Name of the handler which needs to be deleted
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+        handler_id = self.get(handler_name).handler_id
+        self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
+            handler_id)
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_handler)
+
+        if flag:
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to Delete handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] == 0:
+                return
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response with no errorCode&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def add(self,
+            handler_name,
+            search_query,
+            filter_query=None,
+            facet_field=None,
+            facet_query=None,
+            rows=10,
+            response_type=&#34;json&#34;,
+            sort_column=[]):
+        &#34;&#34;&#34;Adds a new handler to the commcell.
+
+            Args:
+                handler_name    (str)   --  name of the handler to add to the datastore
+
+                search_query    (list)  --  list of keywords on which the search is performed.
+
+                filter_query    (list)  --  list of conditional queries which needs to be performed
+                                                when the data is retrieved
+
+                facet_field     (list)  --  list of fields to be faceted.
+
+                facet_query     (list)  --  list of conditional queries for which the facet count
+                                                should be retrieved
+
+                rows            (int)   --  list of keywords on which the search is performed.
+
+                response_type   (str)   --  format in which search results are retrieved.
+                    default: json
+
+                    Supported Types:
+                        json
+
+                        csv
+
+                        xml
+
+
+                sort_column     (list)  --  list of column name to be sorted
+
+
+            Raises:
+                SDKException:
+                    if type of the handler name argument is not string
+
+                    if failed to delete handler
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no handler exists with the given name
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;dataSourceId&#34;: self._datasource_object.datasource_id,
+            &#34;handlerName&#34;: handler_name,
+            &#34;handlerInfo&#34;: {
+                &#34;defaultParams&#34;: {
+                    &#34;q&#34;: search_query,
+                    &#34;fq&#34;: filter_query,
+                    &#34;sort&#34;: sort_column,
+                    &#34;facet&#34;: [
+                        &#34;true&#34; if facet_field or facet_query else &#34;false&#34;
+                    ],
+                    &#34;facet.field&#34;: facet_field,
+                    &#34;facet.query&#34;: facet_query,
+                    &#34;rows&#34;: [rows],
+                    &#34;wt&#34;: [response_type]
+                },
+                &#34;appendParams&#34;: {},
+                &#34;rawDefaultParams&#34;: [],
+                &#34;rawAppendParams&#34;: [],
+                &#34;rawInvariantParams&#34;: [],
+                &#34;alwaysDecode&#34;: &#34;true&#34;
+            }
+        }
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._create_handler, request_json
+        )
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                if(response.json()[&#39;error&#39;] == &#39;None&#39; or response.json()[&#39;error&#39;] is None):
+                    self.refresh()  # reload new list.
+                    return
+                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                if error_code == 0:
+                    self.refresh()  # reload new list.
+                    return
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to create handler\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self.commcell_obj._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+        self._handlers = self._get_handlers()
+
+
+class Handler(object):
+    &#34;&#34;&#34;Class for performing operations on a single Handler&#34;&#34;&#34;
+
+    def __init__(self, datasource_object, handler_name, handler_id=None):
+        &#34;&#34;&#34;Initialize an object of the Handler class.
+
+            Args:
+                datasource_object     (object)    --  instance of the Datacube class
+
+                handler_name          (str)       --  name of the Handler
+
+                handler_id            (int)       --  Id of the Handler. Default = None
+
+            Returns:
+
+                object  -   instance of the Handler class
+        &#34;&#34;&#34;
+        self._datasource_object = datasource_object
+        self._handler_name = handler_name
+        if handler_id is None:
+            self._handler_id = self._get_handler_id(handler_name)
+        else:
+            self._handler_id = handler_id
+        self.commcell_obj = self._datasource_object._commcell_object
+        self._share_handler = self.commcell_obj._services[&#39;SHARE_HANDLER&#39;]
+
+    @property
+    def handler_id(self):
+        &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+        return self._handler_id
+
+    def _get_handler_id(self, handler_name):
+        &#34;&#34;&#34; Get handler id for given handler name
+                Args:
+
+                    handler_name (str) -- Name of the Handler
+
+                Returns:
+
+                    int                -- Handler id
+
+                Raises:
+
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                &#34;&#34;&#34;
+
+        handlers = self.commcell_obj.Datacube.datasources.ds_handlers
+        return handlers.get_properties(handler_name=handler_name)[&#39;handlerId&#39;]
+
+    def get_handler_data(self, handler_filter=&#34;&#34;):
+        &#34;&#34;&#34; Executes handler for fetching data
+                Args:
+
+                     handler_filter    (str)  -- Filter which needs to applied for handler execution
+
+                Returns:
+
+                    dict        --  Dictionary of values fetched from handler execution
+
+                Raises:
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if error in fetching handler data
+        &#34;&#34;&#34;
+
+        if not isinstance(handler_filter, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+        self._execute_handler = self.commcell_obj._services[&#39;EXECUTE_HANDLER&#39;] % (
+            self.handler_id, self._handler_name, handler_filter
+        )
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._execute_handler)
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                return response.json()[&#39;response&#39;]
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to execute handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No response object in Json&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def share(self, permission_list, operation_type, user_id, user_name, user_type):
+        &#34;&#34;&#34; Share handler with user/usergroup
+                Args:
+                    permission_list (list)      -- List of permission
+
+                    operation_type  (int)       -- Operation type (2-add / 3- delete)
+
+                    user_id         (int)       -- User id of share user
+
+                    user_name       (str)       -- Share user name
+
+                    user_type       (int)       -- Share user type (Ex : 13- User)
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                     SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if failed to share handler with User/Usergroup
+        &#34;&#34;&#34;
+
+        category_permission_list = []
+        for permission in permission_list:
+            category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+        request_json = {
+            &#34;entityAssociated&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;entityType&#34;: 157,
+                        &#34;_type_&#34;: 150,
+                        &#34;entityId&#34;: self.handler_id
+                    }
+                ]
+            },
+            &#34;securityAssociations&#34;: {
+                &#34;processHiddenPermission&#34;: 1,
+                &#34;associationsOperationType&#34;: operation_type,
+                &#34;associations&#34;: [
+                    {
+                        &#34;userOrGroup&#34;: [
+                            {
+                                &#34;userId&#34;: user_id,
+                                &#34;_type_&#34;: user_type,
+                                &#34;userName&#34;: user_name
+                            }
+                        ],
+                        &#34;properties&#34;: {
+                            &#34;categoryPermission&#34;: {
+                                &#34;categoriesPermissionList&#34;: category_permission_list
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._share_handler, request_json)
+        if flag:
+            if &#39;response&#39; in response.json():
+                resp = response.json()[&#39;response&#39;]
+                resp = resp[0]
+                if resp.get(&#39;errorCode&#39;) != 0:
+                    error_message = resp[&#39;errorString&#39;]
+                    o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+                return response.json()[&#39;response&#39;]
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.datacube.handler.Handler"><code class="flex name class">
+<span>class <span class="ident">Handler</span></span>
+<span>(</span><span>datasource_object, handler_name, handler_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing operations on a single Handler</p>
+<p>Initialize an object of the Handler class.</p>
+<h2 id="args">Args</h2>
+<p>datasource_object
+(object)
+&ndash;
+instance of the Datacube class</p>
+<p>handler_name
+(str)
+&ndash;
+name of the Handler</p>
+<p>handler_id
+(int)
+&ndash;
+Id of the Handler. Default = None</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Handler class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L334-L499" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Handler(object):
+    &#34;&#34;&#34;Class for performing operations on a single Handler&#34;&#34;&#34;
+
+    def __init__(self, datasource_object, handler_name, handler_id=None):
+        &#34;&#34;&#34;Initialize an object of the Handler class.
+
+            Args:
+                datasource_object     (object)    --  instance of the Datacube class
+
+                handler_name          (str)       --  name of the Handler
+
+                handler_id            (int)       --  Id of the Handler. Default = None
+
+            Returns:
+
+                object  -   instance of the Handler class
+        &#34;&#34;&#34;
+        self._datasource_object = datasource_object
+        self._handler_name = handler_name
+        if handler_id is None:
+            self._handler_id = self._get_handler_id(handler_name)
+        else:
+            self._handler_id = handler_id
+        self.commcell_obj = self._datasource_object._commcell_object
+        self._share_handler = self.commcell_obj._services[&#39;SHARE_HANDLER&#39;]
+
+    @property
+    def handler_id(self):
+        &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+        return self._handler_id
+
+    def _get_handler_id(self, handler_name):
+        &#34;&#34;&#34; Get handler id for given handler name
+                Args:
+
+                    handler_name (str) -- Name of the Handler
+
+                Returns:
+
+                    int                -- Handler id
+
+                Raises:
+
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                &#34;&#34;&#34;
+
+        handlers = self.commcell_obj.Datacube.datasources.ds_handlers
+        return handlers.get_properties(handler_name=handler_name)[&#39;handlerId&#39;]
+
+    def get_handler_data(self, handler_filter=&#34;&#34;):
+        &#34;&#34;&#34; Executes handler for fetching data
+                Args:
+
+                     handler_filter    (str)  -- Filter which needs to applied for handler execution
+
+                Returns:
+
+                    dict        --  Dictionary of values fetched from handler execution
+
+                Raises:
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if error in fetching handler data
+        &#34;&#34;&#34;
+
+        if not isinstance(handler_filter, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+        self._execute_handler = self.commcell_obj._services[&#39;EXECUTE_HANDLER&#39;] % (
+            self.handler_id, self._handler_name, handler_filter
+        )
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._execute_handler)
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                return response.json()[&#39;response&#39;]
+            if &#39;error&#39; in response.json():
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to execute handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No response object in Json&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def share(self, permission_list, operation_type, user_id, user_name, user_type):
+        &#34;&#34;&#34; Share handler with user/usergroup
+                Args:
+                    permission_list (list)      -- List of permission
+
+                    operation_type  (int)       -- Operation type (2-add / 3- delete)
+
+                    user_id         (int)       -- User id of share user
+
+                    user_name       (str)       -- Share user name
+
+                    user_type       (int)       -- Share user type (Ex : 13- User)
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                     SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+
+                        if failed to share handler with User/Usergroup
+        &#34;&#34;&#34;
+
+        category_permission_list = []
+        for permission in permission_list:
+            category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+        request_json = {
+            &#34;entityAssociated&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;entityType&#34;: 157,
+                        &#34;_type_&#34;: 150,
+                        &#34;entityId&#34;: self.handler_id
+                    }
+                ]
+            },
+            &#34;securityAssociations&#34;: {
+                &#34;processHiddenPermission&#34;: 1,
+                &#34;associationsOperationType&#34;: operation_type,
+                &#34;associations&#34;: [
+                    {
+                        &#34;userOrGroup&#34;: [
+                            {
+                                &#34;userId&#34;: user_id,
+                                &#34;_type_&#34;: user_type,
+                                &#34;userName&#34;: user_name
+                            }
+                        ],
+                        &#34;properties&#34;: {
+                            &#34;categoryPermission&#34;: {
+                                &#34;categoriesPermissionList&#34;: category_permission_list
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._share_handler, request_json)
+        if flag:
+            if &#39;response&#39; in response.json():
+                resp = response.json()[&#39;response&#39;]
+                resp = resp[0]
+                if resp.get(&#39;errorCode&#39;) != 0:
+                    error_message = resp[&#39;errorString&#39;]
+                    o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+                return response.json()[&#39;response&#39;]
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.datacube.handler.Handler.handler_id"><code class="name">var <span class="ident">handler_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the value of the handler id attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L360-L363" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def handler_id(self):
+    &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+    return self._handler_id</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.datacube.handler.Handler.get_handler_data"><code class="name flex">
+<span>def <span class="ident">get_handler_data</span></span>(<span>self, handler_filter='')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Executes handler for fetching data</p>
+<h2 id="args">Args</h2>
+<p>handler_filter
+(str)
+&ndash; Filter which needs to applied for handler execution</p>
+<h2 id="returns">Returns</h2>
+<p>dict
+&ndash;
+Dictionary of values fetched from handler execution</p>
+<h2 id="raises">Raises</h2>
+<p>SDKExpception:</p>
+<pre><code>if response is empty
+
+if response is not success
+
+if error in fetching handler data
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L388-L423" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_handler_data(self, handler_filter=&#34;&#34;):
+    &#34;&#34;&#34; Executes handler for fetching data
+            Args:
+
+                 handler_filter    (str)  -- Filter which needs to applied for handler execution
+
+            Returns:
+
+                dict        --  Dictionary of values fetched from handler execution
+
+            Raises:
+                SDKExpception:
+
+                    if response is empty
+
+                    if response is not success
+
+                    if error in fetching handler data
+    &#34;&#34;&#34;
+
+    if not isinstance(handler_filter, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+    self._execute_handler = self.commcell_obj._services[&#39;EXECUTE_HANDLER&#39;] % (
+        self.handler_id, self._handler_name, handler_filter
+    )
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._execute_handler)
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            return response.json()[&#39;response&#39;]
+        if &#39;error&#39; in response.json():
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to execute handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No response object in Json&#34;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handler.share"><code class="name flex">
+<span>def <span class="ident">share</span></span>(<span>self, permission_list, operation_type, user_id, user_name, user_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Share handler with user/usergroup</p>
+<h2 id="args">Args</h2>
+<p>permission_list (list)
+&ndash; List of permission</p>
+<p>operation_type
+(int)
+&ndash; Operation type (2-add / 3- delete)</p>
+<p>user_id
+(int)
+&ndash; User id of share user</p>
+<p>user_name
+(str)
+&ndash; Share user name</p>
+<p>user_type
+(int)
+&ndash; Share user type (Ex : 13- User)</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKExpception:</p>
+<p>if response is empty</p>
+<p>if response is not success</p>
+<p>if failed to share handler with User/Usergroup</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L425-L499" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def share(self, permission_list, operation_type, user_id, user_name, user_type):
+    &#34;&#34;&#34; Share handler with user/usergroup
+            Args:
+                permission_list (list)      -- List of permission
+
+                operation_type  (int)       -- Operation type (2-add / 3- delete)
+
+                user_id         (int)       -- User id of share user
+
+                user_name       (str)       -- Share user name
+
+                user_type       (int)       -- Share user type (Ex : 13- User)
+
+            Returns:
+
+                None
+
+            Raises:
+
+                 SDKExpception:
+
+                    if response is empty
+
+                    if response is not success
+
+                    if failed to share handler with User/Usergroup
+    &#34;&#34;&#34;
+
+    category_permission_list = []
+    for permission in permission_list:
+        category_permission_list.append({&#39;permissionId&#39;: permission, &#39;_type_&#39;: 122})
+    request_json = {
+        &#34;entityAssociated&#34;: {
+            &#34;entity&#34;: [
+                {
+                    &#34;entityType&#34;: 157,
+                    &#34;_type_&#34;: 150,
+                    &#34;entityId&#34;: self.handler_id
+                }
+            ]
+        },
+        &#34;securityAssociations&#34;: {
+            &#34;processHiddenPermission&#34;: 1,
+            &#34;associationsOperationType&#34;: operation_type,
+            &#34;associations&#34;: [
+                {
+                    &#34;userOrGroup&#34;: [
+                        {
+                            &#34;userId&#34;: user_id,
+                            &#34;_type_&#34;: user_type,
+                            &#34;userName&#34;: user_name
+                        }
+                    ],
+                    &#34;properties&#34;: {
+                        &#34;categoryPermission&#34;: {
+                            &#34;categoriesPermissionList&#34;: category_permission_list
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._share_handler, request_json)
+    if flag:
+        if &#39;response&#39; in response.json():
+            resp = response.json()[&#39;response&#39;]
+            resp = resp[0]
+            if resp.get(&#39;errorCode&#39;) != 0:
+                error_message = resp[&#39;errorString&#39;]
+                o_str = &#39;Failed to share handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            return response.json()[&#39;response&#39;]
+        raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response&#34;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers"><code class="flex name class">
+<span>class <span class="ident">Handlers</span></span>
+<span>(</span><span>datasource_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the handlers associated with the datasource.</p>
+<p>Initialize object of the Handlers class.</p>
+<h2 id="args">Args</h2>
+<p>_datasource_object (object)
+&ndash;
+instance of the datastore class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Handlers class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L68-L331" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Handlers(object):
+    &#34;&#34;&#34;Class for representing all the handlers associated with the datasource.&#34;&#34;&#34;
+
+    def __init__(self, datasource_object):
+        &#34;&#34;&#34;Initialize object of the Handlers class.
+
+            Args:
+                _datasource_object (object)  --  instance of the datastore class
+
+            Returns:
+                object - instance of the Handlers class
+
+        &#34;&#34;&#34;
+
+        self._datasource_object = datasource_object
+        self.commcell_obj = self._datasource_object._commcell_object
+        self._create_handler = self.commcell_obj._services[&#39;CREATE_HANDLER&#39;]
+        self._get_handler = self.commcell_obj._services[&#39;GET_HANDLERS&#39;] % (
+            self._datasource_object.datasource_id
+        )
+
+        self._handlers = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all handlers of the datasource.
+
+            Returns:
+                str - string of all the handlers associated with the datasource
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Handler&#39;)
+        for index, handler in enumerate(self._handlers):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, handler)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Handlers class.&#34;&#34;&#34;
+        return &#34;Handlers class instance for Datasource: &#39;{0}&#39;&#34;.format(
+            self._datasource_object.datasource_name
+        )
+
+    def _get_handlers(self):
+        &#34;&#34;&#34;Gets all the handlers associated with the datasource
+
+            Returns:
+                dict - consists of all handlers in the datasource
+                    {
+                         &#34;handler1_name&#34;: dict of handler1 properties,
+                         &#34;handler2_name&#34;: dict of handler2 properties
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        flag, response = self._datasource_object._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._get_handler)
+        if flag:
+            if response.json() and &#39;handlerInfos&#39; in response.json():
+                handlers_dict = {}
+                for dictionary in response.json()[&#39;handlerInfos&#39;]:
+                    temp_name = dictionary[&#39;handlerName&#39;]
+                    handlers_dict[temp_name] = dictionary
+                return handlers_dict
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._datasource_object._commcell_object._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_handler(self, handler_name):
+        &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+                bool - boolean output whether the handler exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the handler name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(handler_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
+
+    def get_properties(self, handler_name):
+        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+                dict -  properties for the given handler name
+
+
+        &#34;&#34;&#34;
+        return self._handlers[handler_name]
+
+    def get(self, handler_name):
+        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+            Args:
+                handler_name (str)  --  name of the handler
+
+            Returns:
+
+                obj                 -- Object of Handler class
+
+
+        &#34;&#34;&#34;
+        if not isinstance(handler_name, basestring):
+            raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+        if self.has_handler(handler_name):
+            handler_id = self.get_properties(handler_name)[&#39;handlerId&#39;]
+            return Handler(self._datasource_object, handler_name, handler_id)
+        raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Unable to get handler class object&#34;)
+
+    def delete(self, handler_name):
+        &#34;&#34;&#34; deletes the handler associated with this handler object
+                Args:
+
+                    handler_name (str)     -- Name of the handler which needs to be deleted
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKExpception:
+
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+        handler_id = self.get(handler_name).handler_id
+        self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
+            handler_id)
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._delete_handler)
+
+        if flag:
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                error_message = response.json()[&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to Delete handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+            elif &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] == 0:
+                return
+            else:
+                raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response with no errorCode&#34;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def add(self,
+            handler_name,
+            search_query,
+            filter_query=None,
+            facet_field=None,
+            facet_query=None,
+            rows=10,
+            response_type=&#34;json&#34;,
+            sort_column=[]):
+        &#34;&#34;&#34;Adds a new handler to the commcell.
+
+            Args:
+                handler_name    (str)   --  name of the handler to add to the datastore
+
+                search_query    (list)  --  list of keywords on which the search is performed.
+
+                filter_query    (list)  --  list of conditional queries which needs to be performed
+                                                when the data is retrieved
+
+                facet_field     (list)  --  list of fields to be faceted.
+
+                facet_query     (list)  --  list of conditional queries for which the facet count
+                                                should be retrieved
+
+                rows            (int)   --  list of keywords on which the search is performed.
+
+                response_type   (str)   --  format in which search results are retrieved.
+                    default: json
+
+                    Supported Types:
+                        json
+
+                        csv
+
+                        xml
+
+
+                sort_column     (list)  --  list of column name to be sorted
+
+
+            Raises:
+                SDKException:
+                    if type of the handler name argument is not string
+
+                    if failed to delete handler
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no handler exists with the given name
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;dataSourceId&#34;: self._datasource_object.datasource_id,
+            &#34;handlerName&#34;: handler_name,
+            &#34;handlerInfo&#34;: {
+                &#34;defaultParams&#34;: {
+                    &#34;q&#34;: search_query,
+                    &#34;fq&#34;: filter_query,
+                    &#34;sort&#34;: sort_column,
+                    &#34;facet&#34;: [
+                        &#34;true&#34; if facet_field or facet_query else &#34;false&#34;
+                    ],
+                    &#34;facet.field&#34;: facet_field,
+                    &#34;facet.query&#34;: facet_query,
+                    &#34;rows&#34;: [rows],
+                    &#34;wt&#34;: [response_type]
+                },
+                &#34;appendParams&#34;: {},
+                &#34;rawDefaultParams&#34;: [],
+                &#34;rawAppendParams&#34;: [],
+                &#34;rawInvariantParams&#34;: [],
+                &#34;alwaysDecode&#34;: &#34;true&#34;
+            }
+        }
+
+        flag, response = self.commcell_obj._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._create_handler, request_json
+        )
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                if(response.json()[&#39;error&#39;] == &#39;None&#39; or response.json()[&#39;error&#39;] is None):
+                    self.refresh()  # reload new list.
+                    return
+                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                if error_code == 0:
+                    self.refresh()  # reload new list.
+                    return
+                error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+                o_str = &#39;Failed to create handler\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self.commcell_obj._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+        self._handlers = self._get_handlers()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.datacube.handler.Handlers.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, handler_name, search_query, filter_query=None, facet_field=None, facet_query=None, rows=10, response_type='json', sort_column=[])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a new handler to the commcell.</p>
+<h2 id="args">Args</h2>
+<p>handler_name
+(str)
+&ndash;
+name of the handler to add to the datastore</p>
+<p>search_query
+(list)
+&ndash;
+list of keywords on which the search is performed.</p>
+<p>filter_query
+(list)
+&ndash;
+list of conditional queries which needs to be performed
+when the data is retrieved</p>
+<p>facet_field
+(list)
+&ndash;
+list of fields to be faceted.</p>
+<p>facet_query
+(list)
+&ndash;
+list of conditional queries for which the facet count
+should be retrieved</p>
+<p>rows
+(int)
+&ndash;
+list of keywords on which the search is performed.</p>
+<p>response_type
+(str)
+&ndash;
+format in which search results are retrieved.
+default: json</p>
+<pre><code>Supported Types:
+    json
+
+    csv
+
+    xml
+</code></pre>
+<p>sort_column
+(list)
+&ndash;
+list of column name to be sorted</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the handler name argument is not string</p>
+<pre><code>if failed to delete handler
+
+if response is empty
+
+if response is not success
+
+if no handler exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L232-L327" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self,
+        handler_name,
+        search_query,
+        filter_query=None,
+        facet_field=None,
+        facet_query=None,
+        rows=10,
+        response_type=&#34;json&#34;,
+        sort_column=[]):
+    &#34;&#34;&#34;Adds a new handler to the commcell.
+
+        Args:
+            handler_name    (str)   --  name of the handler to add to the datastore
+
+            search_query    (list)  --  list of keywords on which the search is performed.
+
+            filter_query    (list)  --  list of conditional queries which needs to be performed
+                                            when the data is retrieved
+
+            facet_field     (list)  --  list of fields to be faceted.
+
+            facet_query     (list)  --  list of conditional queries for which the facet count
+                                            should be retrieved
+
+            rows            (int)   --  list of keywords on which the search is performed.
+
+            response_type   (str)   --  format in which search results are retrieved.
+                default: json
+
+                Supported Types:
+                    json
+
+                    csv
+
+                    xml
+
+
+            sort_column     (list)  --  list of column name to be sorted
+
+
+        Raises:
+            SDKException:
+                if type of the handler name argument is not string
+
+                if failed to delete handler
+
+                if response is empty
+
+                if response is not success
+
+                if no handler exists with the given name
+
+    &#34;&#34;&#34;
+    request_json = {
+        &#34;dataSourceId&#34;: self._datasource_object.datasource_id,
+        &#34;handlerName&#34;: handler_name,
+        &#34;handlerInfo&#34;: {
+            &#34;defaultParams&#34;: {
+                &#34;q&#34;: search_query,
+                &#34;fq&#34;: filter_query,
+                &#34;sort&#34;: sort_column,
+                &#34;facet&#34;: [
+                    &#34;true&#34; if facet_field or facet_query else &#34;false&#34;
+                ],
+                &#34;facet.field&#34;: facet_field,
+                &#34;facet.query&#34;: facet_query,
+                &#34;rows&#34;: [rows],
+                &#34;wt&#34;: [response_type]
+            },
+            &#34;appendParams&#34;: {},
+            &#34;rawDefaultParams&#34;: [],
+            &#34;rawAppendParams&#34;: [],
+            &#34;rawInvariantParams&#34;: [],
+            &#34;alwaysDecode&#34;: &#34;true&#34;
+        }
+    }
+
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._create_handler, request_json
+    )
+    if flag:
+        if response.json() and &#39;error&#39; in response.json():
+            if(response.json()[&#39;error&#39;] == &#39;None&#39; or response.json()[&#39;error&#39;] is None):
+                self.refresh()  # reload new list.
+                return
+            error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+            if error_code == 0:
+                self.refresh()  # reload new list.
+                return
+            error_message = response.json()[&#39;error&#39;][&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to create handler\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, o_str)
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self.commcell_obj._update_response_(
+        response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, handler_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>deletes the handler associated with this handler object</p>
+<h2 id="args">Args</h2>
+<p>handler_name (str)
+&ndash; Name of the handler which needs to be deleted</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKExpception:</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L196-L230" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, handler_name):
+    &#34;&#34;&#34; deletes the handler associated with this handler object
+            Args:
+
+                handler_name (str)     -- Name of the handler which needs to be deleted
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKExpception:
+
+                    if response is empty
+
+                    if response is not success
+    &#34;&#34;&#34;
+    handler_id = self.get(handler_name).handler_id
+    self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
+        handler_id)
+
+    flag, response = self.commcell_obj._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._delete_handler)
+
+    if flag:
+        if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+            error_message = response.json()[&#39;errLogMessage&#39;]
+            o_str = &#39;Failed to Delete handler on datasource\nError: &#34;{0}&#34;&#39;.format(error_message)
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, o_str)
+        elif &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] == 0:
+            return
+        else:
+            raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Empty Response with no errorCode&#34;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, handler_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a handler object of the specified handler name.</p>
+<h2 id="args">Args</h2>
+<p>handler_name (str)
+&ndash;
+name of the handler</p>
+<h2 id="returns">Returns</h2>
+<p>obj
+&ndash; Object of Handler class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L176-L194" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, handler_name):
+    &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+        Args:
+            handler_name (str)  --  name of the handler
+
+        Returns:
+
+            obj                 -- Object of Handler class
+
+
+    &#34;&#34;&#34;
+    if not isinstance(handler_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    if self.has_handler(handler_name):
+        handler_id = self.get_properties(handler_name)[&#39;handlerId&#39;]
+        return Handler(self._datasource_object, handler_name, handler_id)
+    raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Unable to get handler class object&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers.get_properties"><code class="name flex">
+<span>def <span class="ident">get_properties</span></span>(<span>self, handler_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a handler object of the specified handler name.</p>
+<h2 id="args">Args</h2>
+<p>handler_name (str)
+&ndash;
+name of the handler</p>
+<h2 id="returns">Returns</h2>
+<p>dict -
+properties for the given handler name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L163-L174" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_properties(self, handler_name):
+    &#34;&#34;&#34;Returns a handler object of the specified handler name.
+
+        Args:
+            handler_name (str)  --  name of the handler
+
+        Returns:
+            dict -  properties for the given handler name
+
+
+    &#34;&#34;&#34;
+    return self._handlers[handler_name]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers.has_handler"><code class="name flex">
+<span>def <span class="ident">has_handler</span></span>(<span>self, handler_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a handler exists in the datasource with the input handler name.</p>
+<h2 id="args">Args</h2>
+<p>handler_name (str)
+&ndash;
+name of the handler</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the handler exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the handler name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L144-L161" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_handler(self, handler_name):
+    &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+
+        Args:
+            handler_name (str)  --  name of the handler
+
+        Returns:
+            bool - boolean output whether the handler exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the handler name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(handler_name, basestring):
+        raise SDKException(&#39;Datacube&#39;, &#39;101&#39;)
+
+    return self._handlers and handler_name.lower() in map(str.lower, self._handlers)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.datacube.handler.Handlers.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the handlers associated with the Datasource.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/handler.py#L329-L331" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+    self._handlers = self._get_handlers()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.datacube" href="index.html">cvpysdk.datacube</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.datacube.handler.Handler" href="#cvpysdk.datacube.handler.Handler">Handler</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.datacube.handler.Handler.get_handler_data" href="#cvpysdk.datacube.handler.Handler.get_handler_data">get_handler_data</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handler.handler_id" href="#cvpysdk.datacube.handler.Handler.handler_id">handler_id</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handler.share" href="#cvpysdk.datacube.handler.Handler.share">share</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.datacube.handler.Handlers" href="#cvpysdk.datacube.handler.Handlers">Handlers</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.datacube.handler.Handlers.add" href="#cvpysdk.datacube.handler.Handlers.add">add</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handlers.delete" href="#cvpysdk.datacube.handler.Handlers.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handlers.get" href="#cvpysdk.datacube.handler.Handlers.get">get</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handlers.get_properties" href="#cvpysdk.datacube.handler.Handlers.get_properties">get_properties</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handlers.has_handler" href="#cvpysdk.datacube.handler.Handlers.has_handler">has_handler</a></code></li>
+<li><code><a title="cvpysdk.datacube.handler.Handlers.refresh" href="#cvpysdk.datacube.handler.Handlers.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
