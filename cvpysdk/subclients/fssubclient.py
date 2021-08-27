@@ -410,6 +410,17 @@ class FileSystemSubclient(Subclient):
                 final_dict['mediaOpt'].update(media_opts)
             else:
                 final_dict['mediaOpt'] = media_opts
+        
+        if options.get('media_agent_name'):
+            media_agent_name = options['media_agent_name']
+            if not isinstance(media_agent_name, str):
+                message = f"media_agent_name: Expected str, received {type(media_agent_name)}"
+                raise SDKException('Subclient', '101', message)
+            final_dict['dataPathOpt'] = {
+                "mediaAgent": {
+                    "mediaAgentName": media_agent_name
+                }
+            }
 
         return final_dict
 
@@ -774,7 +785,13 @@ class FileSystemSubclient(Subclient):
 
         """
 
-        return self._fsSubClientProp['afterDeletionKeepItemsForNDays']
+        # For Indexing V2 clients
+        if 'afterDeletionKeepItemsForNDays' in self._fsSubClientProp:
+            return self._fsSubClientProp['afterDeletionKeepItemsForNDays']
+
+        # For Indexing V1 clients
+        else:
+            return self._fsSubClientProp.get('daysToKeepItems', 0)
 
     @backup_retention_days.setter
     def backup_retention_days(self, value):
@@ -797,12 +814,19 @@ class FileSystemSubclient(Subclient):
         """
 
         if isinstance(value, int):
-            if value != -1:
-                new_value = {
-                    'afterDeletionKeepItemsForNDays': value,
-                    'backupRetentionMode': 1}
+            if 'afterDeletionKeepItemsForNDays' in self._fsSubClientProp:
+                if value != -1:
+                    new_value = {
+                        'afterDeletionKeepItemsForNDays': value,
+                        'backupRetentionMode': 1
+                    }
+                else:
+                    new_value = {'afterDeletionKeepItemsForNDays': value}
             else:
-                new_value = {'afterDeletionKeepItemsForNDays': value}
+                new_value = {
+                    'daysToKeepItems': value
+                }
+
             self._set_subclient_properties("_fs_subclient_prop", new_value)
 
         else:
@@ -1156,6 +1180,14 @@ class FileSystemSubclient(Subclient):
                         (dict)  --  file version mode
         """
         version = {}
+
+        # For Indexing V1 client, this property is not supported. Taking default versions by number
+        if 'olderFileVersionsMode' not in self._fsSubClientProp:
+            return {
+                'Mode': 2,
+                'DaysOrNumber': self._fsSubClientProp.get('keepAtLeastPreviousVersions', 0)
+            }
+
         version['Mode'] = self._fsSubClientProp['olderFileVersionsMode']
         modes = {
             1: self._fsSubClientProp['keepOlderVersionsForNDays'],
@@ -1192,18 +1224,27 @@ class FileSystemSubclient(Subclient):
                     if value is invalid
 
         """
-        if isinstance(value, dict):
-            if value['Mode'] == 1 or value['Mode'] == 2:
-                new_value = {'olderFileVersionsMode': value['Mode']}
-            else:
-                raise SDKException(
-                    'Subclient', '102', "File version mode can only be 1 or 2")
-            modes = {
-                1: 'keepOlderVersionsForNDays',
-                2: 'keepVersions'
-            }
 
-            new_value[modes[value['Mode']]] = value['DaysOrNumber']
+        if isinstance(value, dict):
+            # For Indexing V2 client
+            if 'olderFileVersionsMode' in self._fsSubClientProp:
+                if value['Mode'] == 1 or value['Mode'] == 2:
+                    new_value = {'olderFileVersionsMode': value['Mode']}
+                else:
+                    raise SDKException(
+                        'Subclient', '102', "File version mode can only be 1 or 2")
+                modes = {
+                    1: 'keepOlderVersionsForNDays',
+                    2: 'keepVersions'
+                }
+
+                new_value[modes[value['Mode']]] = value['DaysOrNumber']
+
+            # For Indexing V1 client
+            else:
+                new_value = {
+                    'keepAtLeastPreviousVersions': value['DaysOrNumber']
+                }
 
             self._set_subclient_properties("_fs_subclient_prop", new_value)
         else:
@@ -1582,7 +1623,7 @@ class FileSystemSubclient(Subclient):
                         only applicable in case of on demand subclient
                     default: None
 
-                advacnced_options   (dict)  --  advanced backup options to be included while
+                advanced_options    (dict)  --  advanced backup options to be included while
                                                     making the request
                         default: None
 
@@ -1592,6 +1633,8 @@ class FileSystemSubclient(Subclient):
                             adhoc_backup_contents   :   sets the contents for adhoc backup
                             inline_backup_copy      :   to run backup copy immediately(inline)
                             skip_catalog            :   skip catalog for intellisnap operation
+                            start_new_media         :   enables the option to start new media for the job
+                            media_agent_name        :   to run backup via this media agent
 
                 common_backup_options      (dict)  --  advanced job options to be included while
                                                         making request

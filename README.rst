@@ -211,7 +211,7 @@ License
 
 About Commvault
 ---------------
-.. image:: https://commvault.github.io/cvpysdk/logo.png
+.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/2/2f/Commvault_logo.svg/320px-Commvault_logo.svg.png
     :align: center
 
 |
