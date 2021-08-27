@@ -111,7 +111,11 @@ Subclient:
 
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    disble_backup()             --  disables the backup for the subclient
+    disable_backup()             --  disables the backup for the subclient
+
+    set_proxy_for_snap()        --  method to set Use proxy option for intellisnap subclient
+
+    unset_proxy_for_snap()      --  method to unset Use proxy option for intellisnap subclient
 
     backup()                    --  run a backup job for the subclient
 
@@ -122,6 +126,8 @@ Subclient:
     at the input path in the time range specified
 
     find()                      --  searches a given file/folder name in the subclient content
+
+    list_media()                --  List media required to browse and restore backed up data from the backupset
 
     restore_in_place()          --  Restores the files/folders specified in the
     input paths list to the same location
@@ -259,6 +265,7 @@ class Subclients(object):
         from .subclients.informixsubclient import InformixSubclient
         from .subclients.adsubclient import ADSubclient
         from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.sharepointsubclient import SharepointV1Subclient
         from .subclients.vminstancesubclient import VMInstanceSubclient
         from .subclients.db2subclient import DB2Subclient
         from .subclients.casesubclient import CaseSubclient
@@ -285,6 +292,7 @@ class Subclients(object):
         globals()['InformixSubclient'] = InformixSubclient
         globals()['ADSubclient'] = ADSubclient
         globals()['SharepointSubclient'] = SharepointSubclient
+        globals()['SharepointV1Subclient'] = SharepointV1Subclient
         globals()['VMInstanceSubclient'] = VMInstanceSubclient
         globals()['CaseSubclient'] = CaseSubclient
         globals()['AzureADSubclient'] = AzureAdSubclient
@@ -301,6 +309,7 @@ class Subclients(object):
             'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
+            'oracle rac': OracleSubclient,
             'notes database': LNDbSubclient,
             'notes document': LNDocSubclient,
             'domino mailbox archiver': LNDmSubclient,
@@ -313,7 +322,7 @@ class Subclients(object):
             'db2': DB2Subclient,
             'informix': InformixSubclient,
             'active directory': ADSubclient,
-            'sharepoint server': SharepointSubclient,
+            'sharepoint server': [SharepointV1Subclient,SharepointSubclient],
             "azure ad" : AzureAdSubclient
         }
 
@@ -617,6 +626,9 @@ class Subclients(object):
                             subclient = self._subclients_dict[agent_name][-1]
                         elif self._client_object.client_type and int(self._client_object.client_type) == 36:
                             # client type 36 is case manager client
+                            subclient = self._subclients_dict[agent_name][-1]
+                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
+                            # agent id 78 is sharepoint client
                             subclient = self._subclients_dict[agent_name][-1]
                         else:
                             subclient = self._subclients_dict[agent_name][0]
@@ -1274,6 +1286,9 @@ class Subclients(object):
                         subclient = self._subclients_dict[agent_name][-1]
                     elif self._client_object.client_type and int(self._client_object.client_type) == 36:
                         # client type 36 is case manager client
+                        subclient = self._subclients_dict[agent_name][-1]
+                    elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
+                        # agent id 78 is sharepoint client
                         subclient = self._subclients_dict[agent_name][-1]
                     else:
                         subclient = self._subclients_dict[agent_name][0]
@@ -2273,6 +2288,34 @@ c
             "_commonProperties['snapCopyInfo']['isSnapBackupEnabled']", False
         )
 
+    def set_proxy_for_snap(self, proxy_name):
+        """ method to set Use proxy option for intellisnap subclient 
+
+        Args:
+            proxy_name(str) -- Name of the proxy to be used
+
+        """
+        if not isinstance(proxy_name, basestring):
+            raise SDKException("Subclient", "101")
+
+        properties_dict = {
+            "clientName": proxy_name
+        }
+
+        update_properties = self.properties
+        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        self.update_properties(update_properties)
+
+    def unset_proxy_for_snap(self):
+        """ method to unset Use proxy option for intellisnap subclient """
+
+        properties_dict = {
+            "clientId": 0
+        }
+        update_properties = self.properties
+        update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
+        self.update_properties(update_properties)
+
     def backup(self,
                backup_level="Incremental",
                incremental_backup=False,
@@ -2462,6 +2505,57 @@ c
         options['_subclient_id'] = self._subclient_id
 
         return self._backupset_object.find(options)
+
+    def list_media(self, *args, **kwargs):
+        """List media required to browse and restore backed up data from the subclient
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2020-04-20 12:00:00',
+                            'to_time': '2021-04-19 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2020-04-20 12:00:00',
+                            to_time='2021-04-19 12:00:00'
+                        )
+
+            Note:
+                Refer `_default_browse_options` in backupset.py for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        """
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['_subclient_id'] = self._subclient_id
+
+        return self._backupset_object.list_media(options)
 
     def restore_in_place(
             self,
@@ -3006,7 +3100,7 @@ c
         if 'planEntity' in self._subclient_properties:
             planEntity = self._subclient_properties['planEntity']
 
-            if bool(planEntity):
+            if bool(planEntity) and 'planName' in planEntity:
                 return planEntity['planName']
             else:
                 return None

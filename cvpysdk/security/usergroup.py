@@ -103,6 +103,8 @@ UserGroup:
 
     disable_tfa()                   --  Disables tfa for this user group
 
+    update_navigation_preferences   --  Updates user group navigation preferences
+
 """
 
 from __future__ import absolute_import
@@ -795,6 +797,36 @@ class UserGroup(object):
 
         self._send_request(request_type=request_type, users_blob=userlist_json,
                            external_group_blob=usergroup_json, local_group_blob=local_groups_json)
+
+    def update_navigation_preferences(self, include_navigation_list):
+        """Updates the user group's include navigation preferences with the the list provided
+
+            Args:
+                include_navigation_list   (list)    --  list of navigation items to be seen in command center
+
+            Raises:
+                SDKException:
+
+                    if failed update user properties
+
+        """
+        request_json = {
+            'groups': [
+                {
+                    'additionalSettings': [
+                        {
+                            'deleted': 0,
+                            'relativepath': 'CommServDB.AdminConsole',
+                            'keyName': 'includeNavItems',
+                            'type': 'MULTISTRING',
+                            'value': ','.join(include_navigation_list),
+                            'enabled': 1
+                        }
+                    ]
+                }
+            ]
+        }
+        self._update_usergroup_props(request_json)
 
     def _send_request(self, request_type, association_blob=None, users_blob=None,
                       external_group_blob=None, local_group_blob=None):

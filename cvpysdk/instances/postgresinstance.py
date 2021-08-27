@@ -54,6 +54,8 @@ PostgreSQLInstance instance Attributes
     **postgres_archive_log_directory**   --  returns the postgres archive log directory
     of postgres server
 
+    **log_storage_policy**               --  returns the log storage policy for the instance
+
     **postgres_server_user_name**        --  returns the postgres server user name
     of postgres server
 
@@ -72,6 +74,8 @@ PostgreSQLInstance instance Attributes
     **use_master_for_log_backup**        --  Returns True if master is used for log backup
 
     **use_master_for_data_backup**       --  Returns True if master is used for data backup
+
+    **archive_delete**                   --  Returns True if archive delete is enabled for instance
 
 """
 
@@ -153,6 +157,15 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the Archive log directory.")
 
     @property
+    def log_storage_policy(self):
+        """Returns the log storage policy for the instance
+
+            Return Type: str
+			Default: None
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('logStoragePolicy', {}).get('storagePolicyName', None)
+
+    @property
     def postgres_server_user_name(self):
         """Returns the username of postgres server
 
@@ -207,6 +220,31 @@ class PostgreSQLInstance(Instance):
             'Instance',
             '105',
             "Could not fetch postgres version.")
+
+    @property
+    def archive_delete(self):
+        """Returns True if archive delete enabled. False if not
+
+            Return Type: bool
+
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('ArchiveDelete', False)
+
+    @archive_delete.setter
+    def archive_delete(self, value):
+        """ Setter for archive delete instance property
+
+            Args:
+
+                value (bool)  -- True to enable archive delete
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['ArchiveDelete'] = value
+        self.update_properties(properties)
+
     @property
     def standby_instance_name(self):
         """Returns the standby instance name

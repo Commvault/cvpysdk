@@ -623,10 +623,10 @@ class VirtualServerSubclient(Subclient):
             else:
                 display_name = child['displayName']
                 content_type = VSAObjects(child['type']).name
-                vm_id = child['name']
+                vm_id = child.get('name', '')
                 temp_dict = {
                     'equal_value': child['equalsOrNotEquals'],
-                    'allOrAnyChildren': child['allOrAnyChildren'],
+                    'allOrAnyChildren': child.get('allOrAnyChildren', True),
                     'id': vm_id,
                     'path': path,
                     'display_name': display_name,
@@ -814,7 +814,7 @@ class VirtualServerSubclient(Subclient):
             }
 
             # setting nics for azureRM instance
-            if value['destination_instance'] == 'azure resource manager':
+            if value.get('destination_instance') == 'azure resource manager':
                 if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
@@ -842,13 +842,14 @@ class VirtualServerSubclient(Subclient):
             Setting IP for destination vm
         """
         vmip = []
+        _asterisk = "*.*.*.*"
         vm_ip = {
             "sourceIP": value.get("source_ip"),
-            "sourceSubnet": value["source_subnet"] if value.get("source_subnet") else "*.*.*.*",
-            "sourceGateway": value["source_gateway"] if value.get("source_gateway") else "*.*.*.*",
+            "sourceSubnet": value["source_subnet"] if value.get("source_subnet") else _asterisk,
+            "sourceGateway": value["source_gateway"] if value.get("source_gateway") else _asterisk,
             "destinationIP": value.get("destination_ip"),
-            "destinationSubnet": value["destination_subnet"] if value.get("destination_subnet") else "*.*.*.*",
-            "destinationGateway": value["destination_gateway"] if value.get("destination_gateway") else "*.*.*.*",
+            "destinationSubnet": value["destination_subnet"] if value.get("destination_subnet") else _asterisk,
+            "destinationGateway": value["destination_gateway"] if value.get("destination_gateway") else _asterisk,
             "primaryDNS": value.get("primary_dns", ""),
             "alternateDNS": value.get("alternate_dns", ""),
             "primaryWins": value.get("primare_wins", ""),
@@ -915,7 +916,7 @@ class VirtualServerSubclient(Subclient):
             "newGuid": value.get("new_guid", ""),
             "newName": value.get("new_name", ""),
             "esxHost": value.get("esx_host", ""),
-            "projectId" : value.get("project_id", ""),
+            "projectId": value.get("project_id", ""),
             "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
@@ -1898,17 +1899,21 @@ class VirtualServerSubclient(Subclient):
         get the list of all the proxies on a selected subclient
 
         Returns:
-            associated_proxies   (LIST)  --  returns the proxies list
+            associated_proxies   (List)  --  returns the proxies list
         """
         associated_proxies = []
         try:
             available_subclient_proxies = self._vsaSubclientProp["proxies"]["memberServers"]
             if len(available_subclient_proxies) > 0:
-                for proxy in available_subclient_proxies:
-                    associated_proxies.append(proxy["client"]["clientName"])
+                for client in available_subclient_proxies:
+                    if 'clientName' in client['client']:
+                        associated_proxies.append(client["client"]["clientName"])
+                    elif 'clientGroupName' in client['client']:
+                        client_group = self._commcell_object.client_groups.get(client["client"]["clientGroupName"])
+                        associated_proxies.extend(client_group.associated_clients)
         except KeyError:
             pass
-        return associated_proxies
+        return list(dict.fromkeys(associated_proxies))
 
     def _set_restore_defaults(self, restore_option):
         """
@@ -2031,7 +2036,7 @@ class VirtualServerSubclient(Subclient):
             folder_path = vs_metadata.get("inventoryPath", '')
             instanceSize = vs_metadata.get("instanceSize", '')
         else:
-            folder_path = ''
+            folder_path = restore_option['folder_path'] if restore_option.get('folder_path') else ''
             instanceSize = ''
 
         if 'resourcePoolPath' in restore_option and restore_option['resourcePoolPath'] is None:
@@ -2098,10 +2103,9 @@ class VirtualServerSubclient(Subclient):
         if "nics" not in restore_option or self._instance_object.instance_name == 'google cloud platform':
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
-            if "source_ip" in restore_option and "destination_ip" in restore_option:
-                if restore_option["source_ip"] and restore_option["destination_ip"]:
-                    vm_ip = self._json_vmip_advanced_restore_options(restore_option)
-                    restore_option["vm_ip_address_options"] = vm_ip
+            if restore_option.get('source_ip') and restore_option.get('destination_ip'):
+                vm_ip = self._json_vmip_advanced_restore_options(restore_option)
+                restore_option["vm_ip_address_options"] = vm_ip
             if restore_option["in_place"]:
                 if "hyper" in restore_option["destination_instance"].lower():
                     restore_option["client_name"] = vs_metadata['esxHost']
@@ -2153,7 +2157,7 @@ class VirtualServerSubclient(Subclient):
         # If new_name is not given, it restores the VM with same name
         # with suffix Delete.
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
-        browse_result = self.vm_files_browse()
+        _ = self.vm_files_browse()
         # populate restore source item
         restore_option['name'] = vm_to_restore
         restore_option['guid'] = vm_ids[vm_to_restore]
@@ -2172,7 +2176,7 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             if self._instance_object.instance_name != 'openstack':
                 new_name = data["name"].replace("/", "_").replace(" ", "_")
-                new_name = "del_" + new_name  if new_name_prefix is None \
+                new_name = "del_" + new_name if new_name_prefix is None \
                     else new_name_prefix + "_" + new_name
             else:
                 new_name = data["name"]
@@ -2244,9 +2248,13 @@ class VirtualServerSubclient(Subclient):
         """
 
         browse_result = self.vm_files_browse()
-
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
+        if ('browseMetaData' not in _metadata['advanced_data']) or \
+                ('virtualServerMetaData' not in _metadata['advanced_data']['browseMetaData']) or \
+                ('nics' not in _metadata['advanced_data']['browseMetaData']['virtualServerMetaData']):
+            browse_result = self.vm_files_browse(operation='find')
+            _metadata = browse_result[1][('\\' + vm_to_restore)]
         vs_metadata = _metadata["advanced_data"]["browseMetaData"]["virtualServerMetaData"]
 
         restore_option['resourcePoolPath'] = vs_metadata['resourcePoolPath']

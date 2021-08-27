@@ -80,6 +80,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
+    'VM_BACKUP': '{0}v2/vsa/vm/%s/backup?backupLevel=%s',
 
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
@@ -98,6 +99,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_MEDIA_AGENTS': '{0}V2/MediaAgents',
     'LIBRARY': '{0}Library',
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
+    'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
+    'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -116,7 +119,11 @@ SERVICES_DICT_TEMPLATE = {
     'ALERT': '{0}AlertRule/%s',
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
-    'GRANULAR_BLR_POINTS': '{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+    'GET_BLR_PAIRS': '{0}Replications/Monitors/continuous',
+    'GET_BLR_PAIR': '{0}Replications/Monitors/continuous?replicationPairId=%s',
+    'GET_BLR_PAIR_STATS': '{0}Replications/Statistics/%s',
+    'GRANULAR_BLR_POINTS': '{0}Replications/Monitors/continuous/VmScale?destProxyClientId=%s&subclientId=%s&vmUuid=%s',
+    'BLR_BOOT_DETAILS': '{0}/Replications/Monitors/continuous/Boot?replicationPairId=%s&bootType=%s&latest=true',
     'BROWSE_MOUNT_POINTS': '{0}/Client/%s/Action/BrowseMountPoints',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
@@ -145,6 +152,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
     'LIVE_SYNC': '{0}Task',
+    'LIVE_SYNC_DETAILS': '{0}/Task/%s/Details',
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
@@ -152,6 +160,7 @@ SERVICES_DICT_TEMPLATE = {
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
+    'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
@@ -208,9 +217,17 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
     'SHARE_HANDLER': '{0}dcube/share/handler',
     'SHARE_DATASOURCE': '{0}dcube/share/datasource',
-    'GET_CONTENT_ANALYZER_CLOUD':'{0}getContentAnalyzerCloud',
-    'ACTIVATE_ENTITIES':'{0}dcube/entity',
-    'ACTIVATE_ENTITY':'{0}dcube/entity/%s',
+    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
+    'ACTIVATE_ENTITIES': '{0}dcube/entity',
+    'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
+    'GET_TAGS': '{0}EDiscovery/Tags',
+    'ADD_CONTAINER': '{0}PerformContainerOperation',
+    'DELETE_CONTAINER': '{0}Containers/Action/Delete',
+    'CA_UPLOAD_FILE': '{0}ContentAnalyzer/%s/action/uploadFile',
+    'GET_CLASSIFIERS': '{0}dcube/classifiers?getDisabled=True',
+    'START_TRAINING': '{0}ContentAnalyzer/%s/%s/ml/action/train',
+    'CANCEL_TRAINING': '{0}ContentAnalyzer/%s/%s/training/cancel',
+
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -235,6 +252,7 @@ SERVICES_DICT_TEMPLATE = {
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
+    'CVDRBACKUP_REQUEST': '{0}cvdrbackup/requests',
 
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
@@ -248,7 +266,7 @@ SERVICES_DICT_TEMPLATE = {
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
     'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&deep=true&hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
-    'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s",
+    'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s&Limit=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
     'USERS': '{0}User',
     'USER': '{0}User/%s?Level=50',
@@ -283,6 +301,7 @@ SERVICES_DICT_TEMPLATE = {
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
     'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
     'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
+    'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -290,6 +309,9 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
+
+    'KEY_MANAGEMENT_SERVER_ADD_GET': '{0}CommCell/KeyManagementServers',
+    'KEY_MANAGEMENT_SERVER_DELETE': '{0}CommCell/KeyManagementServers/%s',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -300,10 +322,16 @@ SERVICES_DICT_TEMPLATE = {
 
     'LICENSE': '{0}CommcellRegistrationInformation',
 
+    'REPLICATION_GROUPS': '{0}ReplicationGroups',
+    'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
+    'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
+
     'DR_GROUPS': '{0}DRGroups',
     'GET_DR_GROUP': '{0}DRGroups/%s',
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+    'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
+
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
     'RPSTORE': '{0}Replications/RPStore',
@@ -320,6 +348,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
+    'GET_CONFIGURATION_POLICIES_FS': '{0}ConfigurationPolicies?policyType=filesytem',
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
@@ -377,6 +406,7 @@ SERVICES_DICT_TEMPLATE = {
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
     'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
+    'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s',
 
     'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
     'DASHBOARD_NEEDS_ATTENTION_TILE': '{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14',
@@ -394,6 +424,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'RETIRE': '{0}Client/%s/Retire',
 
+    'DATASOURCE_ACTIONS': '{0}EDiscoveryClients/Datasources/Actions',
     'CLOUD_CREATE': '{0}cloud/create',
     'CLOUD_MODIFY': '{0}cloud/modify',
     'CLOUD_DELETE': '{0}cloud/delete',
@@ -401,7 +432,15 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
-    'GET_SWAGGER': '{0}swagger/V3/swagger.json'
+    'GET_SWAGGER': '{0}swagger/V3/swagger.json',
+
+    'COMMCELL_METADATA': '{0}Commcell/MetaData',
+    'METALLIC_LINKING': '{0}CloudService/Subscription',
+    'CV_METALLIC_LINKING': '{0}/CloudService/Subscription/Details',
+    'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
+    'USER_MAPPINGS': '{0}GetUserMappings',
+    'METALLIC_REGISTERED': '{0}CloudServices/Registered',
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
 }
 
 

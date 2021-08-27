@@ -90,6 +90,8 @@ Commcell:
 
     register_commcell()             -- registers a commcell
 
+    sync_service_commcell()         --  Sync a service commcell
+
     unregister_commcell()           -- unregisters a commcell
 
     is_commcell_registered()       -- checks if the commcell is registered
@@ -116,6 +118,8 @@ Commcell:
 
     disable_tfa()                          --  Disables two factor authentication on this commcell
 
+    _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
+
 Commcell instance Attributes
 ============================
 
@@ -138,6 +142,8 @@ Commcell instance Attributes
     **version**                 --  returns the complete version info of the commserv
 
     **commcell_id**             --  returns the `CommCell` ID
+
+    **commser_metadata**        -- returns the commserv metadata of the commserv
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -168,6 +174,9 @@ Commcell instance Attributes
     **disk_libraries**          --  returns the instance of the `DiskLibraries` class,
     to interact with the disk libraries added on the Commcell
 
+    **tape_libraries**          --  returns the instance of the `TapeLibraries` class,
+    to interact with the tape libraries added on the Commcell
+
     **storage_policies**        --  returns the instance of the `StoragePolicies` class,
     to interact with the storage policies available on the Commcell
 
@@ -195,8 +204,8 @@ Commcell instance Attributes
     **content_analyzers**       --  returns the instance of the `ContentAnalyzers` class,
     to interact with the CA cloud deployed on the Commcell
 
-    **activate_entity**         --  returns the instance of the `ActivateEntities` class,
-    to interact with the regex entity on the Commcell
+    **activate**                --  returns the instance of the `Activate` class,
+    to interact with activate apps on the Commcell
 
     **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
@@ -278,6 +287,10 @@ Commcell instance Attributes
     **is_linux_commserv**           -- boolean specifying if CommServer is installed on linux cs.
 
     **default_timezone**            -- Default timezone used by all the operations performed via cvpysdk.
+
+    **metallic**                 -- Returns the instance of CVMetallic class
+
+    **key_management_servers**      -- Returns the instance of `KeyManagementServers` class
 """
 
 from __future__ import absolute_import
@@ -295,12 +308,14 @@ from requests.exceptions import Timeout
 # ConnectionError is a built-in exception, do not override it
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
+from .activate import Activate
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
 from .alert import Alerts
 from .storage import MediaAgents
 from .storage import DiskLibraries
+from .storage import TapeLibraries
 from .security.usergroup import UserGroups, UserGroup
 from .domains import Domains, Domain
 from .workflow import WorkFlows
@@ -309,7 +324,6 @@ from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .content_analyzer import ContentAnalyzers
-from .activate_entity import ActivateEntities
 from .plan import Plans
 from .job import JobController
 from .security.user import Users, User
@@ -339,11 +353,15 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .drorchestration.replication_groups import ReplicationGroups
+from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
 from .hac_clusters import HACClusters
 from .index_pools import IndexPools
 from .deduplication_engines import DeduplicationEngines
+from .metallic import Metallic
+from .key_management_server import KeyManagementServers
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -524,6 +542,7 @@ class Commcell(object):
         self._commserv_version = None
         self._version_info = None
         self._is_linux_commserv = None
+        self._commserv_metadata = None
 
         self._id = None
         self._clients = None
@@ -534,6 +553,7 @@ class Commcell(object):
         self._disaster_recovery = None
         self._alerts = None
         self._disk_libraries = None
+        self._tape_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
         self._schedules = None
@@ -543,7 +563,7 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
-        self._activate_entity = None
+        self._activate = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -566,7 +586,9 @@ class Commcell(object):
         self._redirect_rules_service = None
         self._backup_network_pairs = None
         self._reports = None
+        self._replication_groups = None
         self._recovery_targets = None
+        self._blr_pairs = None
         self._job_management = None
         self._index_servers = None
         self._hac_clusters = None
@@ -574,6 +596,8 @@ class Commcell(object):
         self._deduplication_engines = None
         self._redirect_cc_idp = None
         self._tfa = None
+        self._metallic = None
+        self._kms = None
         self.refresh()
 
         del self._password
@@ -629,6 +653,7 @@ class Commcell(object):
         del self._workflows
         del self._alerts
         del self._disk_libraries
+        del self._tape_libraries
         del self._storage_policies
         del self._schedule_policies
         del self._schedules
@@ -640,7 +665,7 @@ class Commcell(object):
         del self._client_groups
         del self._global_filters
         del self._datacube
-        del self._activate_entity
+        del self._activate
         del self._content_analyzers
         del self._plans
         del self._job_controller
@@ -648,6 +673,9 @@ class Commcell(object):
         del self._download_center
         del self._organizations
         del self._storage_pools
+        del self._recovery_targets
+        del self._replication_groups
+        del self._blr_pairs
         del self._activity_control
         del self._events
         del self._monitoring_policies
@@ -671,6 +699,8 @@ class Commcell(object):
         del self._is_service_commcell
         del self._master_saml_token
         del self._tfa
+        del self._metallic
+        del self._kms
         del self
 
     def _get_commserv_details(self):
@@ -696,7 +726,7 @@ class Commcell(object):
         if flag:
             if response.json():
                 try:
-                    self._commserv_guid = response.json()['commcell']['csGUID']
+                    self._commserv_guid = response.json()['commcell'].get('csGUID')
                     self._commserv_hostname = response.json()['hostName']
                     self._commserv_name = response.json()['commcell']['commCellName']
                     self._commserv_timezone_name = response.json()['csTimeZone']['TimeZoneName']
@@ -873,12 +903,21 @@ class Commcell(object):
         """ Updates GXGlobalParam table (Commcell level configuration parameters)
 
             Args:
-                request_json (str)   --  request json that is to be passed
+                request_json (dict)   --  request json that is to be passed
 
                     Sample: {
                                 "name": "",
                                 "value": ""
                             }
+                OR
+                request_json (list)   --  list of Global Param settings
+                    Sample: [
+                                {
+                                    "name": "",
+                                    "value": ""
+                                },
+                                ...
+                            ]
 
             Returns:
                 dict                --   json response received from the server
@@ -890,7 +929,19 @@ class Commcell(object):
                     if response is not success
 
         """
+        if  isinstance(request_json, list):
+            global_params_list = request_json
+            payload = {
+                "App_SetGlobalParamsReq": {
+                    "globalParams": global_params_list
+                }
+            }
+            return self.qoperation_execute(payload)
 
+        if not isinstance(request_json, dict):
+            message = f"Received: {type(request_json)}. Expected: dict, list"
+            raise SDKException('Commcell', 107, message)
+        
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['GLOBAL_PARAM'], request_json
         )
@@ -1074,6 +1125,13 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def tape_libraries(self):
+        """Returns the instance of the TapeLibraries class"""
+        if self._tape_libraries is None:
+            self._tape_libraries = TapeLibraries(self)
+        return self._tape_libraries
+
+    @property
     def storage_policies(self):
         """Returns the instance of the StoragePolicies class."""
         return self.policies.storage_policies
@@ -1182,13 +1240,13 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
-    def activate_entity(self):
+    def activate(self):
         """Returns the instance of the ContentAnalyzers class."""
         try:
-            if self._activate_entity is None:
-                self._activate_entity = ActivateEntities(self)
+            if self._activate is None:
+                self._activate = Activate(self)
 
-            return self._activate_entity
+            return self._activate
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -1417,6 +1475,17 @@ class Commcell(object):
         return self._redirect_rules_service
 
     @property
+    def replication_groups(self):
+        """Returns the instance of ReplicationGroups class"""
+        try:
+            if self._replication_groups is None:
+                self._replication_groups = ReplicationGroups(self)
+            return self._replication_groups
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def recovery_targets(self):
         """Returns the instance of RecoverTargets class"""
         try:
@@ -1424,6 +1493,18 @@ class Commcell(object):
                 self._recovery_targets = RecoveryTargets(self)
 
             return self._recovery_targets
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def blr_pairs(self):
+        """Returns the instance of BLRPairs class"""
+        try:
+            if self._blr_pairs is None:
+                self._blr_pairs = BLRPairs(self)
+
+            return self._blr_pairs
 
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
@@ -1470,6 +1551,35 @@ class Commcell(object):
         if self._redirect_cc_idp is None:
             self._redirect_cc_idp = self._commcells_for_user()
         return self._redirect_cc_idp
+
+    @property
+    def commserv_metadata(self):
+        """Returns the metadata of the commserv."""
+        if self._commserv_metadata is None:
+            self._commserv_metadata = self._get_commserv_metadata()
+        return self._commserv_metadata
+
+    @property
+    def metallic(self):
+        """Returns the instance of the Metallic class."""
+        try:
+            if self._metallic is None:
+                self._metallic = Metallic(self)
+
+            return self._metallic
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+    
+    @property
+    def key_management_servers(self):
+        """Returns the instance of the KeyManagementServers class."""
+        try:
+            if self._kms is None:
+                self._kms = KeyManagementServers(self)
+
+            return self._kms
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     def logout(self):
         """Logs out the user associated with the current instance."""
@@ -1594,6 +1704,7 @@ class Commcell(object):
         self._workflows = None
         self._alerts = None
         self._disk_libraries = None
+        self._tape_libraries = None
         self._storage_policies = None
         self._schedule_policies = None
         self._schedules = None
@@ -1602,7 +1713,7 @@ class Commcell(object):
         self._client_groups = None
         self._global_filters = None
         self._datacube = None
-        self._activate_entity = None
+        self._activate = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -1830,20 +1941,25 @@ class Commcell(object):
         """
         self.commserv_client.delete_additional_setting(category, key_name)
 
-    def protected_vms(self, days):
+    def protected_vms(self, days, limit=100):
         """
         Returns all the protected VMs for the particular client for passed days
         Args:
             days: Protected VMs for days
-                ex: if value is 30 , returns VM prtected in past 30 days
+                ex: if value is 30 , returns VM protected in past 30 days
+
+            limit: Number of Protected VMs
+                ex: if value is 50, returns 50 protected vms are returned
+                    if value is 0, all the protected vms are returned
+                    default value is 100
 
         Returns:
-                vm_dict -  all properties of VM prtotected for passed days
+                vm_dict -  all properties of VM protected for passed days
 
         """
 
         from_time, to_time = self._convert_days_to_epoch(days)
-        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time)
+        self._PROTECTED_VMS = self._services['PROTECTED_VMS'] % (from_time, to_time, limit)
         flag, response = self._cvpysdk_object.make_request(
             'GET',
             self._PROTECTED_VMS
@@ -1888,7 +2004,8 @@ class Commcell(object):
                           os_list=None,
                           service_pack=None,
                           cu_number=0,
-                          sync_cache=True):
+                          sync_cache=True,
+                          schedule_pattern=None):
         """Downloads the os packages on the commcell
 
             Args:
@@ -1962,7 +2079,8 @@ class Commcell(object):
             os_list=os_list,
             service_pack=service_pack,
             cu_number=cu_number,
-            sync_cache=sync_cache
+            sync_cache=sync_cache,
+            schedule_pattern=schedule_pattern
         )
 
     def push_servicepack_and_hotfix(
@@ -2042,6 +2160,7 @@ class Commcell(object):
             log_file_loc=None,
             client_group_name=None,
             storage_policy_name=None,
+            sw_cache_client=None,
             **kwargs):
         """
         Installs the selected features in the selected clients
@@ -2084,6 +2203,10 @@ class Commcell(object):
 
                  default : None
 
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
+
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
             install_flags (dict)            -- dictionary of install flag values
@@ -2123,6 +2246,7 @@ class Commcell(object):
                                 log_file_loc='/var/log',
                                 client_group_name=[My_Servers],
                                 storage_policy_name='My_Storage_Policy',
+                                sw_cache_client="remote_cache_client_name"
                                 install_flags={"preferredIPFamily":2})
 
                     **NOTE:** Either Unix or Windows clients_computers should be chosen and
@@ -2140,6 +2264,7 @@ class Commcell(object):
             log_file_loc=log_file_loc,
             client_group_name=client_group_name,
             storage_policy_name=storage_policy_name,
+            sw_cache_client=sw_cache_client,
             **kwargs)
 
     def enable_auth_code(self):
@@ -2719,14 +2844,66 @@ class Commcell(object):
 
                 if error_code != 0:
                     error_string = response.json()['resultMessage']
+                    if error_code == 1013:
+                        raise SDKException('CommcellRegistration', '105')
+
+                    elif error_code == 1007:
+                        raise SDKException('CommcellRegistration', '106')
+
+                    elif error_code == 1010:
+                        raise SDKException('CommcellRegistration', '107', '{0}'.format(error_string))
+
+                    else:
+                        raise SDKException(
+                            'CommcellRegistration', '101', 'Registration Failed\n Error: "{0}"'.format(
+                                error_string
+                            )
+                    )
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def service_commcell_sync(self, service_commcell):
+        """ Sync a service commcell
+
+        Args:
+
+        service_commcell    (object)    : Service commcell object
+
+        Raises:
+
+            if sync fails
+            if the response is empty
+            if there is no response
+
+        """
+        if not isinstance(service_commcell, Commcell):
+            raise SDKException('CommcellRegistration', '104')
+
+        guid = service_commcell.commserv_guid
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['SYNC_SERVICE_COMMCELL'] % guid
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+
+                if error_code != 0:
+                    error_string = response.json()['errorMessage']
                     raise SDKException(
                         'CommcellRegistration',
-                        '101',
-                        'Registration Failed\n Error: "{0}"'.format(
+                        '102',
+                        'Sync operation failed\n Error: "{0}"'.format(
                             error_string
                         )
                     )
                 self.refresh()
+
+                service_commcell.refresh()
             else:
                 raise SDKException('Response', '102')
         else:
@@ -2858,6 +3035,8 @@ class Commcell(object):
                     if ser_comm.get('commcellName', False):
                         continue
                     redirect_cc_list.append(ser_comm['commcellName'])
+                if 'cloudServices' in response.json():
+                    redirect_cc_list.append(response.json['cloudServices'][0]['commcellName'])
                 return redirect_cc_list
             else:
                 raise SDKException('Response', '102')
@@ -3069,3 +3248,33 @@ class Commcell(object):
             None
         """
         self.two_factor_authentication.disable_tfa()
+
+    def _get_commserv_metadata(self):
+        """loads  the metadata of the CommServ, the Commcell class instance is initialized for,
+            and updates the class instance attributes.
+
+            Returns:
+                commserv_metadata (dict) : returns a dict containing commserv_redirect_url and commserv_certificate
+
+            Raises:
+                SDKException:
+                    if failed to get commserv details
+
+
+                    if response is not success
+
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['COMMCELL_METADATA'])
+
+        if flag:
+            if response.json():
+                    commserv_metadata = {
+                        'commserv_redirect_url': response.json()['redirectUrl'],
+                        'commserv_certificate': response.json()['certificate']
+                    }
+                    return commserv_metadata
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

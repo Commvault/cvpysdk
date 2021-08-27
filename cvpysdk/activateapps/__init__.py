@@ -16,6 +16,6 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Initialize Replication APIs, and Classes for the SDK."""
+"""Initialize Activate Apps for the SDK."""
 
 __author__ = 'Commvault Systems Inc.'

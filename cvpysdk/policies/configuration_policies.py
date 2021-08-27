@@ -36,6 +36,9 @@ CleanupPolicy:          Class for representing a single Cleanup Policy associate
 RetentionPolicy:        Class for representing a single Retention Policy associated with
                             the Commcell; inherits ConfigurationPolicy
 
+ContentIndexingPolicy:  Class for representing a single Content Indexing Policy associated with
+                            the Commcell; inherits ConfigurationPolicy
+
 
 ConfigurationPolicies:
 
@@ -48,6 +51,8 @@ ConfigurationPolicies:
     ConfigurationPolicies class
 
     _get_policies()             --  gets all the Configuration policies of the Commcell
+
+    _get_ci_policies()          --  gets all the CI configuration policies of the Commcell
 
     has_policy(policy_name)     --  checks if a Configuration policy exists with the
     given name in a particular instance
@@ -62,6 +67,31 @@ ConfigurationPolicies:
 
     get_policy_object()         --  get the policy object based on policy type
 
+    run_content_indexing()      --  runs a Content indexing job for the CI policy
+
+
+ContentIndexingPolicy:
+
+    __init__()                  --  initializes the ContentIndexingPolicy instance for the given policy name
+
+    _initialize_policy_json()   --  creates a JSON payload for the Content Indexing Policy
+
+ContentIndexingPolicy Attributes:
+
+    **name**                    --  name of the Content Indexing policy
+
+    **include_doc_types**       --  list of all the file types to be included while Content Indexing
+
+    **index_server_name**       --  index server name to be used for Content Indexing
+
+    **data_access_node**        --  data access node's client name
+
+    **min_doc_size**            --  minimum documents size in MB
+
+    **max_doc_size**            --  maximum documents size in MB
+
+    **exclude_paths**           --  list of all the paths to be excluded from Content Indexing
+
 
 """
 
@@ -70,6 +100,7 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 
 from ..exception import SDKException
+from ..job import Job
 
 
 class ConfigurationPolicies(object):
@@ -92,7 +123,10 @@ class ConfigurationPolicies(object):
         self._update_response_ = commcell_object._update_response_
 
         self._POLICY = self._services['GET_CONFIGURATION_POLICIES']
+        self._POLICY_FS = self._services['GET_CONFIGURATION_POLICIES_FS']
+        self._CREATE_TASK = self._services['CREATE_TASK']
         self._policies = None
+        self._ci_policies = None
         self.refresh()
 
     def __repr__(self):
@@ -165,7 +199,43 @@ class ConfigurationPolicies(object):
         if not isinstance(policy_name, basestring):
             raise SDKException('ConfigurationPolicies', '101')
 
-        return self._policies and policy_name.lower() in self._policies
+        return (self._policies and policy_name.lower() in self._policies) or \
+               (self._ci_policies and policy_name.lower() in self._ci_policies)
+
+    def _get_ci_policies(self):
+        """Gets all the Content Indexing policies associated to the commcell specified by commcell object.
+
+            Returns:
+                 dict    -   consists of all Configuration policies of the commcell
+                            {
+                                "ci_policy1_name": [ci_policy1_id, ci_policy_type],
+
+                                "ci_policy2_name": [ci_policy2_id, ci_policy_type]
+                            }
+
+            Raises:
+                SDKException:
+                        if response is empty
+
+                        if response is not success
+
+                """
+        flag, response = self._cvpysdk_object.make_request('GET', self._POLICY_FS)
+
+        if flag:
+            policies_dict = {}
+            if response.json() and 'policies' in response.json():
+                policies = response.json()['policies']
+                for policy in policies:
+                    temp_name = policy['policyEntity']['policyName'].lower()
+                    temp_id = str(policy['policyEntity']['policyId']).lower()
+                    temp_policy_type = str(policy['detail']['filePolicy']
+                                          ['filePolicyType']).lower()
+                    policies_dict[temp_name] = [temp_id, temp_policy_type]
+            return policies_dict
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _get_policy_id(self, policy_name):
 
@@ -173,6 +243,8 @@ class ConfigurationPolicies(object):
             raise SDKException('ConfigurationPolicies', '101')
         if policy_name.lower() in self._policies:
             return self._policies[policy_name.lower()][0]
+        if policy_name.lower() in self._ci_policies:
+            return self._ci_policies[policy_name.lower()][0]
 
     def get(self, configuration_policy_name, policy_type):
         """Returns a ConfigurationPolicy object of the specified Configuration policy name.
@@ -221,6 +293,8 @@ class ConfigurationPolicies(object):
 
                         - Journal
 
+                        - Content Indexing
+
                 configuration_policy_name   (str)   --  name of the configuration Policy
 
             Returns:
@@ -233,7 +307,8 @@ class ConfigurationPolicies(object):
             "Archive": ArchivePolicy,
             "Journal": JournalPolicy,
             "Cleanup": CleanupPolicy,
-            "Retention": RetentionPolicy
+            "Retention": RetentionPolicy,
+            "ContentIndexing": ContentIndexingPolicy
         }
 
         try:
@@ -244,6 +319,77 @@ class ConfigurationPolicies(object):
                 '102',
                 'Policy Type {} is not supported'.format(policy_type)
             )
+
+    def run_content_indexing(self, ci_policy_name):
+        """Runs Content indexing job from the CI policy level
+
+            Args:
+                ci_policy_name      -       Content indexing policy name
+
+            Returns:
+                Job                 -       Job class object for the CI Job
+
+            Raises:
+                SDKException:
+                    No CI policy exists     -   if given policy name does not exist
+                    Failed to run CI job    -   if CI job failed to start
+                    Response was not success
+                    Response received is empty
+
+        """
+        if not self.has_policy(ci_policy_name):
+            raise SDKException('ConfigurationPolicies', '102', f'No CI policy exists with name: {ci_policy_name}')
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskId": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 5022
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "contentIndexingOption": {
+                                    "fileAnalytics": False,
+                                    "subClientBasedAnalytics": False
+                                },
+                                "contentIndexingPolicyOption": {
+                                    "policyId": int(self._get_policy_id(ci_policy_name)),
+                                    "policyName": ci_policy_name,
+                                    "policyDetailType": 5,
+                                    "policyType": 2
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._CREATE_TASK, request_json)
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Content Index job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('ConfigurationPolicies', '102', o_str)
+                raise SDKException('ConfigurationPolicies', '102', 'Failed to run the content indexing job')
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     def delete(self, configuration_policy_name):
         """Deletes a Configuration policy from the commcell.
@@ -325,7 +471,7 @@ class ConfigurationPolicies(object):
                 if 'policy' in response.json():
                     # initialize the policies again
                     # so the policies object has all the policies
-                    self._policies = self._get_policies()
+                    self.refresh()
                     return ConfigurationPolicy(
                         self._commcell_object, configuration_policy_name,
                         self._get_policy_id(configuration_policy_name)
@@ -344,6 +490,7 @@ class ConfigurationPolicies(object):
     def refresh(self):
         """Refresh the Virtual Machine policies."""
         self._policies = self._get_policies()
+        self._ci_policies = self._get_ci_policies()
 
 
 class ConfigurationPolicy(object):
@@ -391,7 +538,7 @@ class ConfigurationPolicy(object):
         """Gets the Configuration policy id asscoiated with the Configuration policy"""
 
         configuration_policies = ConfigurationPolicies(self._commcell_object)
-        return configuration_policies._get_policies()[self._configuration_policy_name.lower()][0]
+        return configuration_policies._get_policy_id(self._configuration_policy_name)
 
 
 class ArchivePolicy():
@@ -1602,4 +1749,142 @@ class RetentionPolicy():
             }
         }
 
+        return policy_json
+
+
+class ContentIndexingPolicy():
+    """Class for performing Content Indexing policy operations for a specific CI policy"""
+
+    def __init__(self, commcell_object, ci_policy_name):
+        """Initialise the Content indexing Policy class instance."""
+        self._commcell_object = commcell_object
+        self._name = ci_policy_name
+        self._file_policy_type = 5
+        self._includeDocTypes = "*.bmp,*.csv,*.doc,*.docx,*.dot,*.eml,*.htm,*.html,*.jpeg,*.jpg," \
+                                "*.log,*.msg,*.odg,*.odp,*.ods,*.odt,*.pages,*.pdf,*.png,*.ppt," \
+                                "*.pptx,*.rtf,*.txt,*.xls,*.xlsx,*.xmind,*.xml"
+        self._index_server_name = None
+        self._data_access_node = None
+        self._exclude_paths = ["C:\\Program Files", "C:\\Program Files (x86)", "C:\\Windows"]
+        self._min_doc_size = 0
+        self._max_doc_size = 50
+
+    @property
+    def name(self):
+        """Treats the name as a read-only attribute."""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        """Sets the value of name"""
+        self._name = value
+
+    @property
+    def include_doc_types(self):
+        """Treats the include_doc_types as a read-only attribute."""
+        return self._includeDocTypes
+
+    @include_doc_types.setter
+    def include_doc_types(self, value):
+        """Sets the value of include docs type"""
+        self._includeDocTypes = value
+
+    @property
+    def index_server_name(self):
+        """Treats the index_server_name as a read-only attribute."""
+        return self._index_server_name
+
+    @index_server_name.setter
+    def index_server_name(self, value):
+        """Sets the value of index server name"""
+        self._index_server_name = value
+
+    @property
+    def data_access_node(self):
+        """Treats the data_access_node as a read-only attribute."""
+        return self._data_access_node
+
+    @data_access_node.setter
+    def data_access_node(self, value):
+        """Sets the value of data access node"""
+        self._data_access_node = value
+
+    @property
+    def min_doc_size(self):
+        """Treats the min_doc_size as a read-only attribute."""
+        return self._min_doc_size
+
+    @min_doc_size.setter
+    def min_doc_size(self, value):
+        """Sets the value of minimum doc size"""
+        self._min_doc_size = value
+
+    @property
+    def max_doc_size(self):
+        """Treats the max_doc_size as a read-only attribute."""
+        return self._max_doc_size
+
+    @max_doc_size.setter
+    def max_doc_size(self, value):
+        """Sets the value of maximum doc size"""
+        self._max_doc_size = value
+
+    @property
+    def exclude_paths(self):
+        """Treats the exclude_paths as a read-only attribute."""
+        return self._exclude_paths
+
+    @exclude_paths.setter
+    def exclude_paths(self, value):
+        """Sets the value of exclude paths"""
+        self._exclude_paths = value
+
+    def _initialize_policy_json(self):
+        """
+            sets values for creating the add policy json
+        """
+        if not isinstance(self._index_server_name, basestring) or not isinstance(self._data_access_node, basestring) \
+            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, basestring) \
+                or not isinstance(self._name, basestring) or not isinstance(self._min_doc_size, int) \
+                or not isinstance(self._max_doc_size, int):
+            raise SDKException('ConfigurationPolicies', '101')
+        policy_json = {
+            "policy": {
+                "policyType": 2,
+                "flags": 0,
+                "agentType": {
+                    "appTypeId": 33
+                },
+                "detail": {
+                    "filePolicy": {
+                        "filePolicyType": self._file_policy_type,
+                        "contentIndexingPolicy": {
+                            "includeDocTypes": self._includeDocTypes,
+                            "copyPrecedence": 1,
+                            "minDocSize": self._min_doc_size,
+                            "searchEngineId": int(self._commcell_object.index_servers.
+                                                  get(self._index_server_name).index_server_client_id),
+                            "contentIndexVersionsAfterNumberOfDays": -1,
+                            "maxDocSize": self._max_doc_size,
+                            "globalFilterFlag": 0,
+                            "excludePaths": self._exclude_paths,
+                            "dataAccessNodes": {
+                                "numberOfStreams": 0,
+                                "dataAccessNodes": [
+                                    {
+                                        "clientName": self._data_access_node,
+                                        "clientId": int(self._commcell_object.clients.
+                                                        get(self._data_access_node).client_id),
+                                        "_type_": 3
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "policyEntity": {
+                    "policyName": self._name
+                }
+            }
+        }
         return policy_json

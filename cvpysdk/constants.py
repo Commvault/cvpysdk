@@ -32,6 +32,8 @@ AdvancedJobDetailType   --  Enum to maintain advanced job details info type
 
 VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
 
+VSAFailOverStatus       --  Enum to maintain Failover status of the VSA Live sync
+
 ApplicationGroup        --  Enum to maintain Application Group Types.
 """
 
@@ -577,6 +579,21 @@ class VSALiveSyncStatus(Enum):
     SYNC_QUEUED = 9
     REVERT_FAILED = 10
     SYNC_STARTING = 11
+
+
+class VSAFailOverStatus(Enum):
+    """Class to maintain Failover status of the VSA Live sync"""
+    NONE = 0
+    FAILOVER_COMPLETE = 1
+    FAILOVER_RUNNING = 2
+    FAILOVER_PAUSED = 3
+    FAILOVER_FAILED = 4
+    FAILBACK_COMPLETE = 5
+    FAILBACK_RUNNING = 6
+    FAILBACK_PAUSED = 7
+    FAILBACK_FAILED = 8
+    FAILBACK_PARTIAL = 9
+    FAILOVER_PARTIAL = 10
 
 
 class ApplicationGroup(Enum):

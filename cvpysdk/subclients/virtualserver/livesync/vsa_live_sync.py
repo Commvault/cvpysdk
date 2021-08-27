@@ -122,6 +122,8 @@ LiveSyncVMPair Attributes:
 
     **latest_replication_job** -- Returns the latest replication job ID
 
+    **last_replication_job**   -- Returns the last replication job ID
+
 """
 
 import uuid
@@ -130,6 +132,7 @@ from past.builtins import basestring
 
 from ....constants import HypervisorType as hv_type
 from ....constants import VSALiveSyncStatus as sync_status
+from ....constants import VSAFailOverStatus as failover_status
 from ....exception import SDKException
 from ....schedules import SchedulePattern
 
@@ -240,9 +243,12 @@ class VsaLiveSync:
                 return live_sync_pairs_dict
             elif response.json() and 'siteInfo' in response.json():
                 for dictionary in response.json()['siteInfo']:
-                    temp_name = dictionary['subTask']['subtaskName']
+                    if dictionary["replicationGroup"]["replicationGroupName"] != "":
+                        temp_name = dictionary["replicationGroup"]["replicationGroupName"]
+                    else:
+                        temp_name = dictionary['subTask']['subtaskName']
                     temp_id = str(dictionary['subTask']['taskId'])
-                    live_sync_pairs_dict[temp_name] = {
+                    live_sync_pairs_dict[temp_name.lower()] = {
                         'id': temp_id
                     }
 
@@ -371,6 +377,7 @@ class VsaLiveSync:
         """
         if not isinstance(live_sync_name, basestring):
             raise SDKException('LiveSync', '101')
+        live_sync_name = live_sync_name.lower()
         if self.has_live_sync_pair(live_sync_name):
             return LiveSyncPairs(
                 self._subclient_object,
@@ -394,7 +401,7 @@ class VsaLiveSync:
                 if type of the live sync name argument is not string
 
         """
-        return self.live_sync_pairs and live_sync_name in self.live_sync_pairs
+        return self.live_sync_pairs and live_sync_name.lower() in self.live_sync_pairs
 
     def refresh(self):
         """Refresh the live sync pairs associated with the subclient"""
@@ -419,7 +426,7 @@ class LiveSyncPairs:
         self._subclient_id = self._subclient_object.subclient_id
         self._subclient_name = self._subclient_object.name
 
-        self._live_sync_name = live_sync_name
+        self._live_sync_name = live_sync_name.lower()
 
         self._commcell_object = self._subclient_object._commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
@@ -621,6 +628,7 @@ class LiveSyncVMPair:
         self._properties = None
         self._replication_guid = None
         self._status = None
+        self._failover_status = None
         self._source_vm = None
         self._destination_vm = None
         self._destination_client = None
@@ -664,6 +672,7 @@ class LiveSyncVMPair:
                 self._properties = response.json()['siteInfo'][0]
                 self._replication_guid = self._properties['replicationGuid']
                 self._status = self._properties['status']
+                self._failover_status = self._properties['FailoverStatus']
                 self._source_vm = self._properties['sourceName']
                 self._destination_vm = self._properties['destinationName']
                 self._destination_client = self._properties['destinationInstance'].get(
@@ -676,10 +685,6 @@ class LiveSyncVMPair:
                     'instanceName') or self._agent_object.instances.get(
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
-                try:
-                    self._latest_replication_job = int(self._properties['VMReplInfoProperties'][1]['propertyValue'])
-                except Exception:
-                    self._latest_replication_job = self._properties['VMReplInfoProperties'][0]['propertyValue']
 
             else:
                 raise SDKException('Response', '102')
@@ -732,14 +737,39 @@ class LiveSyncVMPair:
         return sync_status(self._status).name
 
     @property
+    def failover_status(self):
+        """Treats the failover_status as a read-only attribute."""
+        return failover_status(self._failover_status).name
+
+    @property
     def last_synced_backup_job(self):
         """Treats the synced backup job as a read-only attribute."""
         return self._last_backup_job
 
     @property
+    def last_replication_job(self):
+        """Returns (int): the last replication job that has been run for the Live sync VM pair"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2215 and prop.get('propertyValue'):
+                return int(prop.get('propertyValue'))
+        return None
+
+    @property
     def latest_replication_job(self):
-        """Treats the latest replication job as a read-only attribute."""
-        return self._latest_replication_job
+        """Returns (int): the latest successful replication job for the Live sync VM pair"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2208 and prop.get('propertyValue'):
+                self._latest_replication_job = int(prop.get('propertyValue'))
+                return self._latest_replication_job
+        return None
+
+    @property
+    def failover_job_id(self):
+        """Returns (int): the job ID of the failover job"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2216 and prop.get('propertyValue'):
+                return int(prop.get('propertyValue'))
+        return None
 
     def refresh(self):
         """Refreshes the properties of the live sync"""

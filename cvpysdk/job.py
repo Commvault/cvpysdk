@@ -191,7 +191,7 @@ Job
 
     _initialize_job_properties()--  initializes the properties of the job
 
-    _wait_for_status()          --  waits for 2 minutes or till the job status is changed
+    _wait_for_status()          --  waits for 6 minutes or till the job status is changed
     to given status, whichever is earlier
 
     wait_for_completion()       --  waits for the job to finish, (job.is_finished == True)
@@ -2556,6 +2556,49 @@ class Job(object):
                     return response.json()['commservEvents']
             raise SDKException('Job', '104')
         raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_vm_list(self):
+        """
+        Gets the list of all VMs associated to the job
+        Returns: list of VM dictionaries
+            VM: {
+               "Size":0,
+               "AverageThroughput":0,
+               "UsedSpace":0,
+               "ArchivedByCurrentJob":false,
+               "jobID":0,
+               "CBTStatus":"",
+               "BackupType":0,
+               "totalFiles":0,
+               "Status":2,
+               "CurrentThroughput":0,
+               "Agent":"proxy",
+               "lastSyncedBkpJob":0,
+               "GUID":"live sync pair guid",
+               "HardwareVersion":"vm h/w",
+               "restoredSize":1361912,
+               "FailureReason":"",
+               "BackupStartTime":0,
+               "TransportMode":"nbd",
+               "projectId":"",
+               "syncStatus":3,
+               "PoweredOffSince":0,
+               "OperatingSystem":"Microsoft Windows Server 2012 (64-bit)",
+               "backupLevel":0,
+               "destinationVMName":"drvm1",
+               "successfulCIedFiles":0,
+               "GuestSize":0,
+               "failedCIedFiles":0,
+               "vmName":"vm1",
+               "ToolsVersion":"Not running",
+               "clientId":3280,
+               "Host":"1.1.1.1",
+               "StubStatus":0,
+               "BackupEndTime":0,
+               "PoweredOffByCurrentJob":false
+            }
+        """
+        return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
 
 
 class _ErrorRule:

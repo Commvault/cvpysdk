@@ -18,7 +18,7 @@
 
 """File for operating on a Virtual Server VMWare Subclient.
 
-VMWareVirtualServerSubclient is the only class defined in this file.
+VMWareVirtualServerSubclient is the only  class defined in this file.
 
 VMWareVirtualServerSubclient:   Derived class from VirtualServerSubClient Base
                                 class,representing a VMware Subclient,
@@ -156,7 +156,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             restored_vm_name=None,
             destination_client=None,
             cluster=None,
-            repository=None,
+            storage=None,
             overwrite=True,
             power_on=True,
             copy_precedence=0,
@@ -248,7 +248,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             restore_option,
             in_place=False,
             vcenter_client=destination_client,
-            datastore=repository,
+            datastore=storage,
             esx_host=cluster,
             cluster=cluster,
             esx_server='',

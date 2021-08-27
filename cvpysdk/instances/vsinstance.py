@@ -122,6 +122,24 @@ class VirtualServerInstance(Instance):
             self._vsinstancetype = self._virtualserverinstance['vsInstanceType']
             self._asscociatedclients = self._virtualserverinstance['associatedClients']
 
+    def _get_instance_proxies(self):
+        """
+                get the list of all the proxies on a selected instance
+
+                Returns:
+                    instance_proxies   (List)  --  returns the proxies list
+        """
+        instance_members = self.associated_clients
+        instance_proxies = []
+        for member in instance_members:
+            if self._commcell_object.client_groups.has_clientgroup(member):
+                client_group = self._commcell_object.client_groups.get(member)
+                instance_proxies.extend(client_group.associated_clients)
+            else:
+                instance_proxies.append(member)
+
+        return list(dict.fromkeys(instance_proxies))
+
     @property
     def server_name(self):
         """returns the PseudoClient Name of the associated isntance"""
@@ -136,6 +154,7 @@ class VirtualServerInstance(Instance):
                 if 'clientName' in client['client']:
                     self._associated_clients.append(client["client"]["clientName"])
                 elif 'clientGroupName' in client['client']:
+
                     self._associated_clients.append(client["client"]["clientGroupName"])
                 else:
                     raise SDKException('Subclient', '102', "No Client Name or Client Group Name in JSON ")

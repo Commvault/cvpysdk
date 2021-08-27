@@ -183,7 +183,8 @@ class ExchangeSubclient(Subclient):
             "exchangeRestoreChoice": 1,
             "exchangeRestoreDrive": 1,
             "isJournalReport": value.get("journal_report", False),
-            "pstFilePath": ""
+            "pstFilePath": "",
+            "targetMailBox": value.get("target_mailbox",None)
         }
 
     def _json_restore_exchange_common_option(self, value):
@@ -589,7 +590,8 @@ class ExchangeSubclient(Subclient):
         restore_option['paths'] = paths
         # restore_option['client'] = destination_client
         restore_option['destination_path'] = destination_path
-
+        oop_target_mailbox = destination_path.split(chr(18))[0].split("\\MB\\")[1]
+        restore_option['target_mailbox'] = oop_target_mailbox
         request_json = self._prepare_out_of_place_restore_json(restore_option)
         return self._process_restore_response(request_json)
 

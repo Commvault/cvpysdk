@@ -96,6 +96,20 @@ MediaAgent:
 
     mark_for_maintenance() -- marks/unmarks media agent offline for maintenance
 
+    set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
+
+
+Libraries:
+
+    __init__()               --  initialize the instance of Libraries class
+    
+    _get_libraries           --  Gets all the libraries associated to the commcell specified by commcell object
+    
+    has_library              --  Checks if a library exists in the commcell with the input library name
+    
+    refresh                  --  Refresh the libraries associated with the Commcell
+    
+
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
 
@@ -103,11 +117,7 @@ DiskLibraries:
 
     __repr__()                  --  returns the string for the instance of the DiskLibraries class
 
-    _get_libraries()            --  gets all the disk libraries of the commcell
-
     all_disk_libraries()        --  returns the dict of all the disk libraries on commcell
-
-    has_library(library_name)   --  checks if a disk library exists with the given name or not
 
     add()                       --  adds a new disk library to the commcell
 
@@ -115,8 +125,6 @@ DiskLibraries:
 
     get(library_name)           --  returns the instance of the DiskLibrary class
     for the library specified
-
-    refresh()                   --  refresh the disk libraries associated with the commcell
 
 
 DiskLibrary:
@@ -157,10 +165,35 @@ DiskLibrary instance Attributes
     **free_space**               --  returns the free space on the library
     **mountpath_usage**          --  returns mountpath usage on library
 
+TapeLibraries:
+
+    __init__()    --  initialize the TapeLibrary class instance for the commcell
+
+    get()                        --  Returns the TapeLibrary object of the specified library
+
+    delete()                     --  Deletes the specified library
+
+    detect_tape_library()        --  Detect the tape library of the specified MediaAgent(s)
+
+    configure_tape_library()     --  Configure the specified tape library
+
+
+TapeLibrary:
+
+     __init__()         --  Initialize the TapeLibrary class instance
+
+     __repr__           --  returns the string for the instance of the TapeLibrary class
+
+     _get_library_id()  --  Returns the library ID
+
+     _get_library_properties()   --  gets the disk library properties
+     
+     
 """
+
 from __future__ import absolute_import
 from __future__ import unicode_literals
-import uuid, time
+import uuid, time, json
 
 from base64 import b64encode
 
@@ -864,7 +897,55 @@ class MediaAgent(object):
         else:
             raise SDKException('Response', '101')
 
+    def set_ransomware_protection(self, status):
+        """Enables / Disables the ransomware protection on Windows MediaAgent.
 
+        Args:
+            status    (bool)        --  True or False value to turn it on/off
+                                        True - ransomware protection on MediaAgent - ON
+                                        False - ransomware protection on MediaAgent - OFF
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            Exception(Exception_Code, Exception_Message):
+                - if there is failure in executing the operation
+        """
+        # this works only on WINDOWS MA
+        if self._platform != 'WINDOWS':
+            raise SDKException('Storage', '101')
+
+        if type(status) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "isRansomwareProtected": status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     @property
     def name(self):
@@ -926,9 +1007,9 @@ class MediaAgent(object):
         self._initialize_media_agent_properties()
 
 
-class DiskLibraries(object):
-    """Class for getting all the disk libraries associated with the commcell."""
-
+class Libraries(object):
+    """ Class for libraries"""
+    
     def __init__(self, commcell_object):
         """Initialize object of the DiskLibraries class.
 
@@ -943,26 +1024,6 @@ class DiskLibraries(object):
 
         self._libraries = None
         self.refresh()
-
-    def __str__(self):
-        """Representation string consisting of all disk libraries of the commcell.
-
-            Returns:
-                str - string of all the disk libraries associated with the commcell
-        """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Disk Library')
-
-        for index, library in enumerate(self._libraries):
-            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
-            representation_string += sub_str
-
-        return representation_string.strip()
-
-    def __repr__(self):
-        """Representation string for the instance of the DiskLibraries class."""
-        return "DiskLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
 
     def _get_libraries(self):
         """Gets all the disk libraries associated to the commcell specified by commcell object.
@@ -999,18 +1060,6 @@ class DiskLibraries(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    @property
-    def all_disk_libraries(self):
-        """Returns dict of all the disk libraries on this commcell
-
-            dict - consists of all disk libraries of the commcell
-                    {
-                         "disk_library1_name": disk_library1_id,
-                         "disk_library2_name": disk_library2_id
-                    }
-
-        """
-        return self._libraries
 
     def has_library(self, library_name):
         """Checks if a library exists in the commcell with the input library name.
@@ -1029,6 +1078,51 @@ class DiskLibraries(object):
             raise SDKException('Storage', '101')
 
         return self._libraries and library_name.lower() in self._libraries
+
+    def refresh(self):
+        """Refresh the disk libraries associated with the Commcell."""
+        self._libraries = self._get_libraries()
+
+
+class DiskLibraries(Libraries):
+    """Class for getting all the disk libraries associated with the commcell."""
+
+    def __init__(self, commcell_object):
+        super().__init__(commcell_object)
+
+    def __str__(self):
+        """Representation string consisting of all disk libraries of the commcell.
+
+            Returns:
+                str - string of all the disk libraries associated with the commcell
+        """
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Disk Library')
+
+        for index, library in enumerate(self._libraries):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the DiskLibraries class."""
+        return "DiskLibraries class instance for Commcell: '{0}'".format(
+            self._commcell_object.commserv_name
+        )
+
+    @property
+    def all_disk_libraries(self):
+        """Returns dict of all the disk libraries on this commcell
+
+            dict - consists of all disk libraries of the commcell
+                    {
+                         "disk_library1_name": disk_library1_id,
+                         "disk_library2_name": disk_library2_id
+                    }
+
+        """
+        return self._libraries
+
 
     def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0,
             saved_credential_name=""):
@@ -1200,11 +1294,13 @@ class DiskLibraries(object):
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', _stdout.format(library_name, _stderr))
 
-    def get(self, library_name):
+    def get(self, library_name, library_details=None):
         """Returns a DiskLibrary object of the specified disk library name.
 
             Args:
                 library_name (str)  --  name of the disk library
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
 
             Returns:
                 object - instance of the DiskLibrary class for the given library name
@@ -1223,15 +1319,12 @@ class DiskLibraries(object):
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
                                    library_name,
-                                   self._libraries[library_name])
+                                   self._libraries[library_name], library_details)
 
             raise SDKException(
                 'Storage', '102', 'No disk library exists with name: {0}'.format(library_name)
             )
 
-    def refresh(self):
-        """Refresh the disk libraries associated with the Commcell."""
-        self._libraries = self._get_libraries()
 
 
 class DiskLibrary(object):
@@ -1246,6 +1339,9 @@ class DiskLibrary(object):
                 library_name     (str)     --  name of the disk library
 
                 library_id       (str)     --  id of the disk library
+                    default: None
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
                     default: None
 
             Returns:
@@ -2106,3 +2202,261 @@ class RPStore(object):
     @property
     def rpstore_id(self):
         return self._rpstore_id
+
+
+
+class TapeLibraries(Libraries):
+
+    def __init__(self, commcell_object):
+        """Initialize object of the DiskLibraries class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the DiskLibraries class
+        """
+        super().__init__(commcell_object)
+        self._commcell_object = commcell_object
+        self._DETECT_TAPE_LIBRARY = self._commcell_object._services['DETECT_TAPE_LIBRARY']
+        self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services['CONFIGURE_TAPE_LIBRARY']
+
+
+    def __str__(self):
+        """Representation string consisting of all tape libraries of the commcell.
+
+            Returns:
+                str - string of all the tape libraries associated with the commcell
+        """
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Tape Library')
+
+        for index, library in enumerate(self._libraries):
+            sub_str = '{:^5}\t{:20}\n'.format(index + 1, library)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        """Representation string for the instance of the TapeLibraries class."""
+        return "TapeLibraries class instance for Commcell: '{0}'".format(
+            self._commcell_object.commserv_name
+        )
+
+
+
+    def get(self, tape_library_name):
+        """
+        Returns the object of TapeLibrary class of the specified library name
+
+                    Args:
+                        library_name (str)  --  name of the library
+
+                    Returns:
+                        object - object of TapeLibrary class of the specified library name
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+        """
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException('Storage', '101')
+        else:
+            if self.has_library(tape_library_name):
+                tape_library_name = tape_library_name.lower()
+                return TapeLibrary(self._commcell_object, tape_library_name, self._libraries[tape_library_name])
+
+    def delete(self, tape_library_name):
+        """
+        Deletes the specified library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                    Returns:
+                        bool - returns true if the library deleted successfully
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+                            if library does not exists
+                            if its failed to delete the library
+        """
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException('Storage', '101')
+
+        if not self.has_library(tape_library_name):
+            raise SDKException('Storage', '101', "Invalid library name")
+
+        pay_load={
+                "isDeconfigLibrary": 1,
+                "library": {
+                    "opType": 2,
+                    "libraryName": tape_library_name
+                }
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._LIBRARY, pay_load)
+
+        if not flag:
+            raise SDKException('Storage', '102', "Failed to DELETE the library")
+
+        self.refresh()
+
+    def detect_tape_library(self, mediaagents):
+        """
+        Detect the tape libraries(s) of the provided MediaAgent(s)
+
+                    Args:
+                        mediaagents (list)  --  The list of the mediaagent(s)
+
+                    Returns:
+                        JSON - JSON of the tape library detections response
+
+                    Raises:
+                        SDKException:
+                            if its fails to detect
+        """
+
+        pay_load ={
+        "autoDetect": True,
+        "mediaAgentIdList": mediaagents
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+
+        if flag and response.json():
+            return response.json()
+        raise SDKException('Storage', '102', "Failed to detect library")
+
+    def configure_tape_library(self,tape_library_name, mediaagents):
+        """
+        Configure the tape library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                        mediaagents(list) -- list of MediaAgents to use for configuration
+
+                    Returns:
+                        object - object of the TapeLibrary class for the specified tape library
+
+                    Raises:
+                        SDKException:
+                            if fails to configure the tape library
+        """
+
+        libraries=self.detect_tape_library(mediaagents)
+        flag=False
+        for lib in libraries['libraries']:
+
+            if lib['libraryName'] == tape_library_name:
+                drive_list=lib['drives']
+
+                pay_load= {
+                    "driveList": drive_list,
+                    "hdr": {
+                        "tag": 0
+                    }
+                }
+                flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._CONFIGURE_TAPE_LIBRARY,
+                                                                                    pay_load)
+                break
+
+        if not flag:
+            raise SDKException('Storage', '102', "Failed to configure the library")
+        self.refresh()
+        tape_library_name = tape_library_name.lower()
+        for lib_name, lib_id in self._libraries.items():
+            if lib_name.startswith(tape_library_name + " "):
+                return self.get(lib_name)
+
+
+
+class TapeLibrary(object):
+
+    def __init__(self, commcell_object, tape_library_name, tape_library_id=None):
+        """Initialize object of the TapeLibrary class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+                tape_library_name (string) -- name of the tape library
+                tape_library_id (int) -- tape library ID
+
+            Returns:
+                object - instance of the TapeLibrary class
+        """
+
+        self._commcell_object = commcell_object
+        self._name = tape_library_name
+        if tape_library_id:
+            self._library_id = str(tape_library_id)
+        else:
+            self._library_id = self._get_library_id()
+
+        self._library_properties_service = self._commcell_object._services[
+                                               'GET_LIBRARY_PROPERTIES'] % (self._library_id)
+
+        self.library_properties = self._get_library_properties()
+
+        self._name = self.library_properties['library']['libraryName']
+
+
+    def __str__(self):
+        """Representation string consisting of the specified tape library.
+
+            Returns:
+                str - string of all the tape library associated with the commcell
+        """
+        representation_string = "TapeLibrary instance of library : {0}"
+
+        return representation_string.format(self._name)
+
+    def __repr__(self):
+        """String representation of the TapeLibrary instance of this class."""
+        representation_string = 'TapeLibrary class instance for library: "{0}" of Commcell: "{1}"'
+        return representation_string.format(
+            self._name, self._commcell_object.commserv_name
+        )
+
+
+
+    def _get_library_properties(self):
+        """Gets the tape library properties.
+
+            Returns:
+                dict - dictionary consisting of the properties of this library
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if failed to get tape library properties
+
+                    if response is not success
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._library_properties_service
+        )
+
+        if flag:
+            if response.json():
+                if 'libraryInfo' in response.json():
+                    return response.json()['libraryInfo']
+                raise SDKException('Storage', '102', 'Failed to get tape Library properties')
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
+
+    @property
+    def library_name(self):
+        """Treats the library name as a read-only attribute."""
+        return self._name
+
+    @property
+    def library_id(self):
+        """Treats the library name as a read-only attribute."""
+        return self._library_id
+
+
