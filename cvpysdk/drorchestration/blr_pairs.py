@@ -245,7 +245,7 @@ class BLRPairs:
                 self._summary = response.json().get('summary', {})
                 self._site_info = response.json().get('siteInfo', [])
             else:
-                raise SDKException('Response', 102)
+                raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -457,7 +457,7 @@ class BLRPairs:
                             o_str = 'Failed to delete Source: {0} and Destination: {1} \nError: "{2}"' \
                                 .format(source_name, destination_name, error_message)
 
-                            raise SDKException('BLRPairs', '102', o_str)
+                            raise SDKException('Response', '101', o_str)
                         else:
                             self.refresh()
                     else:
@@ -496,7 +496,7 @@ class BLRPairs:
                     return str(rpstore.get('MountPathList')[0]
                                .get('rpStoreLibraryInfo', {}).get('rpStoreId', ''))
             else:
-                raise SDKException('BLRPairs', '102', f'No RP Store found with name {rpstore_name}')
+                raise SDKException('BLRPairs', '103', f'No RP Store found with name {rpstore_name}')
         else:
             raise SDKException('Response', '102')
 
@@ -538,13 +538,17 @@ class BLRPair:
         representation_string = 'BLR pair class instance for pair: "{0} -> {1}"'
         return representation_string.format(self._source_name, self._destination_name)
 
+    def __str__(self):
+        """String representation of the instance of BLR pair"""
+        return f'BLR Pair: {self._source_name} -> {self._destination_name}'
+
     def _get_pair_id(self):
         """ Gets BLR pair Id from the BLRPairs class"""
         for pair_id, blr_pair in self._commcell_object.blr_pairs.blr_pairs.items():
             if (blr_pair.get('sourceName').lower() == self._source_name and
                     blr_pair.get('destinationName').lower() == self._destination_name):
                 return pair_id
-        raise SDKException('BLRPairs', '102', 'BLR Pair not found')
+        raise SDKException('BLRPairs', '102')
 
     def _get_pair_properties(self):
         """ Gets BLR pair properties
@@ -591,7 +595,7 @@ class BLRPair:
             if response.json():
                 error_code = response.json().get('errorCode', -1)
                 if error_code != 0:
-                    raise SDKException('BLRPair', '101')
+                    raise SDKException('Response', '101')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -966,9 +970,9 @@ class BLRPair:
                     error_message = response.json()['errorMessage']
 
                     o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Subclient', '102', o_str)
+                    raise SDKException('Job', '102', o_str)
                 else:
-                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
+                    raise SDKException('Job', '102', 'Failed to run the restore job')
             else:
                 raise SDKException('Response', '102')
         else:

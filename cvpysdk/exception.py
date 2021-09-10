@@ -242,7 +242,8 @@ EXCEPTION_DICT = {
         '103': 'Failed to get entity regex details from commcell',
         '104': 'Unable to create regex entity in the commcell',
         '105': 'Unable to delete regex entity in the commcell',
-        '106': 'Unable to modify regex entity in the commcell'
+        '106': 'Unable to modify regex entity in the commcell',
+        '107': 'Failed to get entity container details from commcell'
     },
     'Classifier': {
         '101': 'Data type of the input(s) is not valid',
@@ -274,7 +275,10 @@ EXCEPTION_DICT = {
     },
     'Plan': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Content Analyzer input is missing',
+        '104': 'Please provide either entity list or classifier list in input',
+        '105': 'Failed to share plan with user or group'
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
@@ -353,6 +357,11 @@ EXCEPTION_DICT = {
     'Monitoring': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'BLRPairs': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'BLR Pair not found',
+        '103': 'RPStore not found'
     },
     'ReplicationGroup': {
         '101': 'Data type of the input(s) is not valid',

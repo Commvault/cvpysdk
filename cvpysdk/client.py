@@ -318,6 +318,8 @@ Client Attributes
 
     **cvd_port**                    -- returns cvd port of the client
 
+    **vm_guid**                     -- returns guid of the vm client
+
 """
 
 from __future__ import absolute_import
@@ -3049,6 +3051,8 @@ class Client(object):
 
         self._readiness = None
 
+        self._vm_guid = None
+
         self.refresh()
 
     def __repr__(self):
@@ -3092,6 +3096,8 @@ class Client(object):
                     os_info['SubType'],
                     os_name
                 )
+
+                self._vm_guid = self._properties.get('vmStatusInfo', {}).get('strGUID')
 
                 client_props = self._properties['clientProps']
 
@@ -5626,6 +5632,12 @@ class Client(object):
         """Returns client Type"""
 
         return self._properties.get('pseudoClientInfo', {}).get('clientType', "")
+    
+    @property
+    def vm_guid(self):
+        """Returns guid of the vm client"""
+
+        return self._vm_guid
 
     def set_job_start_time(self, job_start_time_value):
         """Sets the jobstarttime for this Client.

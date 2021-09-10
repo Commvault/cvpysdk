@@ -26,11 +26,159 @@ ClassifierConstants             -       Maintains constants for Classifiers
 
 TrainingStatus                  -       Enum class for classifier training status
 
+TargetApps                      -       Enum class for Activate App types
+
+PlanConstants                   -       Maintains constants for Plan operations
+
 """
 import copy
 from enum import Enum
 
+class PlanConstants:
+    """Class to maintain constants related to DC plan activate operations"""
 
+    INDEXING_ONLY_METADATA = 1
+    INDEXING_METADATA_AND_CONTENT = 2
+
+    DEFAULT_INCLUDE_DOC_TYPES = "*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind"
+    DEFAULT_EXCLUDE_LIST = [
+        "C:\\Program Files",
+        "C:\\Program Files (x86)",
+        "C:\\Windows"]
+
+    DEFAULT_MIN_DOC_SIZE = 0
+    DEFAULT_MAX_DOC_SIZE = 50
+
+    PLAN_UPDATE_REQUEST_JSON = {
+        7: {
+            "ciPolicyInfo": {
+                "ciPolicy": {
+                    "policyType": 5,
+                    "flags": 536870912,
+                    "agentType": {
+                        "appTypeId": 0,
+                        "entityInfo": {},
+                        "flags": {}
+                    },
+                    "detail": {
+                        "ciPolicy": {}
+                    }
+                }
+            },
+            "eePolicyInfo": {
+                "eePolicy": {
+                    "policyType": 3,
+                    "flags": 536870920,
+                    "agentType": {
+                        "appTypeId": 0,
+                        "entityInfo": {},
+                        "flags": {}
+                    },
+                    "detail": {
+                        "eePolicy": {}
+                    }
+                }
+            },
+            "summary": {
+                "plan": {
+                    "planId": 0
+                }
+            }
+        }
+    }
+
+    PLAN_SCHEDULE_REQUEST_JSON = {
+        7: {
+            "summary": {
+                "plan": {
+                    "planId": 0
+                }
+            },
+            "schedule": {
+                "associations": [
+                    {
+                        "_type_": 158,
+                        "entityId": 0
+                    }
+                ],
+                "task": {
+                    "taskType": 4,
+                    "taskName": "",
+                    "taskFlags": {
+                        "isEdiscovery": True
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskName": "",
+                            "subTaskType": 1,
+                            "operationType": 5025
+                        },
+                        "pattern": {},
+                        "options": {
+                            "backupOpts": {
+                                "backupLevel": 2,
+                                "mediaOpt": {
+                                    "auxcopyJobOption": {
+                                        "maxNumberOfStreams": 1,
+                                        "allCopies": True,
+                                        "useMaximumStreams": True
+                                    }
+                                }
+                            },
+                            "adminOpts": {
+                                "contentIndexingOption": {
+                                    "fileAnalytics": False,
+                                    "idaType": 1,
+                                    "operationType": 2
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    PLAN_SHARE_REQUEST_JSON = {
+        "entityAssociated": {
+            "entity": [
+                {
+                    "entityType": 158,
+                    "_type_": 150,
+                    "entityId": 0
+                }
+            ]
+        },
+        "securityAssociations": {
+            "associationsOperationType": 1,
+            "associations": [
+                {
+                    "userOrGroup": [
+                        {
+
+                        }
+                    ],
+                    "properties": {
+                        "role": {
+                            "_type_": 120,
+                            "roleId": 0,
+                            "roleName": ""
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+
+class TargetApps(Enum):
+    """Class to maintain supported apps types in Activate"""
+    SDG = 2
+    FSO = 1
+    CASE_MGR = 4
+    FS = 8
+    
 class TrainingStatus(Enum):
     """Class to maintain training status for classifier"""
     NOT_APPLICABLE = 0

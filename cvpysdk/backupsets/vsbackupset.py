@@ -151,9 +151,14 @@ class VSBackupset(Backupset):
             response_json = response.json()
             if response_json and 'browseResponses' in response_json:
                 _browse_responses = response_json['browseResponses']
+                if not isinstance(_browse_responses, list):
+                    _browse_responses = [_browse_responses]
                 for browse_response in _browse_responses:
                     resp_type = browse_response['respType']
                     if 'messages' in browse_response:
+                        # checking if it is not a list, then converting it to list
+                        if not isinstance(browse_response['messages'], list):
+                            browse_response['messages'] = [browse_response['messages']]
                         message = browse_response['messages'][0]
                         error_message = message['errorMessage']
                         if resp_type == 2 or resp_type == 3 and 'No items found in the index, possibly index is being rebuilt' in \
@@ -168,11 +173,17 @@ class VSBackupset(Backupset):
                         browse_result = browse_response['browseResult']
                         if 'dataResultSet' in browse_result:
                             result_set = browse_result['dataResultSet']
+                            if not isinstance(result_set, list):
+                                result_set = [result_set]
                             break
                 if not browse_result:
                     if 'messages' in response_json['browseResponses'][0]:
+                        if not isinstance(response_json['browseResponses'][0]['messages'],list):
+                            response_json['browseResponses'][0]['messages'] = [response_json['browseResponses'][0]['messages']]
                         message = response_json['browseResponses'][0]['messages'][0]
                         error_message = message['errorMessage']
+                        if error_message == 'Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.':
+                            return [], {}
                         raise SDKException('Backupset', '102', str(error_message))
 
                     else:
@@ -193,14 +204,14 @@ class VSBackupset(Backupset):
                     else:
                         path = '\\'.join([options['path'], name])
 
-                    if 'modificationTime' in result and result['modificationTime'] > 0:
-                        mod_time = time.localtime(result['modificationTime'])
+                    if 'modificationTime' in result and int(result['modificationTime']) > 0:
+                        mod_time = time.localtime(int(result['modificationTime']))
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
 
                     if 'file' in result['flags']:
-                        if result['flags']['file'] is True:
+                        if result['flags']['file'] is True or result['flags']['file'] == "1":
                             file_or_folder = 'File'
                         else:
                             file_or_folder = 'Folder'

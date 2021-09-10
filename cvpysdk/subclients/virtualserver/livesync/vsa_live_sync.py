@@ -644,6 +644,10 @@ class LiveSyncVMPair:
         representation_string = 'LiveSyncVMPair class instance for Live Sync: "{0}"'
         return representation_string.format(self.live_sync_pair.live_sync_name)
 
+    def __str__(self):
+        """String representation of the instance of BLR pair"""
+        return f'Live sync pair: {self._source_vm} -> {self._destination_vm}'
+
     def _get_vm_pair_id(self):
         """Gets the VM pair id associated with the LiveSyncPair
 

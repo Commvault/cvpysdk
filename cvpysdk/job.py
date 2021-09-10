@@ -2009,8 +2009,10 @@ class Job(object):
                     time.sleep(20)
 
             else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                if attempts > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
 
         raise SDKException('Job', '104')
 
@@ -2059,8 +2061,10 @@ class Job(object):
                         raise SDKException('Response', '102')
                     time.sleep(20)
             else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                if retry_count > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
 
         raise SDKException('Response', '102')
 

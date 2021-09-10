@@ -220,6 +220,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
     'ACTIVATE_ENTITIES': '{0}dcube/entity',
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
+    'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',
     'GET_TAGS': '{0}EDiscovery/Tags',
     'ADD_CONTAINER': '{0}PerformContainerOperation',
     'DELETE_CONTAINER': '{0}Containers/Action/Delete',
@@ -283,7 +284,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
-
+    'ENTITY_SECURITY_ASSOCIATION': '{0}Security/%s/%s',
     'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s',
 
     'GET_DC_DATA': '{0}getDownloadCenterLookupData',
