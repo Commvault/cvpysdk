@@ -64,7 +64,7 @@ for the given Array</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L1-L590" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L1-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -116,7 +116,6 @@ ArrayManagement:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-import json
 from .job import Job
 from .exception import SDKException
 
@@ -146,29 +145,45 @@ class ArrayManagement(object):
                         do_vssprotection=True,
                         control_host=None,
                         flags=None,
-                        reconcile=False):
+                        reconcile=False,
+                        user_credentials=None,
+                        server_name=None,
+                        instance_details=None):
         &#34;&#34;&#34; Common Method for Snap Operations
 
             Args :
 
-                operation    (int)        -- snap Operation value
+                operation    (int)         -- snap Operation value
+                                              0- mount, 1-unmount, 2-delete, 3-revert
 
                 volume_id    (list)        -- volume id&#39;s of the snap backup job
 
-                client_name  (str)        -- name of the destination client, default: None
+                client_name  (str)         -- name of the destination client, default: None
 
-                MountPath    (str)        -- MountPath for Snap operation, default: None
+                MountPath    (str)         -- MountPath for Snap operation, default: None
 
-                do_vssprotection  (int)   -- Performs VSS protected snapshot mount
+                do_vssprotection  (bool)   -- Performs VSS protected snapshot mount
 
-                control_host (int)        -- Control host for the Snap recon operation,
+                control_host (int)         -- Control host for the Snap recon operation,
                 defaullt: None
 
-                flags        (int)       -- value to define when snap operation to be forced
+                flags        (int)         -- value to define when snap operation to be forced
                 1 - to force unmount
                 2 - to force delete
 
-                reconcile    (bool)       -- Uses Reconcile json if true
+                reconcile    (bool)        -- Uses Reconcile json if true
+
+                user_credentials  (dict)   -- dict containing userName of vcenter
+                eg: user_credentials = {&#34;userName&#34;:&#34;vcentername&#34;}
+
+                server_name      (str)     -- vcenter name for mount operation
+
+                instance_details (dict)    -- dict containing apptypeId, InstanceId, InstanceName
+                eg: instance_details = {
+                &#34;apptypeId&#34;: 106,
+                &#34;instanceId&#34;: 7,
+                &#34;instanceName&#34;: &#34;VMWare&#34;
+                }
 
             Return :
 
@@ -182,6 +197,14 @@ class ArrayManagement(object):
 
         if flags is None:
             flags = 0
+
+        if user_credentials is None:
+            user_credentials = {}
+            server_name = &#34;&#34;
+            server_type = 0
+            instance_details = {}
+        else:
+            server_type = 1
 
         if reconcile:
             request_json = {
@@ -206,17 +229,18 @@ class ArrayManagement(object):
                 &#34;serverType&#34;: 0,
                 &#34;operation&#34;: operation,
                 &#34;userCredentials&#34;: {},
-                &#34;volumes&#34;: []
+                &#34;volumes&#34;: [],
+                &#34;appId&#34;: instance_details
             }
             for i in range(len(volume_id)):
                 if i == 0:
                     request_json[&#39;volumes&#39;].append({&#39;doVSSProtection&#39;: int(do_vssprotection),
                                                     &#39;destClientId&#39;: client_id,
                                                     &#39;destPath&#39;: mountpath,
-                                                    &#39;serverType&#39;:0,
+                                                    &#39;serverType&#39;: server_type,
                                                     &#39;flags&#39;: flags,
-                                                    &#39;serverName&#39;:&#34;&#34;,
-                                                    &#39;userCredentials&#39;: {},
+                                                    &#39;serverName&#39;: server_name,
+                                                    &#39;userCredentials&#39;: user_credentials,
                                                     &#39;volumeId&#39;:int(volume_id[i][0]),
                                                     &#39;CommCellId&#39;: self._commcell_object.commcell_id})
 
@@ -239,7 +263,8 @@ class ArrayManagement(object):
         else:
             raise SDKException(&#39;Snap&#39;, &#39;102&#39;)
 
-    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
+    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
+              user_credentials=None, server_name=None, instance_details=None):
         &#34;&#34;&#34; Mounts Snap of the given volume id
 
             Args:
@@ -251,8 +276,20 @@ class ArrayManagement(object):
                 MountPath    (str)        -- MountPath for Snap operation, default: None
 
                 do_vssprotection (int)    -- Performs VSS protected mount
+
+                user_credentials (dict)   -- dict containing userName of vcenter
+
+                server_name   (str)       -- vcenter name for mount operation
+
+                instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
         &#34;&#34;&#34;
-        return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)
+        return self._snap_operation(0, volume_id,
+                                    client_name,
+                                    mountpath,
+                                    do_vssprotection,
+                                    user_credentials=user_credentials,
+                                    server_name=server_name,
+                                    instance_details=instance_details)
 
     def unmount(self, volume_id):
         &#34;&#34;&#34; UnMounts Snap of the given volume id
@@ -313,6 +350,8 @@ class ArrayManagement(object):
                   array_name,
                   username,
                   password,
+                  vendor_id,
+                  config_data,
                   control_host=None,
                   array_access_node=None,
                   is_ocum=False):
@@ -326,6 +365,10 @@ class ArrayManagement(object):
 
                     password            (str)               -- password to access array
 
+                    vendor_id           (int)               -- vendor id of the array
+
+                    config_data         (list)              -- SNap configs list to be updated
+
                     control_host        (str)               -- control host of the array
 
                     array_access_node   (list)              -- Array Access Node MediaAgent&#39;s Name list
@@ -337,6 +380,23 @@ class ArrayManagement(object):
 
                 errorMessage   (string) :  Error message
         &#34;&#34;&#34;
+
+        snap_configs = {}
+        assocType = 0
+        if config_data is not None:
+            assocType = 3
+            request_json_service = self.storage_arrays + &#39;/Vendors/{0}&#39;.format(vendor_id)
+            flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
+                &#39;GET&#39;, request_json_service
+            )
+            snap_configs = snap_configs.json()
+            for m_config, value in config_data.items():
+                for config in snap_configs[&#39;configs&#39;][&#39;configList&#39;]:
+                    if int(config[&#39;masterConfigId&#39;]) == int(m_config):
+                        config[&#39;value&#39;] = str(value)
+
+        else:
+            snap_configs[&#39;configs&#39;] = {}
 
         selectedMAs = []
         if array_access_node is not None:
@@ -363,7 +423,7 @@ class ArrayManagement(object):
         request_json = {
             &#34;clientId&#34;: 0,
             &#34;flags&#34;: 0,
-            &#34;assocType&#34;: 0,
+            &#34;assocType&#34;: assocType,
             &#34;copyId&#34;: 0,
             &#34;appId&#34;: 0,
             &#34;selectedMAs&#34;:selectedMAs,
@@ -382,7 +442,7 @@ class ArrayManagement(object):
                 &#34;disableDG&#34;: False,
                 &#34;useDevicesFromThisDG&#34;: False
             },
-            &#34;configList&#34;: {},
+            &#34;configs&#34;: snap_configs[&#39;configs&#39;],
             &#34;array&#34;: {
                 &#34;name&#34;: &#34;&#34;,
                 &#34;id&#34;: 0
@@ -457,7 +517,7 @@ class ArrayManagement(object):
             error_message = response.json()[&#39;errorMessage&#39;]
 
             if error_code != 0:
-                if error_code == 1:
+                if error_code in [1, 10]:
                     raise SDKException(&#39;StorageArray&#39;, &#39;101&#39;)
 
                 error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
@@ -514,24 +574,35 @@ class ArrayManagement(object):
         &#34;&#34;&#34;
 
         copy_level_id = app_level_id = client_level_id = 0
-        request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
-        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, request_json_service
-        )
 
         if config_update_level == &#34;array&#34;:
             config_update_level = 3
+            request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
         elif config_update_level == &#34;copy&#34;:
             config_update_level = 6
             copy_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?copyId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, copy_level_id, config_update_level)
+
         elif config_update_level == &#34;subclient&#34;:
             config_update_level = 9
             app_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?appId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, app_level_id, config_update_level)
+
         elif config_update_level == &#34;client&#34;:
             config_update_level = 8
             client_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?clientId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, client_level_id, config_update_level)
+
         else:
             config_update_level = 3
+            request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
+        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, request_json_service)
 
         request_json = request_json.json()
 
@@ -686,7 +757,7 @@ instance of the ArrayManagement class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L56-L590" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L55-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ArrayManagement(object):
     &#34;&#34;&#34;Class for representing all the array management activities with the commcell.&#34;&#34;&#34;
@@ -713,29 +784,45 @@ instance of the ArrayManagement class</p></div>
                         do_vssprotection=True,
                         control_host=None,
                         flags=None,
-                        reconcile=False):
+                        reconcile=False,
+                        user_credentials=None,
+                        server_name=None,
+                        instance_details=None):
         &#34;&#34;&#34; Common Method for Snap Operations
 
             Args :
 
-                operation    (int)        -- snap Operation value
+                operation    (int)         -- snap Operation value
+                                              0- mount, 1-unmount, 2-delete, 3-revert
 
                 volume_id    (list)        -- volume id&#39;s of the snap backup job
 
-                client_name  (str)        -- name of the destination client, default: None
+                client_name  (str)         -- name of the destination client, default: None
 
-                MountPath    (str)        -- MountPath for Snap operation, default: None
+                MountPath    (str)         -- MountPath for Snap operation, default: None
 
-                do_vssprotection  (int)   -- Performs VSS protected snapshot mount
+                do_vssprotection  (bool)   -- Performs VSS protected snapshot mount
 
-                control_host (int)        -- Control host for the Snap recon operation,
+                control_host (int)         -- Control host for the Snap recon operation,
                 defaullt: None
 
-                flags        (int)       -- value to define when snap operation to be forced
+                flags        (int)         -- value to define when snap operation to be forced
                 1 - to force unmount
                 2 - to force delete
 
-                reconcile    (bool)       -- Uses Reconcile json if true
+                reconcile    (bool)        -- Uses Reconcile json if true
+
+                user_credentials  (dict)   -- dict containing userName of vcenter
+                eg: user_credentials = {&#34;userName&#34;:&#34;vcentername&#34;}
+
+                server_name      (str)     -- vcenter name for mount operation
+
+                instance_details (dict)    -- dict containing apptypeId, InstanceId, InstanceName
+                eg: instance_details = {
+                &#34;apptypeId&#34;: 106,
+                &#34;instanceId&#34;: 7,
+                &#34;instanceName&#34;: &#34;VMWare&#34;
+                }
 
             Return :
 
@@ -749,6 +836,14 @@ instance of the ArrayManagement class</p></div>
 
         if flags is None:
             flags = 0
+
+        if user_credentials is None:
+            user_credentials = {}
+            server_name = &#34;&#34;
+            server_type = 0
+            instance_details = {}
+        else:
+            server_type = 1
 
         if reconcile:
             request_json = {
@@ -773,17 +868,18 @@ instance of the ArrayManagement class</p></div>
                 &#34;serverType&#34;: 0,
                 &#34;operation&#34;: operation,
                 &#34;userCredentials&#34;: {},
-                &#34;volumes&#34;: []
+                &#34;volumes&#34;: [],
+                &#34;appId&#34;: instance_details
             }
             for i in range(len(volume_id)):
                 if i == 0:
                     request_json[&#39;volumes&#39;].append({&#39;doVSSProtection&#39;: int(do_vssprotection),
                                                     &#39;destClientId&#39;: client_id,
                                                     &#39;destPath&#39;: mountpath,
-                                                    &#39;serverType&#39;:0,
+                                                    &#39;serverType&#39;: server_type,
                                                     &#39;flags&#39;: flags,
-                                                    &#39;serverName&#39;:&#34;&#34;,
-                                                    &#39;userCredentials&#39;: {},
+                                                    &#39;serverName&#39;: server_name,
+                                                    &#39;userCredentials&#39;: user_credentials,
                                                     &#39;volumeId&#39;:int(volume_id[i][0]),
                                                     &#39;CommCellId&#39;: self._commcell_object.commcell_id})
 
@@ -806,7 +902,8 @@ instance of the ArrayManagement class</p></div>
         else:
             raise SDKException(&#39;Snap&#39;, &#39;102&#39;)
 
-    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
+    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
+              user_credentials=None, server_name=None, instance_details=None):
         &#34;&#34;&#34; Mounts Snap of the given volume id
 
             Args:
@@ -818,8 +915,20 @@ instance of the ArrayManagement class</p></div>
                 MountPath    (str)        -- MountPath for Snap operation, default: None
 
                 do_vssprotection (int)    -- Performs VSS protected mount
+
+                user_credentials (dict)   -- dict containing userName of vcenter
+
+                server_name   (str)       -- vcenter name for mount operation
+
+                instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
         &#34;&#34;&#34;
-        return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)
+        return self._snap_operation(0, volume_id,
+                                    client_name,
+                                    mountpath,
+                                    do_vssprotection,
+                                    user_credentials=user_credentials,
+                                    server_name=server_name,
+                                    instance_details=instance_details)
 
     def unmount(self, volume_id):
         &#34;&#34;&#34; UnMounts Snap of the given volume id
@@ -880,6 +989,8 @@ instance of the ArrayManagement class</p></div>
                   array_name,
                   username,
                   password,
+                  vendor_id,
+                  config_data,
                   control_host=None,
                   array_access_node=None,
                   is_ocum=False):
@@ -893,6 +1004,10 @@ instance of the ArrayManagement class</p></div>
 
                     password            (str)               -- password to access array
 
+                    vendor_id           (int)               -- vendor id of the array
+
+                    config_data         (list)              -- SNap configs list to be updated
+
                     control_host        (str)               -- control host of the array
 
                     array_access_node   (list)              -- Array Access Node MediaAgent&#39;s Name list
@@ -904,6 +1019,23 @@ instance of the ArrayManagement class</p></div>
 
                 errorMessage   (string) :  Error message
         &#34;&#34;&#34;
+
+        snap_configs = {}
+        assocType = 0
+        if config_data is not None:
+            assocType = 3
+            request_json_service = self.storage_arrays + &#39;/Vendors/{0}&#39;.format(vendor_id)
+            flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
+                &#39;GET&#39;, request_json_service
+            )
+            snap_configs = snap_configs.json()
+            for m_config, value in config_data.items():
+                for config in snap_configs[&#39;configs&#39;][&#39;configList&#39;]:
+                    if int(config[&#39;masterConfigId&#39;]) == int(m_config):
+                        config[&#39;value&#39;] = str(value)
+
+        else:
+            snap_configs[&#39;configs&#39;] = {}
 
         selectedMAs = []
         if array_access_node is not None:
@@ -930,7 +1062,7 @@ instance of the ArrayManagement class</p></div>
         request_json = {
             &#34;clientId&#34;: 0,
             &#34;flags&#34;: 0,
-            &#34;assocType&#34;: 0,
+            &#34;assocType&#34;: assocType,
             &#34;copyId&#34;: 0,
             &#34;appId&#34;: 0,
             &#34;selectedMAs&#34;:selectedMAs,
@@ -949,7 +1081,7 @@ instance of the ArrayManagement class</p></div>
                 &#34;disableDG&#34;: False,
                 &#34;useDevicesFromThisDG&#34;: False
             },
-            &#34;configList&#34;: {},
+            &#34;configs&#34;: snap_configs[&#39;configs&#39;],
             &#34;array&#34;: {
                 &#34;name&#34;: &#34;&#34;,
                 &#34;id&#34;: 0
@@ -1024,7 +1156,7 @@ instance of the ArrayManagement class</p></div>
             error_message = response.json()[&#39;errorMessage&#39;]
 
             if error_code != 0:
-                if error_code == 1:
+                if error_code in [1, 10]:
                     raise SDKException(&#39;StorageArray&#39;, &#39;101&#39;)
 
                 error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
@@ -1081,24 +1213,35 @@ instance of the ArrayManagement class</p></div>
         &#34;&#34;&#34;
 
         copy_level_id = app_level_id = client_level_id = 0
-        request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
-        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, request_json_service
-        )
 
         if config_update_level == &#34;array&#34;:
             config_update_level = 3
+            request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
         elif config_update_level == &#34;copy&#34;:
             config_update_level = 6
             copy_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?copyId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, copy_level_id, config_update_level)
+
         elif config_update_level == &#34;subclient&#34;:
             config_update_level = 9
             app_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?appId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, app_level_id, config_update_level)
+
         elif config_update_level == &#34;client&#34;:
             config_update_level = 8
             client_level_id = level_id
+            request_json_service = self.storage_arrays + &#39;/{0}?clientId={1}&amp;assocType={2}&#39;.format(
+                control_host_id, client_level_id, config_update_level)
+
         else:
             config_update_level = 3
+            request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
+        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, request_json_service)
 
         request_json = request_json.json()
 
@@ -1227,7 +1370,7 @@ instance of the ArrayManagement class</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.array_management.ArrayManagement.add_array"><code class="name flex">
-<span>def <span class="ident">add_array</span></span>(<span>self, vendor_name, array_name, username, password, control_host=None, array_access_node=None, is_ocum=False)</span>
+<span>def <span class="ident">add_array</span></span>(<span>self, vendor_name, array_name, username, password, vendor_id, config_data, control_host=None, array_access_node=None, is_ocum=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This method will help in adding array entry in the array management
@@ -1240,6 +1383,10 @@ vendor_name
     username            (str)               -- username of the array
 
     password            (str)               -- password to access array
+
+    vendor_id           (int)               -- vendor id of the array
+
+    config_data         (list)              -- SNap configs list to be updated
 
     control_host        (str)               -- control host of the array
 
@@ -1254,13 +1401,15 @@ vendor_name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L243-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L280-L460" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_array(self,
               vendor_name,
               array_name,
               username,
               password,
+              vendor_id,
+              config_data,
               control_host=None,
               array_access_node=None,
               is_ocum=False):
@@ -1274,6 +1423,10 @@ vendor_name
 
                 password            (str)               -- password to access array
 
+                vendor_id           (int)               -- vendor id of the array
+
+                config_data         (list)              -- SNap configs list to be updated
+
                 control_host        (str)               -- control host of the array
 
                 array_access_node   (list)              -- Array Access Node MediaAgent&#39;s Name list
@@ -1285,6 +1438,23 @@ vendor_name
 
             errorMessage   (string) :  Error message
     &#34;&#34;&#34;
+
+    snap_configs = {}
+    assocType = 0
+    if config_data is not None:
+        assocType = 3
+        request_json_service = self.storage_arrays + &#39;/Vendors/{0}&#39;.format(vendor_id)
+        flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, request_json_service
+        )
+        snap_configs = snap_configs.json()
+        for m_config, value in config_data.items():
+            for config in snap_configs[&#39;configs&#39;][&#39;configList&#39;]:
+                if int(config[&#39;masterConfigId&#39;]) == int(m_config):
+                    config[&#39;value&#39;] = str(value)
+
+    else:
+        snap_configs[&#39;configs&#39;] = {}
 
     selectedMAs = []
     if array_access_node is not None:
@@ -1311,7 +1481,7 @@ vendor_name
     request_json = {
         &#34;clientId&#34;: 0,
         &#34;flags&#34;: 0,
-        &#34;assocType&#34;: 0,
+        &#34;assocType&#34;: assocType,
         &#34;copyId&#34;: 0,
         &#34;appId&#34;: 0,
         &#34;selectedMAs&#34;:selectedMAs,
@@ -1330,7 +1500,7 @@ vendor_name
             &#34;disableDG&#34;: False,
             &#34;useDevicesFromThisDG&#34;: False
         },
-        &#34;configList&#34;: {},
+        &#34;configs&#34;: snap_configs[&#39;configs&#39;],
         &#34;array&#34;: {
             &#34;name&#34;: &#34;&#34;,
             &#34;id&#34;: 0
@@ -1405,7 +1575,7 @@ vendor_name
         error_message = response.json()[&#39;errorMessage&#39;]
 
         if error_code != 0:
-            if error_code == 1:
+            if error_code in [1, 10]:
                 raise SDKException(&#39;StorageArray&#39;, &#39;101&#39;)
 
             error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
@@ -1428,7 +1598,7 @@ vendor_name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L207-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L244-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, volume_id):
     &#34;&#34;&#34; Deletes Snap of the given volume id
@@ -1458,7 +1628,7 @@ Error message after the execution</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L402-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L462-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_array(self, control_host_array):
     &#34;&#34;&#34;This method Deletes an array from the array management
@@ -1518,7 +1688,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L423-L590" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L483-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_array(self,
                control_host_id,
@@ -1546,24 +1716,35 @@ added/updated</p>
     &#34;&#34;&#34;
 
     copy_level_id = app_level_id = client_level_id = 0
-    request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
-    flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-        &#39;GET&#39;, request_json_service
-    )
 
     if config_update_level == &#34;array&#34;:
         config_update_level = 3
+        request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
     elif config_update_level == &#34;copy&#34;:
         config_update_level = 6
         copy_level_id = level_id
+        request_json_service = self.storage_arrays + &#39;/{0}?copyId={1}&amp;assocType={2}&#39;.format(
+            control_host_id, copy_level_id, config_update_level)
+
     elif config_update_level == &#34;subclient&#34;:
         config_update_level = 9
         app_level_id = level_id
+        request_json_service = self.storage_arrays + &#39;/{0}?appId={1}&amp;assocType={2}&#39;.format(
+            control_host_id, app_level_id, config_update_level)
+
     elif config_update_level == &#34;client&#34;:
         config_update_level = 8
         client_level_id = level_id
+        request_json_service = self.storage_arrays + &#39;/{0}?clientId={1}&amp;assocType={2}&#39;.format(
+            control_host_id, client_level_id, config_update_level)
+
     else:
         config_update_level = 3
+        request_json_service = self.storage_arrays + &#39;/{0}&#39;.format(control_host_id)
+
+    flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, request_json_service)
 
     request_json = request_json.json()
 
@@ -1702,7 +1883,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L216-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L253-L260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def force_delete(self, volume_id):
     &#34;&#34;&#34; Deletes Snap of the given volume id
@@ -1726,7 +1907,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L198-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L235-L242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def force_unmount(self, volume_id):
     &#34;&#34;&#34; Force UnMounts Snap of the given volume id
@@ -1739,7 +1920,7 @@ added/updated</p>
 </details>
 </dd>
 <dt id="cvpysdk.array_management.ArrayManagement.mount"><code class="name flex">
-<span>def <span class="ident">mount</span></span>(<span>self, volume_id, client_name, mountpath, do_vssprotection=True)</span>
+<span>def <span class="ident">mount</span></span>(<span>self, volume_id, client_name, mountpath, do_vssprotection=True, user_credentials=None, server_name=None, instance_details=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Mounts Snap of the given volume id</p>
@@ -1754,13 +1935,21 @@ added/updated</p>
 (str)
 &ndash; MountPath for Snap operation, default: None</p>
 <p>do_vssprotection (int)
-&ndash; Performs VSS protected mount</p></div>
+&ndash; Performs VSS protected mount</p>
+<p>user_credentials (dict)
+&ndash; dict containing userName of vcenter</p>
+<p>server_name
+(str)
+&ndash; vcenter name for mount operation</p>
+<p>instance_details (dict)
+&ndash; dict containing apptypeId, InstanceId, InstanceName</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L174-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L198-L224" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
+<pre><code class="python">def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
+          user_credentials=None, server_name=None, instance_details=None):
     &#34;&#34;&#34; Mounts Snap of the given volume id
 
         Args:
@@ -1772,8 +1961,20 @@ added/updated</p>
             MountPath    (str)        -- MountPath for Snap operation, default: None
 
             do_vssprotection (int)    -- Performs VSS protected mount
+
+            user_credentials (dict)   -- dict containing userName of vcenter
+
+            server_name   (str)       -- vcenter name for mount operation
+
+            instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
     &#34;&#34;&#34;
-    return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)</code></pre>
+    return self._snap_operation(0, volume_id,
+                                client_name,
+                                mountpath,
+                                do_vssprotection,
+                                user_credentials=user_credentials,
+                                server_name=server_name,
+                                instance_details=instance_details)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.array_management.ArrayManagement.reconcile"><code class="name flex">
@@ -1788,7 +1989,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L234-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L271-L278" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reconcile(self, control_host):
     &#34;&#34;&#34; Runs Reconcile Snap of the given control host id
@@ -1812,7 +2013,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L225-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L262-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def revert(self, volume_id):
     &#34;&#34;&#34; Reverts Snap of the given volume id
@@ -1836,7 +2037,7 @@ added/updated</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/array_management.py#L189-L196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/array_management.py#L226-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unmount(self, volume_id):
     &#34;&#34;&#34; UnMounts Snap of the given volume id

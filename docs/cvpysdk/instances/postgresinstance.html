@@ -72,11 +72,13 @@ with postgres server
 **use_master_for_log_backup**        --  Returns True if master is used for log backup
 
 **use_master_for_data_backup**       --  Returns True if master is used for data backup
+
+**archive_delete**                   --  Returns True if archive delete is enabled for instance
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L1-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L1-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -152,6 +154,8 @@ PostgreSQLInstance instance Attributes
     **use_master_for_log_backup**        --  Returns True if master is used for log backup
 
     **use_master_for_data_backup**       --  Returns True if master is used for data backup
+
+    **archive_delete**                   --  Returns True if archive delete is enabled for instance
 
 &#34;&#34;&#34;
 
@@ -287,6 +291,31 @@ class PostgreSQLInstance(Instance):
             &#39;Instance&#39;,
             &#39;105&#39;,
             &#34;Could not fetch postgres version.&#34;)
+
+    @property
+    def archive_delete(self):
+        &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+
+            Return Type: bool
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)
+
+    @archive_delete.setter
+    def archive_delete(self, value):
+        &#34;&#34;&#34; Setter for archive delete instance property
+
+            Args:
+
+                value (bool)  -- True to enable archive delete
+
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;ArchiveDelete&#39;] = value
+        self.update_properties(properties)
+
     @property
     def standby_instance_name(self):
         &#34;&#34;&#34;Returns the standby instance name
@@ -718,7 +747,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L85-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L87-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgreSQLInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
@@ -845,6 +874,31 @@ instance of the Agent class</p>
             &#39;Instance&#39;,
             &#39;105&#39;,
             &#34;Could not fetch postgres version.&#34;)
+
+    @property
+    def archive_delete(self):
+        &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+
+            Return Type: bool
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)
+
+    @archive_delete.setter
+    def archive_delete(self, value):
+        &#34;&#34;&#34; Setter for archive delete instance property
+
+            Args:
+
+                value (bool)  -- True to enable archive delete
+
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;ArchiveDelete&#39;] = value
+        self.update_properties(properties)
+
     @property
     def standby_instance_name(self):
         &#34;&#34;&#34;Returns the standby instance name
@@ -1255,6 +1309,25 @@ instance of the Agent class</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete"><code class="name">var <span class="ident">archive_delete</span></code></dt>
+<dd>
+<div class="desc"><p>Returns True if archive delete enabled. False if not</p>
+<p>Return Type: bool</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L213-L220" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def archive_delete(self):
+    &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+
+        Return Type: bool
+
+    &#34;&#34;&#34;
+    return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled"><code class="name">var <span class="ident">is_standby_enabled</span></code></dt>
 <dd>
 <div class="desc"><p>Returns True if standby enabled. False if not</p>
@@ -1262,7 +1335,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L232-L239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L259-L266" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_standby_enabled(self):
@@ -1281,7 +1354,7 @@ def is_standby_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L183-L195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L185-L197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def maintenance_database(self):
@@ -1305,7 +1378,7 @@ def maintenance_database(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L141-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L143-L155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_archive_log_directory(self):
@@ -1329,7 +1402,7 @@ def postgres_archive_log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L113-L125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L115-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_bin_directory(self):
@@ -1353,7 +1426,7 @@ def postgres_bin_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L127-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L129-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_lib_directory(self):
@@ -1377,7 +1450,7 @@ def postgres_lib_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L169-L181" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L171-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_port_number(self):
@@ -1401,7 +1474,7 @@ def postgres_server_port_number(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L155-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L157-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_user_name(self):
@@ -1425,7 +1498,7 @@ def postgres_server_user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L197-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L199-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_version(self):
@@ -1449,7 +1522,7 @@ def postgres_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L221-L230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L248-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_id(self):
@@ -1470,7 +1543,7 @@ def standby_instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L210-L219" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L237-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_name(self):
@@ -1491,7 +1564,7 @@ def standby_instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L265-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L292-L299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_data_backup(self):
@@ -1510,7 +1583,7 @@ def use_master_for_data_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L241-L248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L268-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_log_backup(self):
@@ -1641,7 +1714,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/postgresinstance.py#L432-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/postgresinstance.py#L459-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1917,6 +1990,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance">PostgreSQLInstance</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete">archive_delete</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled">is_standby_enabled</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database">maintenance_database</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory">postgres_archive_log_directory</a></code></li>

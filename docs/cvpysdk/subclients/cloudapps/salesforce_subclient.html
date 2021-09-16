@@ -92,7 +92,7 @@ json for salesforce</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L1-L1068" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L1-L1207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -957,7 +957,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                 db_type             (str)   :   database type. if database details does not
                                                     provided, it will use syncdb database
                                                     for restore
-                    default: SQLSERVER
+                default: SQLSERVER
 
                 db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
@@ -1132,6 +1132,145 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         return self._process_restore_response(request_json)
 
+    def metadata_restore_to_salesforce(
+            self,
+            metadata_list=None,
+            destination_client=None,
+            destination_instance=None,
+            destination_backupset=None,
+            **sf_options):
+        &#34;&#34;&#34;perform Restore to Salesforce from Media.
+
+        Args:
+            metadata_list           (list)  --  List of metadata components to restore like &#34;folder/component.type&#34;
+
+            destination_client      (str)   --  destination pseudo client name.
+                                                    if this value not provided, it will
+                                                    automatically select source client
+
+            destination_instance    (str)   --  destination instance name.
+                                                    if this value not provided, it will
+                                                    automatically select source instance name
+
+            destination_backupset   (str)   --  destination backupset name.
+                                                    if this value not provided, it will
+                                                    automatically select source backupset
+            sf_options:
+
+                destination_path    (str)   :   staging path for salesforce restore data
+
+                streams             (int)   :   no of streams to use for restore
+                    default: 2
+
+                copy_precedence     (int)   :   copy number to use for restore
+                    default: 0
+
+                from_time           (str)   :   date to get the contents after
+                                                    format: dd/MM/YYYY
+                                                    gets contents from 01/01/1970 if not specified
+                    default: None
+
+                to_time             (str)   :   date to get the contents before
+                                                    format: dd/MM/YYYY
+                                                    gets contents till current day if not specified
+                    default: None
+
+                show_deleted_files  (bool)  :   include deleted files in the content or not
+                    default: True
+
+        Raises:
+                SDKException:
+                    if from date value is incorrect
+
+                    if to date value is incorrect
+
+                    if to date is less than from date
+
+                    if failed to browse content
+
+                    if response is empty
+
+                    if response is not success
+
+                    if destination client does not exist
+
+                    if destination instance does not exist
+
+                    if destination backupset does not exist
+
+        &#34;&#34;&#34;
+
+        file_restore_option = {}
+
+        if not sf_options:
+            sf_options = {}
+
+        # check if client name is correct
+        if destination_client is None:
+            destination_client = self._backupset_object._agent_object._client_object
+
+        if isinstance(destination_client, Client):
+            dest_client = destination_client
+        elif isinstance(destination_client, basestring):
+            dest_client = self._commcell_object.clients.get(destination_client)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
+
+        dest_agent = Agent(dest_client, &#39;Cloud Apps&#39;)
+
+        # check if instance name is correct
+        if destination_instance is None:
+            destination_instance = self._backupset_object._instance_object
+
+        if isinstance(destination_instance, Instance):
+            dest_instance = destination_instance
+        elif isinstance(destination_instance, basestring):
+            dest_instance = dest_agent.instances.get(destination_instance)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;113&#39;)
+
+        # check if backupset name is correct
+        if destination_backupset is None:
+            destination_backupset = self._backupset_object
+
+        if isinstance(destination_backupset, SalesforceBackupset):
+            dest_backupset = destination_backupset
+        elif isinstance(destination_backupset, basestring):
+            dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;114&#39;)
+
+        file_restore_option[&#34;dest_client_name&#34;] = dest_client.client_name
+        file_restore_option[&#34;dest_instance_name&#34;] = dest_instance.instance_name
+        file_restore_option[&#34;dest_backupset_name&#34;] = dest_backupset.backupset_name
+
+        self._restore_salesforce_destination_json(file_restore_option)
+
+        file_restore_option[&#34;paths&#34;] = [f&#34;/Metadata/unpackaged/{metadata_path}&#34; for metadata_path in metadata_list]
+
+        # set the salesforce options
+        file_restore_option[&#34;staging_path&#34;] = sf_options.get(
+            &#34;destination_path&#34;, dest_backupset.download_cache_path
+        )
+        file_restore_option[&#34;dependent_level&#34;] = sf_options.get(&#34;dependent_level&#34;, 0)
+        file_restore_option[&#34;streams&#34;] = sf_options.get(&#34;streams&#34;, 2)
+        file_restore_option[&#34;to_fs&#34;] = False
+        file_restore_option[&#34;to_cloud&#34;] = True
+        file_restore_option[&#34;from_database&#34;] = False
+        file_restore_option[&#34;is_metadata&#34;] = True
+
+        # set the browse option
+        file_restore_option[&#34;client_name&#34;] = self._backupset_object._agent_object._client_object.client_name
+        file_restore_option[&#34;copy_precedence_applicable&#34;] = True
+        file_restore_option[&#34;copy_precedence&#34;] = sf_options.get(&#34;copy_precedence&#34;, 0)
+        file_restore_option[&#34;from_time&#34;] = sf_options.get(&#34;from_time&#34;, 0)
+        file_restore_option[&#34;to_time&#34;] = sf_options.get(&#34;to_time&#34;, 0)
+
+        # prepare and execute the Json
+        request_json = self._prepare_salesforce_restore_json(file_restore_option)
+
+        return self._process_restore_response(request_json)
+
     def _prepare_salesforce_restore_json(self, file_restore_option):
         &#34;&#34;&#34;prepares the  salesforce restore json from getters.&#34;&#34;&#34;
         self._restore_fileoption_json(file_restore_option)
@@ -1194,7 +1333,7 @@ and to perform operations on that subclient.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L84-L1068" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L84-L1207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SalesforceSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient,
@@ -1976,7 +2115,7 @@ and to perform operations on that subclient.</p>
                 db_type             (str)   :   database type. if database details does not
                                                     provided, it will use syncdb database
                                                     for restore
-                    default: SQLSERVER
+                default: SQLSERVER
 
                 db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
@@ -2151,6 +2290,145 @@ and to perform operations on that subclient.</p>
 
         return self._process_restore_response(request_json)
 
+    def metadata_restore_to_salesforce(
+            self,
+            metadata_list=None,
+            destination_client=None,
+            destination_instance=None,
+            destination_backupset=None,
+            **sf_options):
+        &#34;&#34;&#34;perform Restore to Salesforce from Media.
+
+        Args:
+            metadata_list           (list)  --  List of metadata components to restore like &#34;folder/component.type&#34;
+
+            destination_client      (str)   --  destination pseudo client name.
+                                                    if this value not provided, it will
+                                                    automatically select source client
+
+            destination_instance    (str)   --  destination instance name.
+                                                    if this value not provided, it will
+                                                    automatically select source instance name
+
+            destination_backupset   (str)   --  destination backupset name.
+                                                    if this value not provided, it will
+                                                    automatically select source backupset
+            sf_options:
+
+                destination_path    (str)   :   staging path for salesforce restore data
+
+                streams             (int)   :   no of streams to use for restore
+                    default: 2
+
+                copy_precedence     (int)   :   copy number to use for restore
+                    default: 0
+
+                from_time           (str)   :   date to get the contents after
+                                                    format: dd/MM/YYYY
+                                                    gets contents from 01/01/1970 if not specified
+                    default: None
+
+                to_time             (str)   :   date to get the contents before
+                                                    format: dd/MM/YYYY
+                                                    gets contents till current day if not specified
+                    default: None
+
+                show_deleted_files  (bool)  :   include deleted files in the content or not
+                    default: True
+
+        Raises:
+                SDKException:
+                    if from date value is incorrect
+
+                    if to date value is incorrect
+
+                    if to date is less than from date
+
+                    if failed to browse content
+
+                    if response is empty
+
+                    if response is not success
+
+                    if destination client does not exist
+
+                    if destination instance does not exist
+
+                    if destination backupset does not exist
+
+        &#34;&#34;&#34;
+
+        file_restore_option = {}
+
+        if not sf_options:
+            sf_options = {}
+
+        # check if client name is correct
+        if destination_client is None:
+            destination_client = self._backupset_object._agent_object._client_object
+
+        if isinstance(destination_client, Client):
+            dest_client = destination_client
+        elif isinstance(destination_client, basestring):
+            dest_client = self._commcell_object.clients.get(destination_client)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
+
+        dest_agent = Agent(dest_client, &#39;Cloud Apps&#39;)
+
+        # check if instance name is correct
+        if destination_instance is None:
+            destination_instance = self._backupset_object._instance_object
+
+        if isinstance(destination_instance, Instance):
+            dest_instance = destination_instance
+        elif isinstance(destination_instance, basestring):
+            dest_instance = dest_agent.instances.get(destination_instance)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;113&#39;)
+
+        # check if backupset name is correct
+        if destination_backupset is None:
+            destination_backupset = self._backupset_object
+
+        if isinstance(destination_backupset, SalesforceBackupset):
+            dest_backupset = destination_backupset
+        elif isinstance(destination_backupset, basestring):
+            dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;114&#39;)
+
+        file_restore_option[&#34;dest_client_name&#34;] = dest_client.client_name
+        file_restore_option[&#34;dest_instance_name&#34;] = dest_instance.instance_name
+        file_restore_option[&#34;dest_backupset_name&#34;] = dest_backupset.backupset_name
+
+        self._restore_salesforce_destination_json(file_restore_option)
+
+        file_restore_option[&#34;paths&#34;] = [f&#34;/Metadata/unpackaged/{metadata_path}&#34; for metadata_path in metadata_list]
+
+        # set the salesforce options
+        file_restore_option[&#34;staging_path&#34;] = sf_options.get(
+            &#34;destination_path&#34;, dest_backupset.download_cache_path
+        )
+        file_restore_option[&#34;dependent_level&#34;] = sf_options.get(&#34;dependent_level&#34;, 0)
+        file_restore_option[&#34;streams&#34;] = sf_options.get(&#34;streams&#34;, 2)
+        file_restore_option[&#34;to_fs&#34;] = False
+        file_restore_option[&#34;to_cloud&#34;] = True
+        file_restore_option[&#34;from_database&#34;] = False
+        file_restore_option[&#34;is_metadata&#34;] = True
+
+        # set the browse option
+        file_restore_option[&#34;client_name&#34;] = self._backupset_object._agent_object._client_object.client_name
+        file_restore_option[&#34;copy_precedence_applicable&#34;] = True
+        file_restore_option[&#34;copy_precedence&#34;] = sf_options.get(&#34;copy_precedence&#34;, 0)
+        file_restore_option[&#34;from_time&#34;] = sf_options.get(&#34;from_time&#34;, 0)
+        file_restore_option[&#34;to_time&#34;] = sf_options.get(&#34;to_time&#34;, 0)
+
+        # prepare and execute the Json
+        request_json = self._prepare_salesforce_restore_json(file_restore_option)
+
+        return self._process_restore_response(request_json)
+
     def _prepare_salesforce_restore_json(self, file_restore_option):
         &#34;&#34;&#34;prepares the  salesforce restore json from getters.&#34;&#34;&#34;
         self._restore_fileoption_json(file_restore_option)
@@ -2195,7 +2473,7 @@ and to perform operations on that subclient.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L163-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L163-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archived_deleted(self):
@@ -2209,7 +2487,7 @@ def archived_deleted(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L153-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L153-L156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def files(self):
@@ -2223,7 +2501,7 @@ def files(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L158-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L158-L161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -2237,7 +2515,7 @@ def metadata(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L148-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L148-L151" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def objects(self):
@@ -2268,7 +2546,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L216-L245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L216-L245" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def check_object_in_browse(self, object_to_restore, browse_data):
     &#34;&#34;&#34;Check if the particular object is present in browse of the subclient
@@ -2310,7 +2588,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L208-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L208-L214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_archived_deleted(self):
     &#34;&#34;&#34;
@@ -2329,7 +2607,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L192-L198" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L192-L198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_files(self):
     &#34;&#34;&#34;
@@ -2348,7 +2626,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L200-L206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L200-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_metadata(self):
     &#34;&#34;&#34;
@@ -2367,7 +2645,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L184-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L184-L190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_archived_deleted(self):
     &#34;&#34;&#34;
@@ -2386,7 +2664,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L168-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L168-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_files(self):
     &#34;&#34;&#34;
@@ -2405,7 +2683,7 @@ if object is not present in browse result</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L176-L182" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L176-L182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_metadata(self):
     &#34;&#34;&#34;
@@ -2414,6 +2692,220 @@ if object is not present in browse result</p></div>
     if not self.metadata:
         self._set_subclient_properties(&#34;_subclient_properties[&#39;cloudAppsSubClientProp&#39;]\
                                        [&#39;salesforceSubclient&#39;][&#39;backupSFMetadata&#39;]&#34;, True)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata_restore_to_salesforce"><code class="name flex">
+<span>def <span class="ident">metadata_restore_to_salesforce</span></span>(<span>self, metadata_list=None, destination_client=None, destination_instance=None, destination_backupset=None, **sf_options)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>perform Restore to Salesforce from Media.</p>
+<h2 id="args">Args</h2>
+<p>metadata_list
+(list)
+&ndash;
+List of metadata components to restore like "folder/component.type"</p>
+<p>destination_client
+(str)
+&ndash;
+destination pseudo client name.
+if this value not provided, it will
+automatically select source client</p>
+<p>destination_instance
+(str)
+&ndash;
+destination instance name.
+if this value not provided, it will
+automatically select source instance name</p>
+<p>destination_backupset
+(str)
+&ndash;
+destination backupset name.
+if this value not provided, it will
+automatically select source backupset
+sf_options:</p>
+<pre><code>destination_path    (str)   :   staging path for salesforce restore data
+
+streams             (int)   :   no of streams to use for restore
+    default: 2
+
+copy_precedence     (int)   :   copy number to use for restore
+    default: 0
+
+from_time           (str)   :   date to get the contents after
+                                    format: dd/MM/YYYY
+                                    gets contents from 01/01/1970 if not specified
+    default: None
+
+to_time             (str)   :   date to get the contents before
+                                    format: dd/MM/YYYY
+                                    gets contents till current day if not specified
+    default: None
+
+show_deleted_files  (bool)  :   include deleted files in the content or not
+    default: True
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if from date value is incorrect</p>
+<pre><code>if to date value is incorrect
+
+if to date is less than from date
+
+if failed to browse content
+
+if response is empty
+
+if response is not success
+
+if destination client does not exist
+
+if destination instance does not exist
+
+if destination backupset does not exist
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L1039-L1176" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def metadata_restore_to_salesforce(
+        self,
+        metadata_list=None,
+        destination_client=None,
+        destination_instance=None,
+        destination_backupset=None,
+        **sf_options):
+    &#34;&#34;&#34;perform Restore to Salesforce from Media.
+
+    Args:
+        metadata_list           (list)  --  List of metadata components to restore like &#34;folder/component.type&#34;
+
+        destination_client      (str)   --  destination pseudo client name.
+                                                if this value not provided, it will
+                                                automatically select source client
+
+        destination_instance    (str)   --  destination instance name.
+                                                if this value not provided, it will
+                                                automatically select source instance name
+
+        destination_backupset   (str)   --  destination backupset name.
+                                                if this value not provided, it will
+                                                automatically select source backupset
+        sf_options:
+
+            destination_path    (str)   :   staging path for salesforce restore data
+
+            streams             (int)   :   no of streams to use for restore
+                default: 2
+
+            copy_precedence     (int)   :   copy number to use for restore
+                default: 0
+
+            from_time           (str)   :   date to get the contents after
+                                                format: dd/MM/YYYY
+                                                gets contents from 01/01/1970 if not specified
+                default: None
+
+            to_time             (str)   :   date to get the contents before
+                                                format: dd/MM/YYYY
+                                                gets contents till current day if not specified
+                default: None
+
+            show_deleted_files  (bool)  :   include deleted files in the content or not
+                default: True
+
+    Raises:
+            SDKException:
+                if from date value is incorrect
+
+                if to date value is incorrect
+
+                if to date is less than from date
+
+                if failed to browse content
+
+                if response is empty
+
+                if response is not success
+
+                if destination client does not exist
+
+                if destination instance does not exist
+
+                if destination backupset does not exist
+
+    &#34;&#34;&#34;
+
+    file_restore_option = {}
+
+    if not sf_options:
+        sf_options = {}
+
+    # check if client name is correct
+    if destination_client is None:
+        destination_client = self._backupset_object._agent_object._client_object
+
+    if isinstance(destination_client, Client):
+        dest_client = destination_client
+    elif isinstance(destination_client, basestring):
+        dest_client = self._commcell_object.clients.get(destination_client)
+    else:
+        raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
+
+    dest_agent = Agent(dest_client, &#39;Cloud Apps&#39;)
+
+    # check if instance name is correct
+    if destination_instance is None:
+        destination_instance = self._backupset_object._instance_object
+
+    if isinstance(destination_instance, Instance):
+        dest_instance = destination_instance
+    elif isinstance(destination_instance, basestring):
+        dest_instance = dest_agent.instances.get(destination_instance)
+    else:
+        raise SDKException(&#39;Subclient&#39;, &#39;113&#39;)
+
+    # check if backupset name is correct
+    if destination_backupset is None:
+        destination_backupset = self._backupset_object
+
+    if isinstance(destination_backupset, SalesforceBackupset):
+        dest_backupset = destination_backupset
+    elif isinstance(destination_backupset, basestring):
+        dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
+    else:
+        raise SDKException(&#39;Subclient&#39;, &#39;114&#39;)
+
+    file_restore_option[&#34;dest_client_name&#34;] = dest_client.client_name
+    file_restore_option[&#34;dest_instance_name&#34;] = dest_instance.instance_name
+    file_restore_option[&#34;dest_backupset_name&#34;] = dest_backupset.backupset_name
+
+    self._restore_salesforce_destination_json(file_restore_option)
+
+    file_restore_option[&#34;paths&#34;] = [f&#34;/Metadata/unpackaged/{metadata_path}&#34; for metadata_path in metadata_list]
+
+    # set the salesforce options
+    file_restore_option[&#34;staging_path&#34;] = sf_options.get(
+        &#34;destination_path&#34;, dest_backupset.download_cache_path
+    )
+    file_restore_option[&#34;dependent_level&#34;] = sf_options.get(&#34;dependent_level&#34;, 0)
+    file_restore_option[&#34;streams&#34;] = sf_options.get(&#34;streams&#34;, 2)
+    file_restore_option[&#34;to_fs&#34;] = False
+    file_restore_option[&#34;to_cloud&#34;] = True
+    file_restore_option[&#34;from_database&#34;] = False
+    file_restore_option[&#34;is_metadata&#34;] = True
+
+    # set the browse option
+    file_restore_option[&#34;client_name&#34;] = self._backupset_object._agent_object._client_object.client_name
+    file_restore_option[&#34;copy_precedence_applicable&#34;] = True
+    file_restore_option[&#34;copy_precedence&#34;] = sf_options.get(&#34;copy_precedence&#34;, 0)
+    file_restore_option[&#34;from_time&#34;] = sf_options.get(&#34;from_time&#34;, 0)
+    file_restore_option[&#34;to_time&#34;] = sf_options.get(&#34;to_time&#34;, 0)
+
+    # prepare and execute the Json
+    request_json = self._prepare_salesforce_restore_json(file_restore_option)
+
+    return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_database"><code class="name flex">
@@ -2509,7 +3001,7 @@ if all the database details not provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L436-L603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L436-L603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_database(
         self,
@@ -2746,7 +3238,7 @@ if from time value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L312-L434" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L312-L434" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_file_system(
         self,
@@ -2978,7 +3470,7 @@ if syncdb is not enabled and user not provided the database details
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L605-L832" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L605-L832" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_salesforce_from_database(
         self,
@@ -3245,7 +3737,7 @@ sf_options
 db_type             (str)   :   database type. if database details does not
                                     provided, it will use syncdb database
                                     for restore
-    default: SQLSERVER
+default: SQLSERVER
 
 db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
@@ -3315,7 +3807,7 @@ if user does not provide staging database details
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L834-L1037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/cloudapps/salesforce_subclient.py#L834-L1037" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_salesforce_from_media(
         self,
@@ -3347,7 +3839,7 @@ if user does not provide staging database details
             db_type             (str)   :   database type. if database details does not
                                                 provided, it will use syncdb database
                                                 for restore
-                default: SQLSERVER
+            default: SQLSERVER
 
             db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
@@ -3564,6 +4056,7 @@ if user does not provide staging database details
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.storage_ma" href="../../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -3572,6 +4065,7 @@ if user does not provide staging database details
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -3658,6 +4152,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_metadata" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_metadata">enable_metadata</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.files" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.files">files</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata">metadata</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata_restore_to_salesforce" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata_restore_to_salesforce">metadata_restore_to_salesforce</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.objects" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.objects">objects</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_database" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_database">restore_to_database</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_file_system" href="#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_file_system">restore_to_file_system</a></code></li>

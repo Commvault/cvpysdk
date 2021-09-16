@@ -105,11 +105,13 @@ _get_vm_pair_properties()   -- Gets the live sync properties for this VM pair
 **last_synced_backup_job** -- Returns the last synced backup job ID
 
 **latest_replication_job** -- Returns the latest replication job ID
+
+**last_replication_job**   -- Returns the last replication job ID
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L1-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L1-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -235,6 +237,8 @@ LiveSyncVMPair Attributes:
 
     **latest_replication_job** -- Returns the latest replication job ID
 
+    **last_replication_job**   -- Returns the last replication job ID
+
 &#34;&#34;&#34;
 
 import uuid
@@ -243,6 +247,7 @@ from past.builtins import basestring
 
 from ....constants import HypervisorType as hv_type
 from ....constants import VSALiveSyncStatus as sync_status
+from ....constants import VSAFailOverStatus as failover_status
 from ....exception import SDKException
 from ....schedules import SchedulePattern
 
@@ -353,7 +358,10 @@ class VsaLiveSync:
                 return live_sync_pairs_dict
             elif response.json() and &#39;siteInfo&#39; in response.json():
                 for dictionary in response.json()[&#39;siteInfo&#39;]:
-                    temp_name = dictionary[&#39;subTask&#39;][&#39;subtaskName&#39;]
+                    if dictionary[&#34;replicationGroup&#34;][&#34;replicationGroupName&#34;] != &#34;&#34;:
+                        temp_name = dictionary[&#34;replicationGroup&#34;][&#34;replicationGroupName&#34;]
+                    else:
+                        temp_name = dictionary[&#39;subTask&#39;][&#39;subtaskName&#39;]
                     temp_id = str(dictionary[&#39;subTask&#39;][&#39;taskId&#39;])
                     live_sync_pairs_dict[temp_name] = {
                         &#39;id&#39;: temp_id
@@ -734,6 +742,7 @@ class LiveSyncVMPair:
         self._properties = None
         self._replication_guid = None
         self._status = None
+        self._failover_status = None
         self._source_vm = None
         self._destination_vm = None
         self._destination_client = None
@@ -777,6 +786,7 @@ class LiveSyncVMPair:
                 self._properties = response.json()[&#39;siteInfo&#39;][0]
                 self._replication_guid = self._properties[&#39;replicationGuid&#39;]
                 self._status = self._properties[&#39;status&#39;]
+                self._failover_status = self._properties[&#39;FailoverStatus&#39;]
                 self._source_vm = self._properties[&#39;sourceName&#39;]
                 self._destination_vm = self._properties[&#39;destinationName&#39;]
                 self._destination_client = self._properties[&#39;destinationInstance&#39;].get(
@@ -789,10 +799,6 @@ class LiveSyncVMPair:
                     &#39;instanceName&#39;) or self._agent_object.instances.get(
                         self._properties[&#39;destinationInstance&#39;].get(&#39;instanceId&#39;)).name
                 self._last_backup_job = self._properties[&#39;lastSyncedBkpJob&#39;]
-                try:
-                    self._latest_replication_job = int(self._properties[&#39;VMReplInfoProperties&#39;][1][&#39;propertyValue&#39;])
-                except Exception:
-                    self._latest_replication_job = self._properties[&#39;VMReplInfoProperties&#39;][0][&#39;propertyValue&#39;]
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -845,14 +851,31 @@ class LiveSyncVMPair:
         return sync_status(self._status).name
 
     @property
+    def failover_status(self):
+        &#34;&#34;&#34;Treats the failover_status as a read-only attribute.&#34;&#34;&#34;
+        return failover_status(self._failover_status).name
+
+    @property
     def last_synced_backup_job(self):
         &#34;&#34;&#34;Treats the synced backup job as a read-only attribute.&#34;&#34;&#34;
         return self._last_backup_job
 
     @property
+    def last_replication_job(self):
+        &#34;&#34;&#34;Returns (int): the last replication job that has been run for the Live sync VM pair&#34;&#34;&#34;
+        for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+            if prop.get(&#39;propertyId&#39;, 0) == 2216:
+                return int(prop.get(&#39;propertyValue&#39;))
+        return None
+
+    @property
     def latest_replication_job(self):
-        &#34;&#34;&#34;Treats the latest replication job as a read-only attribute.&#34;&#34;&#34;
-        return self._latest_replication_job
+        &#34;&#34;&#34;Returns (int): the latest successful replication job for the Live sync VM pair&#34;&#34;&#34;
+        for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+            if prop.get(&#39;propertyId&#39;, 0) == 2208:
+                self._latest_replication_job = int(prop.get(&#39;propertyValue&#39;))
+                return self._latest_replication_job
+        return None
 
     def refresh(self):
         &#34;&#34;&#34;Refreshes the properties of the live sync&#34;&#34;&#34;
@@ -888,7 +911,7 @@ class LiveSyncVMPair:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L404-L584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L410-L590" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LiveSyncPairs:
     &#34;&#34;&#34;Class for all live sync pairs under a subclient&#34;&#34;&#34;
@@ -1080,7 +1103,7 @@ class LiveSyncVMPair:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L572-L575" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L578-L581" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync_id(self):
@@ -1094,7 +1117,7 @@ def live_sync_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L577-L580" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L583-L586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync_name(self):
@@ -1120,7 +1143,7 @@ def live_sync_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L511-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L517-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pairs(self):
@@ -1163,7 +1186,7 @@ if type of the vm pair name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L530-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L536-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, vm_pair_name):
     &#34;&#34;&#34;Returns the LiveSyncVMPair object assoicated with the subclient
@@ -1211,7 +1234,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L556-L570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L562-L576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_vm_pair(self, vm_pair_name):
     &#34;&#34;&#34;Checks if a live sync pair exists with the given name
@@ -1238,7 +1261,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L582-L584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L588-L590" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the VM pairs associated with the subclient&#34;&#34;&#34;
@@ -1267,7 +1290,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L587-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L593-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LiveSyncVMPair:
     &#34;&#34;&#34;Class for monitoring a live sync VM pair&#34;&#34;&#34;
@@ -1306,6 +1329,7 @@ if type of the live sync name argument is not string</p></div>
         self._properties = None
         self._replication_guid = None
         self._status = None
+        self._failover_status = None
         self._source_vm = None
         self._destination_vm = None
         self._destination_client = None
@@ -1349,6 +1373,7 @@ if type of the live sync name argument is not string</p></div>
                 self._properties = response.json()[&#39;siteInfo&#39;][0]
                 self._replication_guid = self._properties[&#39;replicationGuid&#39;]
                 self._status = self._properties[&#39;status&#39;]
+                self._failover_status = self._properties[&#39;FailoverStatus&#39;]
                 self._source_vm = self._properties[&#39;sourceName&#39;]
                 self._destination_vm = self._properties[&#39;destinationName&#39;]
                 self._destination_client = self._properties[&#39;destinationInstance&#39;].get(
@@ -1361,10 +1386,6 @@ if type of the live sync name argument is not string</p></div>
                     &#39;instanceName&#39;) or self._agent_object.instances.get(
                         self._properties[&#39;destinationInstance&#39;].get(&#39;instanceId&#39;)).name
                 self._last_backup_job = self._properties[&#39;lastSyncedBkpJob&#39;]
-                try:
-                    self._latest_replication_job = int(self._properties[&#39;VMReplInfoProperties&#39;][1][&#39;propertyValue&#39;])
-                except Exception:
-                    self._latest_replication_job = self._properties[&#39;VMReplInfoProperties&#39;][0][&#39;propertyValue&#39;]
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -1417,14 +1438,31 @@ if type of the live sync name argument is not string</p></div>
         return sync_status(self._status).name
 
     @property
+    def failover_status(self):
+        &#34;&#34;&#34;Treats the failover_status as a read-only attribute.&#34;&#34;&#34;
+        return failover_status(self._failover_status).name
+
+    @property
     def last_synced_backup_job(self):
         &#34;&#34;&#34;Treats the synced backup job as a read-only attribute.&#34;&#34;&#34;
         return self._last_backup_job
 
     @property
+    def last_replication_job(self):
+        &#34;&#34;&#34;Returns (int): the last replication job that has been run for the Live sync VM pair&#34;&#34;&#34;
+        for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+            if prop.get(&#39;propertyId&#39;, 0) == 2216:
+                return int(prop.get(&#39;propertyValue&#39;))
+        return None
+
+    @property
     def latest_replication_job(self):
-        &#34;&#34;&#34;Treats the latest replication job as a read-only attribute.&#34;&#34;&#34;
-        return self._latest_replication_job
+        &#34;&#34;&#34;Returns (int): the latest successful replication job for the Live sync VM pair&#34;&#34;&#34;
+        for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+            if prop.get(&#39;propertyId&#39;, 0) == 2208:
+                self._latest_replication_job = int(prop.get(&#39;propertyValue&#39;))
+                return self._latest_replication_job
+        return None
 
     def refresh(self):
         &#34;&#34;&#34;Refreshes the properties of the live sync&#34;&#34;&#34;
@@ -1438,7 +1476,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L714-L717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L718-L721" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_client(self):
@@ -1452,7 +1490,7 @@ def destination_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L724-L727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L728-L731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_instance(self):
@@ -1466,7 +1504,7 @@ def destination_instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L719-L722" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L723-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_proxy(self):
@@ -1480,12 +1518,43 @@ def destination_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L709-L712" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L713-L716" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_vm(self):
     &#34;&#34;&#34;Treats the destination VM as a read-only attribute.&#34;&#34;&#34;
     return self._destination_vm</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.failover_status"><code class="name">var <span class="ident">failover_status</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the failover_status as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L738-L741" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def failover_status(self):
+    &#34;&#34;&#34;Treats the failover_status as a read-only attribute.&#34;&#34;&#34;
+    return failover_status(self._failover_status).name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_replication_job"><code class="name">var <span class="ident">last_replication_job</span></code></dt>
+<dd>
+<div class="desc"><p>Returns (int): the last replication job that has been run for the Live sync VM pair</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L748-L754" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def last_replication_job(self):
+    &#34;&#34;&#34;Returns (int): the last replication job that has been run for the Live sync VM pair&#34;&#34;&#34;
+    for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+        if prop.get(&#39;propertyId&#39;, 0) == 2216:
+            return int(prop.get(&#39;propertyValue&#39;))
+    return None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_synced_backup_job"><code class="name">var <span class="ident">last_synced_backup_job</span></code></dt>
@@ -1494,7 +1563,7 @@ def destination_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L734-L737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L743-L746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def last_synced_backup_job(self):
@@ -1504,16 +1573,20 @@ def last_synced_backup_job(self):
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.latest_replication_job"><code class="name">var <span class="ident">latest_replication_job</span></code></dt>
 <dd>
-<div class="desc"><p>Treats the latest replication job as a read-only attribute.</p></div>
+<div class="desc"><p>Returns (int): the latest successful replication job for the Live sync VM pair</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L739-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L756-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def latest_replication_job(self):
-    &#34;&#34;&#34;Treats the latest replication job as a read-only attribute.&#34;&#34;&#34;
-    return self._latest_replication_job</code></pre>
+    &#34;&#34;&#34;Returns (int): the latest successful replication job for the Live sync VM pair&#34;&#34;&#34;
+    for prop in self._properties.get(&#39;VMReplInfoProperties&#39;, []):
+        if prop.get(&#39;propertyId&#39;, 0) == 2208:
+            self._latest_replication_job = int(prop.get(&#39;propertyValue&#39;))
+            return self._latest_replication_job
+    return None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.replication_guid"><code class="name">var <span class="ident">replication_guid</span></code></dt>
@@ -1522,7 +1595,7 @@ def latest_replication_job(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L699-L702" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L703-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_guid(self):
@@ -1536,7 +1609,7 @@ def replication_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L704-L707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L708-L711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_vm(self):
@@ -1550,7 +1623,7 @@ def source_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L729-L732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L733-L736" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1564,7 +1637,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L689-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L693-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pair_id(self):
@@ -1578,7 +1651,7 @@ def vm_pair_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L694-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L698-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pair_name(self):
@@ -1597,7 +1670,7 @@ def vm_pair_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L744-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L765-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the properties of the live sync&#34;&#34;&#34;
@@ -1620,7 +1693,7 @@ def vm_pair_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L137-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L140-L407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VsaLiveSync:
     &#34;&#34;&#34;Class for configuring and monitoring virtual server live sync operations&#34;&#34;&#34;
@@ -1728,7 +1801,10 @@ def vm_pair_name(self):
                 return live_sync_pairs_dict
             elif response.json() and &#39;siteInfo&#39; in response.json():
                 for dictionary in response.json()[&#39;siteInfo&#39;]:
-                    temp_name = dictionary[&#39;subTask&#39;][&#39;subtaskName&#39;]
+                    if dictionary[&#34;replicationGroup&#34;][&#34;replicationGroupName&#34;] != &#34;&#34;:
+                        temp_name = dictionary[&#34;replicationGroup&#34;][&#34;replicationGroupName&#34;]
+                    else:
+                        temp_name = dictionary[&#39;subTask&#39;][&#39;subtaskName&#39;]
                     temp_id = str(dictionary[&#39;subTask&#39;][&#39;taskId&#39;])
                     live_sync_pairs_dict[temp_name] = {
                         &#39;id&#39;: temp_id
@@ -1915,7 +1991,7 @@ def vm_pair_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L339-L356" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L345-L362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync_pairs(self):
@@ -1958,7 +2034,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L358-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L364-L387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, live_sync_name):
     &#34;&#34;&#34;Returns a LiveSyncPairs object for the given live sync name
@@ -2005,7 +2081,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L383-L397" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L389-L403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_live_sync_pair(self, live_sync_name):
     &#34;&#34;&#34;Checks if a live sync pair exists with the given name
@@ -2032,7 +2108,7 @@ if type of the live sync name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L399-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/livesync/vsa_live_sync.py#L405-L407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the live sync pairs associated with the subclient&#34;&#34;&#34;
@@ -2140,6 +2216,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_instance" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_instance">destination_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_proxy" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_proxy">destination_proxy</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_vm" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.destination_vm">destination_vm</a></code></li>
+<li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.failover_status" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.failover_status">failover_status</a></code></li>
+<li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_replication_job" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_replication_job">last_replication_job</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_synced_backup_job" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.last_synced_backup_job">last_synced_backup_job</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.latest_replication_job" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.latest_replication_job">latest_replication_job</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.refresh" href="#cvpysdk.subclients.virtualserver.livesync.vsa_live_sync.LiveSyncVMPair.refresh">refresh</a></code></li>

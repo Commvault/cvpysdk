@@ -39,7 +39,7 @@ full_vm_restore_in_place()                      --  restores the VM specified by
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -223,6 +223,130 @@ class nutanixsubclient(VirtualServerSubclient):
             in_place=True
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_vmware(
+            self,
+            vcenter_client,
+            destination_os_name,
+            vm_to_restore=None,
+            esx_host=None,
+            datastore=None,
+            overwrite=True,
+            power_on=True,
+            copy_precedence=0,
+            disk_option=&#39;Original&#39;,
+            transport_mode=&#39;Auto&#39;,
+            proxy_client=None,
+            destination_network=None
+        ):
+        &#34;&#34;&#34;
+        Conversion from AHV VM to VMware
+        Args:
+                vcenter_client    (basestring) -- name of the vcenter client
+                                                  where the VM should be
+                                                    restored.
+
+                destination_os_name      (base string)- os of source VM
+
+                vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
+                                                   keys and the new VM name(s) as their values.
+                                                   Input empty string for default VM name for
+                                                   restored VM.
+                                                    default: {}
+
+                esx_host          (basestring) -- destination esx host
+                                                    restores to the source VM
+                                                    esx if this value is not
+                                                    specified
+
+                datastore         (basestring) -- datastore where the
+                                                  restored VM should be located
+                                                  restores to the source VM
+                                                  datastore if this value is
+                                                  not specified
+
+                overwrite         (bool)       -- overwrite the existing VM
+                                                  default: True
+
+                power_on          (bool)       -- power on the  restored VM
+                                                  default: True
+
+                copy_precedence   (int)        -- copy precedence value
+                                                  default: 0
+
+                disk_option       (basestring) -- disk provisioning for the
+                                                  restored vm
+                                                  Options for input are: &#39;Original&#39;,
+                                                  &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
+                                                  default: Original
+
+                transport_mode    (basestring) -- transport mode to be used for
+                                                  the restore.
+                                                  Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
+                                                  &#39;NBD&#39;, &#39;NBD SSL&#39;
+                                                  default: Auto
+
+                proxy_client      (basestring) -- destination proxy client
+
+                destination_network (basestring)-- destiantion network
+                                                    to which VM has to be connected
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        restore_option = {}
+
+        subclient = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        disk_option_value = subclient._disk_option[disk_option]
+        transport_mode_value = subclient._transport_mode[transport_mode]
+        esx_server = instance.server_host_name[0]
+
+        #setting restore vms
+        vm_list = None
+        if vm_to_restore:
+            vm_list = list(vm_to_restore.keys())
+
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=datastore,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=self._set_vm_to_restore(vm_list),
+            disk_option=disk_option_value,
+            transport_mode=transport_mode_value,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=destination_os_name
+        )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][
+            &#39;diskLevelVMRestoreOption&#39;]
+        for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
+            disk_info[&#39;newName&#39;] = &#39;&#39;
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -253,7 +377,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class nutanixsubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -397,6 +521,130 @@ backupset class, subclient name, subclient id</p></div>
             in_place=True
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_vmware(
+            self,
+            vcenter_client,
+            destination_os_name,
+            vm_to_restore=None,
+            esx_host=None,
+            datastore=None,
+            overwrite=True,
+            power_on=True,
+            copy_precedence=0,
+            disk_option=&#39;Original&#39;,
+            transport_mode=&#39;Auto&#39;,
+            proxy_client=None,
+            destination_network=None
+        ):
+        &#34;&#34;&#34;
+        Conversion from AHV VM to VMware
+        Args:
+                vcenter_client    (basestring) -- name of the vcenter client
+                                                  where the VM should be
+                                                    restored.
+
+                destination_os_name      (base string)- os of source VM
+
+                vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
+                                                   keys and the new VM name(s) as their values.
+                                                   Input empty string for default VM name for
+                                                   restored VM.
+                                                    default: {}
+
+                esx_host          (basestring) -- destination esx host
+                                                    restores to the source VM
+                                                    esx if this value is not
+                                                    specified
+
+                datastore         (basestring) -- datastore where the
+                                                  restored VM should be located
+                                                  restores to the source VM
+                                                  datastore if this value is
+                                                  not specified
+
+                overwrite         (bool)       -- overwrite the existing VM
+                                                  default: True
+
+                power_on          (bool)       -- power on the  restored VM
+                                                  default: True
+
+                copy_precedence   (int)        -- copy precedence value
+                                                  default: 0
+
+                disk_option       (basestring) -- disk provisioning for the
+                                                  restored vm
+                                                  Options for input are: &#39;Original&#39;,
+                                                  &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
+                                                  default: Original
+
+                transport_mode    (basestring) -- transport mode to be used for
+                                                  the restore.
+                                                  Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
+                                                  &#39;NBD&#39;, &#39;NBD SSL&#39;
+                                                  default: Auto
+
+                proxy_client      (basestring) -- destination proxy client
+
+                destination_network (basestring)-- destiantion network
+                                                    to which VM has to be connected
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        restore_option = {}
+
+        subclient = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = subclient._backupset_object._instance_object
+        disk_option_value = subclient._disk_option[disk_option]
+        transport_mode_value = subclient._transport_mode[transport_mode]
+        esx_server = instance.server_host_name[0]
+
+        #setting restore vms
+        vm_list = None
+        if vm_to_restore:
+            vm_list = list(vm_to_restore.keys())
+
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=datastore,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=self._set_vm_to_restore(vm_list),
+            disk_option=disk_option_value,
+            transport_mode=transport_mode_value,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=destination_os_name
+        )
+
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][
+            &#39;diskLevelVMRestoreOption&#39;]
+        for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
+            disk_info[&#39;newName&#39;] = &#39;&#39;
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -406,6 +654,202 @@ backupset class, subclient name, subclient id</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_conversion_vmware"><code class="name flex">
+<span>def <span class="ident">full_vm_conversion_vmware</span></span>(<span>self, vcenter_client, destination_os_name, vm_to_restore=None, esx_host=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', transport_mode='Auto', proxy_client=None, destination_network=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Conversion from AHV VM to VMware</p>
+<h2 id="args">Args</h2>
+<pre><code>vcenter_client    (basestring) -- name of the vcenter client
+                                  where the VM should be
+                                    restored.
+
+destination_os_name      (base string)- os of source VM
+
+vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
+                                   keys and the new VM name(s) as their values.
+                                   Input empty string for default VM name for
+                                   restored VM.
+                                    default: {}
+
+esx_host          (basestring) -- destination esx host
+                                    restores to the source VM
+                                    esx if this value is not
+                                    specified
+
+datastore         (basestring) -- datastore where the
+                                  restored VM should be located
+                                  restores to the source VM
+                                  datastore if this value is
+                                  not specified
+
+overwrite         (bool)       -- overwrite the existing VM
+                                  default: True
+
+power_on          (bool)       -- power on the  restored VM
+                                  default: True
+
+copy_precedence   (int)        -- copy precedence value
+                                  default: 0
+
+disk_option       (basestring) -- disk provisioning for the
+                                  restored vm
+                                  Options for input are: 'Original',
+                                  'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
+                                  default: Original
+
+transport_mode    (basestring) -- transport mode to be used for
+                                  the restore.
+                                  Options for input are: 'Auto', 'SAN', 'Hot Add',
+                                  'NBD', 'NBD SSL'
+                                  default: Auto
+
+proxy_client      (basestring) -- destination proxy client
+
+destination_network (basestring)-- destiantion network
+                                    to which VM has to be connected
+</code></pre>
+<p>Returns:
+object - instance of the Job class for this restore job</p>
+<p>Raises:
+SDKException:
+if inputs are not of correct type as per definition</p>
+<pre><code>    if failed to initialize job
+
+    if response is empty
+
+    if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L185-L307" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def full_vm_conversion_vmware(
+        self,
+        vcenter_client,
+        destination_os_name,
+        vm_to_restore=None,
+        esx_host=None,
+        datastore=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        disk_option=&#39;Original&#39;,
+        transport_mode=&#39;Auto&#39;,
+        proxy_client=None,
+        destination_network=None
+    ):
+    &#34;&#34;&#34;
+    Conversion from AHV VM to VMware
+    Args:
+            vcenter_client    (basestring) -- name of the vcenter client
+                                              where the VM should be
+                                                restored.
+
+            destination_os_name      (base string)- os of source VM
+
+            vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
+                                               keys and the new VM name(s) as their values.
+                                               Input empty string for default VM name for
+                                               restored VM.
+                                                default: {}
+
+            esx_host          (basestring) -- destination esx host
+                                                restores to the source VM
+                                                esx if this value is not
+                                                specified
+
+            datastore         (basestring) -- datastore where the
+                                              restored VM should be located
+                                              restores to the source VM
+                                              datastore if this value is
+                                              not specified
+
+            overwrite         (bool)       -- overwrite the existing VM
+                                              default: True
+
+            power_on          (bool)       -- power on the  restored VM
+                                              default: True
+
+            copy_precedence   (int)        -- copy precedence value
+                                              default: 0
+
+            disk_option       (basestring) -- disk provisioning for the
+                                              restored vm
+                                              Options for input are: &#39;Original&#39;,
+                                              &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
+                                              default: Original
+
+            transport_mode    (basestring) -- transport mode to be used for
+                                              the restore.
+                                              Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
+                                              &#39;NBD&#39;, &#39;NBD SSL&#39;
+                                              default: Auto
+
+            proxy_client      (basestring) -- destination proxy client
+
+            destination_network (basestring)-- destiantion network
+                                                to which VM has to be connected
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    restore_option = {}
+
+    subclient = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+    instance = subclient._backupset_object._instance_object
+    disk_option_value = subclient._disk_option[disk_option]
+    transport_mode_value = subclient._transport_mode[transport_mode]
+    esx_server = instance.server_host_name[0]
+
+    #setting restore vms
+    vm_list = None
+    if vm_to_restore:
+        vm_list = list(vm_to_restore.keys())
+
+    self._set_restore_inputs(
+        restore_option,
+        in_place=False,
+        vcenter_client=vcenter_client,
+        datastore=datastore,
+        esx_host=esx_host,
+        esx_server=esx_server,
+        unconditional_overwrite=overwrite,
+        client_name=proxy_client,
+        power_on=power_on,
+        vm_to_restore=self._set_vm_to_restore(vm_list),
+        disk_option=disk_option_value,
+        transport_mode=transport_mode_value,
+        copy_precedence=copy_precedence,
+        volume_level_restore=1,
+        destination_instance=instance.instance_name,
+        backupset_client_name=instance._agent_object._client_object.client_name,
+        destination_network=destination_network,
+        destination_os_name=destination_os_name
+    )
+
+    request_json = self._prepare_fullvm_restore_json(restore_option)
+    disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][
+        &#39;diskLevelVMRestoreOption&#39;]
+    for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
+        disk_info[&#39;newName&#39;] = &#39;&#39;
+
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_in_place"><code class="name flex">
 <span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0)</span>
 </code></dt>
@@ -447,7 +891,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L134-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L134-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -556,7 +1000,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -693,6 +1137,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.storage_ma" href="../../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -702,6 +1147,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>
@@ -782,6 +1228,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient" href="#cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient">nutanixsubclient</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_conversion_vmware" href="#cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_conversion_vmware">full_vm_conversion_vmware</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_in_place" href="#cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_in_place">full_vm_restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_out_of_place" href="#cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_out_of_place">full_vm_restore_out_of_place</a></code></li>
 </ul>

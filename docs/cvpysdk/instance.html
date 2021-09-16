@@ -191,7 +191,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1-L2871" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1-L2983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -474,7 +474,7 @@ class Instances(object):
         else:
             try:
                 return list(
-                    filter(lambda x: x[1][&#39;id&#39;] == value, self.all_instances.items())
+                    filter(lambda x: x[1] == value, self.all_instances.items())
                 )[0][0]
             except IndexError:
                 raise IndexError(&#39;No instance exists with the given Name / Id&#39;)
@@ -1816,6 +1816,96 @@ class Instances(object):
         }
         self._process_add_response(request_json)
 
+    def add_oracle_instance(self, instance_name, **oracle_options):
+        &#34;&#34;&#34;Adds new oracle instance for the given client
+            Args:
+                instance_name       (str)   --  instance_name (Oracle SID)
+                oracle_options      (dict)  --  dict of keyword arguments as follows:
+                                        log_storage_policy    (str)  -- log storage policy
+                                        cmdline_storage_policy (str) -- Commandline data storage policy
+                                        oracle_domain_name (str)   -- Domain name- only for windows
+                                        oracle_user_name   (str)   -- oracle OS user name
+                                        oracle_password    (str)   -- oracle OS user password
+                                        oracle_home        (str)   -- oracle home path
+                                        tns_admin          (str)   -- tns admin path
+                                        connect_string     (dict)  -- Credentials to connect to Oracle DB
+                                        {
+                                            &#34;username&#34;: &#34;&#34;, (str)         -- User to connect to Oracle DB
+                                            &#34;password&#34;: &#34;&#34;, (str)         -- Password
+                                            &#34;service_name&#34;: &#34;&#34;  (str)     -- Oracle SID or service name
+                                        }
+                                        catalog_connect     (dict)--  Credentials to connect to catalog
+                                        {
+                                            &#34;userName&#34;: &#34;&#34;,  (str)        -- Catalog DB user name
+                                            &#34;password&#34;; &#34;&#34;,  (str)        -- Password of catalog user
+                                            &#34;domainName&#34;: &#34;&#34;    (str)     -- SID of catalog database
+                                        }
+            Returns:
+                object - instance of the Instance class
+            Raises:
+                SDKException:
+                            if instance with same name exists already
+                            if required options are not provided
+                            Given storage policies do not exist in Commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    instance_name)
+            )
+        required_options = [&#39;oracle_user_name&#39;, &#39;oracle_home&#39;, &#39;cmdline_storage_policy&#39;,
+                            &#39;log_storage_policy&#39;, &#39;connect_string&#39;]
+        for option in required_options:
+            if option not in oracle_options.keys():
+                raise SDKException(
+                    &#39;Instance&#39;,
+                    &#39;102&#39;,
+                    &#34;Required option: {0} is missing, Please provide all parameters:&#34;.format(option))
+        password = b64encode(oracle_options.get(&#34;oracle_password&#34;, &#34;&#34;).encode()).decode()
+        connect_string_password = b64encode(
+            oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;password&#34;, &#34;&#34;).encode()
+        ).decode()
+
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;instance&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: instance_name,
+                    &#34;appName&#34;: &#34;Oracle&#34;,
+                },
+                &#34;oracleInstance&#34;: {
+                    &#34;TNSAdminPath&#34;: oracle_options.get(&#34;tns_admin&#34;, &#34;&#34;),
+                    &#34;oracleHome&#34;: oracle_options.get(&#34;oracle_home&#34;, &#34;&#34;),
+                    &#34;oracleUser&#34;: {
+                        &#34;userName&#34;: oracle_options.get(&#34;oracle_user_name&#34;, &#34;&#34;),
+                        &#34;domainName&#34;: oracle_options.get(&#34;oracle_domain_name&#34;, &#34;&#34;),
+                        &#34;password&#34;: password,
+                    },
+                    &#34;sqlConnect&#34;: {
+                        &#34;domainName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;service_name&#34;, &#34;&#34;),
+                        &#34;userName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;username&#34;, &#34;/&#34;),
+                        &#34;password&#34;: connect_string_password,
+                    },
+                    &#34;oracleStorageDevice&#34;: {
+                        &#34;commandLineStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: oracle_options.get(&#34;cmdline_storage_policy&#34;, &#34;&#34;)
+                        },
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: oracle_options.get(&#34;log_storage_policy&#34;, &#34;&#34;)
+                        }
+                    },
+                }
+            }
+        }
+        if oracle_options.get(&#34;catalog_connect&#34;):
+            catalog = {
+                &#39;useCatalogConnect&#39;: True,
+                &#39;catalogConnect&#39;: oracle_options.get(&#34;catalog_connect&#34;, &#34;&#34;)
+            }
+            request_json[&#39;instanceProperties&#39;][&#39;oracleInstance&#39;].update(catalog)
+        self._process_add_response(request_json)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
         self._instances = self._get_instances()
@@ -1854,6 +1944,9 @@ class Instance(object):
             self._instance_id = self._get_instance_id()
 
         self._INSTANCE = self._services[&#39;INSTANCE&#39;] % (self._instance_id)
+        self._ALLINSTANCES = self._services[&#39;GET_ALL_INSTANCES&#39;] % (
+            self._agent_object._client_object.client_id
+        )
         self._RESTORE = self._services[&#39;RESTORE&#39;]
 
         self._properties = None
@@ -1919,10 +2012,22 @@ class Instance(object):
         if flag:
             if response.json() and &#34;instanceProperties&#34; in response.json():
                 self._properties = response.json()[&#34;instanceProperties&#34;][0]
-
-                self._instance = self._properties[&#34;instance&#34;]
-                self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
-                self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                try:
+                    self._instance = self._properties[&#34;instance&#34;]
+                    self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
+                    self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                except KeyError:
+                    instance_service = (
+                        &#34;{0}&amp;applicationId={1}&#34;.format(self._ALLINSTANCES, self._agent_object.agent_id))
+                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, instance_service)
+                    if flag:
+                        if response.json() and &#34;instanceProperties&#34; in response.json():
+                            self._properties = response.json()[&#34;instanceProperties&#34;][0]
+                            self._instance = self._properties[&#34;instance&#34;]
+                            self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
+                            self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                    else:
+                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -2281,6 +2386,12 @@ class Instance(object):
                 &#34;backupLevel&#34;: restore_option.get(&#39;backup_level&#39;, &#39;Incremental&#39;)
             }
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;] = backup_opt_json
+
+        if restore_option.get(&#39;restore_acls_only&#39;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 1
+
+        if restore_option.get(&#39;restore_data_only&#39;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 2
 
         return request_json
 
@@ -2842,6 +2953,10 @@ class Instance(object):
                 &#39;clientName&#39;: value.get(&#34;iscsi_server&#34;)
             }
 
+        # Add this option to enable restoring of troubleshooting folder
+        if value.get(&#34;include_metadata&#34;, False):
+            self._browse_restore_json[&#34;includeMetaData&#34;] = True
+
     def _restore_common_opts_json(self, value):
         &#34;&#34;&#34; Method to set commonOpts for restore
 
@@ -2922,9 +3037,6 @@ class Instance(object):
             if value.get(&#39;destination_path&#39;):
                 destination_path = value.get(&#34;destination_path&#34;, &#34;&#34;)
                 self._destination_restore_json[&#34;destPath&#34;] = [destination_path] if destination_path != &#34;&#34; else []
-
-            if self._destination_restore_json[&#34;inPlace&#34;]:
-                self._destination_restore_json[&#34;destPath&#34;] = [&#34;&#34;]
 
         # For Index server restore, we need to set proxy client &amp; in-place flag
         elif value.get(&#34;proxy_client&#34;) is not None and \
@@ -3101,7 +3213,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1629-L2871" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1719-L2983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3136,6 +3248,9 @@ default: None</p>
             self._instance_id = self._get_instance_id()
 
         self._INSTANCE = self._services[&#39;INSTANCE&#39;] % (self._instance_id)
+        self._ALLINSTANCES = self._services[&#39;GET_ALL_INSTANCES&#39;] % (
+            self._agent_object._client_object.client_id
+        )
         self._RESTORE = self._services[&#39;RESTORE&#39;]
 
         self._properties = None
@@ -3201,10 +3316,22 @@ default: None</p>
         if flag:
             if response.json() and &#34;instanceProperties&#34; in response.json():
                 self._properties = response.json()[&#34;instanceProperties&#34;][0]
-
-                self._instance = self._properties[&#34;instance&#34;]
-                self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
-                self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                try:
+                    self._instance = self._properties[&#34;instance&#34;]
+                    self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
+                    self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                except KeyError:
+                    instance_service = (
+                        &#34;{0}&amp;applicationId={1}&#34;.format(self._ALLINSTANCES, self._agent_object.agent_id))
+                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, instance_service)
+                    if flag:
+                        if response.json() and &#34;instanceProperties&#34; in response.json():
+                            self._properties = response.json()[&#34;instanceProperties&#34;][0]
+                            self._instance = self._properties[&#34;instance&#34;]
+                            self._instance_name = self._properties[&#34;instance&#34;][&#34;instanceName&#34;].lower()
+                            self._instanceActivityControl = self._properties[&#34;instanceActivityControl&#34;]
+                    else:
+                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -3563,6 +3690,12 @@ default: None</p>
                 &#34;backupLevel&#34;: restore_option.get(&#39;backup_level&#39;, &#39;Incremental&#39;)
             }
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;] = backup_opt_json
+
+        if restore_option.get(&#39;restore_acls_only&#39;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 1
+
+        if restore_option.get(&#39;restore_data_only&#39;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 2
 
         return request_json
 
@@ -4124,6 +4257,10 @@ default: None</p>
                 &#39;clientName&#39;: value.get(&#34;iscsi_server&#34;)
             }
 
+        # Add this option to enable restoring of troubleshooting folder
+        if value.get(&#34;include_metadata&#34;, False):
+            self._browse_restore_json[&#34;includeMetaData&#34;] = True
+
     def _restore_common_opts_json(self, value):
         &#34;&#34;&#34; Method to set commonOpts for restore
 
@@ -4204,9 +4341,6 @@ default: None</p>
             if value.get(&#39;destination_path&#39;):
                 destination_path = value.get(&#34;destination_path&#34;, &#34;&#34;)
                 self._destination_restore_json[&#34;destPath&#34;] = [destination_path] if destination_path != &#34;&#34; else []
-
-            if self._destination_restore_json[&#34;inPlace&#34;]:
-                self._destination_restore_json[&#34;destPath&#34;] = [&#34;&#34;]
 
         # For Index server restore, we need to set proxy client &amp; in-place flag
         elif value.get(&#34;proxy_client&#34;) is not None and \
@@ -4374,7 +4508,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2439-L2442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2550-L2553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4388,7 +4522,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2444-L2447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2555-L2558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4402,7 +4536,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2410-L2413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2521-L2524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4416,7 +4550,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2405-L2408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2516-L2519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4474,7 +4608,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2449-L2505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2560-L2616" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4594,7 +4728,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2507-L2573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2618-L2684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -4673,7 +4807,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2865-L2871" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2977-L2983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -4708,7 +4842,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L2375-L2403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L2486-L2514" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -4759,7 +4893,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L157-L1626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L157-L1716" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -4886,7 +5020,7 @@ instance of the Agent class</p>
         else:
             try:
                 return list(
-                    filter(lambda x: x[1][&#39;id&#39;] == value, self.all_instances.items())
+                    filter(lambda x: x[1] == value, self.all_instances.items())
                 )[0][0]
             except IndexError:
                 raise IndexError(&#39;No instance exists with the given Name / Id&#39;)
@@ -6228,6 +6362,96 @@ instance of the Agent class</p>
         }
         self._process_add_response(request_json)
 
+    def add_oracle_instance(self, instance_name, **oracle_options):
+        &#34;&#34;&#34;Adds new oracle instance for the given client
+            Args:
+                instance_name       (str)   --  instance_name (Oracle SID)
+                oracle_options      (dict)  --  dict of keyword arguments as follows:
+                                        log_storage_policy    (str)  -- log storage policy
+                                        cmdline_storage_policy (str) -- Commandline data storage policy
+                                        oracle_domain_name (str)   -- Domain name- only for windows
+                                        oracle_user_name   (str)   -- oracle OS user name
+                                        oracle_password    (str)   -- oracle OS user password
+                                        oracle_home        (str)   -- oracle home path
+                                        tns_admin          (str)   -- tns admin path
+                                        connect_string     (dict)  -- Credentials to connect to Oracle DB
+                                        {
+                                            &#34;username&#34;: &#34;&#34;, (str)         -- User to connect to Oracle DB
+                                            &#34;password&#34;: &#34;&#34;, (str)         -- Password
+                                            &#34;service_name&#34;: &#34;&#34;  (str)     -- Oracle SID or service name
+                                        }
+                                        catalog_connect     (dict)--  Credentials to connect to catalog
+                                        {
+                                            &#34;userName&#34;: &#34;&#34;,  (str)        -- Catalog DB user name
+                                            &#34;password&#34;; &#34;&#34;,  (str)        -- Password of catalog user
+                                            &#34;domainName&#34;: &#34;&#34;    (str)     -- SID of catalog database
+                                        }
+            Returns:
+                object - instance of the Instance class
+            Raises:
+                SDKException:
+                            if instance with same name exists already
+                            if required options are not provided
+                            Given storage policies do not exist in Commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    instance_name)
+            )
+        required_options = [&#39;oracle_user_name&#39;, &#39;oracle_home&#39;, &#39;cmdline_storage_policy&#39;,
+                            &#39;log_storage_policy&#39;, &#39;connect_string&#39;]
+        for option in required_options:
+            if option not in oracle_options.keys():
+                raise SDKException(
+                    &#39;Instance&#39;,
+                    &#39;102&#39;,
+                    &#34;Required option: {0} is missing, Please provide all parameters:&#34;.format(option))
+        password = b64encode(oracle_options.get(&#34;oracle_password&#34;, &#34;&#34;).encode()).decode()
+        connect_string_password = b64encode(
+            oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;password&#34;, &#34;&#34;).encode()
+        ).decode()
+
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;instance&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: instance_name,
+                    &#34;appName&#34;: &#34;Oracle&#34;,
+                },
+                &#34;oracleInstance&#34;: {
+                    &#34;TNSAdminPath&#34;: oracle_options.get(&#34;tns_admin&#34;, &#34;&#34;),
+                    &#34;oracleHome&#34;: oracle_options.get(&#34;oracle_home&#34;, &#34;&#34;),
+                    &#34;oracleUser&#34;: {
+                        &#34;userName&#34;: oracle_options.get(&#34;oracle_user_name&#34;, &#34;&#34;),
+                        &#34;domainName&#34;: oracle_options.get(&#34;oracle_domain_name&#34;, &#34;&#34;),
+                        &#34;password&#34;: password,
+                    },
+                    &#34;sqlConnect&#34;: {
+                        &#34;domainName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;service_name&#34;, &#34;&#34;),
+                        &#34;userName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;username&#34;, &#34;/&#34;),
+                        &#34;password&#34;: connect_string_password,
+                    },
+                    &#34;oracleStorageDevice&#34;: {
+                        &#34;commandLineStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: oracle_options.get(&#34;cmdline_storage_policy&#34;, &#34;&#34;)
+                        },
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: oracle_options.get(&#34;log_storage_policy&#34;, &#34;&#34;)
+                        }
+                    },
+                }
+            }
+        }
+        if oracle_options.get(&#34;catalog_connect&#34;):
+            catalog = {
+                &#39;useCatalogConnect&#39;: True,
+                &#39;catalogConnect&#39;: oracle_options.get(&#34;catalog_connect&#34;, &#34;&#34;)
+            }
+            request_json[&#39;instanceProperties&#39;][&#39;oracleInstance&#39;].update(catalog)
+        self._process_add_response(request_json)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
         self._instances = self._get_instances()</code></pre>
@@ -6245,7 +6469,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L344-L355" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L344-L355" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6286,7 +6510,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L897-L1004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L897-L1004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6509,7 +6733,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1006-L1183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1006-L1183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -6718,7 +6942,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L775-L895" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L775-L895" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -6874,7 +7098,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L474-L592" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L474-L592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7035,7 +7259,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1533-L1622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1533-L1622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7129,6 +7353,167 @@ if given storage policy does not exists in commcell
     self._process_add_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instance.Instances.add_oracle_instance"><code class="name flex">
+<span>def <span class="ident">add_oracle_instance</span></span>(<span>self, instance_name, **oracle_options)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds new oracle instance for the given client</p>
+<h2 id="args">Args</h2>
+<p>instance_name
+(str)
+&ndash;
+instance_name (Oracle SID)
+oracle_options
+(dict)
+&ndash;
+dict of keyword arguments as follows:
+log_storage_policy
+(str)
+&ndash; log storage policy
+cmdline_storage_policy (str) &ndash; Commandline data storage policy
+oracle_domain_name (str)
+&ndash; Domain name- only for windows
+oracle_user_name
+(str)
+&ndash; oracle OS user name
+oracle_password
+(str)
+&ndash; oracle OS user password
+oracle_home
+(str)
+&ndash; oracle home path
+tns_admin
+(str)
+&ndash; tns admin path
+connect_string
+(dict)
+&ndash; Credentials to connect to Oracle DB
+{
+"username": "", (str)
+&ndash; User to connect to Oracle DB
+"password": "", (str)
+&ndash; Password
+"service_name": ""
+(str)
+&ndash; Oracle SID or service name
+}
+catalog_connect
+(dict)&ndash;
+Credentials to connect to catalog
+{
+"userName": "",
+(str)
+&ndash; Catalog DB user name
+"password"; "",
+(str)
+&ndash; Password of catalog user
+"domainName": ""
+(str)
+&ndash; SID of catalog database
+}</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Instance class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if instance with same name exists already
+if required options are not provided
+Given storage policies do not exist in Commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1624-L1712" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
+    &#34;&#34;&#34;Adds new oracle instance for the given client
+        Args:
+            instance_name       (str)   --  instance_name (Oracle SID)
+            oracle_options      (dict)  --  dict of keyword arguments as follows:
+                                    log_storage_policy    (str)  -- log storage policy
+                                    cmdline_storage_policy (str) -- Commandline data storage policy
+                                    oracle_domain_name (str)   -- Domain name- only for windows
+                                    oracle_user_name   (str)   -- oracle OS user name
+                                    oracle_password    (str)   -- oracle OS user password
+                                    oracle_home        (str)   -- oracle home path
+                                    tns_admin          (str)   -- tns admin path
+                                    connect_string     (dict)  -- Credentials to connect to Oracle DB
+                                    {
+                                        &#34;username&#34;: &#34;&#34;, (str)         -- User to connect to Oracle DB
+                                        &#34;password&#34;: &#34;&#34;, (str)         -- Password
+                                        &#34;service_name&#34;: &#34;&#34;  (str)     -- Oracle SID or service name
+                                    }
+                                    catalog_connect     (dict)--  Credentials to connect to catalog
+                                    {
+                                        &#34;userName&#34;: &#34;&#34;,  (str)        -- Catalog DB user name
+                                        &#34;password&#34;; &#34;&#34;,  (str)        -- Password of catalog user
+                                        &#34;domainName&#34;: &#34;&#34;    (str)     -- SID of catalog database
+                                    }
+        Returns:
+            object - instance of the Instance class
+        Raises:
+            SDKException:
+                        if instance with same name exists already
+                        if required options are not provided
+                        Given storage policies do not exist in Commcell
+    &#34;&#34;&#34;
+
+    if self.has_instance(instance_name):
+        raise SDKException(
+            &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                instance_name)
+        )
+    required_options = [&#39;oracle_user_name&#39;, &#39;oracle_home&#39;, &#39;cmdline_storage_policy&#39;,
+                        &#39;log_storage_policy&#39;, &#39;connect_string&#39;]
+    for option in required_options:
+        if option not in oracle_options.keys():
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#34;Required option: {0} is missing, Please provide all parameters:&#34;.format(option))
+    password = b64encode(oracle_options.get(&#34;oracle_password&#34;, &#34;&#34;).encode()).decode()
+    connect_string_password = b64encode(
+        oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;password&#34;, &#34;&#34;).encode()
+    ).decode()
+
+    request_json = {
+        &#34;instanceProperties&#34;: {
+            &#34;instance&#34;: {
+                &#34;clientName&#34;: self._client_object.client_name,
+                &#34;instanceName&#34;: instance_name,
+                &#34;appName&#34;: &#34;Oracle&#34;,
+            },
+            &#34;oracleInstance&#34;: {
+                &#34;TNSAdminPath&#34;: oracle_options.get(&#34;tns_admin&#34;, &#34;&#34;),
+                &#34;oracleHome&#34;: oracle_options.get(&#34;oracle_home&#34;, &#34;&#34;),
+                &#34;oracleUser&#34;: {
+                    &#34;userName&#34;: oracle_options.get(&#34;oracle_user_name&#34;, &#34;&#34;),
+                    &#34;domainName&#34;: oracle_options.get(&#34;oracle_domain_name&#34;, &#34;&#34;),
+                    &#34;password&#34;: password,
+                },
+                &#34;sqlConnect&#34;: {
+                    &#34;domainName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;service_name&#34;, &#34;&#34;),
+                    &#34;userName&#34;: oracle_options.get(&#34;connect_string&#34;, {}).get(&#34;username&#34;, &#34;/&#34;),
+                    &#34;password&#34;: connect_string_password,
+                },
+                &#34;oracleStorageDevice&#34;: {
+                    &#34;commandLineStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: oracle_options.get(&#34;cmdline_storage_policy&#34;, &#34;&#34;)
+                    },
+                    &#34;logBackupStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: oracle_options.get(&#34;log_storage_policy&#34;, &#34;&#34;)
+                    }
+                },
+            }
+        }
+    }
+    if oracle_options.get(&#34;catalog_connect&#34;):
+        catalog = {
+            &#39;useCatalogConnect&#39;: True,
+            &#39;catalogConnect&#39;: oracle_options.get(&#34;catalog_connect&#34;, &#34;&#34;)
+        }
+        request_json[&#39;instanceProperties&#39;][&#39;oracleInstance&#39;].update(catalog)
+    self._process_add_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instance.Instances.add_postgresql_instance"><code class="name flex">
 <span>def <span class="ident">add_postgresql_instance</span></span>(<span>self, instance_name, **kwargs)</span>
 </code></dt>
@@ -7181,7 +7566,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1305-L1362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1305-L1362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7303,7 +7688,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1185-L1303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1185-L1303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -7459,7 +7844,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L659-L773" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L659-L773" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -7601,7 +7986,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L594-L657" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L594-L657" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -7688,7 +8073,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L375-L423" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L375-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -7758,7 +8143,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L357-L373" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L357-L373" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -7787,7 +8172,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instance.py#L1624-L1626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instance.py#L1714-L1716" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
@@ -7885,6 +8270,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instance.Instances.add_db2_instance" href="#cvpysdk.instance.Instances.add_db2_instance">add_db2_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_informix_instance" href="#cvpysdk.instance.Instances.add_informix_instance">add_informix_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_mysql_instance" href="#cvpysdk.instance.Instances.add_mysql_instance">add_mysql_instance</a></code></li>
+<li><code><a title="cvpysdk.instance.Instances.add_oracle_instance" href="#cvpysdk.instance.Instances.add_oracle_instance">add_oracle_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_postgresql_instance" href="#cvpysdk.instance.Instances.add_postgresql_instance">add_postgresql_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_salesforce_instance" href="#cvpysdk.instance.Instances.add_salesforce_instance">add_salesforce_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_sybase_instance" href="#cvpysdk.instance.Instances.add_sybase_instance">add_sybase_instance</a></code></li>

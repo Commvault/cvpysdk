@@ -119,7 +119,7 @@ disable_full_schedule()     --  disables the full schedule of a plan
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1-L1672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1-L1681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -609,6 +609,15 @@ class Plans(object):
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+        request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+            &#39;automaticSchedulePattern&#39;].update({
+                &#39;minBackupInterval&#39;: 0,
+                &#39;maxBackupIntervalMinutes&#39;: 0,
+                &#39;minSyncInterval&#39;: 0,
+                &#39;minSyncIntervalMinutes&#39;: 0
+            })
+        request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+            &#39;automaticSchedulePattern&#39;][&#39;ignoreOpWindowPastMaxInterval&#39;] = True
         del request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
         if not plan_sub_type == &#39;ExchangeUser&#39;:
             request_json[&#39;plan&#39;][&#39;storage&#39;][&#39;copy&#39;][0][&#39;useGlobalPolicy&#39;] = {
@@ -1830,7 +1839,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L658-L1672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L667-L1681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plan(object):
     &#34;&#34;&#34;Class for performing operations for a specific Plan.&#34;&#34;&#34;
@@ -2856,7 +2865,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1581-L1588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1590-L1597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def addons(self):
@@ -2874,7 +2883,7 @@ def addons(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1595-L1598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1604-L1607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_entities(self):
@@ -2888,7 +2897,7 @@ def associated_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1481-L1484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1490-L1493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_operation_window(self):
@@ -2902,7 +2911,7 @@ def full_operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1433-L1436" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1442-L1445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operation_window(self):
@@ -2916,7 +2925,7 @@ def operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1538-L1541" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1547-L1550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def override_entities(self):
@@ -2930,7 +2939,7 @@ def override_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1600-L1603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1609-L1612" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_plan(self):
@@ -2944,7 +2953,7 @@ def parent_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1374-L1377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1383-L1386" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_id(self):
@@ -2958,7 +2967,7 @@ def plan_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1379-L1382" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1388-L1391" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_name(self):
@@ -2972,7 +2981,7 @@ def plan_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1528-L1531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1537-L1540" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_type(self):
@@ -2986,7 +2995,7 @@ def plan_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1576-L1579" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1585-L1588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_policies(self):
@@ -3004,7 +3013,7 @@ def schedule_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1605-L1613" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1614-L1622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_associations(self):
@@ -3023,7 +3032,7 @@ def security_associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1407-L1410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1416-L1419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sla_in_minutes(self):
@@ -3037,7 +3046,7 @@ def sla_in_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1571-L1574" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1580-L1583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_copies(self):
@@ -3051,7 +3060,7 @@ def storage_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1566-L1569" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1575-L1578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -3065,7 +3074,7 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1590-L1593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1599-L1602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_policy(self):
@@ -3079,7 +3088,7 @@ def subclient_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1533-L1536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1542-L1545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtype(self):
@@ -3118,7 +3127,7 @@ dictionary of all copies of this plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1213-L1245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1222-L1254" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
     &#34;&#34;&#34;Add a storage copy as backup destination to this plan
@@ -3171,7 +3180,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1619-L1672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1628-L1681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_user(self, userlist):
     &#34;&#34;&#34;associates the users to the plan.
@@ -3281,7 +3290,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L884-L1165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L893-L1174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def derive_and_add(self,
                    plan_name,
@@ -3575,7 +3584,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1247-L1254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1256-L1263" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_full_schedule(self):
     &#34;&#34;&#34;Disable the full backup schedule of the plan&#34;&#34;&#34;
@@ -3615,7 +3624,7 @@ if plan not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1256-L1315" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1265-L1324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_association(self, entities, new_plan=None):
     &#34;&#34;&#34;Reassociates or dissociates the entities from this plan
@@ -3713,7 +3722,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1167-L1211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1176-L1220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_schedule(self, schedule_json, is_full_schedule=False):
     &#34;&#34;&#34;Modifies the incremental RPO schedule pattern of the plan with the given schedule json
@@ -3770,7 +3779,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L1615-L1617" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L1624-L1626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
@@ -3794,7 +3803,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L128-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L128-L664" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plans(object):
     &#34;&#34;&#34;Class for representing all the plans in the commcell.&#34;&#34;&#34;
@@ -4157,6 +4166,15 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+        request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+            &#39;automaticSchedulePattern&#39;].update({
+                &#39;minBackupInterval&#39;: 0,
+                &#39;maxBackupIntervalMinutes&#39;: 0,
+                &#39;minSyncInterval&#39;: 0,
+                &#39;minSyncIntervalMinutes&#39;: 0
+            })
+        request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+            &#39;automaticSchedulePattern&#39;][&#39;ignoreOpWindowPastMaxInterval&#39;] = True
         del request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
         if not plan_sub_type == &#39;ExchangeUser&#39;:
             request_json[&#39;plan&#39;][&#39;storage&#39;][&#39;copy&#39;][0][&#39;useGlobalPolicy&#39;] = {
@@ -4340,7 +4358,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L280-L293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L280-L293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_plans(self):
@@ -4430,7 +4448,7 @@ if input parameters are incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L407-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L407-L618" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         plan_name,
@@ -4514,6 +4532,15 @@ if input parameters are incorrect</p>
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+    request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+        &#39;automaticSchedulePattern&#39;].update({
+            &#39;minBackupInterval&#39;: 0,
+            &#39;maxBackupIntervalMinutes&#39;: 0,
+            &#39;minSyncInterval&#39;: 0,
+            &#39;minSyncIntervalMinutes&#39;: 0
+        })
+    request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;][1][&#39;options&#39;][&#39;commonOpts&#39;][
+        &#39;automaticSchedulePattern&#39;][&#39;ignoreOpWindowPastMaxInterval&#39;] = True
     del request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
     if not plan_sub_type == &#39;ExchangeUser&#39;:
         request_json[&#39;plan&#39;][&#39;storage&#39;][&#39;copy&#39;][0][&#39;useGlobalPolicy&#39;] = {
@@ -4660,7 +4687,7 @@ if no plan exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L346-L405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L346-L405" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, plan_name):
     &#34;&#34;&#34;Deletes the plan from the commcell.
@@ -4743,7 +4770,7 @@ if type of the plan name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L314-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L314-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, plan_name):
     &#34;&#34;&#34;Returns a plan object of the specified plan name.
@@ -4802,7 +4829,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L611-L651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L620-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_eligible_plans(self, entities):
     &#34;&#34;&#34;Returns dict of plans that are eligible for the specified entities
@@ -4867,7 +4894,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L295-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L295-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_plan(self, plan_name):
     &#34;&#34;&#34;Checks if a plan exists in the commcell with the input plan name.
@@ -4897,7 +4924,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/plan.py#L653-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/plan.py#L662-L664" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the plans associated with the Commcell.&#34;&#34;&#34;

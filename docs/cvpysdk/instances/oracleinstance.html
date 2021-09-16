@@ -141,7 +141,7 @@ restore for oracle logical dump</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L1-L1207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L1-L1227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -421,10 +421,16 @@ class OracleInstance(DatabaseInstance):
 
             })
 
-    def _get_live_sync_oracleopt_json(self):
+    def _get_live_sync_oracleopt_json(self, **kwargs):
         &#34;&#34;&#34;
                Constructs JSON with oracle agent specific options
                for configuring live sync
+
+               Args:
+                    **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
         &#34;&#34;&#34;
 
@@ -455,10 +461,14 @@ class OracleInstance(DatabaseInstance):
                                     &#34;restoreInStandby&#34;:False
                                 }
                                 }
+        if kwargs.get(&#39;redirect_path&#39;, None) is not None:
+            self._oracle_options.update({&#34;renamePathForAllTablespaces&#34;: kwargs.get(&#39;redirect_path&#39;),
+                                         &#34;redirectAllItemsSelected&#34;: True,
+                                         &#34;redirectItemsPresent&#34;: True
+                                         })
 
-
-    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid,
-                                baseline_ref_time, schedule_name, source_backupset_id):
+    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid, baseline_ref_time,
+                                schedule_name, source_backupset_id, **kwargs):
         &#34;&#34;&#34;
                Constructs oracle live sync restore JSON by combining common
                and agent specific options
@@ -478,6 +488,11 @@ class OracleInstance(DatabaseInstance):
                        source_backupset_id  (int)   --  The ID of the source backupset
                                                         of source oracle instance for which
                                                         live sync needs to be configured
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
                     Returns:
                         (str)  --   The live sync restore JSON that is constructed
@@ -501,7 +516,7 @@ class OracleInstance(DatabaseInstance):
         else:
             restore_option.update(restore_json)
 
-        self._get_live_sync_oracleopt_json()
+        self._get_live_sync_oracleopt_json(**kwargs)
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientId&#39;] = -1
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetId&#39;] = source_backupset_id
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = &#34;&#34;
@@ -524,8 +539,8 @@ class OracleInstance(DatabaseInstance):
             &#34;restoreOptions&#34;][&#34;oracleOpt&#34;] = self._oracle_options
         return restore_json
 
-
-    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name):
+    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name,
+                                  **kwargs):
         &#34;&#34;&#34;
                Runs full backup on source oracle instance and
                Creates live sync schdule for the given destination oracle instance
@@ -536,6 +551,11 @@ class OracleInstance(DatabaseInstance):
                        dest_instance    (str)   --  The destination instance name for live sync
 
                        schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                            redirect_path   (str) --  Path on destination client
+                                                            to redirect tablespaces and datafiles
 
                    Returns:
                         (object)  --   The job object of the baseline backup that will be replicated
@@ -549,7 +569,8 @@ class OracleInstance(DatabaseInstance):
         baseline_ref_time = baseline_job_object.summary[&#39;jobStartTime&#39;]
         baseline_jobid = int(baseline_job_object.job_id)
         request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
-                                                    baseline_ref_time, schedule_name, source_backupset_id)
+                                                    baseline_ref_time, schedule_name,
+                                                    source_backupset_id, **kwargs)
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._LIVE_SYNC, request_json)
         if flag:
             if response.json():
@@ -566,7 +587,6 @@ class OracleInstance(DatabaseInstance):
                 raise SDKException(&#39;Instance&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;, self._update_response_(response.text))
-
 
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
         &#34;&#34;&#34;Configures data masking policy with given parameters
@@ -1379,7 +1399,7 @@ id of the instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L115-L1207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L115-L1227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OracleInstance(DatabaseInstance):
     &#34;&#34;&#34;
@@ -1545,10 +1565,16 @@ id of the instance</p></div>
 
             })
 
-    def _get_live_sync_oracleopt_json(self):
+    def _get_live_sync_oracleopt_json(self, **kwargs):
         &#34;&#34;&#34;
                Constructs JSON with oracle agent specific options
                for configuring live sync
+
+               Args:
+                    **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
         &#34;&#34;&#34;
 
@@ -1579,10 +1605,14 @@ id of the instance</p></div>
                                     &#34;restoreInStandby&#34;:False
                                 }
                                 }
+        if kwargs.get(&#39;redirect_path&#39;, None) is not None:
+            self._oracle_options.update({&#34;renamePathForAllTablespaces&#34;: kwargs.get(&#39;redirect_path&#39;),
+                                         &#34;redirectAllItemsSelected&#34;: True,
+                                         &#34;redirectItemsPresent&#34;: True
+                                         })
 
-
-    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid,
-                                baseline_ref_time, schedule_name, source_backupset_id):
+    def _live_sync_restore_json(self, dest_client, dest_instance, baseline_jobid, baseline_ref_time,
+                                schedule_name, source_backupset_id, **kwargs):
         &#34;&#34;&#34;
                Constructs oracle live sync restore JSON by combining common
                and agent specific options
@@ -1602,6 +1632,11 @@ id of the instance</p></div>
                        source_backupset_id  (int)   --  The ID of the source backupset
                                                         of source oracle instance for which
                                                         live sync needs to be configured
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                           redirect_path   (str)- Path on destination client
+                                                        to redirect tablespaces and datafiles
 
                     Returns:
                         (str)  --   The live sync restore JSON that is constructed
@@ -1625,7 +1660,7 @@ id of the instance</p></div>
         else:
             restore_option.update(restore_json)
 
-        self._get_live_sync_oracleopt_json()
+        self._get_live_sync_oracleopt_json(**kwargs)
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientId&#39;] = -1
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetId&#39;] = source_backupset_id
         restore_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = &#34;&#34;
@@ -1648,8 +1683,8 @@ id of the instance</p></div>
             &#34;restoreOptions&#34;][&#34;oracleOpt&#34;] = self._oracle_options
         return restore_json
 
-
-    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name):
+    def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name,
+                                  **kwargs):
         &#34;&#34;&#34;
                Runs full backup on source oracle instance and
                Creates live sync schdule for the given destination oracle instance
@@ -1660,6 +1695,11 @@ id of the instance</p></div>
                        dest_instance    (str)   --  The destination instance name for live sync
 
                        schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                       **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                            redirect_path   (str) --  Path on destination client
+                                                            to redirect tablespaces and datafiles
 
                    Returns:
                         (object)  --   The job object of the baseline backup that will be replicated
@@ -1673,7 +1713,8 @@ id of the instance</p></div>
         baseline_ref_time = baseline_job_object.summary[&#39;jobStartTime&#39;]
         baseline_jobid = int(baseline_job_object.job_id)
         request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
-                                                    baseline_ref_time, schedule_name, source_backupset_id)
+                                                    baseline_ref_time, schedule_name,
+                                                    source_backupset_id, **kwargs)
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._LIVE_SYNC, request_json)
         if flag:
             if response.json():
@@ -1690,7 +1731,6 @@ id of the instance</p></div>
                 raise SDKException(&#39;Instance&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;, self._update_response_(response.text))
-
 
     def configure_data_masking_policy(self, policy_name, table_list_of_dict):
         &#34;&#34;&#34;Configures data masking policy with given parameters
@@ -2490,7 +2530,7 @@ id of the instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L867-L876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L887-L896" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archive_log_dest(self):
@@ -2518,7 +2558,7 @@ if not set</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L822-L843" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L842-L863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def catalog_db(self):
@@ -2558,7 +2598,7 @@ if not set</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L799-L820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L819-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def catalog_user(self):
@@ -2592,7 +2632,7 @@ def catalog_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L878-L888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L898-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cmd_sp(self):
@@ -2614,7 +2654,7 @@ def cmd_sp(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L913-L921" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L933-L941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def db_user(self):
@@ -2634,7 +2674,7 @@ def db_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L942-L950" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L962-L970" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def dbid(self):
@@ -2655,7 +2695,7 @@ def dbid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L902-L911" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L922-L931" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_autobackup_on(self):
@@ -2677,7 +2717,7 @@ def is_autobackup_on(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L788-L797" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L808-L817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_catalog_enabled(self):
@@ -2700,7 +2740,7 @@ def is_catalog_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L890-L900" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L910-L920" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_sp(self):
@@ -2724,7 +2764,7 @@ def log_sp(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L204-L213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L204-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_stream(self):
@@ -2746,7 +2786,7 @@ def log_stream(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L777-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L797-L806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def oracle_home(self):
@@ -2768,7 +2808,7 @@ def oracle_home(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L845-L854" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L865-L874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def os_user(self):
@@ -2790,7 +2830,7 @@ def os_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L952-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L972-L981" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tablespaces(self):
@@ -2816,7 +2856,7 @@ if not set</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L923-L940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L943-L960" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tns_name(self):
@@ -2846,7 +2886,7 @@ def tns_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L856-L865" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L876-L885" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2874,7 +2914,7 @@ default: default</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L973-L980" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L993-L1000" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, subclient_name=r&#34;default&#34;):
     &#34;&#34;&#34;Uses the default subclient to backup the database
@@ -2894,7 +2934,7 @@ default: default</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L963-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L983-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Overridden method to browse oracle database tablespaces&#34;&#34;&#34;
@@ -2986,7 +3026,7 @@ Shuffling , FPE , Fixed String</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L426-L511" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L446-L531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_data_masking_policy(self, policy_name, table_list_of_dict):
     &#34;&#34;&#34;Configures data masking policy with given parameters
@@ -3077,7 +3117,7 @@ Shuffling , FPE , Fixed String</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.instances.oracleinstance.OracleInstance.create_live_sync_schedule"><code class="name flex">
-<span>def <span class="ident">create_live_sync_schedule</span></span>(<span>self, dest_client, dest_instance, schedule_name)</span>
+<span>def <span class="ident">create_live_sync_schedule</span></span>(<span>self, dest_client, dest_instance, schedule_name, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs full backup on source oracle instance and
@@ -3089,15 +3129,21 @@ Creates live sync schdule for the given destination oracle instance</p>
 
     schedule_name    (str)   --  The name of the live sync schedule to be created
 
+    **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                         redirect_path   (str) --  Path on destination client
+                                         to redirect tablespaces and datafiles
+
 Returns:
      (object)  --   The job object of the baseline backup that will be replicated
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L383-L423" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L397-L444" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name):
+<pre><code class="python">def create_live_sync_schedule(self, dest_client, dest_instance, schedule_name,
+                              **kwargs):
     &#34;&#34;&#34;
            Runs full backup on source oracle instance and
            Creates live sync schdule for the given destination oracle instance
@@ -3108,6 +3154,11 @@ Returns:
                    dest_instance    (str)   --  The destination instance name for live sync
 
                    schedule_name    (str)   --  The name of the live sync schedule to be created
+
+                   **kwargs    (dict)  -- dict of keyword arguments as follows:
+
+                                        redirect_path   (str) --  Path on destination client
+                                                        to redirect tablespaces and datafiles
 
                Returns:
                     (object)  --   The job object of the baseline backup that will be replicated
@@ -3121,7 +3172,8 @@ Returns:
     baseline_ref_time = baseline_job_object.summary[&#39;jobStartTime&#39;]
     baseline_jobid = int(baseline_job_object.job_id)
     request_json = self._live_sync_restore_json(dest_client, dest_instance, baseline_jobid,
-                                                baseline_ref_time, schedule_name, source_backupset_id)
+                                                baseline_ref_time, schedule_name,
+                                                source_backupset_id, **kwargs)
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._LIVE_SYNC, request_json)
     if flag:
         if response.json():
@@ -3162,7 +3214,7 @@ When Invalid policy name under given instance is provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L538-L587" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L558-L607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data_masking_policy(self, policy_name):
     &#34;&#34;&#34;Deletes given data masking policy
@@ -3232,7 +3284,7 @@ When Invalid policy name under given instance is provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L513-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L533-L556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_masking_policy_id(self, policy_name):
     &#34;&#34;&#34;Returns policy id of given data masking policy
@@ -3323,7 +3375,7 @@ If destination_client can't be set</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L982-L1061" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L1002-L1081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -3445,7 +3497,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L1153-L1207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L1173-L1227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -3532,7 +3584,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L136-L173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L136-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_disk(self,
                     destination_client,
@@ -3598,7 +3650,7 @@ if policy ID retrieved is None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/oracleinstance.py#L589-L654" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/oracleinstance.py#L609-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def standalone_data_masking(
         self,

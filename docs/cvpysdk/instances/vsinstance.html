@@ -57,7 +57,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/vsinstance.py#L1-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/vsinstance.py#L1-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -183,6 +183,24 @@ class VirtualServerInstance(Instance):
             self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
             self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
 
+    def _get_instance_proxies(self):
+        &#34;&#34;&#34;
+                get the list of all the proxies on a selected instance
+
+                Returns:
+                    instance_proxies   (List)  --  returns the proxies list
+        &#34;&#34;&#34;
+        instance_members = self.associated_clients
+        instance_proxies = []
+        for member in instance_members:
+            if self._commcell_object.client_groups.has_clientgroup(member):
+                client_group = self._commcell_object.client_groups.get(member)
+                instance_proxies.extend(client_group.associated_clients)
+            else:
+                instance_proxies.append(member)
+
+        return list(dict.fromkeys(instance_proxies))
+
     @property
     def server_name(self):
         &#34;&#34;&#34;returns the PseudoClient Name of the associated isntance&#34;&#34;&#34;
@@ -197,6 +215,7 @@ class VirtualServerInstance(Instance):
                 if &#39;clientName&#39; in client[&#39;client&#39;]:
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
                 elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
+
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
                 else:
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
@@ -310,7 +329,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/vsinstance.py#L86-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/vsinstance.py#L86-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
@@ -351,6 +370,24 @@ default: None</p>
             self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
             self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
 
+    def _get_instance_proxies(self):
+        &#34;&#34;&#34;
+                get the list of all the proxies on a selected instance
+
+                Returns:
+                    instance_proxies   (List)  --  returns the proxies list
+        &#34;&#34;&#34;
+        instance_members = self.associated_clients
+        instance_proxies = []
+        for member in instance_members:
+            if self._commcell_object.client_groups.has_clientgroup(member):
+                client_group = self._commcell_object.client_groups.get(member)
+                instance_proxies.extend(client_group.associated_clients)
+            else:
+                instance_proxies.append(member)
+
+        return list(dict.fromkeys(instance_proxies))
+
     @property
     def server_name(self):
         &#34;&#34;&#34;returns the PseudoClient Name of the associated isntance&#34;&#34;&#34;
@@ -365,6 +402,7 @@ default: None</p>
                 if &#39;clientName&#39; in client[&#39;client&#39;]:
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
                 elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
+
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
                 else:
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
@@ -476,7 +514,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/vsinstance.py#L130-L142" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/vsinstance.py#L148-L161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -487,6 +525,7 @@ def associated_clients(self):
             if &#39;clientName&#39; in client[&#39;client&#39;]:
                 self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
             elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
+
                 self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
             else:
                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
@@ -499,7 +538,7 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/vsinstance.py#L205-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/vsinstance.py#L224-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def co_ordinator(self):
@@ -519,7 +558,7 @@ def co_ordinator(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/vsinstance.py#L125-L128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/vsinstance.py#L143-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):

@@ -57,6 +57,8 @@ add(backupset_name)             -- adds a new backupset to the agent of the spec
 
 add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client
 
+add_v1_sharepoint_client()      -- Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
 add_salesforce_backupset()      -- adds a new salesforce backupset
 
 get(backupset_name)             -- returns the Backupset class object
@@ -115,6 +117,9 @@ refresh()                       -- refresh the properties of the backupset
 
 delete_data()                   -- deletes items from the backupset and makes then unavailable
 to browse and restore
+
+backed_up_files_count()         -- Returns the count of the total number of files present in the backed up data
+                                   of all the subclients of the given backupset.
 </code></pre>
 <h2 id="backupset-instance-attributes">Backupset Instance Attributes</h2>
 <pre><code>**properties**                  -- returns the properties of backupset
@@ -127,7 +132,7 @@ of the Backupset class
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1-L2122" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1-L2264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -185,6 +190,8 @@ Backupsets:
     add(backupset_name)             -- adds a new backupset to the agent of the specified client
     
     add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client
+
+    add_v1_sharepoint_client()      -- Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
 
     add_salesforce_backupset()      -- adds a new salesforce backupset
 
@@ -246,6 +253,9 @@ Backupset:
 
     delete_data()                   -- deletes items from the backupset and makes then unavailable
     to browse and restore
+
+    backed_up_files_count()         -- Returns the count of the total number of files present in the backed up data
+                                       of all the subclients of the given backupset.
 
 Backupset instance Attributes
 -----------------------------
@@ -313,7 +323,8 @@ class Backupsets(object):
         self._update_response_ = self._commcell_object._update_response_
 
         self._BACKUPSETS = self._services[&#39;GET_ALL_BACKUPSETS&#39;] % (self._client_object.client_id)
-
+        if self._agent_object:
+            self._BACKUPSETS += &#39;&amp;applicationId=&#39; + self._agent_object.agent_id
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
@@ -821,6 +832,116 @@ request_json[&#39;backupSetInfo&#39;].update({
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def add_v1_sharepoint_client(
+            self,
+            backupset_name,
+            server_plan,
+            client_name,
+            **kwargs):
+        &#34;&#34;&#34;
+        for sharepoint v1 client creation is a backupset
+        Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
+                Args:
+                    backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                    server_plan                 (str)   --  server_plan to associate with the client
+
+                    client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+                Kwargs :
+
+                    tenant_url                  (str)   --  url of sharepoint tenant
+
+                    azure_username              (str)   --  username of azure app
+
+                    azure_secret                (str)   --  secret key of azure app
+
+                    user_username        (str)   --  username of Sharepoint admin
+
+                    user_password           (str)  -- password of Sharepoint admin
+
+                    azure_app_id            (str)       --  azure app id for sharepoint online
+
+                    azure_app_key_id        (str)       --  app key for sharepoint online
+
+                    azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+                Returns:
+                    object  -   instance of the Client class for this new client
+
+                Raises:
+                    SDKException:
+                        if client with given name already exists
+
+                        if index_server is not found
+
+                        if server_plan is not found
+
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+
+        &#34;&#34;&#34;
+        if self.has_backupset(backupset_name):
+            raise SDKException(
+                &#39;Backupset&#39;, &#39;102&#39;, &#39;Backupset &#34;{0}&#34; already exists.&#39;.format(backupset_name))
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                &#34;planId&#34;: int(server_plan_object.plan_id)
+            }
+        else:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;)
+        backup_set = {
+            &#34;_type_&#34;: 6,
+            &#34;applicationId&#34;: 78,
+            &#34;backupsetName&#34;: backupset_name,
+            &#34;clientId&#34;: int(self._client_object.client_id)
+        }
+        request_json = {
+            &#34;backupSetInfo&#34;: {
+                &#34;planEntity&#34;: server_plan_dict,
+                &#34;backupSetEntity&#34;: backup_set,
+                &#34;sharepointBackupSet&#34;: {
+                    &#34;sharepointBackupSetType&#34;: 4
+                }
+            }
+        }
+        tenant_url = kwargs.get(&#39;tenant_url&#39;)
+        user_username = kwargs.get(&#39;user_username&#39;)
+        is_modern_auth_enabled = kwargs.get(&#39;is_modern_auth_enabled&#39;,False)
+        azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
+        azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+        user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+        request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;] = {
+            &#34;azureUserAccount&#34;: kwargs.get(&#39;azure_username&#39;),
+            &#34;azureAccountKey&#34;: azure_secret,
+            &#34;tenantUrlItem&#34;: tenant_url,
+            &#34;isModernAuthEnabled&#34;: is_modern_auth_enabled,
+            &#34;office365Credentials&#34;: {
+                &#34;userName&#34;: user_username,
+                &#34;password&#34;: user_password
+            },
+        }
+        if is_modern_auth_enabled:
+            request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
+                &#34;azureApps&#34;: [
+                    {
+                        &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
+                        &#34;azureAppKeyValue&#34;: azure_app_key_id,
+                        &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
+                    }
+                ]
+            }
+
+        self._process_add_response(backupset_name, request_json)
 
     def add_salesforce_backupset(
             self,
@@ -1141,11 +1262,13 @@ class Backupset(object):
             &#39;include_meta_data&#39;:False,
             &#39;include_hidden&#39;: False,
             &#39;include_running_jobs&#39;: False,
+            &#39;compute_folder_size&#39;: False,
             &#39;vs_volume_browse&#39;: False,
             &#39;browse_view_name&#39;: &#39;VOLUMEVIEW&#39;,
 
             &#39;_subclient_id&#39;: 0,
-            &#39;_raw_response&#39;: False
+            &#39;_raw_response&#39;: False,
+            &#39;_custom_queries&#39;: False
         }
 
     def __getattr__(self, attribute):
@@ -1533,10 +1656,16 @@ class Backupset(object):
         if options[&#39;include_running_jobs&#39;]:
             request_json[&#39;options&#39;][&#39;includeRunningJobs&#39;] = True
 
+        if options[&#39;compute_folder_size&#39;]:
+            request_json[&#39;options&#39;][&#39;computeFolderSizeForFilteredBrowse&#39;] = True
+
         if options[&#39;vs_volume_browse&#39;]:
             request_json[&#39;mode&#39;][&#39;mode&#39;] = 3
             request_json[&#39;options&#39;][&#39;vsVolumeBrowse&#39;] = True
             request_json[&#39;advOptions&#39;][&#39;browseViewName&#39;] = options[&#39;browse_view_name&#39;]
+
+        if options[&#39;_custom_queries&#39;]:
+            request_json[&#39;queries&#39;] = options[&#39;_custom_queries&#39;]
 
         return request_json
 
@@ -2174,7 +2303,8 @@ class Backupset(object):
         else:
             options = kwargs
 
-        options[&#39;operation&#39;] = &#39;find&#39;
+        if &#39;operation&#39; not in options:
+            options[&#39;operation&#39;] = &#39;find&#39;
 
         if &#39;path&#39; not in options:
             options[&#39;path&#39;] = &#39;\\**\\*&#39;
@@ -2250,7 +2380,24 @@ class Backupset(object):
         self._get_backupset_properties()
 
         self.subclients = Subclients(self)
-        self.schedules = Schedules(self)</code></pre>
+        self.schedules = Schedules(self)
+
+    def backed_up_files_count(self):
+        &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
+         of all the subclients of the given backupset.
+         &#34;&#34;&#34;
+        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
+               &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                    &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                       &#34;criteria&#34;: {
+                           &#34;field&#34;: &#34;Flags&#34;,
+                           &#34;dataOperator&#34;: &#34;IN&#34;,
+                           &#34;values&#34;: [&#34;file&#34;]
+                       }
+                   }]}], &#34;_raw_response&#34;: True}
+
+        browse_response = self._do_browse(options_dic)
+        return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
 </details>
 </section>
 <section>
@@ -2288,7 +2435,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L921-L2122" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1037-L2264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
@@ -2382,11 +2529,13 @@ default: None</p>
             &#39;include_meta_data&#39;:False,
             &#39;include_hidden&#39;: False,
             &#39;include_running_jobs&#39;: False,
+            &#39;compute_folder_size&#39;: False,
             &#39;vs_volume_browse&#39;: False,
             &#39;browse_view_name&#39;: &#39;VOLUMEVIEW&#39;,
 
             &#39;_subclient_id&#39;: 0,
-            &#39;_raw_response&#39;: False
+            &#39;_raw_response&#39;: False,
+            &#39;_custom_queries&#39;: False
         }
 
     def __getattr__(self, attribute):
@@ -2774,10 +2923,16 @@ default: None</p>
         if options[&#39;include_running_jobs&#39;]:
             request_json[&#39;options&#39;][&#39;includeRunningJobs&#39;] = True
 
+        if options[&#39;compute_folder_size&#39;]:
+            request_json[&#39;options&#39;][&#39;computeFolderSizeForFilteredBrowse&#39;] = True
+
         if options[&#39;vs_volume_browse&#39;]:
             request_json[&#39;mode&#39;][&#39;mode&#39;] = 3
             request_json[&#39;options&#39;][&#39;vsVolumeBrowse&#39;] = True
             request_json[&#39;advOptions&#39;][&#39;browseViewName&#39;] = options[&#39;browse_view_name&#39;]
+
+        if options[&#39;_custom_queries&#39;]:
+            request_json[&#39;queries&#39;] = options[&#39;_custom_queries&#39;]
 
         return request_json
 
@@ -3415,7 +3570,8 @@ default: None</p>
         else:
             options = kwargs
 
-        options[&#39;operation&#39;] = &#39;find&#39;
+        if &#39;operation&#39; not in options:
+            options[&#39;operation&#39;] = &#39;find&#39;
 
         if &#39;path&#39; not in options:
             options[&#39;path&#39;] = &#39;\\**\\*&#39;
@@ -3491,7 +3647,24 @@ default: None</p>
         self._get_backupset_properties()
 
         self.subclients = Subclients(self)
-        self.schedules = Schedules(self)</code></pre>
+        self.schedules = Schedules(self)
+
+    def backed_up_files_count(self):
+        &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
+         of all the subclients of the given backupset.
+         &#34;&#34;&#34;
+        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
+               &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                    &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                       &#34;criteria&#34;: {
+                           &#34;field&#34;: &#34;Flags&#34;,
+                           &#34;dataOperator&#34;: &#34;IN&#34;,
+                           &#34;values&#34;: [&#34;file&#34;]
+                       }
+                   }]}], &#34;_raw_response&#34;: True}
+
+        browse_response = self._do_browse(options_dic)
+        return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -3513,7 +3686,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1689-L1692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1813-L1816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -3527,7 +3700,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1694-L1697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1818-L1821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -3541,7 +3714,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1699-L1702" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1823-L1826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3555,7 +3728,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1725-L1732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1849-L1856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -3573,7 +3746,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1704-L1707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1828-L1831" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_backupset(self):
@@ -3587,7 +3760,7 @@ def is_default_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1709-L1712" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1833-L1836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_backupset(self):
@@ -3601,7 +3774,7 @@ def is_on_demand_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1684-L1687" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1808-L1811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3615,7 +3788,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1714-L1723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1838-L1847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -3635,7 +3808,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1679-L1682" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1803-L1806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3646,6 +3819,35 @@ def properties(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.backupset.Backupset.backed_up_files_count"><code class="name flex">
+<span>def <span class="ident">backed_up_files_count</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the count of the total number of files present in the backed up data
+of all the subclients of the given backupset.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2249-L2264" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backed_up_files_count(self):
+    &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
+     of all the subclients of the given backupset.
+     &#34;&#34;&#34;
+    options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
+           &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                   &#34;criteria&#34;: {
+                       &#34;field&#34;: &#34;Flags&#34;,
+                       &#34;dataOperator&#34;: &#34;IN&#34;,
+                       &#34;values&#34;: [&#34;file&#34;]
+                   }
+               }]}], &#34;_raw_response&#34;: True}
+
+    browse_response = self._do_browse(options_dic)
+    return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.backupset.Backupset.backup"><code class="name flex">
 <span>def <span class="ident">backup</span></span>(<span>self, **kwargs)</span>
 </code></dt>
@@ -3671,7 +3873,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1895-L1930" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2019-L2054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, **kwargs):
     &#34;&#34;&#34;Runs backup job for all subclients in this backupset.
@@ -3755,7 +3957,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1934-L1985" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2058-L2109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -3828,7 +4030,7 @@ If fail to create subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L2068-L2087" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2193-L2212" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_subclient(self, subclient, storagepolicyname, description):
 
@@ -3872,7 +4074,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L2089-L2115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2214-L2240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data(self, paths):
     &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -3959,7 +4161,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1987-L2066" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2111-L2191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the backupset,
@@ -4020,7 +4222,8 @@ file_size_et    (int)   --  Find files with size equal to size
     else:
         options = kwargs
 
-    options[&#39;operation&#39;] = &#39;find&#39;
+    if &#39;operation&#39; not in options:
+        options[&#39;operation&#39;] = &#39;find&#39;
 
     if &#39;path&#39; not in options:
         options[&#39;path&#39;] = &#39;\\**\\*&#39;
@@ -4051,7 +4254,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L2117-L2122" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L2242-L2247" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
@@ -4073,7 +4276,7 @@ if failed to set this as the default backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1874-L1893" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1998-L2017" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_backupset(self):
     &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
@@ -4121,7 +4324,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L1635-L1677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1759-L1801" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the backupset properties
@@ -4192,7 +4395,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L146-L918" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L151-L1034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupsets(object):
     &#34;&#34;&#34;Class for getting all the backupsets associated with a client.&#34;&#34;&#34;
@@ -4233,7 +4436,8 @@ if class object is not an instance of the Agent / Instance class</p></div>
         self._update_response_ = self._commcell_object._update_response_
 
         self._BACKUPSETS = self._services[&#39;GET_ALL_BACKUPSETS&#39;] % (self._client_object.client_id)
-
+        if self._agent_object:
+            self._BACKUPSETS += &#39;&amp;applicationId=&#39; + self._agent_object.agent_id
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
@@ -4741,6 +4945,116 @@ request_json[&#39;backupSetInfo&#39;].update({
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def add_v1_sharepoint_client(
+            self,
+            backupset_name,
+            server_plan,
+            client_name,
+            **kwargs):
+        &#34;&#34;&#34;
+        for sharepoint v1 client creation is a backupset
+        Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
+                Args:
+                    backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                    server_plan                 (str)   --  server_plan to associate with the client
+
+                    client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+                Kwargs :
+
+                    tenant_url                  (str)   --  url of sharepoint tenant
+
+                    azure_username              (str)   --  username of azure app
+
+                    azure_secret                (str)   --  secret key of azure app
+
+                    user_username        (str)   --  username of Sharepoint admin
+
+                    user_password           (str)  -- password of Sharepoint admin
+
+                    azure_app_id            (str)       --  azure app id for sharepoint online
+
+                    azure_app_key_id        (str)       --  app key for sharepoint online
+
+                    azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+                Returns:
+                    object  -   instance of the Client class for this new client
+
+                Raises:
+                    SDKException:
+                        if client with given name already exists
+
+                        if index_server is not found
+
+                        if server_plan is not found
+
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+
+        &#34;&#34;&#34;
+        if self.has_backupset(backupset_name):
+            raise SDKException(
+                &#39;Backupset&#39;, &#39;102&#39;, &#39;Backupset &#34;{0}&#34; already exists.&#39;.format(backupset_name))
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                &#34;planId&#34;: int(server_plan_object.plan_id)
+            }
+        else:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;)
+        backup_set = {
+            &#34;_type_&#34;: 6,
+            &#34;applicationId&#34;: 78,
+            &#34;backupsetName&#34;: backupset_name,
+            &#34;clientId&#34;: int(self._client_object.client_id)
+        }
+        request_json = {
+            &#34;backupSetInfo&#34;: {
+                &#34;planEntity&#34;: server_plan_dict,
+                &#34;backupSetEntity&#34;: backup_set,
+                &#34;sharepointBackupSet&#34;: {
+                    &#34;sharepointBackupSetType&#34;: 4
+                }
+            }
+        }
+        tenant_url = kwargs.get(&#39;tenant_url&#39;)
+        user_username = kwargs.get(&#39;user_username&#39;)
+        is_modern_auth_enabled = kwargs.get(&#39;is_modern_auth_enabled&#39;,False)
+        azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
+        azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+        user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+        request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;] = {
+            &#34;azureUserAccount&#34;: kwargs.get(&#39;azure_username&#39;),
+            &#34;azureAccountKey&#34;: azure_secret,
+            &#34;tenantUrlItem&#34;: tenant_url,
+            &#34;isModernAuthEnabled&#34;: is_modern_auth_enabled,
+            &#34;office365Credentials&#34;: {
+                &#34;userName&#34;: user_username,
+                &#34;password&#34;: user_password
+            },
+        }
+        if is_modern_auth_enabled:
+            request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
+                &#34;azureApps&#34;: [
+                    {
+                        &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
+                        &#34;azureAppKeyValue&#34;: azure_app_key_id,
+                        &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
+                    }
+                ]
+            }
+
+        self._process_add_response(backupset_name, request_json)
 
     def add_salesforce_backupset(
             self,
@@ -4987,7 +5301,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L349-L365" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L355-L371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_backupsets(self):
@@ -5014,7 +5328,7 @@ def all_backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L915-L918" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1031-L1034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_backup_set(self):
@@ -5067,7 +5381,7 @@ if backupset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L434-L571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L440-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         &#34;&#34;&#34;Adds a new backup set to the agent.
@@ -5237,7 +5551,7 @@ if archiveset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L573-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L579-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
     &#34;&#34;&#34; 
@@ -5414,7 +5728,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L694-L799" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L810-L915" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_backupset(
         self,
@@ -5524,6 +5838,173 @@ if response is not success
     self._process_add_response(salesforce_options.get(&#39;salesforce_user_name&#39;), request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.backupset.Backupsets.add_v1_sharepoint_client"><code class="name flex">
+<span>def <span class="ident">add_v1_sharepoint_client</span></span>(<span>self, backupset_name, server_plan, client_name, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>for sharepoint v1 client creation is a backupset
+Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.</p>
+<pre><code>    Args:
+        backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+        server_plan                 (str)   --  server_plan to associate with the client
+
+        client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+    Kwargs :
+
+        tenant_url                  (str)   --  url of sharepoint tenant
+
+        azure_username              (str)   --  username of azure app
+
+        azure_secret                (str)   --  secret key of azure app
+
+        user_username        (str)   --  username of Sharepoint admin
+
+        user_password           (str)  -- password of Sharepoint admin
+
+        azure_app_id            (str)       --  azure app id for sharepoint online
+
+        azure_app_key_id        (str)       --  app key for sharepoint online
+
+        azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+    Returns:
+        object  -   instance of the Client class for this new client
+
+    Raises:
+        SDKException:
+            if client with given name already exists
+
+            if index_server is not found
+
+            if server_plan is not found
+
+            if failed to add the client
+
+            if response is empty
+
+            if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L699-L808" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_v1_sharepoint_client(
+        self,
+        backupset_name,
+        server_plan,
+        client_name,
+        **kwargs):
+    &#34;&#34;&#34;
+    for sharepoint v1 client creation is a backupset
+    Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
+            Args:
+                backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                server_plan                 (str)   --  server_plan to associate with the client
+
+                client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+            Kwargs :
+
+                tenant_url                  (str)   --  url of sharepoint tenant
+
+                azure_username              (str)   --  username of azure app
+
+                azure_secret                (str)   --  secret key of azure app
+
+                user_username        (str)   --  username of Sharepoint admin
+
+                user_password           (str)  -- password of Sharepoint admin
+
+                azure_app_id            (str)       --  azure app id for sharepoint online
+
+                azure_app_key_id        (str)       --  app key for sharepoint online
+
+                azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if index_server is not found
+
+                    if server_plan is not found
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+    &#34;&#34;&#34;
+    if self.has_backupset(backupset_name):
+        raise SDKException(
+            &#39;Backupset&#39;, &#39;102&#39;, &#39;Backupset &#34;{0}&#34; already exists.&#39;.format(backupset_name))
+    if self._commcell_object.plans.has_plan(server_plan):
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_dict = {
+            &#34;planId&#34;: int(server_plan_object.plan_id)
+        }
+    else:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;)
+    backup_set = {
+        &#34;_type_&#34;: 6,
+        &#34;applicationId&#34;: 78,
+        &#34;backupsetName&#34;: backupset_name,
+        &#34;clientId&#34;: int(self._client_object.client_id)
+    }
+    request_json = {
+        &#34;backupSetInfo&#34;: {
+            &#34;planEntity&#34;: server_plan_dict,
+            &#34;backupSetEntity&#34;: backup_set,
+            &#34;sharepointBackupSet&#34;: {
+                &#34;sharepointBackupSetType&#34;: 4
+            }
+        }
+    }
+    tenant_url = kwargs.get(&#39;tenant_url&#39;)
+    user_username = kwargs.get(&#39;user_username&#39;)
+    is_modern_auth_enabled = kwargs.get(&#39;is_modern_auth_enabled&#39;,False)
+    azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
+    azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+    user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+    request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+        &#34;spOffice365BackupSetProp&#34;] = {
+        &#34;azureUserAccount&#34;: kwargs.get(&#39;azure_username&#39;),
+        &#34;azureAccountKey&#34;: azure_secret,
+        &#34;tenantUrlItem&#34;: tenant_url,
+        &#34;isModernAuthEnabled&#34;: is_modern_auth_enabled,
+        &#34;office365Credentials&#34;: {
+            &#34;userName&#34;: user_username,
+            &#34;password&#34;: user_password
+        },
+    }
+    if is_modern_auth_enabled:
+        request_json[&#34;backupSetInfo&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
+            &#34;azureApps&#34;: [
+                {
+                    &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
+                    &#34;azureAppKeyValue&#34;: azure_app_key_id,
+                    &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
+                }
+            ]
+        }
+
+    self._process_add_response(backupset_name, request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.backupset.Backupsets.delete"><code class="name flex">
 <span>def <span class="ident">delete</span></span>(<span>self, backupset_name)</span>
 </code></dt>
@@ -5547,7 +6028,7 @@ if no backupset exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L844-L909" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L960-L1025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, backupset_name):
     &#34;&#34;&#34;Deletes the backup set from the agent.
@@ -5636,7 +6117,7 @@ if type of the backupset name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L801-L842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L917-L958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, backupset_name):
     &#34;&#34;&#34;Returns a backupset object of the specified backupset name.
@@ -5699,7 +6180,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L367-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L373-L389" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_backupset(self, backupset_name):
     &#34;&#34;&#34;Checks if a backupset exists for the agent with the input backupset name.
@@ -5728,7 +6209,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupset.py#L911-L913" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupset.py#L1027-L1029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the backupsets associated with the Agent / Instance.&#34;&#34;&#34;
@@ -5814,6 +6295,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.backupset.Backupset" href="#cvpysdk.backupset.Backupset">Backupset</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.backupset.Backupset.backed_up_files_count" href="#cvpysdk.backupset.Backupset.backed_up_files_count">backed_up_files_count</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backup" href="#cvpysdk.backupset.Backupset.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_id" href="#cvpysdk.backupset.Backupset.backupset_id">backupset_id</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_name" href="#cvpysdk.backupset.Backupset.backupset_name">backupset_name</a></code></li>
@@ -5839,6 +6321,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.backupset.Backupsets.add" href="#cvpysdk.backupset.Backupsets.add">add</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupsets.add_archiveset" href="#cvpysdk.backupset.Backupsets.add_archiveset">add_archiveset</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupsets.add_salesforce_backupset" href="#cvpysdk.backupset.Backupsets.add_salesforce_backupset">add_salesforce_backupset</a></code></li>
+<li><code><a title="cvpysdk.backupset.Backupsets.add_v1_sharepoint_client" href="#cvpysdk.backupset.Backupsets.add_v1_sharepoint_client">add_v1_sharepoint_client</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupsets.all_backupsets" href="#cvpysdk.backupset.Backupsets.all_backupsets">all_backupsets</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupsets.default_backup_set" href="#cvpysdk.backupset.Backupsets.default_backup_set">default_backup_set</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupsets.delete" href="#cvpysdk.backupset.Backupsets.delete">delete</a></code></li>

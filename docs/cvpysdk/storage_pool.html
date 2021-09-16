@@ -89,7 +89,7 @@ returns the storage pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L1-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L1-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -689,6 +689,16 @@ class StoragePool(object):
     def storage_pool_id(self):
         &#34;&#34;&#34;Treats id as a read only attribute&#34;&#34;&#34;
         return self._storage_pool_id
+
+    @property
+    def storage_pool_properties(self):
+        &#34;&#34;&#34;Treats the storage_pool_properties as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties
+
+    @property
+    def global_policy_name(self):
+        &#34;&#34;&#34;Returns the global policy corresponding to the storage pool&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;StoragePolicyCopy&#34;][&#34;storagePolicyName&#34;]
     
     def hyperscale_add_nodes(self, media_agents):
         &#34;&#34;&#34;
@@ -926,7 +936,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L534-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L534-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePool(object):
     &#34;&#34;&#34;Class for individual storage pools&#34;&#34;&#34;
@@ -993,6 +1003,16 @@ class StoragePool(object):
     def storage_pool_id(self):
         &#34;&#34;&#34;Treats id as a read only attribute&#34;&#34;&#34;
         return self._storage_pool_id
+
+    @property
+    def storage_pool_properties(self):
+        &#34;&#34;&#34;Treats the storage_pool_properties as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties
+
+    @property
+    def global_policy_name(self):
+        &#34;&#34;&#34;Returns the global policy corresponding to the storage pool&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;StoragePolicyCopy&#34;][&#34;storagePolicyName&#34;]
     
     def hyperscale_add_nodes(self, media_agents):
         &#34;&#34;&#34;
@@ -1200,13 +1220,27 @@ class StoragePool(object):
 </details>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.storage_pool.StoragePool.global_policy_name"><code class="name">var <span class="ident">global_policy_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the global policy corresponding to the storage pool</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L605-L608" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def global_policy_name(self):
+    &#34;&#34;&#34;Returns the global policy corresponding to the storage pool&#34;&#34;&#34;
+    return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;StoragePolicyCopy&#34;][&#34;storagePolicyName&#34;]</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.storage_pool.StoragePool.storage_pool_id"><code class="name">var <span class="ident">storage_pool_id</span></code></dt>
 <dd>
 <div class="desc"><p>Treats id as a read only attribute</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L595-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L595-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_id(self):
@@ -1220,12 +1254,26 @@ def storage_pool_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L590-L593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L590-L593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_name(self):
     &#34;&#34;&#34;Treats the storage_policy_name as a read only attribute&#34;&#34;&#34;
     return self._storage_pool_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.storage_pool_properties"><code class="name">var <span class="ident">storage_pool_properties</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the storage_pool_properties as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L600-L603" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def storage_pool_properties(self):
+    &#34;&#34;&#34;Treats the storage_pool_properties as a read only attribute&#34;&#34;&#34;
+    return self._storage_pool_properties</code></pre>
 </details>
 </dd>
 </dl>
@@ -1249,7 +1297,7 @@ if add nodes to an existing storage pool fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L600-L682" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L610-L692" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_add_nodes(self, media_agents):
     &#34;&#34;&#34;
@@ -1349,7 +1397,7 @@ if reconfigure fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L684-L731" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L694-L741" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_reconfigure_storage_pool(self, storage_pool_name):
     &#34;&#34;&#34;
@@ -1416,7 +1464,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L733-L798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L743-L808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_replace_disk(self, disk_id, media_agent, storage_pool_name):
     &#34;&#34;&#34;
@@ -1494,7 +1542,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L800-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L810-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
@@ -1522,7 +1570,7 @@ instance of the StoragePools class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L100-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L100-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePools:
     &#34;&#34;&#34;Class for doing operations on Storage Pools, like get storage poo ID.&#34;&#34;&#34;
@@ -1976,7 +2024,7 @@ consists of all storage pools added to the commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L228-L242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L228-L242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_pools(self):
@@ -2029,7 +2077,7 @@ path where the DDB should be stored</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L350-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L350-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
     &#34;&#34;&#34;
@@ -2180,7 +2228,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L475-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L475-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_pool_name):
     &#34;&#34;&#34;deletes the specified storage pool.
@@ -2258,7 +2306,7 @@ if no storage pool exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L256-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L256-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns the id of the storage pool for the given storage pool name.
@@ -2299,7 +2347,7 @@ boolean output whether the storage pool exists in the commcell or not</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L244-L254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L244-L254" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_storage_pool(self, name):
     &#34;&#34;&#34;Checks if a storage pool exists in the Commcell with the input storage pool name.
@@ -2334,7 +2382,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L277-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L277-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_create_storage_pool(self, storage_pool_name, media_agents):
     &#34;&#34;&#34;
@@ -2418,7 +2466,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage_pool.py#L530-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage_pool.py#L530-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;
@@ -2506,12 +2554,14 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.storage_pool.StoragePool" href="#cvpysdk.storage_pool.StoragePool">StoragePool</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.storage_pool.StoragePool.global_policy_name" href="#cvpysdk.storage_pool.StoragePool.global_policy_name">global_policy_name</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_add_nodes" href="#cvpysdk.storage_pool.StoragePool.hyperscale_add_nodes">hyperscale_add_nodes</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_reconfigure_storage_pool" href="#cvpysdk.storage_pool.StoragePool.hyperscale_reconfigure_storage_pool">hyperscale_reconfigure_storage_pool</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_replace_disk" href="#cvpysdk.storage_pool.StoragePool.hyperscale_replace_disk">hyperscale_replace_disk</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.refresh" href="#cvpysdk.storage_pool.StoragePool.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_id" href="#cvpysdk.storage_pool.StoragePool.storage_pool_id">storage_pool_id</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_name" href="#cvpysdk.storage_pool.StoragePool.storage_pool_name">storage_pool_name</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_properties" href="#cvpysdk.storage_pool.StoragePool.storage_pool_properties">storage_pool_properties</a></code></li>
 </ul>
 </li>
 <li>

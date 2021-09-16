@@ -36,7 +36,7 @@ Method to create object based on the backupset name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L1-L863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L1-L865" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -223,7 +223,8 @@ class ExchangeSubclient(Subclient):
             &#34;exchangeRestoreChoice&#34;: 1,
             &#34;exchangeRestoreDrive&#34;: 1,
             &#34;isJournalReport&#34;: value.get(&#34;journal_report&#34;, False),
-            &#34;pstFilePath&#34;: &#34;&#34;
+            &#34;pstFilePath&#34;: &#34;&#34;,
+            &#34;targetMailBox&#34;: value.get(&#34;target_mailbox&#34;,None)
         }
 
     def _json_restore_exchange_common_option(self, value):
@@ -629,7 +630,8 @@ class ExchangeSubclient(Subclient):
         restore_option[&#39;paths&#39;] = paths
         # restore_option[&#39;client&#39;] = destination_client
         restore_option[&#39;destination_path&#39;] = destination_path
-
+        oop_target_mailbox = destination_path.split(chr(18))[0].split(&#34;\\MB\\&#34;)[1]
+        restore_option[&#39;target_mailbox&#39;] = oop_target_mailbox
         request_json = self._prepare_out_of_place_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
@@ -938,7 +940,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L42-L863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L42-L865" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExchangeSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing an Exchange subclient,
@@ -1084,7 +1086,8 @@ default: None</p>
             &#34;exchangeRestoreChoice&#34;: 1,
             &#34;exchangeRestoreDrive&#34;: 1,
             &#34;isJournalReport&#34;: value.get(&#34;journal_report&#34;, False),
-            &#34;pstFilePath&#34;: &#34;&#34;
+            &#34;pstFilePath&#34;: &#34;&#34;,
+            &#34;targetMailBox&#34;: value.get(&#34;target_mailbox&#34;,None)
         }
 
     def _json_restore_exchange_common_option(self, value):
@@ -1490,7 +1493,8 @@ default: None</p>
         restore_option[&#39;paths&#39;] = paths
         # restore_option[&#39;client&#39;] = destination_client
         restore_option[&#39;destination_path&#39;] = destination_path
-
+        oop_target_mailbox = destination_path.split(chr(18))[0].split(&#34;\\MB\\&#34;)[1]
+        restore_option[&#39;target_mailbox&#39;] = oop_target_mailbox
         request_json = self._prepare_out_of_place_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
@@ -1785,7 +1789,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L473-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L474-L483" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def cleanup(self):
     &#34;&#34;&#34;Runs a cleanup job for the subclient .
@@ -1840,7 +1844,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L596-L641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L598-L643" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(
         self,
@@ -1900,7 +1904,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L824-L847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L826-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_backup_opt_json(self):
     &#34;&#34;&#34;Get backup options json for pst ingestion job
@@ -1938,7 +1942,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L849-L863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L851-L865" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_data_opt_json(self):
     &#34;&#34;&#34;Get data options json for pst ingestion job
@@ -1967,7 +1971,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L803-L822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L805-L824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_task_json(self):
     &#34;&#34;&#34;Get task json for pst ingestion job
@@ -2032,7 +2036,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L550-L594" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L551-L596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(
         self,
@@ -2076,7 +2080,8 @@ if response is not success
     restore_option[&#39;paths&#39;] = paths
     # restore_option[&#39;client&#39;] = destination_client
     restore_option[&#39;destination_path&#39;] = destination_path
-
+    oop_target_mailbox = destination_path.split(chr(18))[0].split(&#34;\\MB\\&#34;)[1]
+    restore_option[&#39;target_mailbox&#39;] = oop_target_mailbox
     request_json = self._prepare_out_of_place_restore_json(restore_option)
     return self._process_restore_response(request_json)</code></pre>
 </details>
@@ -2091,7 +2096,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L688-L724" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L690-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pst_ingestion(self):
     &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
@@ -2167,7 +2172,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L643-L686" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L645-L688" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pst_restore(
         self,
@@ -2259,7 +2264,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L484-L548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L485-L549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -2360,7 +2365,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/exchsubclient.py#L726-L801" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/exchsubclient.py#L728-L803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def subclient_content_indexing(self,
                                pick_failed_items=False,
@@ -2480,6 +2485,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -2488,6 +2494,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

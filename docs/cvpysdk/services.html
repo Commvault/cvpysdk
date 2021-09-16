@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/services.py#L1-L422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/services.py#L1-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -139,6 +139,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_MEDIA_AGENTS&#39;: &#39;{0}V2/MediaAgents&#39;,
     &#39;LIBRARY&#39;: &#39;{0}Library&#39;,
     &#39;GET_LIBRARY_PROPERTIES&#39;: &#39;{0}Library/%s&#39;,
+    &#39;DETECT_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=detect&#39;,
+    &#39;CONFIGURE_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=configureTape&#39;,
 
     &#39;STORAGE_POLICY&#39;: &#39;{0}StoragePolicy&#39;,
     &#39;GET_STORAGE_POLICY&#39;: &#39;{0}StoragePolicy/%s&#39;,
@@ -157,7 +159,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ALERT&#39;: &#39;{0}AlertRule/%s&#39;,
     &#39;CREATE_BLR_PAIR&#39;: &#39;{0}Replications/Groups&#39;,
     &#39;DELETE_BLR_PAIR&#39;: &#39;{0}Replications/Monitors/continuous/%s&#39;,
-    &#39;GRANULAR_BLR_POINTS&#39;: &#39;{0}/Replications/Monitors/continuous/VmScale?destProxyClientId=%s&amp;subclientId=%s&amp;vmUuid=%s&#39;,
+    &#39;GET_BLR_PAIRS&#39;: &#39;{0}Replications/Monitors/continuous&#39;,
+    &#39;GET_BLR_PAIR&#39;: &#39;{0}Replications/Monitors/continuous?replicationPairId=%s&#39;,
+    &#39;GET_BLR_PAIR_STATS&#39;: &#39;{0}Replications/Statistics/%s&#39;,
+    &#39;GRANULAR_BLR_POINTS&#39;: &#39;{0}Replications/Monitors/continuous/VmScale?destProxyClientId=%s&amp;subclientId=%s&amp;vmUuid=%s&#39;,
+    &#39;BLR_BOOT_DETAILS&#39;: &#39;{0}/Replications/Monitors/continuous/Boot?replicationPairId=%s&amp;bootType=%s&amp;latest=true&#39;,
     &#39;BROWSE_MOUNT_POINTS&#39;: &#39;{0}/Client/%s/Action/BrowseMountPoints&#39;,
 
     &#39;GET_VM_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&amp;PseudoClientId=%s&#39;,
@@ -193,6 +199,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;USERGROUPS&#39;: &#39;{0}UserGroup?includeSystemCreated=true&#39;,
     &#39;USERGROUP&#39;: &#39;{0}UserGroup/%s&#39;,
     &#39;DELETE_USERGROUP&#39;: &#39;{0}UserGroup/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
+    &#39;COMPANY_USERGROUP&#39;: &#39;{0}UserGroup?parentProvider/providerId=%s&#39;,
 
     &#39;BROWSE&#39;: &#39;{0}DoBrowse&#39;,
     &#39;RESTORE&#39;: &#39;{0}CreateTask&#39;,
@@ -249,9 +256,17 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DELETE_HANDLER&#39;: &#39;{0}dcube/deletehandler/%s&#39;,
     &#39;SHARE_HANDLER&#39;: &#39;{0}dcube/share/handler&#39;,
     &#39;SHARE_DATASOURCE&#39;: &#39;{0}dcube/share/datasource&#39;,
-    &#39;GET_CONTENT_ANALYZER_CLOUD&#39;:&#39;{0}getContentAnalyzerCloud&#39;,
-    &#39;ACTIVATE_ENTITIES&#39;:&#39;{0}dcube/entity&#39;,
-    &#39;ACTIVATE_ENTITY&#39;:&#39;{0}dcube/entity/%s&#39;,
+    &#39;GET_CONTENT_ANALYZER_CLOUD&#39;: &#39;{0}getContentAnalyzerCloud&#39;,
+    &#39;ACTIVATE_ENTITIES&#39;: &#39;{0}dcube/entity&#39;,
+    &#39;ACTIVATE_ENTITY&#39;: &#39;{0}dcube/entity/%s&#39;,
+    &#39;GET_TAGS&#39;: &#39;{0}EDiscovery/Tags&#39;,
+    &#39;ADD_CONTAINER&#39;: &#39;{0}PerformContainerOperation&#39;,
+    &#39;DELETE_CONTAINER&#39;: &#39;{0}Containers/Action/Delete&#39;,
+    &#39;CA_UPLOAD_FILE&#39;: &#39;{0}ContentAnalyzer/%s/action/uploadFile&#39;,
+    &#39;GET_CLASSIFIERS&#39;: &#39;{0}dcube/classifiers?getDisabled=True&#39;,
+    &#39;START_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/ml/action/train&#39;,
+    &#39;CANCEL_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/training/cancel&#39;,
+
 
     &#39;GLOBAL_FILTER&#39;: &#39;{0}GlobalFilter&#39;,
     &#39;RESTORE_OPTIONS&#39;: &#39;{0}Restore/GetDestinationsToRestore?clientId=0&amp;appId=%s&amp;flag=8&#39;,
@@ -276,6 +291,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CVDRBACKUP_STATUS&#39;: &#39;{0}/cvdrbackup/status?commcellid=%s&#39;,
     &#39;CVDRBACKUP_INFO&#39;: &#39;{0}/cvdrbackup/info&#39;,
     &#39;CVDRBACKUP_DOWNLOAD&#39;: &#39;{0}/cvdrbackup/download&#39;,
+    &#39;CVDRBACKUP_REQUEST&#39;: &#39;{0}cvdrbackup/requests&#39;,
 
     &#39;ORACLE_INSTANCE_BROWSE&#39;: &#39;{0}Instance/DBBrowse/%s&#39;,
 
@@ -289,7 +305,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy&#39;,
     &#39;ALL_VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy?showResourceGroupPolicy=true&amp;deep=true&amp;hiddenpolicies=true&#39;,
     &#39;GET_VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy/%s&#39;,
-    &#39;PROTECTED_VMS&#39;: &#34;{0}VM?propertyLevel=AllProperties&amp;status=1&amp;fromTime=%s&amp;toTime=%s&#34;,
+    &#39;PROTECTED_VMS&#39;: &#34;{0}VM?propertyLevel=AllProperties&amp;status=1&amp;fromTime=%s&amp;toTime=%s&amp;Limit=%s&#34;,
     &#39;CONTINUOUS_REPLICATION_MONITOR&#39;: &#34;{0}Replications/Monitors/continuous&#34;,
     &#39;USERS&#39;: &#39;{0}User&#39;,
     &#39;USER&#39;: &#39;{0}User/%s?Level=50&#39;,
@@ -345,6 +361,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_DR_GROUP&#39;: &#39;{0}DRGroups/%s&#39;,
     &#39;DR_GROUP_MACHINES&#39;: &#39;{0}DRGroups/ClientList?source=1&amp;entityType=3&amp;entityId=%s&#39;,
     &#39;DR_GROUP_JOB_STATS&#39;: &#39;{0}DRGroups/JobStats?jobId=%s&amp;drGroupId=%s&amp;replicationId=%s&amp;clientId=0&#39;,
+    &#39;DR_JOB_STATS&#39;: &#39;{0}DRGroups/JobStats?jobId=%s&#39;,
+
     &#39;REVERSE_REPLICATION_TASK&#39;: &#39;{0}Replications/Monitors/streaming/Operation&#39;,
     &#39;REPLICATION_MONITOR&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=0&#39;,
     &#39;RPSTORE&#39;: &#39;{0}Replications/RPStore&#39;,
@@ -361,6 +379,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ADD_EXCHANGE&#39;: &#39;{0}pseudoClient&#39;,
     &#39;CREATE_CONFIGURATION_POLICIES&#39;: &#39;{0}ConfigurationPolicies&#39;,
     &#39;GET_CONFIGURATION_POLICIES&#39;: &#39;{0}ConfigurationPolicies?policyType=email&#39;,
+    &#39;GET_CONFIGURATION_POLICIES_FS&#39;: &#39;{0}ConfigurationPolicies?policyType=filesytem&#39;,
     &#39;GET_CONFIGURATION_POLICY&#39;: &#39;{0}ConfigurationPolicies/%s&#39;,
     &#39;DELETE_CONFIGURATION_POLICY&#39;: &#39;{0}ConfigurationPolicies/%s&#39;,
     &#39;EMAIL_DISCOVERY&#39;: &#39;{0}Backupset/%s/mailboxDiscover?discoveryType=%s&#39;,
@@ -418,6 +437,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;POLL_REQUEST_ROUTER&#39;: &#39;{0}/CommcellRedirect/RedirectListforUser?user=%s&amp;getDistinctSAMLAppType=true&#39;,
     &#39;MULTI_COMMCELL_DROP_DOWN&#39;: &#39;{0}/MultiCommcellsForUser&#39;,
     &#39;SERVICE_COMMCELL_ASSOC&#39;: &#39;{0}/Security/MultiCommcell&#39;,
+    &#39;SYNC_SERVICE_COMMCELL&#39;: &#39;{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s&#39;,
 
     &#39;DASHBOARD_ENVIRONMENT_TILE&#39;: &#39;{0}clients/count?type=fileserver,vm,laptop&#39;,
     &#39;DASHBOARD_NEEDS_ATTENTION_TILE&#39;: &#39;{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14&#39;,
@@ -435,6 +455,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;RETIRE&#39;: &#39;{0}Client/%s/Retire&#39;,
 
+    &#39;DATASOURCE_ACTIONS&#39;: &#39;{0}EDiscoveryClients/Datasources/Actions&#39;,
     &#39;CLOUD_CREATE&#39;: &#39;{0}cloud/create&#39;,
     &#39;CLOUD_MODIFY&#39;: &#39;{0}cloud/modify&#39;,
     &#39;CLOUD_DELETE&#39;: &#39;{0}cloud/delete&#39;,
@@ -442,7 +463,15 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CLOUD_NODE_UPDATE&#39;: &#39;{0}cloud/node/update&#39;,
     &#39;GET_ALL_INDEX_SERVERS&#39;: &#39;{0}dcube/getAnalyticsEngine?retrieveall=true&#39;,
     &#39;GET_ALL_ROLES&#39;: &#39;{0}IndexingGateway/GetAnalyticsRolesInfo&#39;,
-    &#39;GET_SWAGGER&#39;: &#39;{0}swagger/V3/swagger.json&#39;
+    &#39;GET_SWAGGER&#39;: &#39;{0}swagger/V3/swagger.json&#39;,
+
+    &#39;COMMCELL_METADATA&#39;: &#39;{0}Commcell/MetaData&#39;,
+    &#39;METALLIC_LINKING&#39;: &#39;{0}CloudService/Subscription&#39;,
+    &#39;CV_METALLIC_LINKING&#39;: &#39;{0}/CloudService/Subscription/Details&#39;,
+    &#39;METALLIC_COMPLETED_SETUPS&#39;: &#39;{0}CloudService/CompletedSetups&#39;,
+    &#39;USER_MAPPINGS&#39;: &#39;{0}GetUserMappings&#39;,
+    &#39;METALLIC_REGISTERED&#39;: &#39;{0}CloudServices/Registered&#39;,
+    &#39;METALLIC_UNLINK&#39;: &#39;{0}CloudService/Unsubscribe&#39;
 }
 
 
@@ -487,7 +516,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/services.py#L408-L422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/services.py#L437-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

@@ -77,7 +77,7 @@ where the user given message is appended to the original message joined by new l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/exception.py#L1-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/exception.py#L1-L497" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -277,7 +277,8 @@ EXCEPTION_DICT = {
         &#39;102&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;103&#39;: &#39;Invalid operation type passed to Schedules class&#39;,
         &#39;104&#39;: &#39;Provided Option cannot be updated&#39;,
-        &#39;105&#39;: &#39;Could not find the provided schedule name/id&#39;
+        &#39;105&#39;: &#39;Could not find the provided schedule name/id&#39;,
+        &#39;106&#39;: &#39;&#39;
     },
     &#39;ClientGroup&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -322,6 +323,30 @@ EXCEPTION_DICT = {
         &#39;104&#39;: &#39;Unable to create regex entity in the commcell&#39;,
         &#39;105&#39;: &#39;Unable to delete regex entity in the commcell&#39;,
         &#39;106&#39;: &#39;Unable to modify regex entity in the commcell&#39;
+    },
+    &#39;Classifier&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get classifier details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create classifier in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to delete classifier in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to modify classifier in the commcell&#39;,
+        &#39;107&#39;: &#39;Training model data zip file not exists in given path&#39;,
+        &#39;108&#39;: &#39;Model Data Training failed on this classifier&#39;,
+        &#39;109&#39;: &#39;Cancel Training failed on this classifier&#39;
+    },
+    &#39;Tags&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get TagSet details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create TagSet in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to modify TagSet in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to find given tag name in this tagset&#39;,
+        &#39;107&#39;: &#39;Unable to do TagSet security association in the commcell&#39;
+    },
+    &#39;EntityManager&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
     },
     &#39;GlobalFilter&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -478,7 +503,10 @@ EXCEPTION_DICT = {
         &#39;101&#39;: &#39;Failed to register commcell&#39;,
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;Failed to unregister commcell&#39;,
-        &#39;104&#39;: &#39;Datatype of the input is not valid&#39;
+        &#39;104&#39;: &#39;Datatype of the input is not valid&#39;,
+        &#39;105&#39;: &#39;Failed to reach remote commcell.&#39;,
+        &#39;106&#39;: &#39;Failed to authenticate remote commcell. Invalid user name and password.&#39;,
+        &#39;107&#39;: &#39;Insufficient permissions&#39;
     },
     &#39;LiveSync&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -499,7 +527,9 @@ EXCEPTION_DICT = {
         &#39;105&#39;: &#39;Unsupported backup level specified. Please check&#39;,
         &#39;106&#39;: &#39;Storage policy is not associated with subclient. Please associate&#39;,
         &#39;107&#39;: &#39;Backup is not enabled for client/subclient&#39;,
-        &#39;108&#39;: &#39;Client name not specified for solr cloud restore&#39;
+        &#39;108&#39;: &#39;Client name not specified for solr cloud restore&#39;,
+        &#39;109&#39;: &#39;Provide the Index Server Node name for browse to work&#39;,
+        &#39;110&#39;: &#39;Multiple roles found, Unix Index Server Browse works for only 1 role at a time.&#39;
     },
     &#39;HACClusters&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -510,6 +540,10 @@ EXCEPTION_DICT = {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;Index pool not found&#39;,
         &#39;103&#39;: &#39;Index pool node not found&#39;,
+    },
+    &#39;Metallic&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
     }
 }
 
@@ -579,7 +613,7 @@ instance of the SDKException class of type Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/exception.py#L436-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/exception.py#L470-L497" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SDKException(Exception):
     &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;

@@ -66,15 +66,21 @@ the index database</p>
 &ndash;
 Sets the number of cycles to be maintained in
 the index database</p>
-<p>create_fsblr_replication_pair()
-&ndash;
-Create Live/Granular Replication Pair</p>
 <p>create_replica_copy()
 &ndash;
 Triggers Replica Copy for live Replication.</p>
 <p>delete_replication_pair()
 &ndash;
 Delete Replication Pair</p>
+<p>get_mount_path_guid()
+&ndash;
+Get the mount path volume's GUID</p>
+<p>get_recovery_points()
+&ndash;
+Gets all the valid recovery points from the RPStore for the BLR pair</p>
+<p>create_fsblr_replication_pair()
+&ndash;
+Create Live/Granular Replication Pair</p>
 <p>create_granular_replica_copy()
 &ndash;
 Triggers
@@ -85,7 +91,7 @@ It returns browse volume guid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1-L1425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1-L1596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -141,16 +147,19 @@ FSBackupset:
     index_pruning_cycles_retention()    --  Sets the number of cycles to be maintained in
                                             the index database
 
+    create_replica_copy()               --  Triggers Replica Copy for live Replication.
+
+    delete_replication_pair()           --  Delete Replication Pair
+
+    get_mount_path_guid()               --  Get the mount path volume&#39;s GUID
+
+    get_recovery_points()               --  Gets all the valid recovery points from the RPStore for the BLR pair
 
     create_fsblr_replication_pair()     --  Create Live/Granular Replication Pair
 
-    create_replica_copy()               --  Triggers Replica Copy for live Replication.
+    create_granular_replica_copy()      --  Triggers  Granular replication permanent mount
 
-    delete_replication_pair()           --   Delete Replication Pair
-
-    create_granular_replica_copy()      --   Triggers  Granular replication permanent mount
-
-    get_browse_volume_guid()             --   It returns browse volume guid
+    get_browse_volume_guid()            --  It returns browse volume guid
 
 &#34;&#34;&#34;
 
@@ -163,6 +172,7 @@ from ..client import Client
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules
+import socket
 
 class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -451,7 +461,8 @@ class FSBackupset(Backupset):
                                     &#34;isClientMA&#34;: False, &#34;clone&#34;: False,
                                     &#34;isIndexCacheInUSB&#34;: True, &#34;firewallCS&#34;: &#34;&#34;,
                                     &#34;backupSet&#34;: {
-                                        &#34;backupsetName&#34;: &#34;defaultBackupSet&#34;
+                                        &#34;backupsetName&#34;: self.backupset_name,
+                                        &#34;backupsetId&#34;: int(self.backupset_id)
                                     }, &#34;netconfig&#34;:{
                                         &#34;wins&#34;:{
                                             &#34;useDhcp&#34;: False
@@ -537,7 +548,12 @@ class FSBackupset(Backupset):
                                 &#34;hostName&#34;: &#34; &#34;, &#34;resourcePoolPath&#34;: &#34;&#34;, &#34;dataCenterName&#34;: &#34;&#34;,
                                 &#34;vCenter&#34;: &#34; &#34;, &#34;datastore&#34;: {
                                     &#34;name&#34;: &#34; &#34;
-                                    }
+                                    },
+                                &#34;instanceEntity&#34;: {
+                                    &#34;clientName&#34;: &#34;&#34;,
+                                    &#34;instanceName&#34;: &#34;&#34;,
+                                    &#34;instanceId&#34;: 0
+                                }
                                 }, &#34;expirationTime&#34;: {}
                         }
                     }
@@ -562,6 +578,52 @@ class FSBackupset(Backupset):
             }
         }
         return bmr_restore_json
+
+    def _azure_advancedrestoreopts_json(self):
+        &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
+
+
+        Returns :
+                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+
+        &#34;&#34;&#34;
+        azure_adv_rest_opts_json = [
+            {
+                &#34;vmSize&#34;: &#34;&#34;,
+                &#34;securityGroups&#34;: [
+                    {
+                        &#34;groupName&#34;: &#34;--Auto Select--&#34;,
+                        &#34;groupId&#34;: &#34;&#34;
+                    }
+                ]
+            }
+        ]
+        return azure_adv_rest_opts_json
+
+    def _azure_advancedopts_json(self):
+        &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
+
+
+        Returns :
+                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+
+        &#34;&#34;&#34;
+        azure_adv_opts_json = {
+            &#34;networkCards&#34;: [
+                {
+                    &#34;privateIPAddress&#34;: &#34;&#34;,
+                    &#34;networkName&#34;: &#34;&#34;,
+                    &#34;label&#34;: &#34;--Auto Select--&#34;,
+                    &#34;subnetNames&#34;: [
+                        {
+                            &#34;subnetId&#34;: &#34;&#34;
+                        }
+                    ]
+                }
+            ]
+        }
+        return azure_adv_opts_json
+
 
     def _get_responsefile(self):
         &#34;&#34;&#34;Get the response file for the backupset
@@ -595,7 +657,10 @@ class FSBackupset(Backupset):
 
         hwconfig = response[&#39;responseFile&#39;][&#39;hwconfig&#39;]
         ipconfig = response[&#39;responseFile&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
-        return hwconfig, ipconfig
+        cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
+        cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
+        return hwconfig, ipconfig,cs_user,cs_pwd
+
     def run_bmr_restore(self, **restore_options):
         &#34;&#34;&#34;
         Calling the create task API with the final restore JSON
@@ -625,8 +690,6 @@ class FSBackupset(Backupset):
 
                NetworkLabel             (String)    : The network label to be assigned to the VM.
 
-               HyperVInstance           (String)    : The Hyper-V Instance
-
                HyperVHost               (String)    : The Hyper-V host
 
                GuestUser                (String)    : The Username of the guest OS
@@ -641,15 +704,20 @@ class FSBackupset(Backupset):
         &#34;&#34;&#34;
         client_name = self._agent_object._client_object.client_name
 
-
         self._instance_object._restore_association = self._backupset_association
 
-        hwconfig, ipconfig = self._get_responsefile()
+        hwconfig, ipconfig, cs_username, cs_password = self._get_responsefile()
         response_json = self._restore_json(paths=[&#39;&#39;])
 
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
+        # get instance Id of the virtual client
+        virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
+        virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
+        instances_list = virtual_agent_object.instances._instances
+        instance_id = int(list(instances_list.values())[0])
+        instance_name = list(instances_list.keys())[0]
 
         response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
             &#39;adminOpts&#39;] = restore_json_system_state
@@ -657,70 +725,50 @@ class FSBackupset(Backupset):
         response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
             &#39;virtualServerRstOption&#39;] = restore_json_virtualserver
 
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+            &#39;inPlace&#39;] = False
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
+
         vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-        vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-            &#39;backupsetName&#39;] = self.backupset_name
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
+
+
+        if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
+            &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
+            &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
+        if restore_options.get(&#39;CommServIP&#39;):
+            cs_ip = restore_options.get(&#39;CommServIP&#39;)
+        else:
+            try:
+                cs_ip = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+            except Exception as e:
+                raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Error while reading CommServer IP : {}\n. Please set the CommServIP argument.&#39;.format(e))
+
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;ip&#39;][
-            &#39;address&#39;] = restore_options.get(&#39;CommServIP&#39;)
+            &#39;address&#39;] = cs_ip
+
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-            &#39;clientName&#39;] = restore_options.get(&#39;CommServName&#39;, None)
+            &#39;clientName&#39;] = self._commcell_object.commserv_name
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-            &#39;hostName&#39;] = restore_options.get(&#39;CommServHostname&#39;, None)
+            &#39;hostName&#39;] = self._commcell_object.commserv_hostname
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-            &#39;password&#39;] = restore_options.get(&#39;CommServPassword&#39;, None)
+            &#39;password&#39;] = cs_password
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-            &#39;userName&#39;] = restore_options.get(&#39;CommServUsername&#39;, None)
+            &#39;userName&#39;] = cs_username
 
-        if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
-                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
 
-        if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
-                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
-            &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-        if restore_options.get(&#39;VcenterServerName&#39;):
-
-            vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
-                &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                    &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-                &#39;EsxServer&#39;)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
-
-        if restore_options.get(&#39;HyperVInstance&#39;):
-            if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
-                vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                    &#39;esxServerName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-                &#39;HyperVHost&#39;)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;HyperVInstance&#39;)
+        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;hostName&#39;] = restore_options.get(&#39;ClientHostname&#39;, None)
@@ -728,12 +776,108 @@ class FSBackupset(Backupset):
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
-            &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+        if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
+            vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+                &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+
+            if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+                &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            if instance_name == &#39;vmware&#39;:
+
+                vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
+                    &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                    &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                        &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                    &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                    &#39;EsxServer&#39;)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
+
+            if instance_name == &#39;hyper-v&#39;:
+
+                if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
+
+                    vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                    &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                        &#39;esxServerName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                    &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                    &#39;HyperVHost&#39;)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+
+
+        if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+
+            az_advanced_ops_json = self._azure_advancedopts_json()
+
+            az_adv_restore_opts_json = self._azure_advancedrestoreopts_json()
+
+            vm_option[&#39;vendor&#39;] = 7
+
+            vm_option[&#39;createPublicIp&#39;] = restore_options.get(&#39;CreatePublicIP&#39;)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;isBlockLevelBackup&#39;] = True
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;] = az_advanced_ops_json
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;][&#39;networkCards&#39;][0][&#39;label&#39;] = &#34;--Auto Select--&#34;
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(&#39;ResourceGroup&#39;)
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                &#39;advancedRestoreOptions&#39;] = az_adv_restore_opts_json
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                &#39;advancedRestoreOptions&#39;][0][&#39;securityGroups&#39;][0][&#39;groupName&#39;] = &#34;--Auto Select--&#34;
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+            if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+                &#39;name&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+        if instance_name == &#39;azure stack&#39;:
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;ManagementURL&#39;, None)
+
+            vm_option[&#39;vendor&#39;] = 17
+
+    # Additional options
 
         if restore_options.get(&#39;CloneClientName&#39;):
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;clone&#39;] = True
@@ -741,23 +885,15 @@ class FSBackupset(Backupset):
                 &#39;clientName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
                 &#39;hostName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
+
         if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
                 &#39;hostName&#39;] = &#39;&#39;
-            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-                &#39;backupsetName&#39;] = self._properties[&#39;backupSetEntity&#39;][&#39;backupsetName&#39;]
-            if (response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
-                    &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
-                        &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
-                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
         if restore_options.get(&#39;UseDhcp&#39;):
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
                 &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-            &#39;inPlace&#39;] = False
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
 
         return self._process_restore_response(response_json)
 
@@ -1223,13 +1359,13 @@ class FSBackupset(Backupset):
                                 &#34;blockOperation&#34;: {
                                     &#34;operations&#34;: [
                                         {
-                                            &#34;appId&#34;: scid,
+                                            &#34;appId&#34;: int(scid),
                                             &#34;opType&#34;: 8,
-                                            &#34;dstProxyClientId&#34;: destclientid,
+                                            &#34;dstProxyClientId&#34;: int(destclientid),
                                             &#34;fsMountInfo&#34;: {
                                                 &#34;doLiveMount&#34;: True,
                                                 &#34;lifeTimeInSec&#34;: 7200,
-                                                &#34;blrPairId&#34;: blrid,
+                                                &#34;blrPairId&#34;: int(blrid),
                                                 &#34;mountPathPairs&#34;: [
                                                     {
                                                         &#34;mountPath&#34;: restorepath,
@@ -1285,24 +1421,70 @@ class FSBackupset(Backupset):
         if response.status_code != 200 and flag == False:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def get_mount_path_guid(self, volume):
+        &#34;&#34;&#34;
+        Gets the mount points for the BLR pairs
+        Args:
+            volume (str): volume name eg: &#34;E:&#34;
+        &#34;&#34;&#34;
+        volume_list = self.get_browse_volume_guid()
+        for mount_path in volume_list[&#39;mountPathInfo&#39;]:
+            if mount_path[&#39;accessPathList&#39;][0] == volume:
+                return mount_path[&#39;guid&#39;]
+        return &#39;&#39;
+
+    def get_recovery_points(self, client_id, subclient_id):
+        &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
+        These recovery points are those to which BLR pairs can failover/permanent mount to
+        Args:
+            client_id       (int): The ID of the source client machine
+            subclient_id    (int): The ID of the subclient associated with the BLR pair
+
+        Returns:
+            List of dictionary of recovery points in the format: {&#39;timestamp&#39;: 12323, &#39;dataChangedSize&#39;: 1200,
+            &#39;sequenceNumber&#39;: 898}
+        &#34;&#34;&#34;
+        client_name = [key for key, value in self._commcell_object.clients.all_clients.items()
+                       if value[&#39;id&#39;] == client_id]
+        if not client_name:
+            raise SDKException(f&#39;Client not found with client id [{client_id}]&#39;)
+        client = self._commcell_object.clients.get(client_name[0])
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
+                                                           %(client_id, subclient_id, client.client_guid))
+        if not flag or response.status_code != 200:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        if &#39;vmScale&#39; not in response.json():
+            return []
+        return response.json()[&#39;vmScale&#39;][&#39;restorePoints&#39;]
+
+
     def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                       rpstoreid=None, replicationtype=None, **replication_options):
-        &#34;&#34;&#34;&#34;Create granular replication pair  json
-
+        &#34;&#34;&#34;&#34;
+        Create FSBLR continuous replication pair
         Args:
-            srcclientid   (int)  --  Source client id.
+            srcclientid   (int)  --  Source client id
 
-            destclientid   (dict)  -- Destintion client id .
+            destclientid   (dict)  -- Destintion client id
 
-            srcguid        (str) -- Browse guid of source
+            srcguid        (str) -- Browse guid of source volume
 
             dstguid        (str) -- Browse guid of destination volume
 
             rpstoreid      (str) -- Rp store id for replication
 
-            replicationtype (str) -- Replication pair  type to create
+            replicationtype (int) -- Replication pair  type to create (1 for live, 4 for granular pairs)
 
-            **replication_options (dict) -- object instance
+            **replication_options (dict) --
+            {
+                srcvol          (str): Source volume name
+                destvol         (str): Destination volume name
+                srcclient       (str): Source volume name
+                srcclient       (str): Destination volume name
+                rpstore         (int): RPStore ID,
+                ccrp            (str): Time in minutes for crash consistent recovery point
+                arcp            (str): Time in minutes for app consistent recovery point
+            }
 
 
         &#34;&#34;&#34;
@@ -1310,11 +1492,12 @@ class FSBackupset(Backupset):
         destvol = replication_options.get(&#39;destvol&#39;)
         destclient = replication_options.get(&#39;destclient&#39;)
         srcclient = replication_options.get(&#39;srcclient&#39;)
-        rpstore = replication_options.get(&#39;RPStore&#39;)
+        rpstore = replication_options.get(&#39;rpstore&#39;)
+        ccrp = replication_options.get(&#39;ccrp&#39;, &#34;120&#34;)
+        acrp = replication_options.get(&#39;acrp&#39;, &#34;180&#34;)
 
         if replicationtype == 4:
-            blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;120\&#34; acrpInterval=\&#34;300\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{0}\&#34; rpStoreName=\&#34;{1}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;.format(
-                rpstoreid, rpstore)
+            blr_options = f&#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;{ccrp}\&#34; acrpInterval=\&#34;{acrp}\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{rpstoreid}\&#34; rpStoreName=\&#34;{rpstore}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
 
         else:
             blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;1\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;300\&#34; acrpInterval=\&#34;0\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
@@ -1333,13 +1516,13 @@ class FSBackupset(Backupset):
             ],
             &#34;destEntity&#34;: {
                 &#34;client&#34;: {
-                    &#34;clientId&#34;: destclientid,
+                    &#34;clientId&#34;: int(destclientid),
                     &#34;clientName&#34;: destclient
                 }
             },
             &#34;sourceEntity&#34;: {
                 &#34;client&#34;: {
-                    &#34;clientId&#34;: srcclientid,
+                    &#34;clientId&#34;: int(srcclientid),
                     &#34;clientName&#34;: srcclient
                 }
             }
@@ -1383,19 +1566,13 @@ class FSBackupset(Backupset):
 
         &#34;&#34;&#34;
 
-        import re
-
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
-                                                           %(destclientid, scid, srcguid))
-        replicapoints = response.content
-        temp = replicapoints.split(b&#34;},&#34;)
-        list_rp = temp[len(temp) - 1]
-        list_rp = str(list_rp, &#39;utf-8&#39;)
-        result = re.sub(r&#39;[\W_]+&#39;, &#39;&#39;, list_rp)
-        numbers = re.findall(r&#39;\d+&#39;, result)
-        timestamp = int(numbers[0])
-        sequence_number = int(numbers[1])
-        data_changed_size = int(numbers[3])
+        replicapoints = self.get_recovery_points(destclientid, scid)
+        timestamp = replication_options.get(&#39;timestamp&#39;)
+        if timestamp:
+            restore_point = [replica_point for replica_point in replicapoints
+                             if int(replica_point[&#39;timeStamp&#39;]) == timestamp]
+        else:
+            restore_point = replicapoints[-1]
 
         srcvol = replication_options.get(&#39;srcvol&#39;)
         restorepath = replication_options.get(&#39;RestorePath&#39;)
@@ -1432,13 +1609,13 @@ class FSBackupset(Backupset):
                                 &#34;blockOperation&#34;: {
                                     &#34;operations&#34;: [
                                         {
-                                            &#34;appId&#34;: scid,
+                                            &#34;appId&#34;: int(scid),
                                             &#34;opType&#34;: 8,
-                                            &#34;dstProxyClientId&#34;: destclientid,
+                                            &#34;dstProxyClientId&#34;: int(destclientid),
                                             &#34;fsMountInfo&#34;: {
                                                 &#34;doLiveMount&#34;: False,
                                                 &#34;lifeTimeInSec&#34;: 7200,
-                                                &#34;blrPairId&#34;: blrid,
+                                                &#34;blrPairId&#34;: int(blrid),
                                                 &#34;mountPathPairs&#34;: [
                                                     {
                                                         &#34;mountPath&#34;: restorepath,
@@ -1448,11 +1625,11 @@ class FSBackupset(Backupset):
                                                     }
                                                 ],
                                                 &#34;rp&#34;: {
-                                                    &#34;timeStamp&#34;: timestamp,
-                                                    &#34;sequenceNumber&#34;: sequence_number,
+                                                    &#34;timeStamp&#34;: int(restore_point[&#39;timeStamp&#39;]),
+                                                    &#34;sequenceNumber&#34;: int(restore_point[&#39;sequenceNumber&#39;]),
                                                     &#34;rpType&#34;: 1,
                                                     &#34;appConsistent&#34;: False,
-                                                    &#34;dataChangedSize&#34;: data_changed_size
+                                                    &#34;dataChangedSize&#34;: int(restore_point[&#39;dataChangedSize&#39;])
                                                 }
                                             }
                                         }
@@ -1550,7 +1727,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L78-L1425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L82-L1596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -1839,7 +2016,8 @@ default: None</p>
                                     &#34;isClientMA&#34;: False, &#34;clone&#34;: False,
                                     &#34;isIndexCacheInUSB&#34;: True, &#34;firewallCS&#34;: &#34;&#34;,
                                     &#34;backupSet&#34;: {
-                                        &#34;backupsetName&#34;: &#34;defaultBackupSet&#34;
+                                        &#34;backupsetName&#34;: self.backupset_name,
+                                        &#34;backupsetId&#34;: int(self.backupset_id)
                                     }, &#34;netconfig&#34;:{
                                         &#34;wins&#34;:{
                                             &#34;useDhcp&#34;: False
@@ -1925,7 +2103,12 @@ default: None</p>
                                 &#34;hostName&#34;: &#34; &#34;, &#34;resourcePoolPath&#34;: &#34;&#34;, &#34;dataCenterName&#34;: &#34;&#34;,
                                 &#34;vCenter&#34;: &#34; &#34;, &#34;datastore&#34;: {
                                     &#34;name&#34;: &#34; &#34;
-                                    }
+                                    },
+                                &#34;instanceEntity&#34;: {
+                                    &#34;clientName&#34;: &#34;&#34;,
+                                    &#34;instanceName&#34;: &#34;&#34;,
+                                    &#34;instanceId&#34;: 0
+                                }
                                 }, &#34;expirationTime&#34;: {}
                         }
                     }
@@ -1950,6 +2133,52 @@ default: None</p>
             }
         }
         return bmr_restore_json
+
+    def _azure_advancedrestoreopts_json(self):
+        &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
+
+
+        Returns :
+                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+
+        &#34;&#34;&#34;
+        azure_adv_rest_opts_json = [
+            {
+                &#34;vmSize&#34;: &#34;&#34;,
+                &#34;securityGroups&#34;: [
+                    {
+                        &#34;groupName&#34;: &#34;--Auto Select--&#34;,
+                        &#34;groupId&#34;: &#34;&#34;
+                    }
+                ]
+            }
+        ]
+        return azure_adv_rest_opts_json
+
+    def _azure_advancedopts_json(self):
+        &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
+
+
+        Returns :
+                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+
+        &#34;&#34;&#34;
+        azure_adv_opts_json = {
+            &#34;networkCards&#34;: [
+                {
+                    &#34;privateIPAddress&#34;: &#34;&#34;,
+                    &#34;networkName&#34;: &#34;&#34;,
+                    &#34;label&#34;: &#34;--Auto Select--&#34;,
+                    &#34;subnetNames&#34;: [
+                        {
+                            &#34;subnetId&#34;: &#34;&#34;
+                        }
+                    ]
+                }
+            ]
+        }
+        return azure_adv_opts_json
+
 
     def _get_responsefile(self):
         &#34;&#34;&#34;Get the response file for the backupset
@@ -1983,7 +2212,10 @@ default: None</p>
 
         hwconfig = response[&#39;responseFile&#39;][&#39;hwconfig&#39;]
         ipconfig = response[&#39;responseFile&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
-        return hwconfig, ipconfig
+        cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
+        cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
+        return hwconfig, ipconfig,cs_user,cs_pwd
+
     def run_bmr_restore(self, **restore_options):
         &#34;&#34;&#34;
         Calling the create task API with the final restore JSON
@@ -2013,8 +2245,6 @@ default: None</p>
 
                NetworkLabel             (String)    : The network label to be assigned to the VM.
 
-               HyperVInstance           (String)    : The Hyper-V Instance
-
                HyperVHost               (String)    : The Hyper-V host
 
                GuestUser                (String)    : The Username of the guest OS
@@ -2029,15 +2259,20 @@ default: None</p>
         &#34;&#34;&#34;
         client_name = self._agent_object._client_object.client_name
 
-
         self._instance_object._restore_association = self._backupset_association
 
-        hwconfig, ipconfig = self._get_responsefile()
+        hwconfig, ipconfig, cs_username, cs_password = self._get_responsefile()
         response_json = self._restore_json(paths=[&#39;&#39;])
 
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
+        # get instance Id of the virtual client
+        virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
+        virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
+        instances_list = virtual_agent_object.instances._instances
+        instance_id = int(list(instances_list.values())[0])
+        instance_name = list(instances_list.keys())[0]
 
         response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
             &#39;adminOpts&#39;] = restore_json_system_state
@@ -2045,70 +2280,50 @@ default: None</p>
         response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
             &#39;virtualServerRstOption&#39;] = restore_json_virtualserver
 
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+            &#39;inPlace&#39;] = False
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
+
         vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-        vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-            &#39;backupsetName&#39;] = self.backupset_name
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
+
+
+        if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
+            &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
+            &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
+        if restore_options.get(&#39;CommServIP&#39;):
+            cs_ip = restore_options.get(&#39;CommServIP&#39;)
+        else:
+            try:
+                cs_ip = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+            except Exception as e:
+                raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Error while reading CommServer IP : {}\n. Please set the CommServIP argument.&#39;.format(e))
+
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;ip&#39;][
-            &#39;address&#39;] = restore_options.get(&#39;CommServIP&#39;)
+            &#39;address&#39;] = cs_ip
+
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-            &#39;clientName&#39;] = restore_options.get(&#39;CommServName&#39;, None)
+            &#39;clientName&#39;] = self._commcell_object.commserv_name
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-            &#39;hostName&#39;] = restore_options.get(&#39;CommServHostname&#39;, None)
+            &#39;hostName&#39;] = self._commcell_object.commserv_hostname
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-            &#39;password&#39;] = restore_options.get(&#39;CommServPassword&#39;, None)
+            &#39;password&#39;] = cs_password
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-            &#39;userName&#39;] = restore_options.get(&#39;CommServUsername&#39;, None)
+            &#39;userName&#39;] = cs_username
 
-        if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
-                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
 
-        if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
-                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
-            &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-        if restore_options.get(&#39;VcenterServerName&#39;):
-
-            vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
-                &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                    &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-                &#39;EsxServer&#39;)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
-
-        if restore_options.get(&#39;HyperVInstance&#39;):
-            if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
-                vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                    &#39;esxServerName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-                &#39;HyperVHost&#39;)
-
-            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;HyperVInstance&#39;)
+        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;hostName&#39;] = restore_options.get(&#39;ClientHostname&#39;, None)
@@ -2116,12 +2331,108 @@ default: None</p>
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
-            &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+        if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
+            vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+                &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+
+            if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+                &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+            if instance_name == &#39;vmware&#39;:
+
+                vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
+                    &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                    &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                        &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                    &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                    &#39;EsxServer&#39;)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
+
+            if instance_name == &#39;hyper-v&#39;:
+
+                if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
+
+                    vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                    &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                        &#39;esxServerName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                    &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                    &#39;HyperVHost&#39;)
+
+                vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+
+
+        if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+
+            az_advanced_ops_json = self._azure_advancedopts_json()
+
+            az_adv_restore_opts_json = self._azure_advancedrestoreopts_json()
+
+            vm_option[&#39;vendor&#39;] = 7
+
+            vm_option[&#39;createPublicIp&#39;] = restore_options.get(&#39;CreatePublicIP&#39;)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;isBlockLevelBackup&#39;] = True
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;] = az_advanced_ops_json
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;][&#39;networkCards&#39;][0][&#39;label&#39;] = &#34;--Auto Select--&#34;
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(&#39;ResourceGroup&#39;)
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                &#39;advancedRestoreOptions&#39;] = az_adv_restore_opts_json
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                &#39;advancedRestoreOptions&#39;][0][&#39;securityGroups&#39;][0][&#39;groupName&#39;] = &#34;--Auto Select--&#34;
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+            if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                    &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+                &#39;name&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+        if instance_name == &#39;azure stack&#39;:
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;ManagementURL&#39;, None)
+
+            vm_option[&#39;vendor&#39;] = 17
+
+    # Additional options
 
         if restore_options.get(&#39;CloneClientName&#39;):
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;clone&#39;] = True
@@ -2129,23 +2440,15 @@ default: None</p>
                 &#39;clientName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
                 &#39;hostName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
+
         if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
                 &#39;hostName&#39;] = &#39;&#39;
-            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-                &#39;backupsetName&#39;] = self._properties[&#39;backupSetEntity&#39;][&#39;backupsetName&#39;]
-            if (response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
-                    &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
-                        &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
-                vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
         if restore_options.get(&#39;UseDhcp&#39;):
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
                 &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-            &#39;inPlace&#39;] = False
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
 
         return self._process_restore_response(response_json)
 
@@ -2611,13 +2914,13 @@ default: None</p>
                                 &#34;blockOperation&#34;: {
                                     &#34;operations&#34;: [
                                         {
-                                            &#34;appId&#34;: scid,
+                                            &#34;appId&#34;: int(scid),
                                             &#34;opType&#34;: 8,
-                                            &#34;dstProxyClientId&#34;: destclientid,
+                                            &#34;dstProxyClientId&#34;: int(destclientid),
                                             &#34;fsMountInfo&#34;: {
                                                 &#34;doLiveMount&#34;: True,
                                                 &#34;lifeTimeInSec&#34;: 7200,
-                                                &#34;blrPairId&#34;: blrid,
+                                                &#34;blrPairId&#34;: int(blrid),
                                                 &#34;mountPathPairs&#34;: [
                                                     {
                                                         &#34;mountPath&#34;: restorepath,
@@ -2673,24 +2976,70 @@ default: None</p>
         if response.status_code != 200 and flag == False:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def get_mount_path_guid(self, volume):
+        &#34;&#34;&#34;
+        Gets the mount points for the BLR pairs
+        Args:
+            volume (str): volume name eg: &#34;E:&#34;
+        &#34;&#34;&#34;
+        volume_list = self.get_browse_volume_guid()
+        for mount_path in volume_list[&#39;mountPathInfo&#39;]:
+            if mount_path[&#39;accessPathList&#39;][0] == volume:
+                return mount_path[&#39;guid&#39;]
+        return &#39;&#39;
+
+    def get_recovery_points(self, client_id, subclient_id):
+        &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
+        These recovery points are those to which BLR pairs can failover/permanent mount to
+        Args:
+            client_id       (int): The ID of the source client machine
+            subclient_id    (int): The ID of the subclient associated with the BLR pair
+
+        Returns:
+            List of dictionary of recovery points in the format: {&#39;timestamp&#39;: 12323, &#39;dataChangedSize&#39;: 1200,
+            &#39;sequenceNumber&#39;: 898}
+        &#34;&#34;&#34;
+        client_name = [key for key, value in self._commcell_object.clients.all_clients.items()
+                       if value[&#39;id&#39;] == client_id]
+        if not client_name:
+            raise SDKException(f&#39;Client not found with client id [{client_id}]&#39;)
+        client = self._commcell_object.clients.get(client_name[0])
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
+                                                           %(client_id, subclient_id, client.client_guid))
+        if not flag or response.status_code != 200:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        if &#39;vmScale&#39; not in response.json():
+            return []
+        return response.json()[&#39;vmScale&#39;][&#39;restorePoints&#39;]
+
+
     def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                       rpstoreid=None, replicationtype=None, **replication_options):
-        &#34;&#34;&#34;&#34;Create granular replication pair  json
-
+        &#34;&#34;&#34;&#34;
+        Create FSBLR continuous replication pair
         Args:
-            srcclientid   (int)  --  Source client id.
+            srcclientid   (int)  --  Source client id
 
-            destclientid   (dict)  -- Destintion client id .
+            destclientid   (dict)  -- Destintion client id
 
-            srcguid        (str) -- Browse guid of source
+            srcguid        (str) -- Browse guid of source volume
 
             dstguid        (str) -- Browse guid of destination volume
 
             rpstoreid      (str) -- Rp store id for replication
 
-            replicationtype (str) -- Replication pair  type to create
+            replicationtype (int) -- Replication pair  type to create (1 for live, 4 for granular pairs)
 
-            **replication_options (dict) -- object instance
+            **replication_options (dict) --
+            {
+                srcvol          (str): Source volume name
+                destvol         (str): Destination volume name
+                srcclient       (str): Source volume name
+                srcclient       (str): Destination volume name
+                rpstore         (int): RPStore ID,
+                ccrp            (str): Time in minutes for crash consistent recovery point
+                arcp            (str): Time in minutes for app consistent recovery point
+            }
 
 
         &#34;&#34;&#34;
@@ -2698,11 +3047,12 @@ default: None</p>
         destvol = replication_options.get(&#39;destvol&#39;)
         destclient = replication_options.get(&#39;destclient&#39;)
         srcclient = replication_options.get(&#39;srcclient&#39;)
-        rpstore = replication_options.get(&#39;RPStore&#39;)
+        rpstore = replication_options.get(&#39;rpstore&#39;)
+        ccrp = replication_options.get(&#39;ccrp&#39;, &#34;120&#34;)
+        acrp = replication_options.get(&#39;acrp&#39;, &#34;180&#34;)
 
         if replicationtype == 4:
-            blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;120\&#34; acrpInterval=\&#34;300\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{0}\&#34; rpStoreName=\&#34;{1}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;.format(
-                rpstoreid, rpstore)
+            blr_options = f&#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;{ccrp}\&#34; acrpInterval=\&#34;{acrp}\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{rpstoreid}\&#34; rpStoreName=\&#34;{rpstore}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
 
         else:
             blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;1\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;300\&#34; acrpInterval=\&#34;0\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
@@ -2721,13 +3071,13 @@ default: None</p>
             ],
             &#34;destEntity&#34;: {
                 &#34;client&#34;: {
-                    &#34;clientId&#34;: destclientid,
+                    &#34;clientId&#34;: int(destclientid),
                     &#34;clientName&#34;: destclient
                 }
             },
             &#34;sourceEntity&#34;: {
                 &#34;client&#34;: {
-                    &#34;clientId&#34;: srcclientid,
+                    &#34;clientId&#34;: int(srcclientid),
                     &#34;clientName&#34;: srcclient
                 }
             }
@@ -2771,19 +3121,13 @@ default: None</p>
 
         &#34;&#34;&#34;
 
-        import re
-
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
-                                                           %(destclientid, scid, srcguid))
-        replicapoints = response.content
-        temp = replicapoints.split(b&#34;},&#34;)
-        list_rp = temp[len(temp) - 1]
-        list_rp = str(list_rp, &#39;utf-8&#39;)
-        result = re.sub(r&#39;[\W_]+&#39;, &#39;&#39;, list_rp)
-        numbers = re.findall(r&#39;\d+&#39;, result)
-        timestamp = int(numbers[0])
-        sequence_number = int(numbers[1])
-        data_changed_size = int(numbers[3])
+        replicapoints = self.get_recovery_points(destclientid, scid)
+        timestamp = replication_options.get(&#39;timestamp&#39;)
+        if timestamp:
+            restore_point = [replica_point for replica_point in replicapoints
+                             if int(replica_point[&#39;timeStamp&#39;]) == timestamp]
+        else:
+            restore_point = replicapoints[-1]
 
         srcvol = replication_options.get(&#39;srcvol&#39;)
         restorepath = replication_options.get(&#39;RestorePath&#39;)
@@ -2820,13 +3164,13 @@ default: None</p>
                                 &#34;blockOperation&#34;: {
                                     &#34;operations&#34;: [
                                         {
-                                            &#34;appId&#34;: scid,
+                                            &#34;appId&#34;: int(scid),
                                             &#34;opType&#34;: 8,
-                                            &#34;dstProxyClientId&#34;: destclientid,
+                                            &#34;dstProxyClientId&#34;: int(destclientid),
                                             &#34;fsMountInfo&#34;: {
                                                 &#34;doLiveMount&#34;: False,
                                                 &#34;lifeTimeInSec&#34;: 7200,
-                                                &#34;blrPairId&#34;: blrid,
+                                                &#34;blrPairId&#34;: int(blrid),
                                                 &#34;mountPathPairs&#34;: [
                                                     {
                                                         &#34;mountPath&#34;: restorepath,
@@ -2836,11 +3180,11 @@ default: None</p>
                                                     }
                                                 ],
                                                 &#34;rp&#34;: {
-                                                    &#34;timeStamp&#34;: timestamp,
-                                                    &#34;sequenceNumber&#34;: sequence_number,
+                                                    &#34;timeStamp&#34;: int(restore_point[&#39;timeStamp&#39;]),
+                                                    &#34;sequenceNumber&#34;: int(restore_point[&#39;sequenceNumber&#39;]),
                                                     &#34;rpType&#34;: 1,
                                                     &#34;appConsistent&#34;: False,
-                                                    &#34;dataChangedSize&#34;: data_changed_size
+                                                    &#34;dataChangedSize&#34;: int(restore_point[&#39;dataChangedSize&#39;])
                                                 }
                                             }
                                         }
@@ -2917,7 +3261,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L992-L996" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1122-L1126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -2932,7 +3276,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L986-L990" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1116-L1120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -2947,7 +3291,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L981-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1111-L1114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -2961,7 +3305,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L915-L928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1045-L1058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -2986,48 +3330,73 @@ def index_server(self):
 <span>def <span class="ident">create_fsblr_replication_pair</span></span>(<span>self, srcclientid, destclientid, srcguid, destguid, rpstoreid=None, replicationtype=None, **replication_options)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"Create granular replication pair
-json</p>
+<div class="desc"><p>"
+Create FSBLR continuous replication pair</p>
 <h2 id="args">Args</h2>
 <p>srcclientid
 (int)
 &ndash;
-Source client id.</p>
+Source client id</p>
 <p>destclientid
 (dict)
-&ndash; Destintion client id .</p>
+&ndash; Destintion client id</p>
 <p>srcguid
-(str) &ndash; Browse guid of source</p>
+(str) &ndash; Browse guid of source volume</p>
 <p>dstguid
 (str) &ndash; Browse guid of destination volume</p>
 <p>rpstoreid
 (str) &ndash; Rp store id for replication</p>
-<p>replicationtype (str) &ndash; Replication pair
-type to create</p>
-<p>**replication_options (dict) &ndash; object instance</p></div>
+<p>replicationtype (int) &ndash; Replication pair
+type to create (1 for live, 4 for granular pairs)</p>
+<p>**replication_options (dict) &ndash;
+{
+srcvol
+(str): Source volume name
+destvol
+(str): Destination volume name
+srcclient
+(str): Source volume name
+srcclient
+(str): Destination volume name
+rpstore
+(int): RPStore ID,
+ccrp
+(str): Time in minutes for crash consistent recovery point
+arcp
+(str): Time in minutes for app consistent recovery point
+}</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1199-L1267" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1366-L1444" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                   rpstoreid=None, replicationtype=None, **replication_options):
-    &#34;&#34;&#34;&#34;Create granular replication pair  json
-
+    &#34;&#34;&#34;&#34;
+    Create FSBLR continuous replication pair
     Args:
-        srcclientid   (int)  --  Source client id.
+        srcclientid   (int)  --  Source client id
 
-        destclientid   (dict)  -- Destintion client id .
+        destclientid   (dict)  -- Destintion client id
 
-        srcguid        (str) -- Browse guid of source
+        srcguid        (str) -- Browse guid of source volume
 
         dstguid        (str) -- Browse guid of destination volume
 
         rpstoreid      (str) -- Rp store id for replication
 
-        replicationtype (str) -- Replication pair  type to create
+        replicationtype (int) -- Replication pair  type to create (1 for live, 4 for granular pairs)
 
-        **replication_options (dict) -- object instance
+        **replication_options (dict) --
+        {
+            srcvol          (str): Source volume name
+            destvol         (str): Destination volume name
+            srcclient       (str): Source volume name
+            srcclient       (str): Destination volume name
+            rpstore         (int): RPStore ID,
+            ccrp            (str): Time in minutes for crash consistent recovery point
+            arcp            (str): Time in minutes for app consistent recovery point
+        }
 
 
     &#34;&#34;&#34;
@@ -3035,11 +3404,12 @@ type to create</p>
     destvol = replication_options.get(&#39;destvol&#39;)
     destclient = replication_options.get(&#39;destclient&#39;)
     srcclient = replication_options.get(&#39;srcclient&#39;)
-    rpstore = replication_options.get(&#39;RPStore&#39;)
+    rpstore = replication_options.get(&#39;rpstore&#39;)
+    ccrp = replication_options.get(&#39;ccrp&#39;, &#34;120&#34;)
+    acrp = replication_options.get(&#39;acrp&#39;, &#34;180&#34;)
 
     if replicationtype == 4:
-        blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;120\&#34; acrpInterval=\&#34;300\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{0}\&#34; rpStoreName=\&#34;{1}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;.format(
-            rpstoreid, rpstore)
+        blr_options = f&#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;4\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;{ccrp}\&#34; acrpInterval=\&#34;{acrp}\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34; rpStoreId=\&#34;{rpstoreid}\&#34; rpStoreName=\&#34;{rpstore}\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
 
     else:
         blr_options = &#34;&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;&lt;BlockReplication_BLRRecoveryOptions recoveryType=\&#34;1\&#34;&gt;&lt;granularV2 ccrpInterval=\&#34;300\&#34; acrpInterval=\&#34;0\&#34; maxRpInterval=\&#34;21600\&#34; rpMergeDelay=\&#34;172800\&#34; rpRetention=\&#34;604800\&#34; maxRpStoreOfflineTime=\&#34;0\&#34; useOffPeakSchedule=\&#34;0\&#34;/&gt;&lt;/BlockReplication_BLRRecoveryOptions&gt;&#34;
@@ -3058,13 +3428,13 @@ type to create</p>
         ],
         &#34;destEntity&#34;: {
             &#34;client&#34;: {
-                &#34;clientId&#34;: destclientid,
+                &#34;clientId&#34;: int(destclientid),
                 &#34;clientName&#34;: destclient
             }
         },
         &#34;sourceEntity&#34;: {
             &#34;client&#34;: {
-                &#34;clientId&#34;: srcclientid,
+                &#34;clientId&#34;: int(srcclientid),
                 &#34;clientName&#34;: srcclient
             }
         }
@@ -3111,7 +3481,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1271-L1402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1448-L1573" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
                                  **replication_options):
@@ -3139,19 +3509,13 @@ Replication Subclient id</p>
 
     &#34;&#34;&#34;
 
-    import re
-
-    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
-                                                       %(destclientid, scid, srcguid))
-    replicapoints = response.content
-    temp = replicapoints.split(b&#34;},&#34;)
-    list_rp = temp[len(temp) - 1]
-    list_rp = str(list_rp, &#39;utf-8&#39;)
-    result = re.sub(r&#39;[\W_]+&#39;, &#39;&#39;, list_rp)
-    numbers = re.findall(r&#39;\d+&#39;, result)
-    timestamp = int(numbers[0])
-    sequence_number = int(numbers[1])
-    data_changed_size = int(numbers[3])
+    replicapoints = self.get_recovery_points(destclientid, scid)
+    timestamp = replication_options.get(&#39;timestamp&#39;)
+    if timestamp:
+        restore_point = [replica_point for replica_point in replicapoints
+                         if int(replica_point[&#39;timeStamp&#39;]) == timestamp]
+    else:
+        restore_point = replicapoints[-1]
 
     srcvol = replication_options.get(&#39;srcvol&#39;)
     restorepath = replication_options.get(&#39;RestorePath&#39;)
@@ -3188,13 +3552,13 @@ Replication Subclient id</p>
                             &#34;blockOperation&#34;: {
                                 &#34;operations&#34;: [
                                     {
-                                        &#34;appId&#34;: scid,
+                                        &#34;appId&#34;: int(scid),
                                         &#34;opType&#34;: 8,
-                                        &#34;dstProxyClientId&#34;: destclientid,
+                                        &#34;dstProxyClientId&#34;: int(destclientid),
                                         &#34;fsMountInfo&#34;: {
                                             &#34;doLiveMount&#34;: False,
                                             &#34;lifeTimeInSec&#34;: 7200,
-                                            &#34;blrPairId&#34;: blrid,
+                                            &#34;blrPairId&#34;: int(blrid),
                                             &#34;mountPathPairs&#34;: [
                                                 {
                                                     &#34;mountPath&#34;: restorepath,
@@ -3204,11 +3568,11 @@ Replication Subclient id</p>
                                                 }
                                             ],
                                             &#34;rp&#34;: {
-                                                &#34;timeStamp&#34;: timestamp,
-                                                &#34;sequenceNumber&#34;: sequence_number,
+                                                &#34;timeStamp&#34;: int(restore_point[&#39;timeStamp&#39;]),
+                                                &#34;sequenceNumber&#34;: int(restore_point[&#39;sequenceNumber&#39;]),
                                                 &#34;rpType&#34;: 1,
                                                 &#34;appConsistent&#34;: False,
-                                                &#34;dataChangedSize&#34;: data_changed_size
+                                                &#34;dataChangedSize&#34;: int(restore_point[&#39;dataChangedSize&#39;])
                                             }
                                         }
                                     }
@@ -3274,7 +3638,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1080-L1186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1210-L1316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
                         srcguid, dstguid, **replication_options):
@@ -3333,13 +3697,13 @@ Replication Subclient id</p>
                             &#34;blockOperation&#34;: {
                                 &#34;operations&#34;: [
                                     {
-                                        &#34;appId&#34;: scid,
+                                        &#34;appId&#34;: int(scid),
                                         &#34;opType&#34;: 8,
-                                        &#34;dstProxyClientId&#34;: destclientid,
+                                        &#34;dstProxyClientId&#34;: int(destclientid),
                                         &#34;fsMountInfo&#34;: {
                                             &#34;doLiveMount&#34;: True,
                                             &#34;lifeTimeInSec&#34;: 7200,
-                                            &#34;blrPairId&#34;: blrid,
+                                            &#34;blrPairId&#34;: int(blrid),
                                             &#34;mountPathPairs&#34;: [
                                                 {
                                                     &#34;mountPath&#34;: restorepath,
@@ -3398,7 +3762,7 @@ blocklevel replication id.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1189-L1197" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1319-L1327" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_replication_pair(self, blrid):
     &#34;&#34;&#34;&#34;Delete replication pair
@@ -3446,7 +3810,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L298-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient, and returns all versions available for the content.
@@ -3498,7 +3862,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L1405-L1425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1576-L1596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_browse_volume_guid(self):
 
@@ -3521,6 +3885,81 @@ additional metadata retrieved from browse</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
     return vguids</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.get_mount_path_guid"><code class="name flex">
+<span>def <span class="ident">get_mount_path_guid</span></span>(<span>self, volume)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the mount points for the BLR pairs</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>volume</code></strong> :&ensp;<code>str</code></dt>
+<dd>volume name eg: "E:"</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1329-L1339" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_mount_path_guid(self, volume):
+    &#34;&#34;&#34;
+    Gets the mount points for the BLR pairs
+    Args:
+        volume (str): volume name eg: &#34;E:&#34;
+    &#34;&#34;&#34;
+    volume_list = self.get_browse_volume_guid()
+    for mount_path in volume_list[&#39;mountPathInfo&#39;]:
+        if mount_path[&#39;accessPathList&#39;][0] == volume:
+            return mount_path[&#39;guid&#39;]
+    return &#39;&#39;</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.get_recovery_points"><code class="name flex">
+<span>def <span class="ident">get_recovery_points</span></span>(<span>self, client_id, subclient_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get all recovery points for the BLR pair from the associated RPStore.
+These recovery points are those to which BLR pairs can failover/permanent mount to</p>
+<h2 id="args">Args</h2>
+<p>client_id
+(int): The ID of the source client machine
+subclient_id
+(int): The ID of the subclient associated with the BLR pair</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List</code> of <code>dictionary</code> of <code>recovery points in the format</code></dt>
+<dd>{'timestamp': 12323, 'dataChangedSize': 1200,</dd>
+</dl>
+<p>'sequenceNumber': 898}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L1341-L1363" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_recovery_points(self, client_id, subclient_id):
+    &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
+    These recovery points are those to which BLR pairs can failover/permanent mount to
+    Args:
+        client_id       (int): The ID of the source client machine
+        subclient_id    (int): The ID of the subclient associated with the BLR pair
+
+    Returns:
+        List of dictionary of recovery points in the format: {&#39;timestamp&#39;: 12323, &#39;dataChangedSize&#39;: 1200,
+        &#39;sequenceNumber&#39;: 898}
+    &#34;&#34;&#34;
+    client_name = [key for key, value in self._commcell_object.clients.all_clients.items()
+                   if value[&#39;id&#39;] == client_id]
+    if not client_name:
+        raise SDKException(f&#39;Client not found with client id [{client_id}]&#39;)
+    client = self._commcell_object.clients.get(client_name[0])
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GRANULAR_BLR_POINTS&#39;]
+                                                       %(client_id, subclient_id, client.client_guid))
+    if not flag or response.status_code != 200:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+    if &#39;vmScale&#39; not in response.json():
+        return []
+    return response.json()[&#39;vmScale&#39;][&#39;restorePoints&#39;]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.restore_in_place"><code class="name flex">
@@ -3605,7 +4044,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L82-L173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -3806,7 +4245,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L175-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -3965,7 +4404,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L801-L913" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L931-L1043" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_aix_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4113,8 +4552,6 @@ IsoPath
 
    NetworkLabel             (String)    : The network label to be assigned to the VM.
 
-   HyperVInstance           (String)    : The Hyper-V Instance
-
    HyperVHost               (String)    : The Hyper-V host
 
    GuestUser                (String)    : The Username of the guest OS
@@ -4128,7 +4565,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/backupsets/fsbackupset.py#L510-L673" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/backupsets/fsbackupset.py#L569-L803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4159,8 +4596,6 @@ returns the task object</p></div>
 
            NetworkLabel             (String)    : The network label to be assigned to the VM.
 
-           HyperVInstance           (String)    : The Hyper-V Instance
-
            HyperVHost               (String)    : The Hyper-V host
 
            GuestUser                (String)    : The Username of the guest OS
@@ -4175,15 +4610,20 @@ returns the task object</p></div>
     &#34;&#34;&#34;
     client_name = self._agent_object._client_object.client_name
 
-
     self._instance_object._restore_association = self._backupset_association
 
-    hwconfig, ipconfig = self._get_responsefile()
+    hwconfig, ipconfig, cs_username, cs_password = self._get_responsefile()
     response_json = self._restore_json(paths=[&#39;&#39;])
 
     restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
     restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
+    # get instance Id of the virtual client
+    virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
+    virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
+    instances_list = virtual_agent_object.instances._instances
+    instance_id = int(list(instances_list.values())[0])
+    instance_name = list(instances_list.keys())[0]
 
     response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
         &#39;adminOpts&#39;] = restore_json_system_state
@@ -4191,70 +4631,50 @@ returns the task object</p></div>
     response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
         &#39;virtualServerRstOption&#39;] = restore_json_virtualserver
 
+    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+        &#39;inPlace&#39;] = False
+    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
+    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
+
     vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
         &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-    vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-    vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-        &#39;backupsetName&#39;] = self.backupset_name
+    vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+    vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
+
+
+    if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
+        &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
+        &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
+        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
+    if restore_options.get(&#39;CommServIP&#39;):
+        cs_ip = restore_options.get(&#39;CommServIP&#39;)
+    else:
+        try:
+            cs_ip = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+        except Exception as e:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Error while reading CommServer IP : {}\n. Please set the CommServIP argument.&#39;.format(e))
+
     vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;ip&#39;][
-        &#39;address&#39;] = restore_options.get(&#39;CommServIP&#39;)
+        &#39;address&#39;] = cs_ip
+
     vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-        &#39;clientName&#39;] = restore_options.get(&#39;CommServName&#39;, None)
+        &#39;clientName&#39;] = self._commcell_object.commserv_name
     vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;commservInfo&#39;][
-        &#39;hostName&#39;] = restore_options.get(&#39;CommServHostname&#39;, None)
+        &#39;hostName&#39;] = self._commcell_object.commserv_hostname
 
     vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-        &#39;password&#39;] = restore_options.get(&#39;CommServPassword&#39;, None)
+        &#39;password&#39;] = cs_password
 
     vm_option[&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][&#39;creds&#39;][
-        &#39;userName&#39;] = restore_options.get(&#39;CommServUsername&#39;, None)
+        &#39;userName&#39;] = cs_username
 
-    if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
-            &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+    vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
 
-    if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
-        vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
-            &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-    vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
-
-    vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
-        &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
-
-    if restore_options.get(&#39;VcenterServerName&#39;):
-
-        vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
-            &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-            &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
-
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-            &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-            &#39;EsxServer&#39;)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
-
-    if restore_options.get(&#39;HyperVInstance&#39;):
-        if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
-            vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
-            &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
-                &#39;esxServerName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-            &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;HyperVInstance&#39;, None)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
-            &#39;HyperVHost&#39;)
-
-        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;HyperVInstance&#39;)
+    vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
 
     vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
         &#39;hostName&#39;] = restore_options.get(&#39;ClientHostname&#39;, None)
@@ -4262,12 +4682,108 @@ returns the task object</p></div>
     vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
         &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-    vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
-        &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+    if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
 
-    vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;vmName&#39;] = restore_options.get(&#39;VmName&#39;, None)
+        vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
-    vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;overwriteVm&#39;] = True
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+            &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
+
+        if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+        if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                &#39;dataStoreName&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+            &#39;name&#39;] = restore_options.get(&#39;Datastore&#39;, None)
+
+        if instance_name == &#39;vmware&#39;:
+
+            vm_option[&#39;vmInfo&#39;][&#39;proxyClient&#39;][
+                &#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                    &#39;esxServerName&#39;] = restore_options.get(&#39;VcenterServerName&#39;, None)
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                &#39;EsxServer&#39;)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VcenterServerName&#39;)
+
+        if instance_name == &#39;hyper-v&#39;:
+
+            if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
+
+                vm_option[&#39;vendor&#39;] = &#39;MICROSOFT&#39;
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+                    &#39;esxServerName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+                &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(
+                &#39;HyperVHost&#39;)
+
+            vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
+
+
+    if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+
+        az_advanced_ops_json = self._azure_advancedopts_json()
+
+        az_adv_restore_opts_json = self._azure_advancedrestoreopts_json()
+
+        vm_option[&#39;vendor&#39;] = 7
+
+        vm_option[&#39;createPublicIp&#39;] = restore_options.get(&#39;CreatePublicIP&#39;)
+
+        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;isBlockLevelBackup&#39;] = True
+
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;] = az_advanced_ops_json
+
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;advancedProperties&#39;][&#39;networkCards&#39;][0][&#39;label&#39;] = &#34;--Auto Select--&#34;
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;hostName&#39;] = restore_options.get(&#39;ResourceGroup&#39;)
+
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+            &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+            &#39;advancedRestoreOptions&#39;] = az_adv_restore_opts_json
+
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+            &#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][
+            &#39;advancedRestoreOptions&#39;][0][&#39;securityGroups&#39;][0][&#39;groupName&#39;] = &#34;--Auto Select--&#34;
+
+        response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
+            &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;, None)
+
+        if &#39;scsi_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;scsi_disks&#39;][0][
+                &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+        if &#39;ide_disks&#39; in vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;]:
+            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;ide_disks&#39;][0][
+                &#39;dataStoreName&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;datastore&#39;][
+            &#39;name&#39;] = restore_options.get(&#39;StorageAccount&#39;, None)
+
+    if instance_name == &#39;azure stack&#39;:
+
+        vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;ManagementURL&#39;, None)
+
+        vm_option[&#39;vendor&#39;] = 17
+
+# Additional options
 
     if restore_options.get(&#39;CloneClientName&#39;):
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;clone&#39;] = True
@@ -4275,23 +4791,15 @@ returns the task object</p></div>
             &#39;clientName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
             &#39;hostName&#39;] = restore_options.get(&#39;CloneClientName&#39;, None)
+
     if restore_options.get(&#39;OsType&#39;) == &#39;UNIX&#39;:
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;newclient&#39;][
             &#39;hostName&#39;] = &#39;&#39;
-        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;backupSet&#39;][
-            &#39;backupsetName&#39;] = self._properties[&#39;backupSetEntity&#39;][&#39;backupsetName&#39;]
-        if (response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
-                &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
-                    &#39;hwconfig&#39;][&#39;mem_size&#39;]) &lt; 4096:
-            vm_option[&#39;oneTouchResponse&#39;][&#39;hwconfig&#39;][&#39;mem_size&#39;] = 4096
+
     if restore_options.get(&#39;UseDhcp&#39;):
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
             &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
-    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][
-        &#39;inPlace&#39;] = False
-    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;subTaskType&#39;] = 1
-    response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][&#39;operationType&#39;] = 4041
 
     return self._process_restore_response(response_json)</code></pre>
 </details>
@@ -4301,6 +4809,7 @@ returns the task object</p></div>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.backupset.Backupset" href="../backupset.html#cvpysdk.backupset.Backupset">Backupset</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.backupset.Backupset.backed_up_files_count" href="../backupset.html#cvpysdk.backupset.Backupset.backed_up_files_count">backed_up_files_count</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backup" href="../backupset.html#cvpysdk.backupset.Backupset.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_id" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_id">backupset_id</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_name" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_name">backupset_name</a></code></li>
@@ -4399,6 +4908,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.delete_replication_pair">delete_replication_pair</a></code></li>
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.find_all_versions" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.find_all_versions">find_all_versions</a></code></li>
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.get_browse_volume_guid" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.get_browse_volume_guid">get_browse_volume_guid</a></code></li>
+<li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.get_mount_path_guid" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.get_mount_path_guid">get_mount_path_guid</a></code></li>
+<li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.get_recovery_points" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.get_recovery_points">get_recovery_points</a></code></li>
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_cycles_retention" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_cycles_retention">index_pruning_cycles_retention</a></code></li>
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_days_retention" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_days_retention">index_pruning_days_retention</a></code></li>
 <li><code><a title="cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_type" href="#cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_type">index_pruning_type</a></code></li>

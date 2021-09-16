@@ -24,13 +24,19 @@
 </header>
 <section id="section-intro">
 <p>File for operating on a Sharepoint Subclient</p>
-<p>SharepointSubclient is the only class defined in this file.</p>
-<p>SharepointSubclient: Derived class from Subclient Base class, representing a sharepoint subclient,
-and to perform operations on that subclient</p>
-<h2 id="sharepointsubclient">Sharepointsubclient</h2>
+<p>SharepointSuperSubclient: Derived class from Subclient Base class, containing common methods for both Sharepoint v1 and v2 subclients.</p>
+<h2 id="sharepointsupersubclient">Sharepointsupersubclient</h2>
+<p>backup()
+&ndash;
+Runs a backup job for the subclient of the level specified.</p>
 <p>_get_subclient_properties()
 &ndash;
 gets the subclient related properties of the Sharepoint subclient.</p>
+<p>_json_out_of_place_destination_option() &ndash; setter for the SharePoint Online out of place restore
+option in restore json</p>
+<p>SharepointSubclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint subclient,
+and to perform operations on that subclient</p>
+<h2 id="sharepointsubclient">Sharepointsubclient</h2>
 <p>_get_subclient_properties_json()
 &ndash;
 gets all the subclient related properties of the Sharepoint subclient.</p>
@@ -59,10 +65,25 @@ returns the user association content</p>
 <p>restore_in_place()
 &ndash;
 runs a in-place restore job on the specified Sharepoint pseudo client</p>
+<p>SharepointV1Subclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint v1 subclient,
+and to perform operations on that subclient</p>
+<h2 id="sharepointv1subclient">Sharepointv1Subclient</h2>
+<p>discover_sharepoint_sites()
+&ndash;
+Checks whether SP content i.e, sites/webs are available</p>
+<p>_get_subclient_properties_json()
+&ndash;
+gets all the subclient related properties of the Sharepoint subclient.</p>
+<p>content()
+&ndash;
+sets the content of the subclient.</p>
+<p>restore_in_place()
+&ndash;
+runs a in-place restore job on the specified Sharepoint pseudo client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L1-L1104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1-L1329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # ————————————————————————–
@@ -83,14 +104,23 @@ runs a in-place restore job on the specified Sharepoint pseudo client</p>
 
 &#34;&#34;&#34;File for operating on a Sharepoint Subclient
 
-SharepointSubclient is the only class defined in this file.
+SharepointSuperSubclient: Derived class from Subclient Base class, containing common methods for both Sharepoint v1 and v2 subclients.
 
-SharepointSubclient: Derived class from Subclient Base class, representing a sharepoint subclient,
+SharepointSuperSubclient:
+
+    backup()                            --  Runs a backup job for the subclient of the level specified.
+    
+    _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.
+    
+    _json_out_of_place_destination_option() -- setter for the SharePoint Online out of place restore
+        option in restore json
+    
+
+SharepointSubclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint subclient,
 and to perform operations on that subclient
 
 SharepointSubclient:
 
-    _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.
 
     _get_subclient_properties_json()    --  gets all the subclient related properties of the Sharepoint subclient.
 
@@ -112,6 +142,20 @@ SharepointSubclient:
 
     restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client
 
+SharepointV1Subclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint v1 subclient,
+and to perform operations on that subclient
+
+SharepointV1Subclient:
+
+    discover_sharepoint_sites()         --  Checks whether SP content i.e, sites/webs are available
+
+    _get_subclient_properties_json()    --  gets all the subclient related properties of the Sharepoint subclient.
+
+    content()                           --  sets the content of the subclient.
+
+    restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client
+
+
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -121,19 +165,85 @@ from ..exception import SDKException
 from ..constants import SQLDefines
 from ..constants import SharepointDefines
 
+class SharepointSuperSubclient(Subclient):
 
-class SharepointSubclient(Subclient):
-    &#34;&#34;&#34;Derived class from Subclient Base class, representing a Sharepoint subclient,
-        and to perform operations on that subclient.&#34;&#34;&#34;
+    def backup(self,
+               backup_level=&#34;Incremental&#34;,
+               incremental_backup=False,
+               incremental_level=&#39;BEFORE_SYNTH&#39;,
+               collect_metadata=False,
+               advanced_options=None):
+        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+                collect_metadata        (bool)  --  Collect Meta data for the backup
+                advanced_options       (dict)  --  advanced backup options to be included while
+                                                    making the request
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+                         instance of the Schedule class for the backup job if its a scheduled Job
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+        if advanced_options:
+            request_json = self._backup_json(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                advanced_options=advanced_options
+            )
+            backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#39;POST&#39;, backup_service, request_json
+            )
+            return self._process_backup_response(flag, response)
+        else:
+            return super(SharepointSuperSubclient, self).backup(backup_level=backup_level,
+                                                           incremental_backup=incremental_backup,
+                                                           incremental_level=incremental_level,
+                                                           collect_metadata=collect_metadata)
+
+    def _json_out_of_place_destination_option(self, value):
+        &#34;&#34;&#34;setter for the SharePoint Online out of place restore
+        option in restore json
+            Args:
+                value (dict)    --  restore option need to be included
+            Returns:
+                (dict)          --  generated exchange restore options JSON
+        &#34;&#34;&#34;
+        if not isinstance(value, dict):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+        self._out_of_place_destination_json = {
+            &#34;inPlace&#34;: False,
+            &#34;destPath&#34;: [value.get(&#34;destination_path&#34;)],
+            &#34;destClient&#34;: {
+                &#34;clientId&#34;: int(self._client_object.client_id),
+                &#34;clientName&#34;: self._client_object.client_name
+            },
+        }
 
     def _get_subclient_properties(self):
         &#34;&#34;&#34;Gets the subclient related properties of the Sharepoint subclient.
-
         &#34;&#34;&#34;
-        super(SharepointSubclient, self)._get_subclient_properties()
-
+        super(SharepointSuperSubclient, self)._get_subclient_properties()
         self._sharepoint_subclient_prop = self._subclient_properties.get(&#39;sharepointsubclientprop&#39;, {})
         self._content = self._subclient_properties.get(&#39;content&#39;, {})
+
+class SharepointSubclient(SharepointSuperSubclient):
+    &#34;&#34;&#34;Derived class from Subclient Base class, representing a Sharepoint subclient,
+        and to perform operations on that subclient.&#34;&#34;&#34;
 
     def _get_subclient_properties_json(self):
         &#34;&#34;&#34;get the all subclient related properties of this subclient.
@@ -397,7 +507,7 @@ class SharepointSubclient(Subclient):
                                 }
                             }]
                         }
-            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;]\
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;] \
                 [&#34;fileOption&#34;][&#34;sourceItem&#34;] = source_items
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;] \
                 [&#34;sqlServerRstOption&#34;][&#34;database&#34;] = database_list
@@ -478,30 +588,6 @@ class SharepointSubclient(Subclient):
             &#34;spRestoreToDisk&#34;] = self._sharepoint_disk_option_restore_json
 
         return request_json
-
-    def _json_out_of_place_destination_option(self, value):
-        &#34;&#34;&#34;setter for the SharePoint Online out of place restore
-        option in restore json
-
-            Args:
-                value (dict)    --  restore option need to be included
-
-            Returns:
-                (dict)          --  generated exchange restore options JSON
-
-        &#34;&#34;&#34;
-
-        if not isinstance(value, dict):
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        self._out_of_place_destination_json = {
-            &#34;inPlace&#34;: False,
-            &#34;destPath&#34;: [value.get(&#34;destination_path&#34;)],
-            &#34;destClient&#34;: {
-                &#34;clientId&#34;: int(self._client_object.client_id),
-                &#34;clientName&#34;: self._client_object.client_name
-            },
-        }
 
     def _prepare_out_of_place_restore_json(self, _restore_option):
         &#34;&#34;&#34;
@@ -685,7 +771,8 @@ class SharepointSubclient(Subclient):
                                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
                     elif &#39;errorMessage&#39; in response.json():
                         error_string = response.json().get(&#39;errorMessage&#39;, &#34;&#34;)
-                        o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(
+                            error_string)
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
@@ -926,69 +1013,6 @@ class SharepointSubclient(Subclient):
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Method not supported for SharePoint On-Premise Instance&#39;)
-
-    def backup(self,
-               backup_level=&#34;Incremental&#34;,
-               incremental_backup=False,
-               incremental_level=&#39;BEFORE_SYNTH&#39;,
-               collect_metadata=False,
-               advanced_options=None):
-        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
-
-            Args:
-                backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental
-
-                incremental_backup      (bool)  --  run incremental backup
-                                                    only applicable in case of Synthetic_full backup
-
-                incremental_level       (str)   --  run incremental backup before/after synthetic full
-                                                    BEFORE_SYNTH / AFTER_SYNTH
-                                                    only applicable in case of Synthetic_full backup
-
-                collect_metadata        (bool)  --  Collect Meta data for the backup
-
-                advanced_options       (dict)  --  advanced backup options to be included while
-                                                    making the request
-
-            Returns:
-                object - instance of the Job class for this backup job if its an immediate Job
-
-                         instance of the Schedule class for the backup job if its a scheduled Job
-
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
-
-                    if response is empty
-
-                    if response is not success
-        &#34;&#34;&#34;
-
-        backup_level = backup_level.lower()
-        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
-            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
-
-        if advanced_options:
-            request_json = self._backup_json(
-                backup_level=backup_level,
-                incremental_backup=incremental_backup,
-                incremental_level=incremental_level,
-                advanced_options=advanced_options
-            )
-            backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                &#39;POST&#39;, backup_service, request_json
-            )
-
-            return self._process_backup_response(flag, response)
-
-        else:
-            return super(SharepointSubclient, self).backup(backup_level=backup_level,
-                                                           incremental_backup=incremental_backup,
-                                                           incremental_level=incremental_level,
-                                                           collect_metadata=collect_metadata)
 
     def restore_in_place(self, **kwargs):
         &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
@@ -1167,7 +1191,228 @@ class SharepointSubclient(Subclient):
             else:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
         else:
-            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Method not supported for SharePoint On-Premise Instance&#39;)</code></pre>
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Method not supported for SharePoint On-Premise Instance&#39;)
+
+
+class SharepointV1Subclient(SharepointSuperSubclient):
+    &#34;&#34;&#34;Derived class from Subclient Base class, representing a Sharepoint v1 subclient,
+            and to perform operations on that subclient.&#34;&#34;&#34;
+
+    def discover_sharepoint_sites(self, paths):
+        &#34;&#34;&#34;Checks whether SP content i.e, sites/webs are available
+
+                    Args:
+                            paths (list)          --      list of paths of SharePoint sites to be checked
+
+                &#34;&#34;&#34;
+        request_json = {
+            &#34;opType&#34;: 0,
+            &#34;session&#34;: {
+                &#34;sessionId&#34;: &#34;&#34;
+            },
+            &#34;paths&#34;: [{&#34;path&#34;: path} for path in paths],
+            &#34;entity&#34;: {
+                &#34;clientId&#34;: int(self._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id),
+                &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+            },
+            &#34;advOptions&#34;: {
+                &#34;advConfig&#34;: {
+                    &#34;applicationMining&#34;: {
+                        &#34;isApplicationMiningReq&#34;: True,
+                        &#34;appType&#34;: int(self._agent_object._agent_id),
+                        &#34;agentVersion&#34;: 2013,
+                        &#34;browseReq&#34;: {
+                            &#34;spBrowseReq&#34;: {
+                                &#34;spBrowseType&#34;: 2,
+                                &#34;spBrowseLevel&#34;: 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if len(response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                           &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]) &gt; 0:
+                    return \
+                    response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                        &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]
+                else:
+                    raise SDKException(&#39;Sites not found&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    @property
+    def content(self):
+        &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+
+            Returns:
+                list - list of content associated with the subclient
+        &#34;&#34;&#34;
+
+        return self._content
+
+    @content.setter
+    def content(self, subclient_content):
+        &#34;&#34;&#34;Creates the list of content JSON to pass to the API to add a new Sharepoint server Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+        &#34;&#34;&#34;
+
+        self._set_subclient_properties(&#34;_content&#34;, subclient_content)
+
+    def _get_subclient_properties_json(self):
+        &#34;&#34;&#34;get the all subclient related properties of this subclient.
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        &#34;&#34;&#34;
+        subclient_json = {
+            &#34;subClientProperties&#34;:
+                {
+                    &#34;subClientEntity&#34;: self._subClientEntity,
+                    &#34;sharepointsubclientprop&#34;: self._sharepoint_subclient_prop,
+                    &#34;content&#34;: self._content,
+                    &#34;commonProperties&#34;: self._commonProperties,
+                    &#34;contentOperationType&#34;: 1,
+                    &#34;planEntity&#34;: self._planEntity,
+                },
+            &#34;association&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(self.subclient_id),
+                        &#34;applicationId&#34;: self._subClientEntity[&#34;applicationId&#34;],
+                        &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+                        &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                        &#34;clientId&#34;: int(self._client_object.client_id),
+                        &#34;subclientName&#34;: self.subclient_name
+                    }
+                ]
+            }
+        }
+        return subclient_json
+
+    def restore_in_place(self, **kwargs):
+        &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
+           This is used by Sharepoint V2 pseudo client
+
+             Kwargs:
+
+                 paths     (list)   --  list of sites or webs to be restored
+                 Example: [
+                    &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents&#34;,
+                    &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List&#34;
+                    ]
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        &#34;&#34;&#34;
+        self._instance_object._restore_association = self._subClientEntity
+        parameter_dict = self._restore_json(**kwargs, v1=True )
+        return self._process_restore_response(parameter_dict)
+
+    def out_of_place_restore(
+            self,
+            paths,
+            destination_path,
+            overwrite=True):
+        &#34;&#34;&#34;Restores the SharePoint list/libraries specified in the input paths list to the different site
+
+            Args:
+                paths                   (list)  --  list of paths of SharePoint list/libraries to restore
+
+                destination_path        (str)   --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+
+        &#34;&#34;&#34;
+        restore_option = {}
+        if not paths:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+        restore_option[&#39;overwrite&#39;] = overwrite
+        restore_option[&#39;paths&#39;] = paths
+        restore_option[&#39;destination_path&#39;] = destination_path
+        restore_option[&#39;in_place&#39;] = False
+        request_json = self._prepare_out_of_place_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def _prepare_out_of_place_restore_json(self, _restore_option):
+        &#34;&#34;&#34;
+        Prepare out of place retsore Json with all getters
+
+        Args:
+            _restore_option - dictionary with all out of place restore options
+
+            value:
+
+                paths (list)            --  list of paths of SharePoint list/libraries to restore
+
+                destination_path (str)  --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite (bool)        --  unconditional overwrite files during restore
+                    default: True
+
+
+        returns:
+            request_json        -  complete json for performing disk Restore options
+
+        &#34;&#34;&#34;
+
+        if _restore_option is None:
+            _restore_option = {}
+
+        paths = self._filter_paths(_restore_option[&#39;paths&#39;])
+        self._json_out_of_place_destination_option(_restore_option)
+        _restore_option[&#39;paths&#39;] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_restore_option, v1=True )
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;destination&#39;] = self._out_of_place_destination_json
+        return request_json</code></pre>
 </details>
 </section>
 <section>
@@ -1205,20 +1450,11 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L59-L1104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L157-L1107" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class SharepointSubclient(Subclient):
+<pre><code class="python">class SharepointSubclient(SharepointSuperSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a Sharepoint subclient,
         and to perform operations on that subclient.&#34;&#34;&#34;
-
-    def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient related properties of the Sharepoint subclient.
-
-        &#34;&#34;&#34;
-        super(SharepointSubclient, self)._get_subclient_properties()
-
-        self._sharepoint_subclient_prop = self._subclient_properties.get(&#39;sharepointsubclientprop&#39;, {})
-        self._content = self._subclient_properties.get(&#39;content&#39;, {})
 
     def _get_subclient_properties_json(self):
         &#34;&#34;&#34;get the all subclient related properties of this subclient.
@@ -1482,7 +1718,7 @@ default: None</p>
                                 }
                             }]
                         }
-            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;]\
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;] \
                 [&#34;fileOption&#34;][&#34;sourceItem&#34;] = source_items
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#34;restoreOptions&#34;] \
                 [&#34;sqlServerRstOption&#34;][&#34;database&#34;] = database_list
@@ -1563,30 +1799,6 @@ default: None</p>
             &#34;spRestoreToDisk&#34;] = self._sharepoint_disk_option_restore_json
 
         return request_json
-
-    def _json_out_of_place_destination_option(self, value):
-        &#34;&#34;&#34;setter for the SharePoint Online out of place restore
-        option in restore json
-
-            Args:
-                value (dict)    --  restore option need to be included
-
-            Returns:
-                (dict)          --  generated exchange restore options JSON
-
-        &#34;&#34;&#34;
-
-        if not isinstance(value, dict):
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        self._out_of_place_destination_json = {
-            &#34;inPlace&#34;: False,
-            &#34;destPath&#34;: [value.get(&#34;destination_path&#34;)],
-            &#34;destClient&#34;: {
-                &#34;clientId&#34;: int(self._client_object.client_id),
-                &#34;clientName&#34;: self._client_object.client_name
-            },
-        }
 
     def _prepare_out_of_place_restore_json(self, _restore_option):
         &#34;&#34;&#34;
@@ -1770,7 +1982,8 @@ default: None</p>
                                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
                     elif &#39;errorMessage&#39; in response.json():
                         error_string = response.json().get(&#39;errorMessage&#39;, &#34;&#34;)
-                        o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(
+                            error_string)
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
@@ -2011,69 +2224,6 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Method not supported for SharePoint On-Premise Instance&#39;)
-
-    def backup(self,
-               backup_level=&#34;Incremental&#34;,
-               incremental_backup=False,
-               incremental_level=&#39;BEFORE_SYNTH&#39;,
-               collect_metadata=False,
-               advanced_options=None):
-        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
-
-            Args:
-                backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental
-
-                incremental_backup      (bool)  --  run incremental backup
-                                                    only applicable in case of Synthetic_full backup
-
-                incremental_level       (str)   --  run incremental backup before/after synthetic full
-                                                    BEFORE_SYNTH / AFTER_SYNTH
-                                                    only applicable in case of Synthetic_full backup
-
-                collect_metadata        (bool)  --  Collect Meta data for the backup
-
-                advanced_options       (dict)  --  advanced backup options to be included while
-                                                    making the request
-
-            Returns:
-                object - instance of the Job class for this backup job if its an immediate Job
-
-                         instance of the Schedule class for the backup job if its a scheduled Job
-
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
-
-                    if response is empty
-
-                    if response is not success
-        &#34;&#34;&#34;
-
-        backup_level = backup_level.lower()
-        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
-            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
-
-        if advanced_options:
-            request_json = self._backup_json(
-                backup_level=backup_level,
-                incremental_backup=incremental_backup,
-                incremental_level=incremental_level,
-                advanced_options=advanced_options
-            )
-            backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                &#39;POST&#39;, backup_service, request_json
-            )
-
-            return self._process_backup_response(flag, response)
-
-        else:
-            return super(SharepointSubclient, self).backup(backup_level=backup_level,
-                                                           incremental_backup=incremental_backup,
-                                                           incremental_level=incremental_level,
-                                                           collect_metadata=collect_metadata)
 
     def restore_in_place(self, **kwargs):
         &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
@@ -2256,6 +2406,7 @@ default: None</p>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient">SharepointSuperSubclient</a></li>
 <li><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
 </ul>
 <h3>Instance variables</h3>
@@ -2268,7 +2419,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L111-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L200-L216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -2295,7 +2446,7 @@ def content(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L92-L95" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L181-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sharepoint_subclient_prop(self):
@@ -2306,117 +2457,6 @@ def sharepoint_subclient_prop(self):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.backup"><code class="name flex">
-<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', collect_metadata=False, advanced_options=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
-<h2 id="args">Args</h2>
-<p>backup_level
-(str)
-&ndash;
-level of backup the user wish to run
-Full / Incremental</p>
-<p>incremental_backup
-(bool)
-&ndash;
-run incremental backup
-only applicable in case of Synthetic_full backup</p>
-<p>incremental_level
-(str)
-&ndash;
-run incremental backup before/after synthetic full
-BEFORE_SYNTH / AFTER_SYNTH
-only applicable in case of Synthetic_full backup</p>
-<p>collect_metadata
-(bool)
-&ndash;
-Collect Meta data for the backup</p>
-<p>advanced_options
-(dict)
-&ndash;
-advanced backup options to be included while
-making the request</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job if its an immediate Job</p>
-<pre><code>     instance of the Schedule class for the backup job if its a scheduled Job
-</code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if backup level specified is not correct</p>
-<pre><code>if response is empty
-
-if response is not success
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L864-L925" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def backup(self,
-           backup_level=&#34;Incremental&#34;,
-           incremental_backup=False,
-           incremental_level=&#39;BEFORE_SYNTH&#39;,
-           collect_metadata=False,
-           advanced_options=None):
-    &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
-
-        Args:
-            backup_level            (str)   --  level of backup the user wish to run
-                                                Full / Incremental
-
-            incremental_backup      (bool)  --  run incremental backup
-                                                only applicable in case of Synthetic_full backup
-
-            incremental_level       (str)   --  run incremental backup before/after synthetic full
-                                                BEFORE_SYNTH / AFTER_SYNTH
-                                                only applicable in case of Synthetic_full backup
-
-            collect_metadata        (bool)  --  Collect Meta data for the backup
-
-            advanced_options       (dict)  --  advanced backup options to be included while
-                                                making the request
-
-        Returns:
-            object - instance of the Job class for this backup job if its an immediate Job
-
-                     instance of the Schedule class for the backup job if its a scheduled Job
-
-        Raises:
-            SDKException:
-                if backup level specified is not correct
-
-                if response is empty
-
-                if response is not success
-    &#34;&#34;&#34;
-
-    backup_level = backup_level.lower()
-    if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
-        raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
-
-    if advanced_options:
-        request_json = self._backup_json(
-            backup_level=backup_level,
-            incremental_backup=incremental_backup,
-            incremental_level=incremental_level,
-            advanced_options=advanced_options
-        )
-        backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;POST&#39;, backup_service, request_json
-        )
-
-        return self._process_backup_response(flag, response)
-
-    else:
-        return super(SharepointSubclient, self).backup(backup_level=backup_level,
-                                                       incremental_backup=incremental_backup,
-                                                       incremental_level=incremental_level,
-                                                       collect_metadata=collect_metadata)</code></pre>
-</details>
-</dd>
 <dt id="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.browse_for_content"><code class="name flex">
 <span>def <span class="ident">browse_for_content</span></span>(<span>self, discovery_type)</span>
 </code></dt>
@@ -2449,7 +2489,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L705-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L771-L851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_for_content(self, discovery_type):
     &#34;&#34;&#34;Returns the SP content i.e. sites/web information that is discovered in auto discovery phase
@@ -2565,7 +2605,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L559-L627" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L624-L693" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_group_for_backup(self, discovery_type, association_group_name, plan_id):
     &#34;&#34;&#34;Configures group for backup
@@ -2630,7 +2670,8 @@ if the method is called by SharePoint On-Premise Instance
                             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
                 elif &#39;errorMessage&#39; in response.json():
                     error_string = response.json().get(&#39;errorMessage&#39;, &#34;&#34;)
-                    o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(error_string)
+                    o_str = &#39;Failed to set category based content for association\nError: &#34;{0}&#34;&#39;.format(
+                        error_string)
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
@@ -2677,7 +2718,7 @@ SDKException:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L1007-L1062" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1010-L1065" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(
         self,
@@ -2772,7 +2813,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L963-L1005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L966-L1008" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(
         self,
@@ -2839,7 +2880,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L1064-L1104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1067-L1107" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def process_index_retention_rules(self, index_server_client_id):
     &#34;&#34;&#34;Makes API call to process index retention rules
@@ -2916,7 +2957,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L148-L195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L237-L284" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -2998,7 +3039,7 @@ This is used by Sharepoint V2 pseudo client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L927-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L930-L964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(self, **kwargs):
     &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
@@ -3055,7 +3096,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L514-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L579-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_manual_discovery(self):
     &#34;&#34;&#34;Runs the manual discovery of backupset
@@ -3141,7 +3182,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L629-L703" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L695-L769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_auto_association_group_properties(self, discovery_type, association_group_name,
                                              account_status=None, plan_id=None):
@@ -3251,7 +3292,7 @@ if the method is called by SharePoint On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/sharepointsubclient.py#L787-L862" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L853-L928" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_sites_association_properties(self, site_user_accounts_list, operation, plan_id=None):
     &#34;&#34;&#34;Updates the association properties of site
@@ -3334,6 +3375,268 @@ if the method is called by SharePoint On-Premise Instance
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
+<li><code><b><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient">SharepointSuperSubclient</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.disable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.disable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.disable_intelli_snap">disable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.display_name" href="../subclient.html#cvpysdk.subclient.Subclient.display_name">display_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup">enable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_backup_at_time" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">enable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_trueup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">enable_trueup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_trueup_days" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup_days">enable_trueup_days</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.encryption_flag" href="../subclient.html#cvpysdk.subclient.Subclient.encryption_flag">encryption_flag</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.exclude_from_sla" href="../subclient.html#cvpysdk.subclient.Subclient.exclude_from_sla">exclude_from_sla</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.find" href="../subclient.html#cvpysdk.subclient.Subclient.find">find</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.find_latest_job" href="../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">find_latest_job</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.get_ma_associated_storagepolicy" href="../subclient.html#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">get_ma_associated_storagepolicy</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_blocklevel_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled">is_blocklevel_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_default_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_default_subclient">is_default_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_intelli_snap_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.plan" href="../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_ma_id" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma_id">storage_ma_id</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_policy" href="../subclient.html#cvpysdk.subclient.Subclient.storage_policy">storage_policy</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient"><code class="flex name class">
+<span>class <span class="ident">SharepointSuperSubclient</span></span>
+<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class consisting of all the common properties and operations for a Subclient</p>
+<p>Initialise the Subclient object.</p>
+<h2 id="args">Args</h2>
+<p>backupset_object (object)
+&ndash;
+instance of the Backupset class</p>
+<p>subclient_name
+(str)
+&ndash;
+name of the subclient</p>
+<p>subclient_id
+(str)
+&ndash;
+id of the subclient
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Subclient class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L81-L155" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class SharepointSuperSubclient(Subclient):
+
+    def backup(self,
+               backup_level=&#34;Incremental&#34;,
+               incremental_backup=False,
+               incremental_level=&#39;BEFORE_SYNTH&#39;,
+               collect_metadata=False,
+               advanced_options=None):
+        &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+                collect_metadata        (bool)  --  Collect Meta data for the backup
+                advanced_options       (dict)  --  advanced backup options to be included while
+                                                    making the request
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+                         instance of the Schedule class for the backup job if its a scheduled Job
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+        if advanced_options:
+            request_json = self._backup_json(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                advanced_options=advanced_options
+            )
+            backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#39;POST&#39;, backup_service, request_json
+            )
+            return self._process_backup_response(flag, response)
+        else:
+            return super(SharepointSuperSubclient, self).backup(backup_level=backup_level,
+                                                           incremental_backup=incremental_backup,
+                                                           incremental_level=incremental_level,
+                                                           collect_metadata=collect_metadata)
+
+    def _json_out_of_place_destination_option(self, value):
+        &#34;&#34;&#34;setter for the SharePoint Online out of place restore
+        option in restore json
+            Args:
+                value (dict)    --  restore option need to be included
+            Returns:
+                (dict)          --  generated exchange restore options JSON
+        &#34;&#34;&#34;
+        if not isinstance(value, dict):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+        self._out_of_place_destination_json = {
+            &#34;inPlace&#34;: False,
+            &#34;destPath&#34;: [value.get(&#34;destination_path&#34;)],
+            &#34;destClient&#34;: {
+                &#34;clientId&#34;: int(self._client_object.client_id),
+                &#34;clientName&#34;: self._client_object.client_name
+            },
+        }
+
+    def _get_subclient_properties(self):
+        &#34;&#34;&#34;Gets the subclient related properties of the Sharepoint subclient.
+        &#34;&#34;&#34;
+        super(SharepointSuperSubclient, self)._get_subclient_properties()
+        self._sharepoint_subclient_prop = self._subclient_properties.get(&#39;sharepointsubclientprop&#39;, {})
+        self._content = self._subclient_properties.get(&#39;content&#39;, {})</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient">SharepointSubclient</a></li>
+<li><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient">SharepointV1Subclient</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup"><code class="name flex">
+<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', collect_metadata=False, advanced_options=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
+<h2 id="args">Args</h2>
+<p>backup_level
+(str)
+&ndash;
+level of backup the user wish to run
+Full / Incremental
+incremental_backup
+(bool)
+&ndash;
+run incremental backup
+only applicable in case of Synthetic_full backup
+incremental_level
+(str)
+&ndash;
+run incremental backup before/after synthetic full
+BEFORE_SYNTH / AFTER_SYNTH
+only applicable in case of Synthetic_full backup
+collect_metadata
+(bool)
+&ndash;
+Collect Meta data for the backup
+advanced_options
+(dict)
+&ndash;
+advanced backup options to be included while
+making the request</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this backup job if its an immediate Job
+instance of the Schedule class for the backup job if its a scheduled Job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if backup level specified is not correct
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L83-L129" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backup(self,
+           backup_level=&#34;Incremental&#34;,
+           incremental_backup=False,
+           incremental_level=&#39;BEFORE_SYNTH&#39;,
+           collect_metadata=False,
+           advanced_options=None):
+    &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
+        Args:
+            backup_level            (str)   --  level of backup the user wish to run
+                                                Full / Incremental
+            incremental_backup      (bool)  --  run incremental backup
+                                                only applicable in case of Synthetic_full backup
+            incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                BEFORE_SYNTH / AFTER_SYNTH
+                                                only applicable in case of Synthetic_full backup
+            collect_metadata        (bool)  --  Collect Meta data for the backup
+            advanced_options       (dict)  --  advanced backup options to be included while
+                                                making the request
+        Returns:
+            object - instance of the Job class for this backup job if its an immediate Job
+                     instance of the Schedule class for the backup job if its a scheduled Job
+        Raises:
+            SDKException:
+                if backup level specified is not correct
+                if response is empty
+                if response is not success
+    &#34;&#34;&#34;
+    backup_level = backup_level.lower()
+    if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
+        raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+    if advanced_options:
+        request_json = self._backup_json(
+            backup_level=backup_level,
+            incremental_backup=incremental_backup,
+            incremental_level=incremental_level,
+            advanced_options=advanced_options
+        )
+        backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, backup_service, request_json
+        )
+        return self._process_backup_response(flag, response)
+    else:
+        return super(SharepointSuperSubclient, self).backup(backup_level=backup_level,
+                                                       incremental_backup=incremental_backup,
+                                                       incremental_level=incremental_level,
+                                                       collect_metadata=collect_metadata)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
 <li><code><b><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.subclient.Subclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
@@ -3368,8 +3671,10 @@ if the method is called by SharePoint On-Premise Instance
 <li><code><a title="cvpysdk.subclient.Subclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.restore_in_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -3378,7 +3683,550 @@ if the method is called by SharePoint On-Premise Instance
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient"><code class="flex name class">
+<span>class <span class="ident">SharepointV1Subclient</span></span>
+<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Derived class from Subclient Base class, representing a Sharepoint v1 subclient,
+and to perform operations on that subclient.</p>
+<p>Initialise the Subclient object.</p>
+<h2 id="args">Args</h2>
+<p>backupset_object (object)
+&ndash;
+instance of the Backupset class</p>
+<p>subclient_name
+(str)
+&ndash;
+name of the subclient</p>
+<p>subclient_id
+(str)
+&ndash;
+id of the subclient
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Subclient class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1110-L1328" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class SharepointV1Subclient(SharepointSuperSubclient):
+    &#34;&#34;&#34;Derived class from Subclient Base class, representing a Sharepoint v1 subclient,
+            and to perform operations on that subclient.&#34;&#34;&#34;
+
+    def discover_sharepoint_sites(self, paths):
+        &#34;&#34;&#34;Checks whether SP content i.e, sites/webs are available
+
+                    Args:
+                            paths (list)          --      list of paths of SharePoint sites to be checked
+
+                &#34;&#34;&#34;
+        request_json = {
+            &#34;opType&#34;: 0,
+            &#34;session&#34;: {
+                &#34;sessionId&#34;: &#34;&#34;
+            },
+            &#34;paths&#34;: [{&#34;path&#34;: path} for path in paths],
+            &#34;entity&#34;: {
+                &#34;clientId&#34;: int(self._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id),
+                &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+            },
+            &#34;advOptions&#34;: {
+                &#34;advConfig&#34;: {
+                    &#34;applicationMining&#34;: {
+                        &#34;isApplicationMiningReq&#34;: True,
+                        &#34;appType&#34;: int(self._agent_object._agent_id),
+                        &#34;agentVersion&#34;: 2013,
+                        &#34;browseReq&#34;: {
+                            &#34;spBrowseReq&#34;: {
+                                &#34;spBrowseType&#34;: 2,
+                                &#34;spBrowseLevel&#34;: 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if len(response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                           &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]) &gt; 0:
+                    return \
+                    response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                        &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]
+                else:
+                    raise SDKException(&#39;Sites not found&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    @property
+    def content(self):
+        &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+
+            Returns:
+                list - list of content associated with the subclient
+        &#34;&#34;&#34;
+
+        return self._content
+
+    @content.setter
+    def content(self, subclient_content):
+        &#34;&#34;&#34;Creates the list of content JSON to pass to the API to add a new Sharepoint server Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+        &#34;&#34;&#34;
+
+        self._set_subclient_properties(&#34;_content&#34;, subclient_content)
+
+    def _get_subclient_properties_json(self):
+        &#34;&#34;&#34;get the all subclient related properties of this subclient.
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        &#34;&#34;&#34;
+        subclient_json = {
+            &#34;subClientProperties&#34;:
+                {
+                    &#34;subClientEntity&#34;: self._subClientEntity,
+                    &#34;sharepointsubclientprop&#34;: self._sharepoint_subclient_prop,
+                    &#34;content&#34;: self._content,
+                    &#34;commonProperties&#34;: self._commonProperties,
+                    &#34;contentOperationType&#34;: 1,
+                    &#34;planEntity&#34;: self._planEntity,
+                },
+            &#34;association&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(self.subclient_id),
+                        &#34;applicationId&#34;: self._subClientEntity[&#34;applicationId&#34;],
+                        &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+                        &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                        &#34;clientId&#34;: int(self._client_object.client_id),
+                        &#34;subclientName&#34;: self.subclient_name
+                    }
+                ]
+            }
+        }
+        return subclient_json
+
+    def restore_in_place(self, **kwargs):
+        &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
+           This is used by Sharepoint V2 pseudo client
+
+             Kwargs:
+
+                 paths     (list)   --  list of sites or webs to be restored
+                 Example: [
+                    &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents&#34;,
+                    &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List&#34;
+                    ]
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        &#34;&#34;&#34;
+        self._instance_object._restore_association = self._subClientEntity
+        parameter_dict = self._restore_json(**kwargs, v1=True )
+        return self._process_restore_response(parameter_dict)
+
+    def out_of_place_restore(
+            self,
+            paths,
+            destination_path,
+            overwrite=True):
+        &#34;&#34;&#34;Restores the SharePoint list/libraries specified in the input paths list to the different site
+
+            Args:
+                paths                   (list)  --  list of paths of SharePoint list/libraries to restore
+
+                destination_path        (str)   --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+
+        &#34;&#34;&#34;
+        restore_option = {}
+        if not paths:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+        restore_option[&#39;overwrite&#39;] = overwrite
+        restore_option[&#39;paths&#39;] = paths
+        restore_option[&#39;destination_path&#39;] = destination_path
+        restore_option[&#39;in_place&#39;] = False
+        request_json = self._prepare_out_of_place_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def _prepare_out_of_place_restore_json(self, _restore_option):
+        &#34;&#34;&#34;
+        Prepare out of place retsore Json with all getters
+
+        Args:
+            _restore_option - dictionary with all out of place restore options
+
+            value:
+
+                paths (list)            --  list of paths of SharePoint list/libraries to restore
+
+                destination_path (str)  --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite (bool)        --  unconditional overwrite files during restore
+                    default: True
+
+
+        returns:
+            request_json        -  complete json for performing disk Restore options
+
+        &#34;&#34;&#34;
+
+        if _restore_option is None:
+            _restore_option = {}
+
+        paths = self._filter_paths(_restore_option[&#39;paths&#39;])
+        self._json_out_of_place_destination_option(_restore_option)
+        _restore_option[&#39;paths&#39;] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_restore_option, v1=True )
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;destination&#39;] = self._out_of_place_destination_json
+        return request_json</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient">SharepointSuperSubclient</a></li>
+<li><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.content"><code class="name">var <span class="ident">content</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the appropriate content from the Subclient relevant to the user.</p>
+<h2 id="returns">Returns</h2>
+<p>list - list of content associated with the subclient</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1165-L1173" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def content(self):
+    &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+
+        Returns:
+            list - list of content associated with the subclient
+    &#34;&#34;&#34;
+
+    return self._content</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.discover_sharepoint_sites"><code class="name flex">
+<span>def <span class="ident">discover_sharepoint_sites</span></span>(<span>self, paths)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks whether SP content i.e, sites/webs are available</p>
+<h2 id="args">Args</h2>
+<p>paths (list)
+&ndash;
+list of paths of SharePoint sites to be checked</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1114-L1163" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def discover_sharepoint_sites(self, paths):
+    &#34;&#34;&#34;Checks whether SP content i.e, sites/webs are available
+
+                Args:
+                        paths (list)          --      list of paths of SharePoint sites to be checked
+
+            &#34;&#34;&#34;
+    request_json = {
+        &#34;opType&#34;: 0,
+        &#34;session&#34;: {
+            &#34;sessionId&#34;: &#34;&#34;
+        },
+        &#34;paths&#34;: [{&#34;path&#34;: path} for path in paths],
+        &#34;entity&#34;: {
+            &#34;clientId&#34;: int(self._client_object.client_id),
+            &#34;applicationId&#34;: int(self._agent_object.agent_id),
+            &#34;instanceId&#34;: int(self._instance_object.instance_id),
+            &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+        },
+        &#34;advOptions&#34;: {
+            &#34;advConfig&#34;: {
+                &#34;applicationMining&#34;: {
+                    &#34;isApplicationMiningReq&#34;: True,
+                    &#34;appType&#34;: int(self._agent_object._agent_id),
+                    &#34;agentVersion&#34;: 2013,
+                    &#34;browseReq&#34;: {
+                        &#34;spBrowseReq&#34;: {
+                            &#34;spBrowseType&#34;: 2,
+                            &#34;spBrowseLevel&#34;: 1
+                        }
+                    }
+                }
+            }
+        }
+    }
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
+    if flag:
+        if response and response.json():
+            response = response.json()
+            if len(response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                       &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]) &gt; 0:
+                return \
+                response[&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][
+                    &#39;spBrowseResp&#39;][&#39;dataPathContents&#39;]
+            else:
+                raise SDKException(&#39;Sites not found&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.out_of_place_restore"><code class="name flex">
+<span>def <span class="ident">out_of_place_restore</span></span>(<span>self, paths, destination_path, overwrite=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the SharePoint list/libraries specified in the input paths list to the different site</p>
+<h2 id="args">Args</h2>
+<p>paths
+(list)
+&ndash;
+list of paths of SharePoint list/libraries to restore</p>
+<p>destination_path
+(str)
+&ndash;
+path where the SharePoint Site where list/libraries needs to be restored</p>
+<p>overwrite
+(bool)
+&ndash;
+unconditional overwrite files during restore
+default: True</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if paths is not a list</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1252-L1290" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def out_of_place_restore(
+        self,
+        paths,
+        destination_path,
+        overwrite=True):
+    &#34;&#34;&#34;Restores the SharePoint list/libraries specified in the input paths list to the different site
+
+        Args:
+            paths                   (list)  --  list of paths of SharePoint list/libraries to restore
+
+            destination_path        (str)   --  path where the SharePoint Site where list/libraries needs to be restored
+
+            overwrite               (bool)  --  unconditional overwrite files during restore
+                default: True
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+
+    &#34;&#34;&#34;
+    restore_option = {}
+    if not paths:
+        raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+    restore_option[&#39;overwrite&#39;] = overwrite
+    restore_option[&#39;paths&#39;] = paths
+    restore_option[&#39;destination_path&#39;] = destination_path
+    restore_option[&#39;in_place&#39;] = False
+    request_json = self._prepare_out_of_place_restore_json(restore_option)
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.restore_in_place"><code class="name flex">
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs a in-place restore job on the specified Sharepoint pseudo client
+This is used by Sharepoint V2 pseudo client</p>
+<p>Kwargs:</p>
+<pre><code>  paths     (list)   --  list of sites or webs to be restored
+  Example: [
+     "MB\&lt;https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared&gt; Documents",
+     "MB\&lt;https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test&gt; Automation List"
+     ]
+</code></pre>
+<p>Returns:</p>
+<pre><code> Job object
+</code></pre>
+<p>Raises:</p>
+<pre><code> SDKException:
+
+     if paths is not a list
+
+     if failed to initialize job
+
+     if response is empty
+
+     if the method is called by SharePoint On-Premise Instance
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/sharepointsubclient.py#L1219-L1250" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_in_place(self, **kwargs):
+    &#34;&#34;&#34;Runs a in-place restore job on the specified Sharepoint pseudo client
+       This is used by Sharepoint V2 pseudo client
+
+         Kwargs:
+
+             paths     (list)   --  list of sites or webs to be restored
+             Example: [
+                &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents&#34;,
+                &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List&#34;
+                ]
+
+         Returns:
+
+            Job object
+
+        Raises:
+
+            SDKException:
+
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if the method is called by SharePoint On-Premise Instance
+
+    &#34;&#34;&#34;
+    self._instance_object._restore_association = self._subClientEntity
+    parameter_dict = self._restore_json(**kwargs, v1=True )
+    return self._process_restore_response(parameter_dict)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient">SharepointSuperSubclient</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.disable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.disable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.disable_intelli_snap">disable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.display_name" href="../subclient.html#cvpysdk.subclient.Subclient.display_name">display_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup">enable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_backup_at_time" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">enable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_trueup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">enable_trueup</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.enable_trueup_days" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup_days">enable_trueup_days</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.encryption_flag" href="../subclient.html#cvpysdk.subclient.Subclient.encryption_flag">encryption_flag</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.exclude_from_sla" href="../subclient.html#cvpysdk.subclient.Subclient.exclude_from_sla">exclude_from_sla</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.find" href="../subclient.html#cvpysdk.subclient.Subclient.find">find</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.find_latest_job" href="../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">find_latest_job</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.get_ma_associated_storagepolicy" href="../subclient.html#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">get_ma_associated_storagepolicy</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_blocklevel_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled">is_blocklevel_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_default_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_default_subclient">is_default_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_intelli_snap_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.plan" href="../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_ma_id" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma_id">storage_ma_id</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.storage_policy" href="../subclient.html#cvpysdk.subclient.Subclient.storage_policy">storage_policy</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
 </ul>
@@ -3454,7 +4302,6 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient">SharepointSubclient</a></code></h4>
 <ul class="">
-<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.backup" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.browse_for_content" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.browse_for_content">browse_for_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.configure_group_for_backup" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.configure_group_for_backup">configure_group_for_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.content" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.content">content</a></code></li>
@@ -3467,6 +4314,21 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.sharepoint_subclient_prop" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.sharepoint_subclient_prop">sharepoint_subclient_prop</a></code></li>
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_auto_association_group_properties" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_auto_association_group_properties">update_auto_association_group_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_sites_association_properties" href="#cvpysdk.subclients.sharepointsubclient.SharepointSubclient.update_sites_association_properties">update_sites_association_properties</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient">SharepointSuperSubclient</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup" href="#cvpysdk.subclients.sharepointsubclient.SharepointSuperSubclient.backup">backup</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient">SharepointV1Subclient</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.content" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.content">content</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.discover_sharepoint_sites" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.discover_sharepoint_sites">discover_sharepoint_sites</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.out_of_place_restore" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.out_of_place_restore">out_of_place_restore</a></code></li>
+<li><code><a title="cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.restore_in_place" href="#cvpysdk.subclients.sharepointsubclient.SharepointV1Subclient.restore_in_place">restore_in_place</a></code></li>
 </ul>
 </li>
 </ul>

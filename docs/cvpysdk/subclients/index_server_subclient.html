@@ -46,7 +46,7 @@ _get_path_for_restore               --  forms path argument for restore based on
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L1-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L1-L379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -94,6 +94,7 @@ IndexServerSubClient:
 
 from past.builtins import basestring
 from ..exception import SDKException
+from ..index_server import IndexServerOSType
 from ..subclients.bigdataappssubclient import BigDataAppsSubclient
 
 
@@ -159,17 +160,25 @@ class IndexServerSubclient(BigDataAppsSubclient):
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Given client name is not part of index server cloud&#39;)
+
+        path_delimiter = &#34;\\&#34;
+        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+            path_delimiter = &#34;/&#34;
+
         if core_name is None and roles is not None:
-            paths = [f&#34;\\{role}\\{client}&#34; for role in roles]
+            paths = [f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34; for role in roles]
+
         elif roles is None and core_name is not None:
             for core in core_name:
-                core = core.replace(&#34;\\&#34;, f&#34;\\{client}\\&#34;)
-                paths.append(f&#34;\\{core}&#34;)
+                core = core.replace(path_delimiter, f&#34;{path_delimiter}{client}{path_delimiter}&#34;)
+                paths.append(f&#34;{path_delimiter}{core}&#34;)
+
         else:
             for role in self.content:
-                role = role.replace(&#34;\\\\&#34;, &#39;&#39;)
+                role = role.replace(&#34;\\&#34;, &#39;&#39;)
                 role = role.replace(&#34;%&#34;, &#39;&#39;)
-                paths.append(f&#34;\\{role}\\{client}&#34;)
+                paths.append(f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34;)
+
         return paths
 
     def do_restore_in_place(
@@ -223,11 +232,10 @@ class IndexServerSubclient(BigDataAppsSubclient):
         &#34;&#34;&#34;
 
         paths = self._get_path_for_restore(roles=roles, core_name=core_name, client=client)
-        proxy_client = None
-        if not self._index_server_obj.is_cloud:
-            proxy_client = self._index_server_obj.client_name[0]
-        else:
+        proxy_client = self._index_server_obj.client_name[0]
+        if self._index_server_obj.is_cloud or len(self._index_server_obj.client_name) &gt; 1:
             proxy_client = client
+
         job_obj = self.restore_in_place(paths=paths, overwrite=overwrite,
                                         from_time=from_time, to_time=to_time,
                                         proxy_client=proxy_client,
@@ -327,7 +335,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
         &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                     Args:
@@ -336,8 +344,12 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                         include_files       (bool)  --  whether to include files in response or not
                             default : True (Both files/folders from backup will be returned)
+                            Note : Works only in the case of Windows IS, does not work for Linux IS
 
                         job_id              (str)   --  job id to be used for browse
+
+                        index_server_node   (str)   --  index server client node name
+                            Note : Required compulsory in the case of unix IS when roles is not none.
 
 
                      Returns: (list, dict)
@@ -356,9 +368,23 @@ class IndexServerSubclient(BigDataAppsSubclient):
         find_options = {}
         if roles is None:
             find_options[&#39;path&#39;] = &#39;\\**\\*&#39;
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                find_options[&#39;path&#39;] = &#39;/**/*&#39;
+
         else:
-            roles = [f&#34;\\{role}\\**\\*&#34; for role in roles]
-            find_options[&#39;path&#39;] = roles
+            roles_path = [f&#34;\\{role}\\**\\*&#34; for role in roles]
+            if index_server_node is not None:
+                roles_path = [f&#34;\\{role}\\{index_server_node}\\**\\*&#34; for role in roles]
+
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                if index_server_node is None:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
+                if len(roles) &gt; 1:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
+                roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+                find_options[&#39;operation&#39;] = &#39;browse&#39;
+
+            find_options[&#39;path&#39;] = roles_path
         if job_id != 0:
             find_options[&#39;job_id&#39;] = job_id
         if include_files:
@@ -433,7 +459,7 @@ and to perform operations on that subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L50-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L51-L379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServerSubclient(BigDataAppsSubclient):
     &#34;&#34;&#34;
@@ -497,17 +523,25 @@ and to perform operations on that subclient</p>
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Given client name is not part of index server cloud&#39;)
+
+        path_delimiter = &#34;\\&#34;
+        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+            path_delimiter = &#34;/&#34;
+
         if core_name is None and roles is not None:
-            paths = [f&#34;\\{role}\\{client}&#34; for role in roles]
+            paths = [f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34; for role in roles]
+
         elif roles is None and core_name is not None:
             for core in core_name:
-                core = core.replace(&#34;\\&#34;, f&#34;\\{client}\\&#34;)
-                paths.append(f&#34;\\{core}&#34;)
+                core = core.replace(path_delimiter, f&#34;{path_delimiter}{client}{path_delimiter}&#34;)
+                paths.append(f&#34;{path_delimiter}{core}&#34;)
+
         else:
             for role in self.content:
-                role = role.replace(&#34;\\\\&#34;, &#39;&#39;)
+                role = role.replace(&#34;\\&#34;, &#39;&#39;)
                 role = role.replace(&#34;%&#34;, &#39;&#39;)
-                paths.append(f&#34;\\{role}\\{client}&#34;)
+                paths.append(f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34;)
+
         return paths
 
     def do_restore_in_place(
@@ -561,11 +595,10 @@ and to perform operations on that subclient</p>
         &#34;&#34;&#34;
 
         paths = self._get_path_for_restore(roles=roles, core_name=core_name, client=client)
-        proxy_client = None
-        if not self._index_server_obj.is_cloud:
-            proxy_client = self._index_server_obj.client_name[0]
-        else:
+        proxy_client = self._index_server_obj.client_name[0]
+        if self._index_server_obj.is_cloud or len(self._index_server_obj.client_name) &gt; 1:
             proxy_client = client
+
         job_obj = self.restore_in_place(paths=paths, overwrite=overwrite,
                                         from_time=from_time, to_time=to_time,
                                         proxy_client=proxy_client,
@@ -665,7 +698,7 @@ and to perform operations on that subclient</p>
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
         &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                     Args:
@@ -674,8 +707,12 @@ and to perform operations on that subclient</p>
 
                         include_files       (bool)  --  whether to include files in response or not
                             default : True (Both files/folders from backup will be returned)
+                            Note : Works only in the case of Windows IS, does not work for Linux IS
 
                         job_id              (str)   --  job id to be used for browse
+
+                        index_server_node   (str)   --  index server client node name
+                            Note : Required compulsory in the case of unix IS when roles is not none.
 
 
                      Returns: (list, dict)
@@ -694,9 +731,23 @@ and to perform operations on that subclient</p>
         find_options = {}
         if roles is None:
             find_options[&#39;path&#39;] = &#39;\\**\\*&#39;
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                find_options[&#39;path&#39;] = &#39;/**/*&#39;
+
         else:
-            roles = [f&#34;\\{role}\\**\\*&#34; for role in roles]
-            find_options[&#39;path&#39;] = roles
+            roles_path = [f&#34;\\{role}\\**\\*&#34; for role in roles]
+            if index_server_node is not None:
+                roles_path = [f&#34;\\{role}\\{index_server_node}\\**\\*&#34; for role in roles]
+
+            if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+                if index_server_node is None:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
+                if len(roles) &gt; 1:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
+                roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+                find_options[&#39;operation&#39;] = &#39;browse&#39;
+
+            find_options[&#39;path&#39;] = roles_path
         if job_id != 0:
             find_options[&#39;job_id&#39;] = job_id
         if include_files:
@@ -775,7 +826,7 @@ list of role names which needs to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L319-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L345-L379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_backup(self, storage_policy, role_content):
     &#34;&#34;&#34;Edit the default subclient for modifying role content or storage policy.
@@ -871,7 +922,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L125-L185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L134-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_in_place(
         self,
@@ -924,11 +975,10 @@ if response is not success
     &#34;&#34;&#34;
 
     paths = self._get_path_for_restore(roles=roles, core_name=core_name, client=client)
-    proxy_client = None
-    if not self._index_server_obj.is_cloud:
-        proxy_client = self._index_server_obj.client_name[0]
-    else:
+    proxy_client = self._index_server_obj.client_name[0]
+    if self._index_server_obj.is_cloud or len(self._index_server_obj.client_name) &gt; 1:
         proxy_client = client
+
     job_obj = self.restore_in_place(paths=paths, overwrite=overwrite,
                                     from_time=from_time, to_time=to_time,
                                     proxy_client=proxy_client,
@@ -997,7 +1047,7 @@ if failed to initialize job
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L187-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L195-L258" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_out_of_place(
         self,
@@ -1066,7 +1116,7 @@ if failed to initialize job
 </details>
 </dd>
 <dt id="cvpysdk.subclients.index_server_subclient.IndexServerSubclient.get_file_details_from_backup"><code class="name flex">
-<span>def <span class="ident">get_file_details_from_backup</span></span>(<span>self, roles=None, include_files=True, job_id=0)</span>
+<span>def <span class="ident">get_file_details_from_backup</span></span>(<span>self, roles=None, include_files=True, job_id=0, index_server_node=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Gets files/folders details from index server backup job.</p>
@@ -1079,11 +1129,17 @@ list of roles whose file details needs to be fetched from backup</p>
 (bool)
 &ndash;
 whether to include files in response or not
-default : True (Both files/folders from backup will be returned)</p>
+default : True (Both files/folders from backup will be returned)
+Note : Works only in the case of Windows IS, does not work for Linux IS</p>
 <p>job_id
 (str)
 &ndash;
-job id to be used for browse
+job id to be used for browse</p>
+<p>index_server_node
+(str)
+&ndash;
+index server client node name
+Note : Required compulsory in the case of unix IS when roles is not none.
 Returns: (list, dict)</p>
 <pre><code>list    -   List of only the file, folder paths from the browse response
 
@@ -1097,9 +1153,9 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L280-L317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L288-L343" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0):
+<pre><code class="python">def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
     &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                 Args:
@@ -1108,8 +1164,12 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
 
                     include_files       (bool)  --  whether to include files in response or not
                         default : True (Both files/folders from backup will be returned)
+                        Note : Works only in the case of Windows IS, does not work for Linux IS
 
                     job_id              (str)   --  job id to be used for browse
+
+                    index_server_node   (str)   --  index server client node name
+                        Note : Required compulsory in the case of unix IS when roles is not none.
 
 
                  Returns: (list, dict)
@@ -1128,9 +1188,23 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
     find_options = {}
     if roles is None:
         find_options[&#39;path&#39;] = &#39;\\**\\*&#39;
+        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+            find_options[&#39;path&#39;] = &#39;/**/*&#39;
+
     else:
-        roles = [f&#34;\\{role}\\**\\*&#34; for role in roles]
-        find_options[&#39;path&#39;] = roles
+        roles_path = [f&#34;\\{role}\\**\\*&#34; for role in roles]
+        if index_server_node is not None:
+            roles_path = [f&#34;\\{role}\\{index_server_node}\\**\\*&#34; for role in roles]
+
+        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
+            if index_server_node is None:
+                raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
+            if len(roles) &gt; 1:
+                raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
+            roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+            find_options[&#39;operation&#39;] = &#39;browse&#39;
+
+        find_options[&#39;path&#39;] = roles_path
     if job_id != 0:
         find_options[&#39;job_id&#39;] = job_id
     if include_files:
@@ -1160,7 +1234,7 @@ if backup level specified is not correct</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/index_server_subclient.py#L252-L278" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/index_server_subclient.py#L260-L286" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup(self, backup_level=&#34;Full&#34;):
     &#34;&#34;&#34;Runs a backup job for the default subclient.
@@ -1208,6 +1282,7 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.backup_retention_days" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_retention_days">backup_retention_days</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.backup_savf_file_data" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_savf_file_data">backup_savf_file_data</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.backup_spool_file_data" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_spool_file_data">backup_spool_file_data</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.backup_using_multiple_drives" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_using_multiple_drives">backup_using_multiple_drives</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.block_level_backup_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.block_level_backup_option">block_level_backup_option</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.catalog_acl" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.catalog_acl">catalog_acl</a></code></li>
@@ -1217,12 +1292,14 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.disable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.disable_content_indexing" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.disable_content_indexing">disable_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.disable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.disable_intelli_snap">disable_intelli_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.disk_cleanup" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.disk_cleanup">disk_cleanup</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.disk_cleanup_rules" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.disk_cleanup_rules">disk_cleanup_rules</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.display_name" href="../subclient.html#cvpysdk.subclient.Subclient.display_name">display_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup">enable_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_backup_at_time" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_content_indexing" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.enable_content_indexing">enable_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">enable_intelli_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_synclib" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.enable_synclib">enable_synclib</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_trueup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">enable_trueup</a></code></li>
@@ -1260,6 +1337,8 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.onetouch_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.onetouch_option">onetouch_option</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.onetouch_server" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.onetouch_server">onetouch_server</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.onetouch_server_directory" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.onetouch_server_directory">onetouch_server_directory</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.other_pending_changes" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.other_pending_changes">other_pending_changes</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.pending_record_changes" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.pending_record_changes">pending_record_changes</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.plan" href="../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.pre_post_commands" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.pre_post_commands">pre_post_commands</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
@@ -1273,6 +1352,7 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.scan_type" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.scan_type">scan_type</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.set_data_access_nodes" href="bigdataappssubclient.html#cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.set_data_access_nodes">set_data_access_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.software_compression" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -1285,6 +1365,7 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.target_release" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.target_release">target_release</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.trueup_days" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_days">trueup_days</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.trueup_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_option">trueup_option</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.update_history" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.update_history">update_history</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.use_vss" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.use_vss">use_vss</a></code></li>

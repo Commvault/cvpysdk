@@ -79,7 +79,7 @@ get the properties of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L1-L555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L1-L584" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -428,12 +428,24 @@ class Domains(object):
                     &#34;open ldap&#34;
                     &#34;ldap server&#34;
 
-                **kwargs            --      required parameters for LDAP Server registration
+                **kwargs            --      required parameters for LDAP Server registration and other additional
+                                            settings can be passed
 
                     group_filter    (str)   --  group filter for ldap server
                     user_filter     (str)   --  user filter for ldap server
                     unique_identifier   (str)   --  unique identifier for ldap server
                     base_dn              (str)  --  base dn for ldap server
+
+                    additional_settings     (list)  --  additional settings for directory server.
+                        eg:-    [
+                                    {
+                                        &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
+                                        &#34;keyName&#34;: &#34;basedn&#34;,
+                                        &#34;type&#34;: &#34;STRING&#34;,
+                                        &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
+                                        &#34;enabled&#34;: 1
+                                    }
+                                ]
 
             Returns:
                 dict    -   properties of domain
@@ -525,10 +537,27 @@ class Domains(object):
                           &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
                           &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
                           &#34;attrTypeFlags&#34;: 1
+                        },
+                        {
+                            &#34;attrTypeFlags&#34;: 6,
+                            &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                            &#34;attrId&#34;: 3,
+                            &#34;attributeName&#34;: &#34;Email&#34;,
+                            &#34;staticAttributeString&#34;: &#34;mail&#34;
+                        },
+                        {
+                            &#34;attrTypeFlags&#34;: 6,
+                            &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                            &#34;attrId&#34;: 4,
+                            &#34;attributeName&#34;: &#34;GUID&#34;,
+                            &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
                         }
                     ]
                 }
             domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
+
+        if &#34;additional_settings&#34; in kwargs and kwargs.get(&#39;additional_settings&#39;):
+            domain_create_request[&#34;provider&#34;][&#39;additionalSettings&#39;] = kwargs.get(&#39;additional_settings&#39;)
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._DOMAIN_CONTROLER, domain_create_request
@@ -668,7 +697,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L475-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L504-L583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domain(object):
     &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
@@ -759,7 +788,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L551-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L580-L583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_id(self):
@@ -773,7 +802,7 @@ def domain_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L546-L549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L575-L578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -792,7 +821,7 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L542-L544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L571-L573" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
@@ -818,7 +847,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L76-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L76-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domains(object):
     &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
@@ -1092,12 +1121,24 @@ instance of the Commcell class</p>
                     &#34;open ldap&#34;
                     &#34;ldap server&#34;
 
-                **kwargs            --      required parameters for LDAP Server registration
+                **kwargs            --      required parameters for LDAP Server registration and other additional
+                                            settings can be passed
 
                     group_filter    (str)   --  group filter for ldap server
                     user_filter     (str)   --  user filter for ldap server
                     unique_identifier   (str)   --  unique identifier for ldap server
                     base_dn              (str)  --  base dn for ldap server
+
+                    additional_settings     (list)  --  additional settings for directory server.
+                        eg:-    [
+                                    {
+                                        &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
+                                        &#34;keyName&#34;: &#34;basedn&#34;,
+                                        &#34;type&#34;: &#34;STRING&#34;,
+                                        &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
+                                        &#34;enabled&#34;: 1
+                                    }
+                                ]
 
             Returns:
                 dict    -   properties of domain
@@ -1189,10 +1230,27 @@ instance of the Commcell class</p>
                           &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
                           &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
                           &#34;attrTypeFlags&#34;: 1
+                        },
+                        {
+                            &#34;attrTypeFlags&#34;: 6,
+                            &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                            &#34;attrId&#34;: 3,
+                            &#34;attributeName&#34;: &#34;Email&#34;,
+                            &#34;staticAttributeString&#34;: &#34;mail&#34;
+                        },
+                        {
+                            &#34;attrTypeFlags&#34;: 6,
+                            &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                            &#34;attrId&#34;: 4,
+                            &#34;attributeName&#34;: &#34;GUID&#34;,
+                            &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
                         }
                     ]
                 }
             domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
+
+        if &#34;additional_settings&#34; in kwargs and kwargs.get(&#39;additional_settings&#39;):
+            domain_create_request[&#34;provider&#34;][&#39;additionalSettings&#39;] = kwargs.get(&#39;additional_settings&#39;)
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._DOMAIN_CONTROLER, domain_create_request
@@ -1234,7 +1292,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L189-L201" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L189-L201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_domains(self):
@@ -1304,11 +1362,23 @@ values:
 "ldap server"</p>
 <p>**kwargs
 &ndash;
-required parameters for LDAP Server registration</p>
+required parameters for LDAP Server registration and other additional
+settings can be passed</p>
 <pre><code>group_filter    (str)   --  group filter for ldap server
 user_filter     (str)   --  user filter for ldap server
 unique_identifier   (str)   --  unique identifier for ldap server
 base_dn              (str)  --  base dn for ldap server
+
+additional_settings     (list)  --  additional settings for directory server.
+    eg:-    [
+                {
+                    "relativepath": "CommServDB.Console",
+                    "keyName": "basedn",
+                    "type": "STRING",
+                    "value": "cn=automation_group2,dc=example,dc=com",
+                    "enabled": 1
+                }
+            ]
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>dict
@@ -1322,7 +1392,7 @@ if type of the domain name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L309-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L309-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         domain_name,
@@ -1363,12 +1433,24 @@ if type of the domain name argument is not string</p>
                 &#34;open ldap&#34;
                 &#34;ldap server&#34;
 
-            **kwargs            --      required parameters for LDAP Server registration
+            **kwargs            --      required parameters for LDAP Server registration and other additional
+                                        settings can be passed
 
                 group_filter    (str)   --  group filter for ldap server
                 user_filter     (str)   --  user filter for ldap server
                 unique_identifier   (str)   --  unique identifier for ldap server
                 base_dn              (str)  --  base dn for ldap server
+
+                additional_settings     (list)  --  additional settings for directory server.
+                    eg:-    [
+                                {
+                                    &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
+                                    &#34;keyName&#34;: &#34;basedn&#34;,
+                                    &#34;type&#34;: &#34;STRING&#34;,
+                                    &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
+                                    &#34;enabled&#34;: 1
+                                }
+                            ]
 
         Returns:
             dict    -   properties of domain
@@ -1460,10 +1542,27 @@ if type of the domain name argument is not string</p>
                       &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
                       &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
                       &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                        &#34;attrId&#34;: 3,
+                        &#34;attributeName&#34;: &#34;Email&#34;,
+                        &#34;staticAttributeString&#34;: &#34;mail&#34;
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                        &#34;attrId&#34;: 4,
+                        &#34;attributeName&#34;: &#34;GUID&#34;,
+                        &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
                     }
                 ]
             }
         domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
+
+    if &#34;additional_settings&#34; in kwargs and kwargs.get(&#39;additional_settings&#39;):
+        domain_create_request[&#34;provider&#34;][&#39;additionalSettings&#39;] = kwargs.get(&#39;additional_settings&#39;)
 
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._DOMAIN_CONTROLER, domain_create_request
@@ -1515,7 +1614,7 @@ if no domain exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L249-L303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L249-L303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, domain_name):
     &#34;&#34;&#34;Deletes the domain from the commcell.
@@ -1594,7 +1693,7 @@ name of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L222-L247" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L222-L247" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, domain_name):
     &#34;&#34;&#34;Returns a domain object of the specified domain name.
@@ -1644,7 +1743,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L203-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L203-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_domain(self, domain_name):
     &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
@@ -1674,7 +1773,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/domains.py#L305-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/domains.py#L305-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;

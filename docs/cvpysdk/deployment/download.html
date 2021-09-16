@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/download.py#L1-L350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/download.py#L1-L358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -72,6 +72,7 @@ Download
 from ..job import Job
 from ..exception import SDKException
 from .deploymentconstants import DownloadOptions
+from cvpysdk.schedules import Schedules, SchedulePattern
 
 
 class Download(object):
@@ -99,7 +100,8 @@ class Download(object):
             os_list=None,
             service_pack=None,
             cu_number=0,
-            sync_cache=True):
+            sync_cache=True,
+            schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
             Args:
@@ -275,6 +277,9 @@ class Download(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -283,6 +288,9 @@ class Download(object):
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Download&#39;, &#39;101&#39;)
@@ -414,7 +422,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/download.py#L38-L350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/download.py#L39-L358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -441,7 +449,8 @@ instance of the Commcell class</p>
             os_list=None,
             service_pack=None,
             cu_number=0,
-            sync_cache=True):
+            sync_cache=True,
+            schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
             Args:
@@ -617,6 +626,9 @@ instance of the Commcell class</p>
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -625,6 +637,9 @@ instance of the Commcell class</p>
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Download&#39;, &#39;101&#39;)
@@ -733,7 +748,7 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.download.Download.download_software"><code class="name flex">
-<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True)</span>
+<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downloads the os packages on the commcell</p>
@@ -840,7 +855,7 @@ cu_number=42
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/download.py#L57-L254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/download.py#L58-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
@@ -848,7 +863,8 @@ cu_number=42
         os_list=None,
         service_pack=None,
         cu_number=0,
-        sync_cache=True):
+        sync_cache=True,
+        schedule_pattern=None):
     &#34;&#34;&#34;Downloads the os packages on the commcell
 
         Args:
@@ -1024,6 +1040,9 @@ cu_number=42
         }
     }
 
+    if schedule_pattern:
+        request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
     flag, response = self._cvpysdkcommcell_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
     )
@@ -1032,6 +1051,9 @@ cu_number=42
         if response.json():
             if &#34;jobIds&#34; in response.json():
                 return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            elif &#34;taskId&#34; in response.json():
+                return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
             else:
                 raise SDKException(&#39;Download&#39;, &#39;101&#39;)
@@ -1066,7 +1088,7 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/download.py#L256-L350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/download.py#L264-L358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def sync_remote_cache(self, client_list=None):
     &#34;&#34;&#34;Syncs remote cache

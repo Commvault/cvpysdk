@@ -34,10 +34,11 @@ Sharepoint Instance, and to perform operations on that instance</p>
 &ndash; setter for common options property in restore</p>
 <p>_restore_json() &ndash;
 Method which creates json for a restore job</p>
+<p>_restore_v1_json() &ndash; Method which creates json for v1 client for a restore job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/sharepointinstance.py#L1-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/sharepointinstance.py#L1-L231" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -67,10 +68,14 @@ SharepointInstance:
 
      _restore_json() --  Method which creates json for a restore job
 
+     _restore_v1_json() -- Method which creates json for v1 client for a restore job
+
 &#34;&#34;&#34;
 
 from cvpysdk.exception import SDKException
 from ..instance import Instance
+from past.builtins import basestring
+
 
 
 class SharepointInstance(Instance):
@@ -143,6 +148,8 @@ class SharepointInstance(Instance):
             rest_json  (dict)  --  dictionary with parameters set required for a restore job
 
         &#34;&#34;&#34;
+        if(kwargs.get(&#34;v1&#34;,False)):
+            return self._restore_v1_json(**kwargs)
         rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
         rest_json[&#34;taskInfo&#34;][&#34;task&#34;][&#34;initiatedFrom&#34;] = 1
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;sharePointDocRstOption&#34;] = {}
@@ -157,7 +164,112 @@ class SharepointInstance(Instance):
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;commonOpts&#34;] = {
             &#34;notifyUserOnJobCompletion&#34;: False
         }
-        return rest_json</code></pre>
+        return rest_json
+
+    def _restore_v1_json(self, **kwargs):
+        &#34;&#34;&#34;
+        Creates json required for restore job for v1 client
+
+        Kwargs:
+
+            paths   (list)  --  list of sites or webs to be restored
+                Example : [
+                        &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
+                        &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
+                        ]
+        Returns:
+
+            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+
+        &#34;&#34;&#34;
+        restore_option = {}
+        if kwargs.get(&#34;restore_option&#34;):
+            restore_option = kwargs[&#34;restore_option&#34;]
+            for key in kwargs:
+                if not key == &#34;restore_option&#34;:
+                    restore_option[key] = kwargs[key]
+        else:
+            restore_option.update(kwargs)
+
+        if self._restore_association is None:
+            self._restore_association = self._instance
+
+        if restore_option.get(&#39;copy_precedence&#39;) is None:
+            restore_option[&#39;copy_precedence&#39;] = 0
+
+        if restore_option.get(&#39;overwrite&#39;) is not None:
+            restore_option[&#39;unconditional_overwrite&#39;] = restore_option[&#39;overwrite&#39;]
+
+        if restore_option.get(&#39;live_browse&#39;):
+            restore_option[&#39;liveBrowse&#39;] = True
+        else:
+            restore_option[&#39;liveBrowse&#39;] = False
+
+        # restore_option should use client key for destination client info
+        client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
+
+        if isinstance(client, basestring):
+            client = self._commcell_object.clients.get(client)
+
+        restore_option[&#34;client_name&#34;] = client.client_name
+        restore_option[&#34;client_id&#34;] = int(client.client_id)
+
+        # set time zone
+        from_time = restore_option.get(&#34;from_time&#34;, None)
+        to_time = restore_option.get(&#34;to_time&#34;, None)
+        time_list = [&#39;01/01/1970 00:00:00&#39;, &#39;1/1/1970 00:00:00&#39;]
+
+        if from_time and from_time not in time_list:
+            restore_option[&#34;from_time&#34;] = from_time
+
+        if to_time and to_time not in time_list:
+            restore_option[&#34;to_time&#34;] = to_time
+
+        self._restore_browse_option_json(restore_option)
+        self._restore_common_options_json(restore_option)
+        self._restore_destination_json(restore_option)
+        self._restore_fileoption_json(restore_option)
+        self._restore_common_opts_json(restore_option)
+
+        if not restore_option.get(&#39;index_free_restore&#39;, False):
+            if restore_option.get(&#34;paths&#34;) == []:
+                raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [self._restore_association],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 1
+                },
+                &#34;subTasks&#34;: [{
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 3,
+                        &#34;operationType&#34;: 1001
+                    },
+                    &#34;options&#34;: {
+                        &#34;restoreOptions&#34;: {
+                            &#34;sharePointDocRstOption&#34;: {
+                                &#34;isWorkflowAlertsRestoreOnly&#34;: False
+                            },
+                            &#34;browseOption&#34;: self._browse_restore_json,
+                            &#34;commonOptions&#34;: self._commonoption_restore_json,
+                            &#34;destination&#34;: self._destination_restore_json,
+                            &#34;fileOption&#34;: self._fileoption_restore_json,
+                            &#34;sharePointRstOption&#34;: {
+                                &#34;sharePointDocument&#34;: True,
+                                &#34;spRestoreToDisk&#34;: {
+                                    &#34;restoreToDiskPath&#34;: &#34;&#34;,
+                                    &#34;restoreToDisk&#34;: False
+                                }
+                            },
+                        },
+                        &#34;commonOpts&#34;: self._commonopts_restore_json
+                    }
+                }]
+            }
+        }
+        return request_json</code></pre>
 </details>
 </section>
 <section>
@@ -196,7 +308,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/instances/sharepointinstance.py#L35-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/instances/sharepointinstance.py#L39-L230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointInstance(Instance):
     &#34;&#34;&#34; Class  representing a sharepoint instance, and to perform operations on that instance
@@ -268,6 +380,8 @@ default: None</p>
             rest_json  (dict)  --  dictionary with parameters set required for a restore job
 
         &#34;&#34;&#34;
+        if(kwargs.get(&#34;v1&#34;,False)):
+            return self._restore_v1_json(**kwargs)
         rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
         rest_json[&#34;taskInfo&#34;][&#34;task&#34;][&#34;initiatedFrom&#34;] = 1
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;sharePointDocRstOption&#34;] = {}
@@ -282,7 +396,112 @@ default: None</p>
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;commonOpts&#34;] = {
             &#34;notifyUserOnJobCompletion&#34;: False
         }
-        return rest_json</code></pre>
+        return rest_json
+
+    def _restore_v1_json(self, **kwargs):
+        &#34;&#34;&#34;
+        Creates json required for restore job for v1 client
+
+        Kwargs:
+
+            paths   (list)  --  list of sites or webs to be restored
+                Example : [
+                        &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
+                        &#34;MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
+                        ]
+        Returns:
+
+            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+
+        &#34;&#34;&#34;
+        restore_option = {}
+        if kwargs.get(&#34;restore_option&#34;):
+            restore_option = kwargs[&#34;restore_option&#34;]
+            for key in kwargs:
+                if not key == &#34;restore_option&#34;:
+                    restore_option[key] = kwargs[key]
+        else:
+            restore_option.update(kwargs)
+
+        if self._restore_association is None:
+            self._restore_association = self._instance
+
+        if restore_option.get(&#39;copy_precedence&#39;) is None:
+            restore_option[&#39;copy_precedence&#39;] = 0
+
+        if restore_option.get(&#39;overwrite&#39;) is not None:
+            restore_option[&#39;unconditional_overwrite&#39;] = restore_option[&#39;overwrite&#39;]
+
+        if restore_option.get(&#39;live_browse&#39;):
+            restore_option[&#39;liveBrowse&#39;] = True
+        else:
+            restore_option[&#39;liveBrowse&#39;] = False
+
+        # restore_option should use client key for destination client info
+        client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
+
+        if isinstance(client, basestring):
+            client = self._commcell_object.clients.get(client)
+
+        restore_option[&#34;client_name&#34;] = client.client_name
+        restore_option[&#34;client_id&#34;] = int(client.client_id)
+
+        # set time zone
+        from_time = restore_option.get(&#34;from_time&#34;, None)
+        to_time = restore_option.get(&#34;to_time&#34;, None)
+        time_list = [&#39;01/01/1970 00:00:00&#39;, &#39;1/1/1970 00:00:00&#39;]
+
+        if from_time and from_time not in time_list:
+            restore_option[&#34;from_time&#34;] = from_time
+
+        if to_time and to_time not in time_list:
+            restore_option[&#34;to_time&#34;] = to_time
+
+        self._restore_browse_option_json(restore_option)
+        self._restore_common_options_json(restore_option)
+        self._restore_destination_json(restore_option)
+        self._restore_fileoption_json(restore_option)
+        self._restore_common_opts_json(restore_option)
+
+        if not restore_option.get(&#39;index_free_restore&#39;, False):
+            if restore_option.get(&#34;paths&#34;) == []:
+                raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [self._restore_association],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 1
+                },
+                &#34;subTasks&#34;: [{
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 3,
+                        &#34;operationType&#34;: 1001
+                    },
+                    &#34;options&#34;: {
+                        &#34;restoreOptions&#34;: {
+                            &#34;sharePointDocRstOption&#34;: {
+                                &#34;isWorkflowAlertsRestoreOnly&#34;: False
+                            },
+                            &#34;browseOption&#34;: self._browse_restore_json,
+                            &#34;commonOptions&#34;: self._commonoption_restore_json,
+                            &#34;destination&#34;: self._destination_restore_json,
+                            &#34;fileOption&#34;: self._fileoption_restore_json,
+                            &#34;sharePointRstOption&#34;: {
+                                &#34;sharePointDocument&#34;: True,
+                                &#34;spRestoreToDisk&#34;: {
+                                    &#34;restoreToDiskPath&#34;: &#34;&#34;,
+                                    &#34;restoreToDisk&#34;: False
+                                }
+                            },
+                        },
+                        &#34;commonOpts&#34;: self._commonopts_restore_json
+                    }
+                }]
+            }
+        }
+        return request_json</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">

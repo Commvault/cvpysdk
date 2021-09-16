@@ -149,6 +149,13 @@ Runs Data Verification Job</p>
 <p>get_copy()
 &ndash;
 Returns the StoragePolicyCopy class object of the input copy</p>
+<p>get_primary_copy()
+&ndash;
+Returns the primary copy of the storage policy</p>
+<p>get_secondary_copies()
+&ndash;
+Returns all the secondary copies in the storage policy sorted
+by copy precedence</p>
 <p>mark_for_recovery()
 &ndash;
 Marks Deduplication store for recovery</p>
@@ -167,6 +174,11 @@ Enables the content indexing for this storage policy</p>
 <p>run_content_indexing()
 &ndash;
 start the content indexing job for this storage policy</p>
+<p>start_over()
+&ndash;
+performs start over operation on storage policy/gdsp</p>
+<p>run_data_forecast()
+&ndash; runs granular data forecast operation for given storage policy</p>
 <h2 id="storagepolicycopy">Storagepolicycopy</h2>
 <p><strong>init</strong>(self, commcell_object,
 storage_policy_name,
@@ -217,10 +229,15 @@ delete a job from storage policy copy node</p>
 <p>recopy_jobs()
 &ndash;
 recopies a job on a secondary copy</p>
+<h2 id="attributes">Attributes</h2>
+<pre><code>**space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
+
+**space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1-L3566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1-L3837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -336,6 +353,11 @@ StoragePolicy:
 
     get_copy()                              --  Returns the StoragePolicyCopy class object of the input copy
 
+    get_primary_copy()                      --  Returns the primary copy of the storage policy
+
+    get_secondary_copies()                  --  Returns all the secondary copies in the storage policy sorted
+    by copy precedence
+
     mark_for_recovery()                     --  Marks Deduplication store for recovery
 
     run_recon()                             --  Runs non-mem DB Reconstruction job
@@ -347,6 +369,10 @@ StoragePolicy:
     enable_content_indexing()               --  Enables the content indexing for this storage policy
 
     run_content_indexing()                  --  start the content indexing job for this storage policy
+
+    start_over()                            --  performs start over operation on storage policy/gdsp
+
+    run_data_forecast()                     -- runs granular data forecast operation for given storage policy
 
 
 StoragePolicyCopy:
@@ -384,6 +410,12 @@ StoragePolicyCopy:
 
     recopy_jobs()                           --  recopies a job on a secondary copy
 
+Attributes
+----------
+
+    **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
+
+    **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
@@ -396,6 +428,7 @@ from future.standard_library import install_aliases
 
 from ..exception import SDKException
 from ..job import Job
+from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
@@ -684,8 +717,8 @@ class StoragePolicies(object):
 
     def add(self,
             storage_policy_name,
-            library,
-            media_agent,
+            library=None,
+            media_agent=None,
             dedup_path=None,
             incremental_sp=None,
             retention_period=5,
@@ -759,6 +792,8 @@ class StoragePolicies(object):
             &#39;global_policy_name&#39;: None,
             &#39;global_dedup_policy&#39;: True
         }
+        # if global_dedup_policy will always have some value
+        # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
@@ -771,6 +806,9 @@ class StoragePolicies(object):
             disk_library = library
         elif isinstance(library, basestring):
             disk_library = DiskLibrary(self._commcell_object, library)
+        elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+            pass
+            # when existing global_dedup_policy is used then library details not needed
         else:
             raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
@@ -778,61 +816,66 @@ class StoragePolicies(object):
             media_agent = media_agent
         elif isinstance(media_agent, basestring):
             media_agent = MediaAgent(self._commcell_object, media_agent)
+        elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+            pass
+            # when existing global_dedup_policy is used then MA details not needed
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         sp_type = 2 if dr_sp else 1
 
-        request_json = {
-            &#34;storagePolicyCopyInfo&#34;: {
-                &#34;library&#34;: {
-                    &#34;libraryId&#34;: int(disk_library.library_id)
-                },
-                &#34;mediaAgent&#34;: {
-                    &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
-                },
-                &#34;retentionRules&#34;: {
-                    &#34;retainBackupDataForDays&#34;: retention_period
-                }
-            },
-            &#34;storagePolicyName&#34;: storage_policy_name,
-            &#34;type&#34;: sp_type
-        }
-
-        if dedup_path:
-            if dedup_media_agent is None:
-                dedup_media_agent = media_agent
-            elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
-                dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
-            else:
-                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
-
-            dedup_info = {
+        if extra_arguments[&#34;global_policy_name&#34;] is None:
+            # then populate request json using supplied Library, MA and dedup path
+            request_json = {
                 &#34;storagePolicyCopyInfo&#34;: {
-                    &#34;dedupeFlags&#34;: {
-                        &#34;enableDeduplication&#34;: 1
+                    &#34;library&#34;: {
+                        &#34;libraryId&#34;: int(disk_library.library_id)
                     },
-                    &#34;DDBPartitionInfo&#34;: {
-                        &#34;maInfoList&#34;: [{
-                            &#34;mediaAgent&#34;: {
-                                &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
-                            },
-                            &#34;subStoreList&#34;: [{
-                                &#34;accessPath&#34;: {
-                                    &#34;path&#34;: dedup_path
-                                }
-                            }]
-                        }]
+                    &#34;mediaAgent&#34;: {
+                        &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
+                    },
+                    &#34;retentionRules&#34;: {
+                        &#34;retainBackupDataForDays&#34;: retention_period
                     }
-                }
+                },
+                &#34;storagePolicyName&#34;: storage_policy_name,
+                &#34;type&#34;: sp_type
             }
 
-            request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
+            if dedup_path:
+                if dedup_media_agent is None:
+                    dedup_media_agent = media_agent
+                elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
+                    dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+
+                dedup_info = {
+                    &#34;storagePolicyCopyInfo&#34;: {
+                        &#34;dedupeFlags&#34;: {
+                            &#34;enableDeduplication&#34;: 1
+                        },
+                        &#34;DDBPartitionInfo&#34;: {
+                            &#34;maInfoList&#34;: [{
+                                &#34;mediaAgent&#34;: {
+                                    &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
+                                },
+                                &#34;subStoreList&#34;: [{
+                                    &#34;accessPath&#34;: {
+                                        &#34;path&#34;: dedup_path
+                                    }
+                                }]
+                            }]
+                        }
+                    }
+                }
+
+                request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
 
         # since we are supplying a global policy thus there is no need of the
         # dedup store details and the library details which got included above,
         # it will take up the settings of the global storage policy
-        # thus redefining request_json
+        # thus defining request_json
 
         if extra_arguments[&#34;global_policy_name&#34;] is not None and extra_arguments[&#34;global_dedup_policy&#34;] is True:
             request_json = {
@@ -1080,6 +1123,8 @@ class StoragePolicies(object):
                             raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
                 except ValueError:
                     if response.text:
+                        if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
+                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, response.text.strip())
                         self.refresh()
                         return response.text.strip()
                     else:
@@ -1198,14 +1243,16 @@ class StoragePolicy(object):
                 except:
                     library_name = None
                 copy_precedence = copy[&#39;copyPrecedence&#39;]
-                is_snap = bool(int(copy[&#39;isSnapCopy&#39;]))
+                is_snap_copy = bool(int(copy[&#39;isSnapCopy&#39;]))
+                is_default_copy = bool(int(copy.get(&#39;isDefault&#39;, 0)))
                 temp = {
                     &#34;copyType&#34;: copy_type,
                     &#34;active&#34;: active,
                     &#34;copyId&#34;: copy_id,
                     &#34;libraryName&#34;: library_name,
                     &#34;copyPrecedence&#34;: copy_precedence,
-                    &#34;isSnapCopy&#34;: is_snap
+                    &#34;isSnapCopy&#34;: is_snap_copy,
+                    &#34;isDefault&#34;: is_default_copy
                 }
                 self._copies[copy_name] = temp
 
@@ -1570,7 +1617,7 @@ class StoragePolicy(object):
             )
 
         for entity in entity_names:
-            entity_obj = self._commcell_object.activate_entity.get(entity)
+            entity_obj = self._commcell_object.activate.entity_manager().get(entity)
             request_xml = request_xml + &#34;&#34;&#34;&lt;entities enabled=&#34;1&#34; entityId=&#34;{0}&#34; entityName=&#34;{1}&#34;/&gt;&#34;&#34;&#34;\
                 .format(entity_obj.entity_id, entity)
 
@@ -1778,133 +1825,130 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-        def create_selective_copy(self,
-                                  copy_name,
-                                  library_name,
-                                  media_agent_name,
-                                  sel_freq,
-                                  first_or_last_full,
-                                  backups_from,
-                                  daystartson=None):
-            &#34;&#34;&#34;Creates Selective copy for this storage policy
+    def create_selective_copy(self,
+                              copy_name,
+                              library_name,
+                              media_agent_name,
+                              sel_freq,
+                              first_or_last_full,
+                              backups_from,
+                              daystartson=None):
+        &#34;&#34;&#34;Creates Selective copy for this storage policy
 
-                Args:
-                    copy_name           (str)   --  copy name to create
-                    library_name        (str)   --  library name to be assigned
-                    media_agent_name    (str)   --  media_agent to be assigned
-                    drive_pool etc are for tape library
+            Args:
+                copy_name           (str)   --  copy name to create
+                library_name        (str)   --  library name to be assigned
+                media_agent_name    (str)   --  media_agent to be assigned
+                drive_pool etc are for tape library
 
-                    sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
-                    first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
-                    backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
+                sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
+                first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
+                backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
 
-                Raises:
-                    SDKException:
-                        if type of inputs in not string
+            Raises:
+                SDKException:
+                    if type of inputs in not string
 
-                        if copy with given name already exists
+                    if copy with given name already exists
 
-                        if failed to create copy
+                    if failed to create copy
 
-                        if response received is empty
+                    if response received is empty
 
-                        if response is not success
-            &#34;&#34;&#34;
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
-                raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+                    if response is not success
+        &#34;&#34;&#34;
+        if not (isinstance(copy_name, basestring) and
+                isinstance(library_name, basestring) and
+                isinstance(media_agent_name, basestring)):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
-            if self.has_copy(copy_name):
-                err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
-                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
+        if self.has_copy(copy_name):
+            err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
 
-            media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
 
-            selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
-                                   &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
-                                   }
-            week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
-                              &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
-                              }
+        selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
+                               &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
+                               }
+        week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
+                          &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
+                          }
 
-            selective_rule = selective_copy_freq[sel_freq]
-            copyflags = &#34;&#34;
-            if first_or_last_full == &#34;LastFull&#34;:
-                copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
-            elif first_or_last_full == &#34;LastFullWait&#34;:
-                copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
+        selective_rule = selective_copy_freq[sel_freq]
+        copyflags = &#34;&#34;
+        if first_or_last_full == &#34;LastFull&#34;:
+            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
+        elif first_or_last_full == &#34;LastFullWait&#34;:
+            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
 
-            dsostr = &#34;&#34;
-            if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
-                    and isinstance(daystartson, dict):
-                dsostr = &#34;&#34;&#34;
-                            &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
-                            &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
-                            &lt;/dayStartsAt&gt; 
-                         &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
-                                    daystartson[&#34;ampm&#34;])
+        dsostr = &#34;&#34;
+        if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
+                and isinstance(daystartson, dict):
+            dsostr = &#34;&#34;&#34;
+                        &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
+                        &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
+                        &lt;/dayStartsAt&gt; 
+                     &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
+                                daystartson[&#34;ampm&#34;])
 
-            day_starts = &#34;&#34;
-            if sel_freq == &#39;weekly&#39;:
-                if daystartson is not None:
-                    day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
-                else:
-                    day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
-                print(day_starts)
+        day_starts = &#34;&#34;
+        if sel_freq == &#39;weekly&#39;:
+            if daystartson is not None:
+                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
+            else:
+                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
 
-            # monthStartsOn
-            if sel_freq == &#39;monthly&#39;:
-                if daystartson is not None:
-                    day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
-                else:
-                    day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
-                # print(day_starts)
+        # monthStartsOn
+        if sel_freq == &#39;monthly&#39;:
+            if daystartson is not None:
+                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
+            else:
+                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
 
-            library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-            request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
-                    &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
-                        &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
-                        &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
-                        &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
-                        &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
-                        &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
-                        &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
-                                  &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
-                              &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
-                                                                           self.storage_policy_name,
-                                                                           library_id, library_name, media_agent_id,
-                                                                           media_agent_name, backups_from,
-                                                                           selective_rule, dsostr, day_starts)
-            create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
+        library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
+        request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
+                &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
+                    &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
+                    &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
+                    &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
+                    &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
+                    &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
+                    &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
+                              &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
+                          &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
+                                                                       self.storage_policy_name,
+                                                                       library_id, library_name, media_agent_id,
+                                                                       media_agent_name, backups_from,
+                                                                       selective_rule, dsostr, day_starts)
+        create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
-            # print(request_xml)
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                &#39;POST&#39;, create_copy_service, request_xml)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, create_copy_service, request_xml)
 
-            self.refresh()
+        self.refresh()
 
-            if flag:
-                if response.json():
-                    if &#39;error&#39; in response.json():
-                        error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
-                        if error_code != 0:
-                            if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
-                                error_message = &#34;Failed to create {0} Storage Policy copy with error \
-                                {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
-                            else:
-                                error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
-                                    copy_name
-                                )
-                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+        if flag:
+            if response.json():
+                if &#39;error&#39; in response.json():
+                    error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
+                    if error_code != 0:
+                        if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                            error_message = &#34;Failed to create {0} Storage Policy copy with error \
+                            {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
+                        else:
+                            error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
+                                copy_name
+                            )
+                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
 
-                    else:
-                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
     def copies(self):
@@ -2274,7 +2318,7 @@ class StoragePolicy(object):
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=1000):
+                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None):
         &#34;&#34;&#34;Runs the aux copy job from the commcell.
             Args:
 
@@ -2369,6 +2413,9 @@ class StoragePolicy(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         aux_copy = self._commcell_object._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -2384,6 +2431,10 @@ class StoragePolicy(object):
 
                     o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
                 else:
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Failed to run the aux copy job&#39;)
             else:
@@ -2692,7 +2743,7 @@ class StoragePolicy(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, **kwargs):
+                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
         &#34;&#34;&#34;Runs Data verification job
 
         Args:
@@ -2751,7 +2802,7 @@ class StoragePolicy(object):
                                     &#34;auxcopyJobOption&#34;: {
                                         &#34;maxNumberOfStreams&#34;: streams,
                                         &#34;useMaximumStreams&#34;: not bool(streams),
-                                        &#34;useScallableResourceManagement&#34;: use_scallable,
+                                        &#34;useScallableResourceManagement&#34;: use_scalable,
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: media_agent_name
                                         }
@@ -2772,6 +2823,10 @@ class StoragePolicy(object):
             }
         }
 
+        if schedule_pattern:
+            request[&#34;taskInfo&#34;][&#34;task&#34;] = {&#34;taskType&#34;: 2}
+            request = SchedulePattern().create_schedule(request, schedule_pattern)
+
         data_verf = self._commcell_object._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, data_verf, request
@@ -2784,6 +2839,8 @@ class StoragePolicy(object):
                     error_message = response.json()[&#39;errorMessage&#39;]
                     o_str = &#39;Data verification Request failed. Error: &#34;{0}&#34;&#39;.format(error_message)
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
                 else:
                     raise SDKException(&#39;Storage&#39;, &#39;109&#39;)
             else:
@@ -2969,6 +3026,42 @@ class StoragePolicy(object):
                 &#39;Storage&#39;, &#39;102&#39;, &#39;No copy exists with name: {0}&#39;.format(copy_name)
             )
 
+    def get_primary_copy(self):
+        &#34;&#34;&#34;Returns the primary copy of the storage policy
+
+            Returns:
+                object  -   Instance of the StoragePolicyCopy class of the primary copy
+
+            Raises:
+               SDKException:
+                   if unable to find a primary copy in the storage policy
+
+        &#34;&#34;&#34;
+
+        for copy_name, copy_info in self.copies.items():
+            if copy_info[&#39;isDefault&#39;]:
+                return self.get_copy(copy_name)
+
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Unable to find a primary copy in the storage policy&#39;)
+
+    def get_secondary_copies(self):
+        &#34;&#34;&#34;Returns all the secondary copies in the storage policy sorted by copy precedence
+
+            Returns:
+                list    -   A list of storage policy copy instances.
+
+        &#34;&#34;&#34;
+
+        sorted_copies = sorted(self.copies.items(), key=lambda x: x[1][&#39;copyPrecedence&#39;])  # Sort by copy precedence
+        result = []
+
+        for copy_name, copy_info in sorted_copies:
+            if not copy_info[&#39;isDefault&#39;] and not copy_info[&#39;isSnapCopy&#39;]:  # Skip primary copy and snap primary copies
+                copy_obj = self.get_copy(copy_name)
+                result.append(copy_obj)
+
+        return result
+
     def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
         &#34;&#34;&#34; Marks Deduplication store for recovery
 
@@ -3087,6 +3180,167 @@ class StoragePolicy(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
         self.refresh()
+
+    def start_over(self):
+        &#34;&#34;&#34;
+        performs a start over operation on the specified storage policy/gdsp
+
+            Args:
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+        returns None
+        &#34;&#34;&#34;
+        dependent_flag = self.storage_policy_properties[&#34;copy&#34;][0][&#34;dedupeFlags&#34;].get(&#34;useGlobalDedupStore&#34;, 0)
+        if dependent_flag == 1:
+            raise Exception(&#34;Dependent policy cannot be started over ...&#34;)
+
+        request = {
+            &#34;MediaManager_MMStartOverReq&#34;: {
+                    &#34;bSealDDB&#34;: True,
+                    &#34;storagePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: self.storage_policy_name
+                    }
+                }
+            }
+
+        startover = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, startover, request
+        )
+
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json():
+                    error_code = int(response.json()[&#39;errorCode&#39;])
+                    if error_code != 0:
+                        error_message = &#34;Failed to Start Over&#34;
+                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def run_data_forecast(self, **kwargs):
+        &#34;&#34;&#34;runs data forecast and retention report generation operation
+
+            Args:
+
+                **kwargs    --  dict of keyword arguments as follows:
+
+                    localeName      str     localeName for report [defaults to &#34;en-us&#34;]
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+            Returns None
+                &#34;&#34;&#34;
+        request = {
+                    &#34;processinginstructioninfo&#34;: {},
+                    &#34;taskInfo&#34;: {
+                        &#34;task&#34;: {
+                            &#34;taskType&#34;: 1,
+                            &#34;initiatedFrom&#34;: 2,
+                            &#34;taskFlags&#34;: {
+                                &#34;disabled&#34;: False
+                            }
+                        },
+                        &#34;appGroup&#34;: {},
+                        &#34;subTasks&#34;: [
+                            {
+                                &#34;subTaskOperation&#34;: 1,
+                                &#34;subTask&#34;: {
+                                    &#34;subTaskName&#34;: &#34;&#34;,
+                                    &#34;subTaskType&#34;: 1,
+                                    &#34;operationType&#34;: 4004
+                                },
+                                &#34;options&#34;: {
+                                    &#34;adminOpts&#34;: {
+                                        &#34;reportOption&#34;: {
+                                            &#34;showHiddenStoragePolicies&#34;: False,
+                                            &#34;showGlobalStoragePolicies&#34;: False,
+                                            &#34;storagePolicyCopyList&#34;: [
+                                                {
+                                                    &#34;storagePolicyName&#34;: self.storage_policy_name
+                                                }
+                                            ],
+                                            &#34;mediaInfoReport&#34;: {
+                                                &#34;mediaLocIn&#34;: True,
+                                                &#34;mediaLocOut&#34;: True
+                                            },
+                                            &#34;commonOpt&#34;: {
+                                                &#34;dateFormat&#34;: &#34;mm/dd/yyyy&#34;,
+                                                &#34;overrideDateTimeFormat&#34;: 0,
+                                                &#34;reportType&#34;: 7738,
+                                                &#34;summaryOnly&#34;: False,
+                                                &#34;reportCustomName&#34;: &#34;&#34;,
+                                                &#34;timeFormat&#34;: &#34;hh:mm:ss am/pm&#34;,
+                                                &#34;onCS&#34;: True,
+                                                &#34;locale&#34;: {
+                                                    &#34;country&#34;: &#34;English&#34;,
+                                                    &#34;language&#34;: &#34;UnitedStates&#34;,
+                                                    &#34;localeName&#34;: kwargs.get(&#34;localeName&#34;, &#34;en-us&#34;)
+                                                },
+                                                &#34;outputFormat&#34;: {
+                                                    &#34;outputType&#34;: 1,
+                                                    &#34;isNetworkDrive&#34;: False
+                                                }
+                                            },
+                                            &#34;computerSelectionList&#34;: {
+                                                &#34;includeAll&#34;: True
+                                            },
+                                            &#34;jobSummaryReport&#34;: {
+                                                &#34;subclientFilter&#34;: False
+                                            },
+                                            &#34;dataRetentionForecastReport&#34;: {
+                                                &#34;pruneData&#34;: True,
+                                                &#34;retainedBeyondBasicRet&#34;: False,
+                                                &#34;forecastDays&#34;: 0,
+                                                &#34;unPrunableData&#34;: True,
+                                                &#34;sortByOption&#34;: 2
+                                            },
+                                            &#34;agentList&#34;: [
+                                                {
+                                                    &#34;type&#34;: 0,
+                                                    &#34;flags&#34;: {
+                                                        &#34;include&#34;: True
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+
+        forecast = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, forecast, request)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    o_str = &#39;Failed to Run Data Forecast\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
 class StoragePolicyCopy(object):
     &#34;&#34;&#34;Class for performing storage policy copy operations for a specific storage policy copy&#34;&#34;&#34;
@@ -3245,6 +3499,11 @@ class StoragePolicyCopy(object):
                 raise SDKException(&#39;Response&#39;, &#39;111&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    @property
+    def copy_name(self):
+        &#34;&#34;&#34;Returns the name of the copy&#34;&#34;&#34;
+        return self._copy_name
 
     @property
     def copy_retention(self):
@@ -3466,6 +3725,11 @@ class StoragePolicyCopy(object):
         self._set_copy_properties()
 
     @property
+    def copy_precedence(self):
+        &#34;&#34;&#34;Gets the copy precedence of the copy&#34;&#34;&#34;
+        return self.all_copies[&#34;copyPrecedence&#34;]
+
+    @property
     def media_agent(self):
         &#34;&#34;&#34;Gets the media agent name of the copy&#34;&#34;&#34;
         return self._media_agent.get(&#39;mediaAgentName&#39;)
@@ -3685,6 +3949,30 @@ class StoragePolicyCopy(object):
         self._set_copy_properties()
 
     @property
+    def space_optimized_auxillary_copy(self):
+        &#34;&#34;&#34;Treats the space optimized auxillary copy setting as a read-only attribute.&#34;&#34;&#34;
+        if self._copy_properties.get(&#39;extendedFlags&#39;, {}).get(&#39;spaceOptimizedAuxCopy&#39;):
+            return True
+        return False
+
+    @space_optimized_auxillary_copy.setter
+    def space_optimized_auxillary_copy(self, value):
+        &#34;&#34;&#34;Sets the space optimized auxillary copy setting as the value provided as input.
+            Args:
+                value    (bool) --  Enable/Disable Space Optimized Auxillary Copy
+            Raises:
+                SDKException:
+                    if failed to update property
+
+                    if the type of value input is not correct
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+        self._copy_properties[&#39;extendedFlags&#39;][&#39;spaceOptimizedAuxCopy&#39;] = int(value)
+
+        self._set_copy_properties()
+
+    @property
     def is_inline_copy(self):
         &#34;&#34;&#34;Treats the inline copy setting as a read-only attribute.&#34;&#34;&#34;
         return &#39;inlineAuxCopy&#39; in self._copy_flags
@@ -3815,7 +4103,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L182-L873" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L198-L901" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicies(object):
     &#34;&#34;&#34;Class for getting all the storage policies associated with the commcell.&#34;&#34;&#34;
@@ -4098,8 +4386,8 @@ instance of the Commcell class</p>
 
     def add(self,
             storage_policy_name,
-            library,
-            media_agent,
+            library=None,
+            media_agent=None,
             dedup_path=None,
             incremental_sp=None,
             retention_period=5,
@@ -4173,6 +4461,8 @@ instance of the Commcell class</p>
             &#39;global_policy_name&#39;: None,
             &#39;global_dedup_policy&#39;: True
         }
+        # if global_dedup_policy will always have some value
+        # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
         if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
@@ -4185,6 +4475,9 @@ instance of the Commcell class</p>
             disk_library = library
         elif isinstance(library, basestring):
             disk_library = DiskLibrary(self._commcell_object, library)
+        elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+            pass
+            # when existing global_dedup_policy is used then library details not needed
         else:
             raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
@@ -4192,61 +4485,66 @@ instance of the Commcell class</p>
             media_agent = media_agent
         elif isinstance(media_agent, basestring):
             media_agent = MediaAgent(self._commcell_object, media_agent)
+        elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+            pass
+            # when existing global_dedup_policy is used then MA details not needed
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         sp_type = 2 if dr_sp else 1
 
-        request_json = {
-            &#34;storagePolicyCopyInfo&#34;: {
-                &#34;library&#34;: {
-                    &#34;libraryId&#34;: int(disk_library.library_id)
-                },
-                &#34;mediaAgent&#34;: {
-                    &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
-                },
-                &#34;retentionRules&#34;: {
-                    &#34;retainBackupDataForDays&#34;: retention_period
-                }
-            },
-            &#34;storagePolicyName&#34;: storage_policy_name,
-            &#34;type&#34;: sp_type
-        }
-
-        if dedup_path:
-            if dedup_media_agent is None:
-                dedup_media_agent = media_agent
-            elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
-                dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
-            else:
-                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
-
-            dedup_info = {
+        if extra_arguments[&#34;global_policy_name&#34;] is None:
+            # then populate request json using supplied Library, MA and dedup path
+            request_json = {
                 &#34;storagePolicyCopyInfo&#34;: {
-                    &#34;dedupeFlags&#34;: {
-                        &#34;enableDeduplication&#34;: 1
+                    &#34;library&#34;: {
+                        &#34;libraryId&#34;: int(disk_library.library_id)
                     },
-                    &#34;DDBPartitionInfo&#34;: {
-                        &#34;maInfoList&#34;: [{
-                            &#34;mediaAgent&#34;: {
-                                &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
-                            },
-                            &#34;subStoreList&#34;: [{
-                                &#34;accessPath&#34;: {
-                                    &#34;path&#34;: dedup_path
-                                }
-                            }]
-                        }]
+                    &#34;mediaAgent&#34;: {
+                        &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
+                    },
+                    &#34;retentionRules&#34;: {
+                        &#34;retainBackupDataForDays&#34;: retention_period
                     }
-                }
+                },
+                &#34;storagePolicyName&#34;: storage_policy_name,
+                &#34;type&#34;: sp_type
             }
 
-            request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
+            if dedup_path:
+                if dedup_media_agent is None:
+                    dedup_media_agent = media_agent
+                elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
+                    dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+
+                dedup_info = {
+                    &#34;storagePolicyCopyInfo&#34;: {
+                        &#34;dedupeFlags&#34;: {
+                            &#34;enableDeduplication&#34;: 1
+                        },
+                        &#34;DDBPartitionInfo&#34;: {
+                            &#34;maInfoList&#34;: [{
+                                &#34;mediaAgent&#34;: {
+                                    &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
+                                },
+                                &#34;subStoreList&#34;: [{
+                                    &#34;accessPath&#34;: {
+                                        &#34;path&#34;: dedup_path
+                                    }
+                                }]
+                            }]
+                        }
+                    }
+                }
+
+                request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
 
         # since we are supplying a global policy thus there is no need of the
         # dedup store details and the library details which got included above,
         # it will take up the settings of the global storage policy
-        # thus redefining request_json
+        # thus defining request_json
 
         if extra_arguments[&#34;global_policy_name&#34;] is not None and extra_arguments[&#34;global_dedup_policy&#34;] is True:
             request_json = {
@@ -4494,6 +4792,8 @@ instance of the Commcell class</p>
                             raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
                 except ValueError:
                     if response.text:
+                        if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
+                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, response.text.strip())
                         self.refresh()
                         return response.text.strip()
                     else:
@@ -4523,7 +4823,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L260-L270" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L276-L286" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_policies(self):
@@ -4542,7 +4842,7 @@ def all_storage_policies(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicies.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, storage_policy_name, library, media_agent, dedup_path=None, incremental_sp=None, retention_period=5, number_of_streams=None, ocum_server=None, dedup_media_agent=None, dr_sp=False, **kwargs)</span>
+<span>def <span class="ident">add</span></span>(<span>self, storage_policy_name, library=None, media_agent=None, dedup_path=None, incremental_sp=None, retention_period=5, number_of_streams=None, ocum_server=None, dedup_media_agent=None, dr_sp=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds a new Storage Policy to the Commcell.</p>
@@ -4634,12 +4934,12 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L461-L709" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L477-L735" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         storage_policy_name,
-        library,
-        media_agent,
+        library=None,
+        media_agent=None,
         dedup_path=None,
         incremental_sp=None,
         retention_period=5,
@@ -4713,6 +5013,8 @@ if response is not success
         &#39;global_policy_name&#39;: None,
         &#39;global_dedup_policy&#39;: True
     }
+    # if global_dedup_policy will always have some value
+    # global_policy_name decides if user wants to create sp using existing global dedup policy or not
     extra_arguments.update(kwargs)
 
     if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
@@ -4725,6 +5027,9 @@ if response is not success
         disk_library = library
     elif isinstance(library, basestring):
         disk_library = DiskLibrary(self._commcell_object, library)
+    elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+        pass
+        # when existing global_dedup_policy is used then library details not needed
     else:
         raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
@@ -4732,61 +5037,66 @@ if response is not success
         media_agent = media_agent
     elif isinstance(media_agent, basestring):
         media_agent = MediaAgent(self._commcell_object, media_agent)
+    elif extra_arguments[&#34;global_policy_name&#34;] is not None:
+        pass
+        # when existing global_dedup_policy is used then MA details not needed
     else:
         raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
     sp_type = 2 if dr_sp else 1
 
-    request_json = {
-        &#34;storagePolicyCopyInfo&#34;: {
-            &#34;library&#34;: {
-                &#34;libraryId&#34;: int(disk_library.library_id)
-            },
-            &#34;mediaAgent&#34;: {
-                &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
-            },
-            &#34;retentionRules&#34;: {
-                &#34;retainBackupDataForDays&#34;: retention_period
-            }
-        },
-        &#34;storagePolicyName&#34;: storage_policy_name,
-        &#34;type&#34;: sp_type
-    }
-
-    if dedup_path:
-        if dedup_media_agent is None:
-            dedup_media_agent = media_agent
-        elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
-            dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
-        else:
-            raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
-
-        dedup_info = {
+    if extra_arguments[&#34;global_policy_name&#34;] is None:
+        # then populate request json using supplied Library, MA and dedup path
+        request_json = {
             &#34;storagePolicyCopyInfo&#34;: {
-                &#34;dedupeFlags&#34;: {
-                    &#34;enableDeduplication&#34;: 1
+                &#34;library&#34;: {
+                    &#34;libraryId&#34;: int(disk_library.library_id)
                 },
-                &#34;DDBPartitionInfo&#34;: {
-                    &#34;maInfoList&#34;: [{
-                        &#34;mediaAgent&#34;: {
-                            &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
-                        },
-                        &#34;subStoreList&#34;: [{
-                            &#34;accessPath&#34;: {
-                                &#34;path&#34;: dedup_path
-                            }
-                        }]
-                    }]
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: int(media_agent.media_agent_id)
+                },
+                &#34;retentionRules&#34;: {
+                    &#34;retainBackupDataForDays&#34;: retention_period
                 }
-            }
+            },
+            &#34;storagePolicyName&#34;: storage_policy_name,
+            &#34;type&#34;: sp_type
         }
 
-        request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
+        if dedup_path:
+            if dedup_media_agent is None:
+                dedup_media_agent = media_agent
+            elif self._commcell_object.media_agents.has_media_agent(dedup_media_agent):
+                dedup_media_agent = MediaAgent(self._commcell_object, dedup_media_agent)
+            else:
+                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+
+            dedup_info = {
+                &#34;storagePolicyCopyInfo&#34;: {
+                    &#34;dedupeFlags&#34;: {
+                        &#34;enableDeduplication&#34;: 1
+                    },
+                    &#34;DDBPartitionInfo&#34;: {
+                        &#34;maInfoList&#34;: [{
+                            &#34;mediaAgent&#34;: {
+                                &#34;mediaAgentName&#34;: dedup_media_agent.media_agent_name
+                            },
+                            &#34;subStoreList&#34;: [{
+                                &#34;accessPath&#34;: {
+                                    &#34;path&#34;: dedup_path
+                                }
+                            }]
+                        }]
+                    }
+                }
+            }
+
+            request_json[&#34;storagePolicyCopyInfo&#34;].update(dedup_info[&#34;storagePolicyCopyInfo&#34;])
 
     # since we are supplying a global policy thus there is no need of the
     # dedup store details and the library details which got included above,
     # it will take up the settings of the global storage policy
-    # thus redefining request_json
+    # thus defining request_json
 
     if extra_arguments[&#34;global_policy_name&#34;] is not None and extra_arguments[&#34;global_dedup_policy&#34;] is True:
         request_json = {
@@ -4935,7 +5245,7 @@ is not of type String</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L319-L459" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L335-L475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_global_storage_policy(self,
                               global_storage_policy_name,
@@ -5123,7 +5433,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L711-L821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L737-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool, retention_period_days=15,
                 ocum_server=None):
@@ -5259,7 +5569,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L823-L869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L849-L897" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_policy_name):
     &#34;&#34;&#34;Deletes a storage policy from the commcell.
@@ -5297,6 +5607,8 @@ if response is not success
                         raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
             except ValueError:
                 if response.text:
+                    if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
+                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, response.text.strip())
                     self.refresh()
                     return response.text.strip()
                 else:
@@ -5330,7 +5642,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L290-L317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L306-L333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name):
     &#34;&#34;&#34;Returns a StoragePolicy object of the specified storage policy name.
@@ -5379,7 +5691,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L272-L288" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L288-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_policy(self, policy_name):
     &#34;&#34;&#34;Checks if a storage policy exists in the commcell with the input storage policy name.
@@ -5408,7 +5720,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L871-L873" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L899-L901" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the storage policies associated with the Commcell.&#34;&#34;&#34;
@@ -5427,7 +5739,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L876-L2865" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L904-L3102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicy(object):
     &#34;&#34;&#34;Class for performing storage policy operations for a specific storage policy&#34;&#34;&#34;
@@ -5530,14 +5842,16 @@ if type of the storage policy name argument is not string</p></div>
                 except:
                     library_name = None
                 copy_precedence = copy[&#39;copyPrecedence&#39;]
-                is_snap = bool(int(copy[&#39;isSnapCopy&#39;]))
+                is_snap_copy = bool(int(copy[&#39;isSnapCopy&#39;]))
+                is_default_copy = bool(int(copy.get(&#39;isDefault&#39;, 0)))
                 temp = {
                     &#34;copyType&#34;: copy_type,
                     &#34;active&#34;: active,
                     &#34;copyId&#34;: copy_id,
                     &#34;libraryName&#34;: library_name,
                     &#34;copyPrecedence&#34;: copy_precedence,
-                    &#34;isSnapCopy&#34;: is_snap
+                    &#34;isSnapCopy&#34;: is_snap_copy,
+                    &#34;isDefault&#34;: is_default_copy
                 }
                 self._copies[copy_name] = temp
 
@@ -5902,7 +6216,7 @@ if type of the storage policy name argument is not string</p></div>
             )
 
         for entity in entity_names:
-            entity_obj = self._commcell_object.activate_entity.get(entity)
+            entity_obj = self._commcell_object.activate.entity_manager().get(entity)
             request_xml = request_xml + &#34;&#34;&#34;&lt;entities enabled=&#34;1&#34; entityId=&#34;{0}&#34; entityName=&#34;{1}&#34;/&gt;&#34;&#34;&#34;\
                 .format(entity_obj.entity_id, entity)
 
@@ -6110,133 +6424,130 @@ if type of the storage policy name argument is not string</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-        def create_selective_copy(self,
-                                  copy_name,
-                                  library_name,
-                                  media_agent_name,
-                                  sel_freq,
-                                  first_or_last_full,
-                                  backups_from,
-                                  daystartson=None):
-            &#34;&#34;&#34;Creates Selective copy for this storage policy
+    def create_selective_copy(self,
+                              copy_name,
+                              library_name,
+                              media_agent_name,
+                              sel_freq,
+                              first_or_last_full,
+                              backups_from,
+                              daystartson=None):
+        &#34;&#34;&#34;Creates Selective copy for this storage policy
 
-                Args:
-                    copy_name           (str)   --  copy name to create
-                    library_name        (str)   --  library name to be assigned
-                    media_agent_name    (str)   --  media_agent to be assigned
-                    drive_pool etc are for tape library
+            Args:
+                copy_name           (str)   --  copy name to create
+                library_name        (str)   --  library name to be assigned
+                media_agent_name    (str)   --  media_agent to be assigned
+                drive_pool etc are for tape library
 
-                    sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
-                    first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
-                    backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
+                sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
+                first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
+                backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
 
-                Raises:
-                    SDKException:
-                        if type of inputs in not string
+            Raises:
+                SDKException:
+                    if type of inputs in not string
 
-                        if copy with given name already exists
+                    if copy with given name already exists
 
-                        if failed to create copy
+                    if failed to create copy
 
-                        if response received is empty
+                    if response received is empty
 
-                        if response is not success
-            &#34;&#34;&#34;
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
-                raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+                    if response is not success
+        &#34;&#34;&#34;
+        if not (isinstance(copy_name, basestring) and
+                isinstance(library_name, basestring) and
+                isinstance(media_agent_name, basestring)):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
-            if self.has_copy(copy_name):
-                err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
-                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
+        if self.has_copy(copy_name):
+            err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
 
-            media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
+        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
 
-            selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
-                                   &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
-                                   }
-            week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
-                              &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
-                              }
+        selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
+                               &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
+                               }
+        week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
+                          &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
+                          }
 
-            selective_rule = selective_copy_freq[sel_freq]
-            copyflags = &#34;&#34;
-            if first_or_last_full == &#34;LastFull&#34;:
-                copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
-            elif first_or_last_full == &#34;LastFullWait&#34;:
-                copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
+        selective_rule = selective_copy_freq[sel_freq]
+        copyflags = &#34;&#34;
+        if first_or_last_full == &#34;LastFull&#34;:
+            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
+        elif first_or_last_full == &#34;LastFullWait&#34;:
+            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
 
-            dsostr = &#34;&#34;
-            if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
-                    and isinstance(daystartson, dict):
-                dsostr = &#34;&#34;&#34;
-                            &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
-                            &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
-                            &lt;/dayStartsAt&gt; 
-                         &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
-                                    daystartson[&#34;ampm&#34;])
+        dsostr = &#34;&#34;
+        if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
+                and isinstance(daystartson, dict):
+            dsostr = &#34;&#34;&#34;
+                        &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
+                        &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
+                        &lt;/dayStartsAt&gt; 
+                     &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
+                                daystartson[&#34;ampm&#34;])
 
-            day_starts = &#34;&#34;
-            if sel_freq == &#39;weekly&#39;:
-                if daystartson is not None:
-                    day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
-                else:
-                    day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
-                print(day_starts)
+        day_starts = &#34;&#34;
+        if sel_freq == &#39;weekly&#39;:
+            if daystartson is not None:
+                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
+            else:
+                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
 
-            # monthStartsOn
-            if sel_freq == &#39;monthly&#39;:
-                if daystartson is not None:
-                    day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
-                else:
-                    day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
-                # print(day_starts)
+        # monthStartsOn
+        if sel_freq == &#39;monthly&#39;:
+            if daystartson is not None:
+                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
+            else:
+                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
 
-            library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-            request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
-                    &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
-                        &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
-                        &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
-                        &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
-                        &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
-                        &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
-                        &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
-                                  &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
-                              &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
-                                                                           self.storage_policy_name,
-                                                                           library_id, library_name, media_agent_id,
-                                                                           media_agent_name, backups_from,
-                                                                           selective_rule, dsostr, day_starts)
-            create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
+        library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
+        request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
+                &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
+                    &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
+                    &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
+                    &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
+                    &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
+                    &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
+                    &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
+                              &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
+                          &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
+                                                                       self.storage_policy_name,
+                                                                       library_id, library_name, media_agent_id,
+                                                                       media_agent_name, backups_from,
+                                                                       selective_rule, dsostr, day_starts)
+        create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
-            # print(request_xml)
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                &#39;POST&#39;, create_copy_service, request_xml)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, create_copy_service, request_xml)
 
-            self.refresh()
+        self.refresh()
 
-            if flag:
-                if response.json():
-                    if &#39;error&#39; in response.json():
-                        error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
-                        if error_code != 0:
-                            if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
-                                error_message = &#34;Failed to create {0} Storage Policy copy with error \
-                                {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
-                            else:
-                                error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
-                                    copy_name
-                                )
-                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+        if flag:
+            if response.json():
+                if &#39;error&#39; in response.json():
+                    error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
+                    if error_code != 0:
+                        if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                            error_message = &#34;Failed to create {0} Storage Policy copy with error \
+                            {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
+                        else:
+                            error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
+                                copy_name
+                            )
+                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
 
-                    else:
-                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
     def copies(self):
@@ -6606,7 +6917,7 @@ if type of the storage policy name argument is not string</p></div>
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=1000):
+                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None):
         &#34;&#34;&#34;Runs the aux copy job from the commcell.
             Args:
 
@@ -6701,6 +7012,9 @@ if type of the storage policy name argument is not string</p></div>
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         aux_copy = self._commcell_object._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -6716,6 +7030,10 @@ if type of the storage policy name argument is not string</p></div>
 
                     o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
                 else:
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Failed to run the aux copy job&#39;)
             else:
@@ -7024,7 +7342,7 @@ if type of the storage policy name argument is not string</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, **kwargs):
+                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
         &#34;&#34;&#34;Runs Data verification job
 
         Args:
@@ -7083,7 +7401,7 @@ if type of the storage policy name argument is not string</p></div>
                                     &#34;auxcopyJobOption&#34;: {
                                         &#34;maxNumberOfStreams&#34;: streams,
                                         &#34;useMaximumStreams&#34;: not bool(streams),
-                                        &#34;useScallableResourceManagement&#34;: use_scallable,
+                                        &#34;useScallableResourceManagement&#34;: use_scalable,
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: media_agent_name
                                         }
@@ -7104,6 +7422,10 @@ if type of the storage policy name argument is not string</p></div>
             }
         }
 
+        if schedule_pattern:
+            request[&#34;taskInfo&#34;][&#34;task&#34;] = {&#34;taskType&#34;: 2}
+            request = SchedulePattern().create_schedule(request, schedule_pattern)
+
         data_verf = self._commcell_object._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, data_verf, request
@@ -7116,6 +7438,8 @@ if type of the storage policy name argument is not string</p></div>
                     error_message = response.json()[&#39;errorMessage&#39;]
                     o_str = &#39;Data verification Request failed. Error: &#34;{0}&#34;&#39;.format(error_message)
                     raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
                 else:
                     raise SDKException(&#39;Storage&#39;, &#39;109&#39;)
             else:
@@ -7301,6 +7625,42 @@ if type of the storage policy name argument is not string</p></div>
                 &#39;Storage&#39;, &#39;102&#39;, &#39;No copy exists with name: {0}&#39;.format(copy_name)
             )
 
+    def get_primary_copy(self):
+        &#34;&#34;&#34;Returns the primary copy of the storage policy
+
+            Returns:
+                object  -   Instance of the StoragePolicyCopy class of the primary copy
+
+            Raises:
+               SDKException:
+                   if unable to find a primary copy in the storage policy
+
+        &#34;&#34;&#34;
+
+        for copy_name, copy_info in self.copies.items():
+            if copy_info[&#39;isDefault&#39;]:
+                return self.get_copy(copy_name)
+
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Unable to find a primary copy in the storage policy&#39;)
+
+    def get_secondary_copies(self):
+        &#34;&#34;&#34;Returns all the secondary copies in the storage policy sorted by copy precedence
+
+            Returns:
+                list    -   A list of storage policy copy instances.
+
+        &#34;&#34;&#34;
+
+        sorted_copies = sorted(self.copies.items(), key=lambda x: x[1][&#39;copyPrecedence&#39;])  # Sort by copy precedence
+        result = []
+
+        for copy_name, copy_info in sorted_copies:
+            if not copy_info[&#39;isDefault&#39;] and not copy_info[&#39;isSnapCopy&#39;]:  # Skip primary copy and snap primary copies
+                copy_obj = self.get_copy(copy_name)
+                result.append(copy_obj)
+
+        return result
+
     def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
         &#34;&#34;&#34; Marks Deduplication store for recovery
 
@@ -7418,7 +7778,168 @@ if type of the storage policy name argument is not string</p></div>
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-        self.refresh()</code></pre>
+        self.refresh()
+
+    def start_over(self):
+        &#34;&#34;&#34;
+        performs a start over operation on the specified storage policy/gdsp
+
+            Args:
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+        returns None
+        &#34;&#34;&#34;
+        dependent_flag = self.storage_policy_properties[&#34;copy&#34;][0][&#34;dedupeFlags&#34;].get(&#34;useGlobalDedupStore&#34;, 0)
+        if dependent_flag == 1:
+            raise Exception(&#34;Dependent policy cannot be started over ...&#34;)
+
+        request = {
+            &#34;MediaManager_MMStartOverReq&#34;: {
+                    &#34;bSealDDB&#34;: True,
+                    &#34;storagePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: self.storage_policy_name
+                    }
+                }
+            }
+
+        startover = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, startover, request
+        )
+
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json():
+                    error_code = int(response.json()[&#39;errorCode&#39;])
+                    if error_code != 0:
+                        error_message = &#34;Failed to Start Over&#34;
+                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def run_data_forecast(self, **kwargs):
+        &#34;&#34;&#34;runs data forecast and retention report generation operation
+
+            Args:
+
+                **kwargs    --  dict of keyword arguments as follows:
+
+                    localeName      str     localeName for report [defaults to &#34;en-us&#34;]
+
+            Raises:
+                  SDKException -- if response is bad/ flag is false
+
+            Returns None
+                &#34;&#34;&#34;
+        request = {
+                    &#34;processinginstructioninfo&#34;: {},
+                    &#34;taskInfo&#34;: {
+                        &#34;task&#34;: {
+                            &#34;taskType&#34;: 1,
+                            &#34;initiatedFrom&#34;: 2,
+                            &#34;taskFlags&#34;: {
+                                &#34;disabled&#34;: False
+                            }
+                        },
+                        &#34;appGroup&#34;: {},
+                        &#34;subTasks&#34;: [
+                            {
+                                &#34;subTaskOperation&#34;: 1,
+                                &#34;subTask&#34;: {
+                                    &#34;subTaskName&#34;: &#34;&#34;,
+                                    &#34;subTaskType&#34;: 1,
+                                    &#34;operationType&#34;: 4004
+                                },
+                                &#34;options&#34;: {
+                                    &#34;adminOpts&#34;: {
+                                        &#34;reportOption&#34;: {
+                                            &#34;showHiddenStoragePolicies&#34;: False,
+                                            &#34;showGlobalStoragePolicies&#34;: False,
+                                            &#34;storagePolicyCopyList&#34;: [
+                                                {
+                                                    &#34;storagePolicyName&#34;: self.storage_policy_name
+                                                }
+                                            ],
+                                            &#34;mediaInfoReport&#34;: {
+                                                &#34;mediaLocIn&#34;: True,
+                                                &#34;mediaLocOut&#34;: True
+                                            },
+                                            &#34;commonOpt&#34;: {
+                                                &#34;dateFormat&#34;: &#34;mm/dd/yyyy&#34;,
+                                                &#34;overrideDateTimeFormat&#34;: 0,
+                                                &#34;reportType&#34;: 7738,
+                                                &#34;summaryOnly&#34;: False,
+                                                &#34;reportCustomName&#34;: &#34;&#34;,
+                                                &#34;timeFormat&#34;: &#34;hh:mm:ss am/pm&#34;,
+                                                &#34;onCS&#34;: True,
+                                                &#34;locale&#34;: {
+                                                    &#34;country&#34;: &#34;English&#34;,
+                                                    &#34;language&#34;: &#34;UnitedStates&#34;,
+                                                    &#34;localeName&#34;: kwargs.get(&#34;localeName&#34;, &#34;en-us&#34;)
+                                                },
+                                                &#34;outputFormat&#34;: {
+                                                    &#34;outputType&#34;: 1,
+                                                    &#34;isNetworkDrive&#34;: False
+                                                }
+                                            },
+                                            &#34;computerSelectionList&#34;: {
+                                                &#34;includeAll&#34;: True
+                                            },
+                                            &#34;jobSummaryReport&#34;: {
+                                                &#34;subclientFilter&#34;: False
+                                            },
+                                            &#34;dataRetentionForecastReport&#34;: {
+                                                &#34;pruneData&#34;: True,
+                                                &#34;retainedBeyondBasicRet&#34;: False,
+                                                &#34;forecastDays&#34;: 0,
+                                                &#34;unPrunableData&#34;: True,
+                                                &#34;sortByOption&#34;: 2
+                                            },
+                                            &#34;agentList&#34;: [
+                                                {
+                                                    &#34;type&#34;: 0,
+                                                    &#34;flags&#34;: {
+                                                        &#34;include&#34;: True
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+
+        forecast = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, forecast, request)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    o_str = &#39;Failed to Run Data Forecast\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -7430,7 +7951,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2025-L2036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2052-L2063" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def aux_copies(self):
@@ -7452,7 +7973,7 @@ def aux_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1685-L1688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1712-L1715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copies(self):
@@ -7466,7 +7987,7 @@ def copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1705-L1710" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1732-L1737" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -7482,7 +8003,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2017-L2023" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2044-L2050" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -7499,7 +8020,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2009-L2015" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2036-L2042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -7516,7 +8037,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1695-L1698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1722-L1725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -7532,7 +8053,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2038-L2049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2065-L2076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snap_copy(self):
@@ -7556,7 +8077,7 @@ storage policy advanced properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1999-L2007" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2026-L2034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_advanced_properties(self):
@@ -7575,7 +8096,7 @@ def storage_policy_advanced_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1690-L1693" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1717-L1720" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -7589,7 +8110,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1700-L1703" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1727-L1730" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
@@ -7604,7 +8125,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1991-L1997" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2018-L2024" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_properties(self):
@@ -7640,7 +8161,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2679-L2721" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2719-L2761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_ddb_partition(self,
                       copy_id,
@@ -7741,7 +8262,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2245-L2367" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2279-L2401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_dedupe_secondary_copy(self, copy_name, library_name,
                                  media_agent_name, path, ddb_media_agent,
@@ -7912,7 +8433,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1007-L1161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1037-L1191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_secondary_copy(self,
                           copy_name,
@@ -8071,6 +8592,173 @@ if response is not success
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.create_selective_copy"><code class="name flex">
+<span>def <span class="ident">create_selective_copy</span></span>(<span>self, copy_name, library_name, media_agent_name, sel_freq, first_or_last_full, backups_from, daystartson=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates Selective copy for this storage policy</p>
+<h2 id="args">Args</h2>
+<p>copy_name
+(str)
+&ndash;
+copy name to create
+library_name
+(str)
+&ndash;
+library name to be assigned
+media_agent_name
+(str)
+&ndash;
+media_agent to be assigned
+drive_pool etc are for tape library</p>
+<p>sel_freq
+(str) &ndash; {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
+first_or_last_full
+(str) &ndash; {FirstFull, LastFull, LastFullWait}
+backups_from
+(str) &ndash; {start date in yyyy-mm-dd format to pick jobs from this date}</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of inputs in not string</p>
+<pre><code>if copy with given name already exists
+
+if failed to create copy
+
+if response received is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1587-L1710" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def create_selective_copy(self,
+                          copy_name,
+                          library_name,
+                          media_agent_name,
+                          sel_freq,
+                          first_or_last_full,
+                          backups_from,
+                          daystartson=None):
+    &#34;&#34;&#34;Creates Selective copy for this storage policy
+
+        Args:
+            copy_name           (str)   --  copy name to create
+            library_name        (str)   --  library name to be assigned
+            media_agent_name    (str)   --  media_agent to be assigned
+            drive_pool etc are for tape library
+
+            sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
+            first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
+            backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
+
+        Raises:
+            SDKException:
+                if type of inputs in not string
+
+                if copy with given name already exists
+
+                if failed to create copy
+
+                if response received is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    if not (isinstance(copy_name, basestring) and
+            isinstance(library_name, basestring) and
+            isinstance(media_agent_name, basestring)):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if self.has_copy(copy_name):
+        err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
+
+    media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
+
+    selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
+                           &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
+                           }
+    week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
+                      &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
+                      }
+
+    selective_rule = selective_copy_freq[sel_freq]
+    copyflags = &#34;&#34;
+    if first_or_last_full == &#34;LastFull&#34;:
+        copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
+    elif first_or_last_full == &#34;LastFullWait&#34;:
+        copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
+
+    dsostr = &#34;&#34;
+    if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
+            and isinstance(daystartson, dict):
+        dsostr = &#34;&#34;&#34;
+                    &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
+                    &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
+                    &lt;/dayStartsAt&gt; 
+                 &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
+                            daystartson[&#34;ampm&#34;])
+
+    day_starts = &#34;&#34;
+    if sel_freq == &#39;weekly&#39;:
+        if daystartson is not None:
+            day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
+        else:
+            day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
+
+    # monthStartsOn
+    if sel_freq == &#39;monthly&#39;:
+        if daystartson is not None:
+            day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
+        else:
+            day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
+
+    library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
+    request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
+            &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
+                &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
+                &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
+                &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
+                &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
+                &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
+                &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
+                          &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
+                      &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
+                                                                   self.storage_policy_name,
+                                                                   library_id, library_name, media_agent_id,
+                                                                   media_agent_name, backups_from,
+                                                                   selective_rule, dsostr, day_starts)
+    create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, create_copy_service, request_xml)
+
+    self.refresh()
+
+    if flag:
+        if response.json():
+            if &#39;error&#39; in response.json():
+                error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
+                if error_code != 0:
+                    if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                        error_message = &#34;Failed to create {0} Storage Policy copy with error \
+                        {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
+                    else:
+                        error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
+                            copy_name
+                        )
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy"><code class="name flex">
 <span>def <span class="ident">create_snap_copy</span></span>(<span>self, copy_name, is_mirror_copy, is_snap_copy, library_name, media_agent_name, source_copy, provisioning_policy=None, resource_pool=None, is_replica_copy=None)</span>
 </code></dt>
@@ -8129,7 +8817,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1378-L1496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1408-L1526" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_snap_copy(self,
                      copy_name,
@@ -8276,7 +8964,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1498-L1683" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1528-L1585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_secondary_copy(self, copy_name):
     &#34;&#34;&#34;Deletes the copy associated with this storage policy
@@ -8335,135 +9023,7 @@ if response is not success
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         response_string = self._commcell_object._update_response_(response.text)
-        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-
-    def create_selective_copy(self,
-                              copy_name,
-                              library_name,
-                              media_agent_name,
-                              sel_freq,
-                              first_or_last_full,
-                              backups_from,
-                              daystartson=None):
-        &#34;&#34;&#34;Creates Selective copy for this storage policy
-
-            Args:
-                copy_name           (str)   --  copy name to create
-                library_name        (str)   --  library name to be assigned
-                media_agent_name    (str)   --  media_agent to be assigned
-                drive_pool etc are for tape library
-
-                sel_freq            (str) -- {all,hourly,daily,weekly,monthly,quaterly,half-year,year}
-                first_or_last_full  (str) -- {FirstFull, LastFull, LastFullWait}
-                backups_from        (str) -- {start date in yyyy-mm-dd format to pick jobs from this date}
-
-            Raises:
-                SDKException:
-                    if type of inputs in not string
-
-                    if copy with given name already exists
-
-                    if failed to create copy
-
-                    if response received is empty
-
-                    if response is not success
-        &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
-            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
-        if self.has_copy(copy_name):
-            err_msg = &#39;Storage Policy copy &#34;{0}&#34; already exists.&#39;.format(copy_name)
-            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, err_msg)
-
-        media_agent_id = self._commcell_object.media_agents._media_agents[media_agent_name.lower()][&#39;id&#39;]
-
-        selective_copy_freq = {&#39;all&#39;: 2, &#39;hourly&#39;: 262144, &#39;daily&#39;: 524288, &#39;weekly&#39;: 4, &#39;monthly&#39;: 8,
-                               &#39;quarterly&#39;: 16, &#39;halfyearly&#39;: 32, &#39;yearly&#39;: 64, &#39;advanced&#39;: 16777216
-                               }
-        week_starts_on = {&#39;Sunday&#39;: 0, &#39;Monday&#39;: 1, &#39;Tuesday&#39;: 2, &#39;Wednesday&#39;: 3, &#39;Thursday&#39;: 4,
-                          &#39;Friday&#39;: 5, &#39;Saturday&#39;: 6
-                          }
-
-        selective_rule = selective_copy_freq[sel_freq]
-        copyflags = &#34;&#34;
-        if first_or_last_full == &#34;LastFull&#34;:
-            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; /&gt;&#34;&#34;&#34;
-        elif first_or_last_full == &#34;LastFullWait&#34;:
-            copyflags = &#34;&#34;&#34;&lt;copyFlags lastFull = &#34;1&#34; lastFullWait=&#34;1&#34; /&gt;&#34;&#34;&#34;
-
-        dsostr = &#34;&#34;
-        if (sel_freq == &#39;daily&#39; or sel_freq == &#39;hourly&#39;) and daystartson is not None \
-                and isinstance(daystartson, dict):
-            dsostr = &#34;&#34;&#34;
-                        &lt;dayStartsAt amOrPm = &#34;{3}&#34;&gt; 
-                        &lt;dayStartsHoursMinutes hours=&#34;{0}&#34; minutes = &#34;{1}&#34;  seconds= &#34;{2}&#34; /&gt;
-                        &lt;/dayStartsAt&gt; 
-                     &#34;&#34;&#34;.format(daystartson[&#34;hours&#34;], daystartson[&#34;minutes&#34;], daystartson[&#34;seconds&#34;],
-                                daystartson[&#34;ampm&#34;])
-
-        day_starts = &#34;&#34;
-        if sel_freq == &#39;weekly&#39;:
-            if daystartson is not None:
-                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[daystartson])
-            else:
-                day_starts = &#34;&#34;&#34; weekDayStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(week_starts_on[&#39;Friday&#39;])
-            print(day_starts)
-
-        # monthStartsOn
-        if sel_freq == &#39;monthly&#39;:
-            if daystartson is not None:
-                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{0}&#34; &#34;&#34;&#34;.format(daystartson)
-            else:
-                day_starts = &#34;&#34;&#34; monthStartsOn=&#34;{}&#34; &#34;&#34;&#34;.format(1)
-            # print(day_starts)
-
-        library_id = self._commcell_object.disk_libraries._libraries[library_name.lower()]
-        request_xml = str(&#34;&#34;&#34;&lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
-                &lt;storagePolicyCopyInfo copyType=&#34;2&#34; isDefault=&#34;0&#34; isMirrorCopy=&#34;0&#34; isSnapCopy=&#34;0&#34; numberOfStreamsToCombine=&#34;1&#34;&gt;
-                    &lt;StoragePolicyCopy _type_=&#34;18&#34; storagePolicyId=&#34;{1}&#34; storagePolicyName=&#34;{2}&#34; /&gt;
-                    &lt;library _type_=&#34;9&#34; libraryId=&#34;{3}&#34; libraryName=&#34;{4}&#34; /&gt;
-                    &lt;mediaAgent _type_=&#34;11&#34; mediaAgentId=&#34;{5}&#34; mediaAgentName=&#34;{6}&#34; /&gt;
-                    &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;100&#34; retainBackupDataForDays=&#34;150&#34; /&gt;
-                    &lt;startTime  timeValue = &#34;{7}&#34; /&gt;
-                    &lt;selectiveCopyRules selectiveRule=&#34;{8}&#34; {10} &gt; {9} &lt;/selectiveCopyRules&gt; &#34;&#34;&#34; + copyflags +
-                              &#34;&#34;&#34;&lt;/storagePolicyCopyInfo&gt;
-                          &lt;/App_CreateStoragePolicyCopyReq&gt;&#34;&#34;&#34;).format(copy_name, self.storage_policy_id,
-                                                                       self.storage_policy_name,
-                                                                       library_id, library_name, media_agent_id,
-                                                                       media_agent_name, backups_from,
-                                                                       selective_rule, dsostr, day_starts)
-        create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
-
-        # print(request_xml)
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;POST&#39;, create_copy_service, request_xml)
-
-        self.refresh()
-
-        if flag:
-            if response.json():
-                if &#39;error&#39; in response.json():
-                    error_code = int(response.json()[&#39;error&#39;][&#39;errorCode&#39;])
-                    if error_code != 0:
-                        if &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
-                            error_message = &#34;Failed to create {0} Storage Policy copy with error \
-                            {1}&#34;.format(copy_name, str(response.json()[&#39;error&#39;][&#39;errorMessage&#39;]))
-                        else:
-                            error_message = &#34;Failed to create {0} Storage Policy copy&#34;.format(
-                                copy_name
-                            )
-                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
-
-                else:
-                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
-            else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.enable_content_indexing"><code class="name flex">
@@ -8510,7 +9070,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1215-L1294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1245-L1324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(
         self,
@@ -8626,7 +9186,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1296-L1376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1326-L1406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_entity_extraction(self, entity_details, entity_names, ca_client_name):
     &#34;&#34;&#34;configures offline CI entity extraction for given subclient id&#39;s on this storage policy
@@ -8681,7 +9241,7 @@ if response is not success
         )
 
     for entity in entity_names:
-        entity_obj = self._commcell_object.activate_entity.get(entity)
+        entity_obj = self._commcell_object.activate.entity_manager().get(entity)
         request_xml = request_xml + &#34;&#34;&#34;&lt;entities enabled=&#34;1&#34; entityId=&#34;{0}&#34; entityName=&#34;{1}&#34;/&gt;&#34;&#34;&#34;\
             .format(entity_obj.entity_id, entity)
 
@@ -8730,7 +9290,7 @@ if type of the copy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2723-L2746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2763-L2786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy(self, copy_name):
     &#34;&#34;&#34;Returns a storage policy copy object if copy exists
@@ -8780,7 +9340,7 @@ if unable to find the given copy name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1712-L1734" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1739-L1761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_precedence(self, copy_name):
     &#34;&#34;&#34; returns the copy precedence value associated with the copy name
@@ -8807,6 +9367,75 @@ if unable to find the given copy name</p></div>
         &#39;Failed to get copy precedence from policy&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.get_primary_copy"><code class="name flex">
+<span>def <span class="ident">get_primary_copy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the primary copy of the storage policy</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Instance of the StoragePolicyCopy class of the primary copy</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if unable to find a primary copy in the storage policy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2788-L2804" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_primary_copy(self):
+    &#34;&#34;&#34;Returns the primary copy of the storage policy
+
+        Returns:
+            object  -   Instance of the StoragePolicyCopy class of the primary copy
+
+        Raises:
+           SDKException:
+               if unable to find a primary copy in the storage policy
+
+    &#34;&#34;&#34;
+
+    for copy_name, copy_info in self.copies.items():
+        if copy_info[&#39;isDefault&#39;]:
+            return self.get_copy(copy_name)
+
+    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Unable to find a primary copy in the storage policy&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.get_secondary_copies"><code class="name flex">
+<span>def <span class="ident">get_secondary_copies</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns all the secondary copies in the storage policy sorted by copy precedence</p>
+<h2 id="returns">Returns</h2>
+<p>list
+-
+A list of storage policy copy instances.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2806-L2822" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_secondary_copies(self):
+    &#34;&#34;&#34;Returns all the secondary copies in the storage policy sorted by copy precedence
+
+        Returns:
+            list    -   A list of storage policy copy instances.
+
+    &#34;&#34;&#34;
+
+    sorted_copies = sorted(self.copies.items(), key=lambda x: x[1][&#39;copyPrecedence&#39;])  # Sort by copy precedence
+    result = []
+
+    for copy_name, copy_info in sorted_copies:
+        if not copy_info[&#39;isDefault&#39;] and not copy_info[&#39;isSnapCopy&#39;]:  # Skip primary copy and snap primary copies
+            copy_obj = self.get_copy(copy_name)
+            result.append(copy_obj)
+
+    return result</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.has_copy"><code class="name flex">
 <span>def <span class="ident">has_copy</span></span>(<span>self, copy_name)</span>
 </code></dt>
@@ -8825,7 +9454,7 @@ if type of the storage policy copy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L988-L1005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1018-L1035" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_copy(self, copy_name):
     &#34;&#34;&#34;Checks if a storage policy copy exists for this storage
@@ -8871,7 +9500,7 @@ SIDB store path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2748-L2767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2824-L2843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
     &#34;&#34;&#34; Marks Deduplication store for recovery
@@ -8907,7 +9536,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1893-L1910" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1920-L1937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_dynamic_stream_allocation(self, enable=True):
     &#34;&#34;&#34;
@@ -8964,7 +9593,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2571-L2677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2611-L2717" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def move_dedupe_store(self,
                       copy_name,
@@ -9095,7 +9724,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2824-L2865" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2900-L2941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reassociate_all_subclients(self, dest_storage_policy_name=&#39;CV_DEFAULT&#39;):
     &#34;&#34;&#34;
@@ -9149,7 +9778,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2172-L2175" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2206-L2209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -9158,7 +9787,7 @@ Default Value:
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy"><code class="name flex">
-<span>def <span class="ident">run_aux_copy</span></span>(<span>self, storage_policy_copy_name=None, media_agent=None, use_scale=True, streams=0, all_copies=True, total_jobs_to_process=1000)</span>
+<span>def <span class="ident">run_aux_copy</span></span>(<span>self, storage_policy_copy_name=None, media_agent=None, use_scale=True, streams=0, all_copies=True, total_jobs_to_process=1000, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs the aux copy job from the commcell.</p>
@@ -9198,11 +9827,11 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2051-L2170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2078-L2204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_aux_copy(self, storage_policy_copy_name=None,
                  media_agent=None, use_scale=True, streams=0,
-                 all_copies=True, total_jobs_to_process=1000):
+                 all_copies=True, total_jobs_to_process=1000, schedule_pattern=None):
     &#34;&#34;&#34;Runs the aux copy job from the commcell.
         Args:
 
@@ -9297,6 +9926,9 @@ if response is not success
         }
     }
 
+    if schedule_pattern:
+        request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
     aux_copy = self._commcell_object._services[&#39;CREATE_TASK&#39;]
 
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -9312,6 +9944,10 @@ if response is not success
 
                 o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
                 raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+
+            elif &#34;taskId&#34; in response.json():
+                return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Failed to run the aux copy job&#39;)
         else:
@@ -9342,7 +9978,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1819-L1891" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1846-L1918" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_copy(self):
     &#34;&#34;&#34;
@@ -9440,7 +10076,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1163-L1213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1193-L1243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_content_indexing(self):
     &#34;&#34;&#34;starts the offline CI job for this storage policy
@@ -9495,8 +10131,143 @@ if type of inputs is not valid</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_data_forecast"><code class="name flex">
+<span>def <span class="ident">run_data_forecast</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>runs data forecast and retention report generation operation</p>
+<h2 id="args">Args</h2>
+<p>**kwargs
+&ndash;
+dict of keyword arguments as follows:</p>
+<pre><code>localeName      str     localeName for report [defaults to "en-us"]
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException &ndash; if response is bad/ flag is false
+Returns None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2989-L3102" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def run_data_forecast(self, **kwargs):
+    &#34;&#34;&#34;runs data forecast and retention report generation operation
+
+        Args:
+
+            **kwargs    --  dict of keyword arguments as follows:
+
+                localeName      str     localeName for report [defaults to &#34;en-us&#34;]
+
+        Raises:
+              SDKException -- if response is bad/ flag is false
+
+        Returns None
+            &#34;&#34;&#34;
+    request = {
+                &#34;processinginstructioninfo&#34;: {},
+                &#34;taskInfo&#34;: {
+                    &#34;task&#34;: {
+                        &#34;taskType&#34;: 1,
+                        &#34;initiatedFrom&#34;: 2,
+                        &#34;taskFlags&#34;: {
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;appGroup&#34;: {},
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskName&#34;: &#34;&#34;,
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 4004
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;reportOption&#34;: {
+                                        &#34;showHiddenStoragePolicies&#34;: False,
+                                        &#34;showGlobalStoragePolicies&#34;: False,
+                                        &#34;storagePolicyCopyList&#34;: [
+                                            {
+                                                &#34;storagePolicyName&#34;: self.storage_policy_name
+                                            }
+                                        ],
+                                        &#34;mediaInfoReport&#34;: {
+                                            &#34;mediaLocIn&#34;: True,
+                                            &#34;mediaLocOut&#34;: True
+                                        },
+                                        &#34;commonOpt&#34;: {
+                                            &#34;dateFormat&#34;: &#34;mm/dd/yyyy&#34;,
+                                            &#34;overrideDateTimeFormat&#34;: 0,
+                                            &#34;reportType&#34;: 7738,
+                                            &#34;summaryOnly&#34;: False,
+                                            &#34;reportCustomName&#34;: &#34;&#34;,
+                                            &#34;timeFormat&#34;: &#34;hh:mm:ss am/pm&#34;,
+                                            &#34;onCS&#34;: True,
+                                            &#34;locale&#34;: {
+                                                &#34;country&#34;: &#34;English&#34;,
+                                                &#34;language&#34;: &#34;UnitedStates&#34;,
+                                                &#34;localeName&#34;: kwargs.get(&#34;localeName&#34;, &#34;en-us&#34;)
+                                            },
+                                            &#34;outputFormat&#34;: {
+                                                &#34;outputType&#34;: 1,
+                                                &#34;isNetworkDrive&#34;: False
+                                            }
+                                        },
+                                        &#34;computerSelectionList&#34;: {
+                                            &#34;includeAll&#34;: True
+                                        },
+                                        &#34;jobSummaryReport&#34;: {
+                                            &#34;subclientFilter&#34;: False
+                                        },
+                                        &#34;dataRetentionForecastReport&#34;: {
+                                            &#34;pruneData&#34;: True,
+                                            &#34;retainedBeyondBasicRet&#34;: False,
+                                            &#34;forecastDays&#34;: 0,
+                                            &#34;unPrunableData&#34;: True,
+                                            &#34;sortByOption&#34;: 2
+                                        },
+                                        &#34;agentList&#34;: [
+                                            {
+                                                &#34;type&#34;: 0,
+                                                &#34;flags&#34;: {
+                                                    &#34;include&#34;: True
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+
+    forecast = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, forecast, request)
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+            elif &#34;errorCode&#34; in response.json():
+                error_message = response.json()[&#39;errorMessage&#39;]
+
+                o_str = &#39;Failed to Run Data Forecast\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification"><code class="name flex">
-<span>def <span class="ident">run_data_verification</span></span>(<span>self, media_agent_name='', copy_name='', streams=0, jobs_to_verify='NEW', use_scalable=False, **kwargs)</span>
+<span>def <span class="ident">run_data_verification</span></span>(<span>self, media_agent_name='', copy_name='', streams=0, jobs_to_verify='NEW', use_scalable=False, schedule_pattern=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs Data verification job</p>
@@ -9529,10 +10300,10 @@ job_description
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2470-L2569" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2504-L2609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                          jobs_to_verify=&#39;NEW&#39;, use_scalable=False, **kwargs):
+                          jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
     &#34;&#34;&#34;Runs Data verification job
 
     Args:
@@ -9591,7 +10362,7 @@ job_description
                                 &#34;auxcopyJobOption&#34;: {
                                     &#34;maxNumberOfStreams&#34;: streams,
                                     &#34;useMaximumStreams&#34;: not bool(streams),
-                                    &#34;useScallableResourceManagement&#34;: use_scallable,
+                                    &#34;useScallableResourceManagement&#34;: use_scalable,
                                     &#34;mediaAgent&#34;: {
                                         &#34;mediaAgentName&#34;: media_agent_name
                                     }
@@ -9612,6 +10383,10 @@ job_description
         }
     }
 
+    if schedule_pattern:
+        request[&#34;taskInfo&#34;][&#34;task&#34;] = {&#34;taskType&#34;: 2}
+        request = SchedulePattern().create_schedule(request, schedule_pattern)
+
     data_verf = self._commcell_object._services[&#39;CREATE_TASK&#39;]
     flag, response = self._commcell_object._cvpysdk_object.make_request(
         &#39;POST&#39;, data_verf, request
@@ -9624,6 +10399,8 @@ job_description
                 error_message = response.json()[&#39;errorMessage&#39;]
                 o_str = &#39;Data verification Request failed. Error: &#34;{0}&#34;&#39;.format(error_message)
                 raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+            elif &#34;taskId&#34; in response.json():
+                return Schedules(self._commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;109&#39;)
         else:
@@ -9663,7 +10440,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2369-L2468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2403-L2502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_ddb_verification(self,
                          copy_name,
@@ -9802,7 +10579,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2769-L2822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2845-L2898" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_recon(self, copy_name, sp_name, store_id, full_reconstruction=0, use_scalable_resource=&#39;false&#39;):
     &#34;&#34;&#34; Runs non-mem DB Reconstruction job
@@ -9880,7 +10657,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1912-L1989" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1939-L2016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_snapshot_cataloging(self):
     &#34;&#34;&#34;
@@ -9977,7 +10754,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2177-L2200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2211-L2234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def seal_ddb(self, copy_name):
     &#34;&#34;&#34;
@@ -10003,6 +10780,69 @@ Raises:
 
     &#34;&#34;&#34;.format(copy_name, self.storage_policy_name)
     self._commcell_object._qoperation_execute(request_xml)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicy.start_over"><code class="name flex">
+<span>def <span class="ident">start_over</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>performs a start over operation on the specified storage policy/gdsp</p>
+<pre><code>Args:
+
+Raises:
+      SDKException -- if response is bad/ flag is false
+</code></pre>
+<p>returns None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2943-L2987" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def start_over(self):
+    &#34;&#34;&#34;
+    performs a start over operation on the specified storage policy/gdsp
+
+        Args:
+
+        Raises:
+              SDKException -- if response is bad/ flag is false
+
+    returns None
+    &#34;&#34;&#34;
+    dependent_flag = self.storage_policy_properties[&#34;copy&#34;][0][&#34;dedupeFlags&#34;].get(&#34;useGlobalDedupStore&#34;, 0)
+    if dependent_flag == 1:
+        raise Exception(&#34;Dependent policy cannot be started over ...&#34;)
+
+    request = {
+        &#34;MediaManager_MMStartOverReq&#34;: {
+                &#34;bSealDDB&#34;: True,
+                &#34;storagePolicy&#34;: {
+                    &#34;storagePolicyName&#34;: self.storage_policy_name
+                }
+            }
+        }
+
+    startover = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, startover, request
+    )
+
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json():
+                error_code = int(response.json()[&#39;errorCode&#39;])
+                if error_code != 0:
+                    error_message = &#34;Failed to Start Over&#34;
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+    self.refresh()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.update_snapshot_options"><code class="name flex">
@@ -10035,7 +10875,7 @@ ocum server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L1736-L1817" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L1763-L1844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_snapshot_options(self, **options):
     &#34;&#34;&#34;
@@ -10140,7 +10980,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2202-L2243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L2236-L2277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_transactional_ddb(self, update_value, copy_name, media_agent_name):
     &#34;&#34;&#34;
@@ -10214,7 +11054,7 @@ Default : None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2867-L3566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3104-L3837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicyCopy(object):
     &#34;&#34;&#34;Class for performing storage policy copy operations for a specific storage policy copy&#34;&#34;&#34;
@@ -10373,6 +11213,11 @@ Default : None</p>
                 raise SDKException(&#39;Response&#39;, &#39;111&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    @property
+    def copy_name(self):
+        &#34;&#34;&#34;Returns the name of the copy&#34;&#34;&#34;
+        return self._copy_name
 
     @property
     def copy_retention(self):
@@ -10594,6 +11439,11 @@ Default : None</p>
         self._set_copy_properties()
 
     @property
+    def copy_precedence(self):
+        &#34;&#34;&#34;Gets the copy precedence of the copy&#34;&#34;&#34;
+        return self.all_copies[&#34;copyPrecedence&#34;]
+
+    @property
     def media_agent(self):
         &#34;&#34;&#34;Gets the media agent name of the copy&#34;&#34;&#34;
         return self._media_agent.get(&#39;mediaAgentName&#39;)
@@ -10813,6 +11663,30 @@ Default : None</p>
         self._set_copy_properties()
 
     @property
+    def space_optimized_auxillary_copy(self):
+        &#34;&#34;&#34;Treats the space optimized auxillary copy setting as a read-only attribute.&#34;&#34;&#34;
+        if self._copy_properties.get(&#39;extendedFlags&#39;, {}).get(&#39;spaceOptimizedAuxCopy&#39;):
+            return True
+        return False
+
+    @space_optimized_auxillary_copy.setter
+    def space_optimized_auxillary_copy(self, value):
+        &#34;&#34;&#34;Sets the space optimized auxillary copy setting as the value provided as input.
+            Args:
+                value    (bool) --  Enable/Disable Space Optimized Auxillary Copy
+            Raises:
+                SDKException:
+                    if failed to update property
+
+                    if the type of value input is not correct
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+        self._copy_properties[&#39;extendedFlags&#39;][&#39;spaceOptimizedAuxCopy&#39;] = int(value)
+
+        self._set_copy_properties()
+
+    @property
     def is_inline_copy(self):
         &#34;&#34;&#34;Treats the inline copy setting as a read-only attribute.&#34;&#34;&#34;
         return &#39;inlineAuxCopy&#39; in self._copy_flags
@@ -10932,7 +11806,7 @@ the storage policy copy associated with this storage policy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2913-L2924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3150-L3161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_copies(self):
@@ -10954,7 +11828,7 @@ def all_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3145-L3148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3387-L3390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_client_side_dedup(self):
@@ -10968,7 +11842,7 @@ def copy_client_side_dedup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3093-L3096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3335-L3338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_dash_full(self):
@@ -10982,12 +11856,40 @@ def copy_dedupe_dash_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3121-L3124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3363-L3366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_disk_cache(self):
     &#34;&#34;&#34;Treats the copy deduplication setting as a read-only attribute.&#34;&#34;&#34;
     return &#39;enableSourceSideDiskCache&#39; in self._dedupe_flags</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_name"><code class="name">var <span class="ident">copy_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the name of the copy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3262-L3265" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def copy_name(self):
+    &#34;&#34;&#34;Returns the name of the copy&#34;&#34;&#34;
+    return self._copy_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_precedence"><code class="name">var <span class="ident">copy_precedence</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the copy precedence of the copy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3486-L3489" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def copy_precedence(self):
+    &#34;&#34;&#34;Gets the copy precedence of the copy&#34;&#34;&#34;
+    return self.all_copies[&#34;copyPrecedence&#34;]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_reencryption"><code class="name">var <span class="ident">copy_reencryption</span></code></dt>
@@ -10996,7 +11898,7 @@ def copy_dedupe_disk_cache(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3170-L3181" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3412-L3423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_reencryption(self):
@@ -11018,7 +11920,7 @@ def copy_reencryption(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3025-L3032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3267-L3274" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention(self):
@@ -11036,7 +11938,7 @@ def copy_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3413-L3416" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3660-L3663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention_managed_disk_space(self):
@@ -11050,7 +11952,7 @@ def copy_retention_managed_disk_space(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3066-L3069" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3308-L3311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_software_compression(self):
@@ -11064,7 +11966,7 @@ def copy_software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3295-L3352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3542-L3599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def extended_retention_rules(self):
@@ -11132,7 +12034,7 @@ def extended_retention_rules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3463-L3466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3734-L3737" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_inline_copy(self):
@@ -11146,7 +12048,7 @@ def is_inline_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3440-L3443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3687-L3690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_parallel_copy(self):
@@ -11160,12 +12062,28 @@ def is_parallel_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3244-L3247" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3491-L3494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
     &#34;&#34;&#34;Gets the media agent name of the copy&#34;&#34;&#34;
     return self._media_agent.get(&#39;mediaAgentName&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.space_optimized_auxillary_copy"><code class="name">var <span class="ident">space_optimized_auxillary_copy</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the space optimized auxillary copy setting as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3710-L3715" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def space_optimized_auxillary_copy(self):
+    &#34;&#34;&#34;Treats the space optimized auxillary copy setting as a read-only attribute.&#34;&#34;&#34;
+    if self._copy_properties.get(&#39;extendedFlags&#39;, {}).get(&#39;spaceOptimizedAuxCopy&#39;):
+        return True
+    return False</code></pre>
 </details>
 </dd>
 </dl>
@@ -11196,7 +12114,7 @@ Name of the Target Array</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3486-L3566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3757-L3837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
     &#34;&#34;&#34; Method to add SVM association on Replica/vault and Mirror Copy
@@ -11297,7 +12215,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3249-L3268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3496-L3515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_job(self, job_id):
     &#34;&#34;&#34;
@@ -11329,7 +12247,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2930-L2932" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3167-L3169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_Precedence(self):
     &#34;&#34;&#34;Gets the copyprecendence asscoiated with the storage policy copy&#34;&#34;&#34;
@@ -11344,7 +12262,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2926-L2928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3163-L3165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_id(self):
     &#34;&#34;&#34;Gets the storage policy id asscoiated with the storage policy&#34;&#34;&#34;
@@ -11366,7 +12284,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3270-L3293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3517-L3540" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recopy_jobs(self, job_id):
     &#34;&#34;&#34; recopies a job on a secondary copy
@@ -11402,7 +12320,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L2934-L2936" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3171-L3173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -11426,7 +12344,7 @@ if failed to update compression values on copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3071-L3091" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3313-L3333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_copy_software_compression(self, value):
     &#34;&#34;&#34;Sets the copy software compression setting as the value provided as input.
@@ -11468,7 +12386,7 @@ if failed to update inline copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3468-L3484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3739-L3755" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_inline_copy(self, value):
     &#34;&#34;&#34; Sets the inline copy on storage policy copy as the value provided as input.
@@ -11506,7 +12424,7 @@ if failed to update parallel copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/policies/storage_policies.py#L3445-L3461" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/policies/storage_policies.py#L3692-L3708" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_parallel_copy(self, value):
     &#34;&#34;&#34; Sets the parallel copy on storage policy copy as the value provided as input.
@@ -11587,7 +12505,9 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#attributes">Attributes</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -11618,6 +12538,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.copies" href="#cvpysdk.policies.storage_policies.StoragePolicy.copies">copies</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.create_dedupe_secondary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.create_dedupe_secondary_copy">create_dedupe_secondary_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.create_secondary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.create_secondary_copy">create_secondary_copy</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.create_selective_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.create_selective_copy">create_selective_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy">create_snap_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.delete_secondary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.delete_secondary_copy">delete_secondary_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.description" href="#cvpysdk.policies.storage_policies.StoragePolicy.description">description</a></code></li>
@@ -11625,6 +12546,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.enable_entity_extraction" href="#cvpysdk.policies.storage_policies.StoragePolicy.enable_entity_extraction">enable_entity_extraction</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.get_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_copy">get_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.get_copy_precedence" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_copy_precedence">get_copy_precedence</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.get_primary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_primary_copy">get_primary_copy</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.get_secondary_copies" href="#cvpysdk.policies.storage_policies.StoragePolicy.get_secondary_copies">get_secondary_copies</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.has_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.has_copy">has_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.library_id" href="#cvpysdk.policies.storage_policies.StoragePolicy.library_id">library_id</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.library_name" href="#cvpysdk.policies.storage_policies.StoragePolicy.library_name">library_name</a></code></li>
@@ -11637,12 +12560,14 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy">run_aux_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_backup_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_backup_copy">run_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_content_indexing" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_content_indexing">run_content_indexing</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_data_forecast" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_data_forecast">run_data_forecast</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification">run_data_verification</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_ddb_verification" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_ddb_verification">run_ddb_verification</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_recon" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_recon">run_recon</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.run_snapshot_cataloging" href="#cvpysdk.policies.storage_policies.StoragePolicy.run_snapshot_cataloging">run_snapshot_cataloging</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.seal_ddb" href="#cvpysdk.policies.storage_policies.StoragePolicy.seal_ddb">seal_ddb</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.snap_copy" href="#cvpysdk.policies.storage_policies.StoragePolicy.snap_copy">snap_copy</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.start_over" href="#cvpysdk.policies.storage_policies.StoragePolicy.start_over">start_over</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_advanced_properties" href="#cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_advanced_properties">storage_policy_advanced_properties</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_id" href="#cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_id">storage_policy_id</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_name" href="#cvpysdk.policies.storage_policies.StoragePolicy.storage_policy_name">storage_policy_name</a></code></li>
@@ -11659,6 +12584,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_client_side_dedup" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_client_side_dedup">copy_client_side_dedup</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_dash_full" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_dash_full">copy_dedupe_dash_full</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_disk_cache" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_dedupe_disk_cache">copy_dedupe_disk_cache</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_name" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_name">copy_name</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_precedence" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_precedence">copy_precedence</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_reencryption" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_reencryption">copy_reencryption</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention">copy_retention</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention_managed_disk_space" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.copy_retention_managed_disk_space">copy_retention_managed_disk_space</a></code></li>
@@ -11675,6 +12602,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_copy_software_compression" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_copy_software_compression">set_copy_software_compression</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_inline_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_inline_copy">set_inline_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy">set_parallel_copy</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.space_optimized_auxillary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.space_optimized_auxillary_copy">space_optimized_auxillary_copy</a></code></li>
 </ul>
 </li>
 </ul>

@@ -90,12 +90,16 @@ Class for representing a single substore associated to the deduplication store.<
 - checks if a substore exists in a store</p>
 <p>get()
 - gets a substore class object for provided substore id</p>
+<p>seal_deduplication_database() - Seals the deduplication database</p>
 <p>recover_deduplication_database()
 - starts DDB Reconstruction job for store</p>
 <p>run_space_reclaimation()
 - starts DDB space reclaimation job for store</p>
 <p>run_ddb_verification()
 - starts DDB verification job for store</p>
+<p>enable_store_pruning
+-
+Property to get the current state of store pruning or enable/disable store pruning</p>
 <h2 id="substore">Substore</h2>
 <p><strong>init</strong>(commcell_object, storage_policy_name, copy_name,
 store_id, substore-id)
@@ -113,7 +117,7 @@ store_id, substore-id)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L1-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1-L1094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -203,12 +207,15 @@ Store:
 
     get()                      - gets a substore class object for provided substore id
 
+    seal_deduplication_database() - Seals the deduplication database
+
     recover_deduplication_database()    - starts DDB Reconstruction job for store
 
     run_space_reclaimation()    - starts DDB space reclaimation job for store
 
     run_ddb_verification()      - starts DDB verification job for store
 
+    enable_store_pruning        -  Property to get the current state of store pruning or enable/disable store pruning
 
 Substore:
     __init__(commcell_object, storage_policy_name, copy_name,
@@ -224,17 +231,21 @@ Substore:
 
     mark_for_recovery()         - marks a substore for recovery
 &#34;&#34;&#34;
-
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from past.builtins import basestring
 from future.standard_library import install_aliases
+from enum import Enum
 
 from .exception import SDKException
 from .job import Job
 
 install_aliases()
+
+
+class StoreFlags(Enum):
+    IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
 
 
 class DeduplicationEngines(object):
@@ -708,6 +719,12 @@ class Store(object):
         )
 
     @property
+    def store_flags(self):
+        &#34;&#34;&#34;returns the deduplication flags on store&#34;&#34;&#34;
+        self.refresh()
+        return self._store_flags
+
+    @property
     def store_name(self):
         &#34;&#34;&#34;returns the store display name&#34;&#34;&#34;
         return self._store_properties.get(&#39;storeName&#39;)
@@ -749,6 +766,45 @@ class Store(object):
             return False
         return True
 
+    @property
+    def enable_store_pruning(self):
+        &#34;&#34;&#34;returns if purning is enabled or disabled on store&#34;&#34;&#34;
+        return self._store_flags &amp; StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value != 0
+
+    @enable_store_pruning.setter
+    def enable_store_pruning(self, value):
+        &#34;&#34;&#34;sets store purning value to true or false
+        Args:
+              value (bool) -- value to enable or disable store pruning
+        &#34;&#34;&#34;
+        if not value:
+            new_value = self._store_flags &amp; ~StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+        else:
+            new_value = self._store_flags | StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+
+        request_json = {
+            &#34;EVGui_ParallelDedupConfigReq&#34;: {
+                &#34;processinginstructioninfo&#34;: &#34;&#34;,
+                &#34;SIDBStore&#34;: {
+                    &#34;SIDBStoreId&#34;: self.store_id,
+                    &#34;SIDBStoreName&#34;: self.store_name,
+                    &#34;extendedFlags&#34;: self._extended_flags,
+                    &#34;flags&#34;: new_value,
+                    &#34;minObjSizeKB&#34;: 50,
+                    &#34;oldestEligibleObjArchiveTime&#34;: -1
+                },
+                &#34;appTypeGroupId&#34;: 0,
+                &#34;commCellId&#34;: 2,
+                &#34;copyId&#34;: self.copy_id,
+                &#34;operation&#34;: 3
+            }
+        }
+        output = self._commcell_object.qoperation_execute(request_json)
+        if output[&#39;error&#39;][&#39;errorString&#39;] != &#39;&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, output[&#39;error&#39;][&#39;errorString&#39;])
+
+        self.refresh()
+
     @enable_garbage_collection.setter
     def enable_garbage_collection(self, value):
         &#34;&#34;&#34;sets enable garbage collection with true or false
@@ -780,6 +836,16 @@ class Store(object):
             }
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
+
+    def seal_deduplication_database(self):
+        &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
+
+        request_json = {
+                        &#34;App_SealSIDBStoreReq&#34;:{
+                                &#34;SidbStoreId&#34;: self.store_id
+                            }
+                        }
+        self._commcell_object._qoperation_execute(request_json)
 
     def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
         &#34;&#34;&#34;
@@ -1179,7 +1245,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L271-L446" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L278-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngine(object):
     &#34;&#34;&#34;Class to get all stores associated for deduplication engine&#34;&#34;&#34;
@@ -1366,7 +1432,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L389-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L396-L403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_stores(self):
@@ -1384,7 +1450,7 @@ def all_stores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L403-L406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L410-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -1398,7 +1464,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L398-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L405-L408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -1424,7 +1490,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L424-L446" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L431-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, store_id):
     &#34;&#34;&#34;
@@ -1466,7 +1532,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L408-L422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L415-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_store(self, store_id):
     &#34;&#34;&#34;Checks if a deduplication store exists in a engine with provided storeid id.
@@ -1493,7 +1559,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L385-L387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L392-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engine properties&#34;&#34;&#34;
@@ -1518,7 +1584,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L123-L268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L130-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngines(object):
     &#34;&#34;&#34;Class for getting all the deduplication engines associated with the commcell.&#34;&#34;&#34;
@@ -1675,7 +1741,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L210-L213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L217-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_engines(self):
@@ -1704,7 +1770,7 @@ if type of arguments are not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L238-L268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L245-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;
@@ -1759,7 +1825,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L219-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L226-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_engine(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;Checks if a deduplication engine exists in the commcell with the input storage policy and copy name.
@@ -1789,7 +1855,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L215-L217" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L222-L224" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engines and their properties&#34;&#34;&#34;
@@ -1817,7 +1883,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L449-L949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L456-L1011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Store(object):
     &#34;&#34;&#34;Class for performing deduplication store level operations for deduplication engine&#34;&#34;&#34;
@@ -1964,6 +2030,12 @@ if type of the storage policy and copy name arguments are not string</p></div>
         )
 
     @property
+    def store_flags(self):
+        &#34;&#34;&#34;returns the deduplication flags on store&#34;&#34;&#34;
+        self.refresh()
+        return self._store_flags
+
+    @property
     def store_name(self):
         &#34;&#34;&#34;returns the store display name&#34;&#34;&#34;
         return self._store_properties.get(&#39;storeName&#39;)
@@ -2005,6 +2077,45 @@ if type of the storage policy and copy name arguments are not string</p></div>
             return False
         return True
 
+    @property
+    def enable_store_pruning(self):
+        &#34;&#34;&#34;returns if purning is enabled or disabled on store&#34;&#34;&#34;
+        return self._store_flags &amp; StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value != 0
+
+    @enable_store_pruning.setter
+    def enable_store_pruning(self, value):
+        &#34;&#34;&#34;sets store purning value to true or false
+        Args:
+              value (bool) -- value to enable or disable store pruning
+        &#34;&#34;&#34;
+        if not value:
+            new_value = self._store_flags &amp; ~StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+        else:
+            new_value = self._store_flags | StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+
+        request_json = {
+            &#34;EVGui_ParallelDedupConfigReq&#34;: {
+                &#34;processinginstructioninfo&#34;: &#34;&#34;,
+                &#34;SIDBStore&#34;: {
+                    &#34;SIDBStoreId&#34;: self.store_id,
+                    &#34;SIDBStoreName&#34;: self.store_name,
+                    &#34;extendedFlags&#34;: self._extended_flags,
+                    &#34;flags&#34;: new_value,
+                    &#34;minObjSizeKB&#34;: 50,
+                    &#34;oldestEligibleObjArchiveTime&#34;: -1
+                },
+                &#34;appTypeGroupId&#34;: 0,
+                &#34;commCellId&#34;: 2,
+                &#34;copyId&#34;: self.copy_id,
+                &#34;operation&#34;: 3
+            }
+        }
+        output = self._commcell_object.qoperation_execute(request_json)
+        if output[&#39;error&#39;][&#39;errorString&#39;] != &#39;&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, output[&#39;error&#39;][&#39;errorString&#39;])
+
+        self.refresh()
+
     @enable_garbage_collection.setter
     def enable_garbage_collection(self, value):
         &#34;&#34;&#34;sets enable garbage collection with true or false
@@ -2036,6 +2147,16 @@ if type of the storage policy and copy name arguments are not string</p></div>
             }
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
+
+    def seal_deduplication_database(self):
+        &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
+
+        request_json = {
+                        &#34;App_SealSIDBStoreReq&#34;:{
+                                &#34;SidbStoreId&#34;: self.store_id
+                            }
+                        }
+        self._commcell_object._qoperation_execute(request_json)
 
     def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
         &#34;&#34;&#34;
@@ -2329,7 +2450,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L543-L550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L550-L557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_substores(self):
@@ -2347,7 +2468,7 @@ def all_substores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L623-L626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L636-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -2361,7 +2482,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L618-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L631-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -2375,7 +2496,7 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L628-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L641-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_garbage_collection(self):
@@ -2385,13 +2506,27 @@ def enable_garbage_collection(self):
     return True</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.deduplication_engines.Store.enable_store_pruning"><code class="name">var <span class="ident">enable_store_pruning</span></code></dt>
+<dd>
+<div class="desc"><p>returns if purning is enabled or disabled on store</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L648-L651" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def enable_store_pruning(self):
+    &#34;&#34;&#34;returns if purning is enabled or disabled on store&#34;&#34;&#34;
+    return self._store_flags &amp; StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value != 0</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.deduplication_engines.Store.status"><code class="name">var <span class="ident">status</span></code></dt>
 <dd>
 <div class="desc"><p>returns the store display name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L608-L611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L621-L624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -2405,12 +2540,27 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L613-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L626-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
     &#34;&#34;&#34;returns storage policy name associated with store&#34;&#34;&#34;
     return self._storage_policy_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deduplication_engines.Store.store_flags"><code class="name">var <span class="ident">store_flags</span></code></dt>
+<dd>
+<div class="desc"><p>returns the deduplication flags on store</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L600-L604" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def store_flags(self):
+    &#34;&#34;&#34;returns the deduplication flags on store&#34;&#34;&#34;
+    self.refresh()
+    return self._store_flags</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.store_id"><code class="name">var <span class="ident">store_id</span></code></dt>
@@ -2419,7 +2569,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L598-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L611-L614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -2433,7 +2583,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L593-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L606-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_name(self):
@@ -2447,7 +2597,7 @@ def store_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L603-L606" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L616-L619" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2473,7 +2623,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L568-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L575-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, substore_id):
     &#34;&#34;&#34;
@@ -2516,7 +2666,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L552-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L559-L573" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_substore(self, substore_id):
     &#34;&#34;&#34;Checks if a substore exists in a deduplication store with provided substore id.
@@ -2557,7 +2707,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L667-L755" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L729-L817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
     &#34;&#34;&#34;
@@ -2658,7 +2808,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L539-L541" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L546-L548" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication store properties&#34;&#34;&#34;
@@ -2686,7 +2836,7 @@ if DDB Verification job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L857-L949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L919-L1011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_ddb_verification(self, incremental_verification=True, quick_verification=True):
     &#34;&#34;&#34;
@@ -2804,7 +2954,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L757-L855" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L819-L917" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_space_reclaimation(self, level=3, clean_orphan_data=False):
     &#34;&#34;&#34;
@@ -2907,6 +3057,53 @@ if invalid level is provided</p>
     raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.deduplication_engines.Store.seal_deduplication_database"><code class="name flex">
+<span>def <span class="ident">seal_deduplication_database</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Seals the deduplication database</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L719-L727" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def seal_deduplication_database(self):
+    &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
+
+    request_json = {
+                    &#34;App_SealSIDBStoreReq&#34;:{
+                            &#34;SidbStoreId&#34;: self.store_id
+                        }
+                    }
+    self._commcell_object._qoperation_execute(request_json)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.deduplication_engines.StoreFlags"><code class="flex name class">
+<span>class <span class="ident">StoreFlags</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L126-L127" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class StoreFlags(Enum):
+    IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED"><code class="name">var <span class="ident">IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 </dl>
 </dd>
 <dt id="cvpysdk.deduplication_engines.SubStore"><code class="flex name class">
@@ -2930,7 +3127,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L952-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1014-L1094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SubStore(object):
     &#34;&#34;&#34;Class to performing substore level operations for Deduplication engine&#34;&#34;&#34;
@@ -3022,7 +3219,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L1014-L1017" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1076-L1079" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -3036,7 +3233,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L1019-L1022" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1081-L1084" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def path(self):
@@ -3050,7 +3247,7 @@ def path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L1024-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1086-L1089" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -3064,7 +3261,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L1029-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1091-L1094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def substore_id(self):
@@ -3083,7 +3280,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L996-L1012" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1058-L1074" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self):
     &#34;&#34;&#34;mark a substore for recovery and refresh substore properties&#34;&#34;&#34;
@@ -3112,7 +3309,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deduplication_engines.py#L992-L994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deduplication_engines.py#L1054-L1056" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refresh the properties of a substore&#34;&#34;&#34;
@@ -3216,17 +3413,26 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.deduplication_engines.Store.copy_id" href="#cvpysdk.deduplication_engines.Store.copy_id">copy_id</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.copy_name" href="#cvpysdk.deduplication_engines.Store.copy_name">copy_name</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.enable_garbage_collection" href="#cvpysdk.deduplication_engines.Store.enable_garbage_collection">enable_garbage_collection</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.enable_store_pruning" href="#cvpysdk.deduplication_engines.Store.enable_store_pruning">enable_store_pruning</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.get" href="#cvpysdk.deduplication_engines.Store.get">get</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.has_substore" href="#cvpysdk.deduplication_engines.Store.has_substore">has_substore</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.recover_deduplication_database" href="#cvpysdk.deduplication_engines.Store.recover_deduplication_database">recover_deduplication_database</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.refresh" href="#cvpysdk.deduplication_engines.Store.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.run_ddb_verification" href="#cvpysdk.deduplication_engines.Store.run_ddb_verification">run_ddb_verification</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.run_space_reclaimation" href="#cvpysdk.deduplication_engines.Store.run_space_reclaimation">run_space_reclaimation</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.seal_deduplication_database" href="#cvpysdk.deduplication_engines.Store.seal_deduplication_database">seal_deduplication_database</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.status" href="#cvpysdk.deduplication_engines.Store.status">status</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.storage_policy_name" href="#cvpysdk.deduplication_engines.Store.storage_policy_name">storage_policy_name</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.store_flags" href="#cvpysdk.deduplication_engines.Store.store_flags">store_flags</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.store_id" href="#cvpysdk.deduplication_engines.Store.store_id">store_id</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.store_name" href="#cvpysdk.deduplication_engines.Store.store_name">store_name</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.version" href="#cvpysdk.deduplication_engines.Store.version">version</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.deduplication_engines.StoreFlags" href="#cvpysdk.deduplication_engines.StoreFlags">StoreFlags</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED" href="#cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED">IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED</a></code></li>
 </ul>
 </li>
 <li>

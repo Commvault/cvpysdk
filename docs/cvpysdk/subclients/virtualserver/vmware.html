@@ -47,7 +47,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L1-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L1-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -243,15 +243,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             disk_option=&#39;Original&#39;,
             transport_mode=&#39;Auto&#39;,
             proxy_client=None,
-            source_ip=None,
-            destination_ip=None,
-            network=None,
-            dest_computer_name=None,
-            source_subnet=None,
-            source_gateway=None,
-            destination_subnet=None,
-            destination_gateway=None,
-            to_time=0
+            to_time=0,
+            **kwargs,
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -295,27 +288,28 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
-
-                network           (basestring)    --  Network of the detination vm
-
-                dest_computer_name  (basestring)    --  Hostname of the restored vm
-
-                source_subnet  (basestring)    --  subnet of the source vm
-
-                source_gateway  (basestring)    --  gateway of the source vm
-
-                destination_subnet  (basestring)    --  subnet of the restored vm
-
-                destination_gateway  (basestring)    --  gateway of the restored vm
-
-                restore_option      (dict)     --  complete dictionary with all advanced options
-                    default: {}
-
                 to_time             (Int)         --  End time to select the job for restore
                                                     default: None
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                                eg:
+                                source_ip           (basestring)    --  IP of the source VM
+
+                                destination_ip      (basestring)    --  IP of the destination VM
+
+                                destComputerName  (basestring)    --  Hostname of the restored vm
+
+                                source_subnet  (basestring)    --  subnet of the source vm
+
+                                source_gateway  (basestring)    --  gateway of the source vm
+
+                                destination_subnet  (basestring)    --  subnet of the restored vm
+
+                                destination_gateway  (basestring)    --  gateway of the restored vm
+
+                                restore_option      (dict)     --  complete dictionary with all advanced options
+                                    default: {}
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -333,7 +327,14 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
 
         restore_option = {}
-
+        extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
+                         &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;]
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -344,7 +345,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option[&#39;client&#39;] = proxy_client
+            restore_option[&#39;client_name&#39;] = proxy_client
 
         if restored_vm_name:
             if not (isinstance(vm_to_restore, basestring) or
@@ -372,15 +373,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             source_item=[],
-            source_ip=source_ip,
-            destination_ip=destination_ip,
-            network=network,
-            to_time=to_time,
-            destComputerName=dest_computer_name,
-            source_subnet=source_subnet,
-            source_gateway=source_gateway,
-            destination_subnet=destination_subnet,
-            destination_gateway=destination_gateway
+            to_time=to_time
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -1061,7 +1054,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L51-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L51-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMWareVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -1207,15 +1200,8 @@ backupset class, subclient name, subclient id</p></div>
             disk_option=&#39;Original&#39;,
             transport_mode=&#39;Auto&#39;,
             proxy_client=None,
-            source_ip=None,
-            destination_ip=None,
-            network=None,
-            dest_computer_name=None,
-            source_subnet=None,
-            source_gateway=None,
-            destination_subnet=None,
-            destination_gateway=None,
-            to_time=0
+            to_time=0,
+            **kwargs,
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -1259,27 +1245,28 @@ backupset class, subclient name, subclient id</p></div>
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
-
-                network           (basestring)    --  Network of the detination vm
-
-                dest_computer_name  (basestring)    --  Hostname of the restored vm
-
-                source_subnet  (basestring)    --  subnet of the source vm
-
-                source_gateway  (basestring)    --  gateway of the source vm
-
-                destination_subnet  (basestring)    --  subnet of the restored vm
-
-                destination_gateway  (basestring)    --  gateway of the restored vm
-
-                restore_option      (dict)     --  complete dictionary with all advanced options
-                    default: {}
-
                 to_time             (Int)         --  End time to select the job for restore
                                                     default: None
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                                eg:
+                                source_ip           (basestring)    --  IP of the source VM
+
+                                destination_ip      (basestring)    --  IP of the destination VM
+
+                                destComputerName  (basestring)    --  Hostname of the restored vm
+
+                                source_subnet  (basestring)    --  subnet of the source vm
+
+                                source_gateway  (basestring)    --  gateway of the source vm
+
+                                destination_subnet  (basestring)    --  subnet of the restored vm
+
+                                destination_gateway  (basestring)    --  gateway of the restored vm
+
+                                restore_option      (dict)     --  complete dictionary with all advanced options
+                                    default: {}
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1297,7 +1284,14 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;
 
         restore_option = {}
-
+        extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
+                         &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;]
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -1308,7 +1302,7 @@ backupset class, subclient name, subclient id</p></div>
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option[&#39;client&#39;] = proxy_client
+            restore_option[&#39;client_name&#39;] = proxy_client
 
         if restored_vm_name:
             if not (isinstance(vm_to_restore, basestring) or
@@ -1336,15 +1330,7 @@ backupset class, subclient name, subclient id</p></div>
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             source_item=[],
-            source_ip=source_ip,
-            destination_ip=destination_ip,
-            network=network,
-            to_time=to_time,
-            destComputerName=dest_computer_name,
-            source_subnet=source_subnet,
-            source_gateway=source_gateway,
-            destination_subnet=destination_subnet,
-            destination_gateway=destination_gateway
+            to_time=to_time
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -2066,7 +2052,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L467-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L460-L571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -2214,7 +2200,7 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L802-L870" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L795-L863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
     &#34;&#34;&#34;
@@ -2350,7 +2336,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L338-L465" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L331-L458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -2545,7 +2531,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L580-L704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L573-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -2726,7 +2712,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L872-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L865-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_googlecloud(
         self,
@@ -2894,7 +2880,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L707-L800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L700-L793" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -3059,7 +3045,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L85-L180" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L85-L180" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -3160,7 +3146,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, esx_host=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', transport_mode='Auto', proxy_client=None, source_ip=None, destination_ip=None, network=None, dest_computer_name=None, source_subnet=None, source_gateway=None, destination_subnet=None, destination_gateway=None, to_time=0)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, esx_host=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', transport_mode='Auto', proxy_client=None, to_time=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -3228,48 +3214,34 @@ default: Auto</p>
 (basestring)
 &ndash;
 destination proxy client</p>
-<p>source_ip
-(basestring)
-&ndash;
-IP of the source VM</p>
-<p>destination_ip
-(basestring)
-&ndash;
-IP of the destination VM</p>
-<p>network
-(basestring)
-&ndash;
-Network of the detination vm</p>
-<p>dest_computer_name
-(basestring)
-&ndash;
-Hostname of the restored vm</p>
-<p>source_subnet
-(basestring)
-&ndash;
-subnet of the source vm</p>
-<p>source_gateway
-(basestring)
-&ndash;
-gateway of the source vm</p>
-<p>destination_subnet
-(basestring)
-&ndash;
-subnet of the restored vm</p>
-<p>destination_gateway
-(basestring)
-&ndash;
-gateway of the restored vm</p>
-<p>restore_option
-(dict)
-&ndash;
-complete dictionary with all advanced options
-default: {}</p>
 <p>to_time
 (Int)
 &ndash;
 End time to select the job for restore
 default: None</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+source_ip
+(basestring)
+&ndash;
+IP of the source VM</p>
+<pre><code>            destination_ip      (basestring)    --  IP of the destination VM
+
+            destComputerName  (basestring)    --  Hostname of the restored vm
+
+            source_subnet  (basestring)    --  subnet of the source vm
+
+            source_gateway  (basestring)    --  gateway of the source vm
+
+            destination_subnet  (basestring)    --  subnet of the restored vm
+
+            destination_gateway  (basestring)    --  gateway of the restored vm
+
+            restore_option      (dict)     --  complete dictionary with all advanced options
+                default: {}
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -3284,7 +3256,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/vmware.py#L182-L336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/vmware.py#L182-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -3299,15 +3271,8 @@ if response is not success
         disk_option=&#39;Original&#39;,
         transport_mode=&#39;Auto&#39;,
         proxy_client=None,
-        source_ip=None,
-        destination_ip=None,
-        network=None,
-        dest_computer_name=None,
-        source_subnet=None,
-        source_gateway=None,
-        destination_subnet=None,
-        destination_gateway=None,
-        to_time=0
+        to_time=0,
+        **kwargs,
 ):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
@@ -3351,27 +3316,28 @@ if response is not success
 
             proxy_client      (basestring)    --  destination proxy client
 
-            source_ip           (basestring)    --  IP of the source VM
-
-            destination_ip      (basestring)    --  IP of the destination VM
-
-            network           (basestring)    --  Network of the detination vm
-
-            dest_computer_name  (basestring)    --  Hostname of the restored vm
-
-            source_subnet  (basestring)    --  subnet of the source vm
-
-            source_gateway  (basestring)    --  gateway of the source vm
-
-            destination_subnet  (basestring)    --  subnet of the restored vm
-
-            destination_gateway  (basestring)    --  gateway of the restored vm
-
-            restore_option      (dict)     --  complete dictionary with all advanced options
-                default: {}
-
             to_time             (Int)         --  End time to select the job for restore
                                                 default: None
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                            eg:
+                            source_ip           (basestring)    --  IP of the source VM
+
+                            destination_ip      (basestring)    --  IP of the destination VM
+
+                            destComputerName  (basestring)    --  Hostname of the restored vm
+
+                            source_subnet  (basestring)    --  subnet of the source vm
+
+                            source_gateway  (basestring)    --  gateway of the source vm
+
+                            destination_subnet  (basestring)    --  subnet of the restored vm
+
+                            destination_gateway  (basestring)    --  gateway of the restored vm
+
+                            restore_option      (dict)     --  complete dictionary with all advanced options
+                                default: {}
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3389,7 +3355,14 @@ if response is not success
     &#34;&#34;&#34;
 
     restore_option = {}
-
+    extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
+                     &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
+                     &#39;destination_gateway&#39;, &#39;folder_path&#39;]
+    for key in extra_options:
+        if key in kwargs:
+            restore_option[key] = kwargs[key]
+        else:
+            restore_option[key] = None
     # check mandatory input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -3400,7 +3373,7 @@ if response is not success
     # populating proxy client. It assumes the proxy controller added in instance
     # properties if not specified
     if proxy_client is not None:
-        restore_option[&#39;client&#39;] = proxy_client
+        restore_option[&#39;client_name&#39;] = proxy_client
 
     if restored_vm_name:
         if not (isinstance(vm_to_restore, basestring) or
@@ -3428,15 +3401,7 @@ if response is not success
         copy_precedence=copy_precedence,
         volume_level_restore=1,
         source_item=[],
-        source_ip=source_ip,
-        destination_ip=destination_ip,
-        network=network,
-        to_time=to_time,
-        destComputerName=dest_computer_name,
-        source_subnet=source_subnet,
-        source_gateway=source_gateway,
-        destination_subnet=destination_subnet,
-        destination_gateway=destination_gateway
+        to_time=to_time
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -3499,6 +3464,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.storage_ma" href="../../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -3508,6 +3474,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>

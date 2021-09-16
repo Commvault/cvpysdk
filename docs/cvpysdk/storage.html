@@ -124,6 +124,21 @@ returns index cache enabled status</p>
 <p>set_state()
 &ndash; enables/disables media agent</p>
 <p>mark_for_maintenance() &ndash; marks/unmarks media agent offline for maintenance</p>
+<p>set_ransomware_protection()
+&ndash; set / unset ransomware protection on Windows MA</p>
+<h2 id="libraries">Libraries</h2>
+<p><strong>init</strong>()
+&ndash;
+initialize the instance of Libraries class</p>
+<p>_get_libraries
+&ndash;
+Gets all the libraries associated to the commcell specified by commcell object</p>
+<p>has_library
+&ndash;
+Checks if a library exists in the commcell with the input library name</p>
+<p>refresh
+&ndash;
+Refresh the libraries associated with the Commcell</p>
 <h2 id="disklibraries">Disklibraries</h2>
 <p><strong>init</strong>(commcell_object)
 &ndash;
@@ -134,15 +149,9 @@ returns all the disk libraries associated with the commcell</p>
 <p><strong>repr</strong>()
 &ndash;
 returns the string for the instance of the DiskLibraries class</p>
-<p>_get_libraries()
-&ndash;
-gets all the disk libraries of the commcell</p>
 <p>all_disk_libraries()
 &ndash;
 returns the dict of all the disk libraries on commcell</p>
-<p>has_library(library_name)
-&ndash;
-checks if a disk library exists with the given name or not</p>
 <p>add()
 &ndash;
 adds a new disk library to the commcell</p>
@@ -153,9 +162,6 @@ Deletes a disk library from commcell</p>
 &ndash;
 returns the instance of the DiskLibrary class
 for the library specified</p>
-<p>refresh()
-&ndash;
-refresh the disk libraries associated with the commcell</p>
 <h2 id="disklibrary">Disklibrary</h2>
 <p><strong>init</strong>(commcell_object,
 library_name,
@@ -204,10 +210,39 @@ Refresh the properties of this disk library.</p>
 **free_space**               --  returns the free space on the library
 **mountpath_usage**          --  returns mountpath usage on library
 </code></pre>
+<h2 id="tapelibraries">Tapelibraries</h2>
+<p><strong>init</strong>()
+&ndash;
+initialize the TapeLibrary class instance for the commcell</p>
+<p>get()
+&ndash;
+Returns the TapeLibrary object of the specified library</p>
+<p>delete()
+&ndash;
+Deletes the specified library</p>
+<p>detect_tape_library()
+&ndash;
+Detect the tape library of the specified MediaAgent(s)</p>
+<p>configure_tape_library()
+&ndash;
+Configure the specified tape library</p>
+<h2 id="tapelibrary">Tapelibrary</h2>
+<p><strong>init</strong>()
+&ndash;
+Initialize the TapeLibrary class instance</p>
+<p><strong>repr</strong>
+&ndash;
+returns the string for the instance of the TapeLibrary class</p>
+<p>_get_library_id()
+&ndash;
+Returns the library ID</p>
+<p>_get_library_properties()
+&ndash;
+gets the disk library properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1-L2108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1-L2462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -307,6 +342,20 @@ MediaAgent:
 
     mark_for_maintenance() -- marks/unmarks media agent offline for maintenance
 
+    set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
+
+
+Libraries:
+
+    __init__()               --  initialize the instance of Libraries class
+    
+    _get_libraries           --  Gets all the libraries associated to the commcell specified by commcell object
+    
+    has_library              --  Checks if a library exists in the commcell with the input library name
+    
+    refresh                  --  Refresh the libraries associated with the Commcell
+    
+
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
 
@@ -314,11 +363,7 @@ DiskLibraries:
 
     __repr__()                  --  returns the string for the instance of the DiskLibraries class
 
-    _get_libraries()            --  gets all the disk libraries of the commcell
-
     all_disk_libraries()        --  returns the dict of all the disk libraries on commcell
-
-    has_library(library_name)   --  checks if a disk library exists with the given name or not
 
     add()                       --  adds a new disk library to the commcell
 
@@ -326,8 +371,6 @@ DiskLibraries:
 
     get(library_name)           --  returns the instance of the DiskLibrary class
     for the library specified
-
-    refresh()                   --  refresh the disk libraries associated with the commcell
 
 
 DiskLibrary:
@@ -368,10 +411,35 @@ DiskLibrary instance Attributes
     **free_space**               --  returns the free space on the library
     **mountpath_usage**          --  returns mountpath usage on library
 
+TapeLibraries:
+
+    __init__()    --  initialize the TapeLibrary class instance for the commcell
+
+    get()                        --  Returns the TapeLibrary object of the specified library
+
+    delete()                     --  Deletes the specified library
+
+    detect_tape_library()        --  Detect the tape library of the specified MediaAgent(s)
+
+    configure_tape_library()     --  Configure the specified tape library
+
+
+TapeLibrary:
+
+     __init__()         --  Initialize the TapeLibrary class instance
+
+     __repr__           --  returns the string for the instance of the TapeLibrary class
+
+     _get_library_id()  --  Returns the library ID
+
+     _get_library_properties()   --  gets the disk library properties
+     
+     
 &#34;&#34;&#34;
+
 from __future__ import absolute_import
 from __future__ import unicode_literals
-import uuid, time
+import uuid, time, json
 
 from base64 import b64encode
 
@@ -1075,7 +1143,55 @@ class MediaAgent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def set_ransomware_protection(self, status):
+        &#34;&#34;&#34;Enables / Disables the ransomware protection on Windows MediaAgent.
 
+        Args:
+            status    (bool)        --  True or False value to turn it on/off
+                                        True - ransomware protection on MediaAgent - ON
+                                        False - ransomware protection on MediaAgent - OFF
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            Exception(Exception_Code, Exception_Message):
+                - if there is failure in executing the operation
+        &#34;&#34;&#34;
+        # this works only on WINDOWS MA
+        if self._platform != &#39;WINDOWS&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if type(status) != bool:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        media_id = int(self.media_agent_id)
+
+        request_json = {
+            &#34;mediaAgentInfo&#34;: {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: media_id
+                },
+                &#34;mediaAgentProps&#34;: {
+                    &#34;isRansomwareProtected&#34;: status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                    error_message = response.get(&#39;error&#39;, {}).get(&#39;errorString&#39;, &#39;&#39;)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
     @property
     def name(self):
@@ -1137,9 +1253,9 @@ class MediaAgent(object):
         self._initialize_media_agent_properties()
 
 
-class DiskLibraries(object):
-    &#34;&#34;&#34;Class for getting all the disk libraries associated with the commcell.&#34;&#34;&#34;
-
+class Libraries(object):
+    &#34;&#34;&#34; Class for libraries&#34;&#34;&#34;
+    
     def __init__(self, commcell_object):
         &#34;&#34;&#34;Initialize object of the DiskLibraries class.
 
@@ -1154,26 +1270,6 @@ class DiskLibraries(object):
 
         self._libraries = None
         self.refresh()
-
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all disk libraries of the commcell.
-
-            Returns:
-                str - string of all the disk libraries associated with the commcell
-        &#34;&#34;&#34;
-        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Disk Library&#39;)
-
-        for index, library in enumerate(self._libraries):
-            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, library)
-            representation_string += sub_str
-
-        return representation_string.strip()
-
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the DiskLibraries class.&#34;&#34;&#34;
-        return &#34;DiskLibraries class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
 
     def _get_libraries(self):
         &#34;&#34;&#34;Gets all the disk libraries associated to the commcell specified by commcell object.
@@ -1210,18 +1306,6 @@ class DiskLibraries(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    @property
-    def all_disk_libraries(self):
-        &#34;&#34;&#34;Returns dict of all the disk libraries on this commcell
-
-            dict - consists of all disk libraries of the commcell
-                    {
-                         &#34;disk_library1_name&#34;: disk_library1_id,
-                         &#34;disk_library2_name&#34;: disk_library2_id
-                    }
-
-        &#34;&#34;&#34;
-        return self._libraries
 
     def has_library(self, library_name):
         &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
@@ -1240,6 +1324,51 @@ class DiskLibraries(object):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         return self._libraries and library_name.lower() in self._libraries
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
+        self._libraries = self._get_libraries()
+
+
+class DiskLibraries(Libraries):
+    &#34;&#34;&#34;Class for getting all the disk libraries associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        super().__init__(commcell_object)
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all disk libraries of the commcell.
+
+            Returns:
+                str - string of all the disk libraries associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Disk Library&#39;)
+
+        for index, library in enumerate(self._libraries):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, library)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the DiskLibraries class.&#34;&#34;&#34;
+        return &#34;DiskLibraries class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    @property
+    def all_disk_libraries(self):
+        &#34;&#34;&#34;Returns dict of all the disk libraries on this commcell
+
+            dict - consists of all disk libraries of the commcell
+                    {
+                         &#34;disk_library1_name&#34;: disk_library1_id,
+                         &#34;disk_library2_name&#34;: disk_library2_id
+                    }
+
+        &#34;&#34;&#34;
+        return self._libraries
+
 
     def add(self, library_name, media_agent, mount_path, username=&#34;&#34;, password=&#34;&#34;, servertype=0,
             saved_credential_name=&#34;&#34;):
@@ -1411,11 +1540,13 @@ class DiskLibraries(object):
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, _stdout.format(library_name, _stderr))
 
-    def get(self, library_name):
+    def get(self, library_name, library_details=None):
         &#34;&#34;&#34;Returns a DiskLibrary object of the specified disk library name.
 
             Args:
                 library_name (str)  --  name of the disk library
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
 
             Returns:
                 object - instance of the DiskLibrary class for the given library name
@@ -1434,15 +1565,12 @@ class DiskLibraries(object):
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
                                    library_name,
-                                   self._libraries[library_name])
+                                   self._libraries[library_name], library_details)
 
             raise SDKException(
                 &#39;Storage&#39;, &#39;102&#39;, &#39;No disk library exists with name: {0}&#39;.format(library_name)
             )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
-        self._libraries = self._get_libraries()
 
 
 class DiskLibrary(object):
@@ -1457,6 +1585,9 @@ class DiskLibrary(object):
                 library_name     (str)     --  name of the disk library
 
                 library_id       (str)     --  id of the disk library
+                    default: None
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
                     default: None
 
             Returns:
@@ -2316,7 +2447,263 @@ class RPStore(object):
 
     @property
     def rpstore_id(self):
-        return self._rpstore_id</code></pre>
+        return self._rpstore_id
+
+
+
+class TapeLibraries(Libraries):
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the DiskLibraries class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the DiskLibraries class
+        &#34;&#34;&#34;
+        super().__init__(commcell_object)
+        self._commcell_object = commcell_object
+        self._DETECT_TAPE_LIBRARY = self._commcell_object._services[&#39;DETECT_TAPE_LIBRARY&#39;]
+        self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services[&#39;CONFIGURE_TAPE_LIBRARY&#39;]
+
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all tape libraries of the commcell.
+
+            Returns:
+                str - string of all the tape libraries associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Tape Library&#39;)
+
+        for index, library in enumerate(self._libraries):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, library)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the TapeLibraries class.&#34;&#34;&#34;
+        return &#34;TapeLibraries class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+
+
+    def get(self, tape_library_name):
+        &#34;&#34;&#34;
+        Returns the object of TapeLibrary class of the specified library name
+
+                    Args:
+                        library_name (str)  --  name of the library
+
+                    Returns:
+                        object - object of TapeLibrary class of the specified library name
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+        &#34;&#34;&#34;
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+        else:
+            if self.has_library(tape_library_name):
+                tape_library_name = tape_library_name.lower()
+                return TapeLibrary(self._commcell_object, tape_library_name, self._libraries[tape_library_name])
+
+    def delete(self, tape_library_name):
+        &#34;&#34;&#34;
+        Deletes the specified library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                    Returns:
+                        bool - returns true if the library deleted successfully
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+                            if library does not exists
+                            if its failed to delete the library
+        &#34;&#34;&#34;
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if not self.has_library(tape_library_name):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Invalid library name&#34;)
+
+        pay_load={
+                &#34;isDeconfigLibrary&#34;: 1,
+                &#34;library&#34;: {
+                    &#34;opType&#34;: 2,
+                    &#34;libraryName&#34;: tape_library_name
+                }
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._LIBRARY, pay_load)
+
+        if not flag:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to DELETE the library&#34;)
+
+        self.refresh()
+
+    def detect_tape_library(self, mediaagents):
+        &#34;&#34;&#34;
+        Detect the tape libraries(s) of the provided MediaAgent(s)
+
+                    Args:
+                        mediaagents (list)  --  The list of the mediaagent(s)
+
+                    Returns:
+                        JSON - JSON of the tape library detections response
+
+                    Raises:
+                        SDKException:
+                            if its fails to detect
+        &#34;&#34;&#34;
+
+        pay_load ={
+        &#34;autoDetect&#34;: True,
+        &#34;mediaAgentIdList&#34;: mediaagents
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DETECT_TAPE_LIBRARY, pay_load )
+
+        if flag and response.json():
+            return response.json()
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to detect library&#34;)
+
+    def configure_tape_library(self,tape_library_name, mediaagents):
+        &#34;&#34;&#34;
+        Configure the tape library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                        mediaagents(list) -- list of MediaAgents to use for configuration
+
+                    Returns:
+                        object - object of the TapeLibrary class for the specified tape library
+
+                    Raises:
+                        SDKException:
+                            if fails to configure the tape library
+        &#34;&#34;&#34;
+
+        libraries=self.detect_tape_library(mediaagents)
+        flag=False
+        for lib in libraries[&#39;libraries&#39;]:
+
+            if lib[&#39;libraryName&#39;] == tape_library_name:
+                drive_list=lib[&#39;drives&#39;]
+
+                pay_load= {
+                    &#34;driveList&#34;: drive_list,
+                    &#34;hdr&#34;: {
+                        &#34;tag&#34;: 0
+                    }
+                }
+                flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._CONFIGURE_TAPE_LIBRARY,
+                                                                                    pay_load)
+                break
+
+        if not flag:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to configure the library&#34;)
+        self.refresh()
+        tape_library_name = tape_library_name.lower()
+        for lib_name, lib_id in self._libraries.items():
+            if lib_name.startswith(tape_library_name + &#34; &#34;):
+                return self.get(lib_name)
+
+
+
+class TapeLibrary(object):
+
+    def __init__(self, commcell_object, tape_library_name, tape_library_id=None):
+        &#34;&#34;&#34;Initialize object of the TapeLibrary class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+                tape_library_name (string) -- name of the tape library
+                tape_library_id (int) -- tape library ID
+
+            Returns:
+                object - instance of the TapeLibrary class
+        &#34;&#34;&#34;
+
+        self._commcell_object = commcell_object
+        self._name = tape_library_name
+        if tape_library_id:
+            self._library_id = str(tape_library_id)
+        else:
+            self._library_id = self._get_library_id()
+
+        self._library_properties_service = self._commcell_object._services[
+                                               &#39;GET_LIBRARY_PROPERTIES&#39;] % (self._library_id)
+
+        self.library_properties = self._get_library_properties()
+
+        self._name = self.library_properties[&#39;library&#39;][&#39;libraryName&#39;]
+
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of the specified tape library.
+
+            Returns:
+                str - string of all the tape library associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#34;TapeLibrary instance of library : {0}&#34;
+
+        return representation_string.format(self._name)
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the TapeLibrary instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;TapeLibrary class instance for library: &#34;{0}&#34; of Commcell: &#34;{1}&#34;&#39;
+        return representation_string.format(
+            self._name, self._commcell_object.commserv_name
+        )
+
+
+
+    def _get_library_properties(self):
+        &#34;&#34;&#34;Gets the tape library properties.
+
+            Returns:
+                dict - dictionary consisting of the properties of this library
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if failed to get tape library properties
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._library_properties_service
+        )
+
+        if flag:
+            if response.json():
+                if &#39;libraryInfo&#39; in response.json():
+                    return response.json()[&#39;libraryInfo&#39;]
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Failed to get tape Library properties&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+
+    @property
+    def library_name(self):
+        &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+        return self._name
+
+    @property
+    def library_id(self):
+        &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+        return self._library_id</code></pre>
 </details>
 </section>
 <section>
@@ -2344,25 +2731,13 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L929-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1087-L1326" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class DiskLibraries(object):
+<pre><code class="python">class DiskLibraries(Libraries):
     &#34;&#34;&#34;Class for getting all the disk libraries associated with the commcell.&#34;&#34;&#34;
 
     def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the DiskLibraries class.
-
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
-
-            Returns:
-                object - instance of the DiskLibraries class
-        &#34;&#34;&#34;
-        self._commcell_object = commcell_object
-        self._LIBRARY = self._commcell_object._services[&#39;LIBRARY&#39;]
-
-        self._libraries = None
-        self.refresh()
+        super().__init__(commcell_object)
 
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all disk libraries of the commcell.
@@ -2384,41 +2759,6 @@ instance of the Commcell class</p>
             self._commcell_object.commserv_name
         )
 
-    def _get_libraries(self):
-        &#34;&#34;&#34;Gets all the disk libraries associated to the commcell specified by commcell object.
-
-            Returns:
-                dict - consists of all disk libraries of the commcell
-                    {
-                         &#34;disk_library1_name&#34;: disk_library1_id,
-                         &#34;disk_library2_name&#34;: disk_library2_id
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-        &#34;&#34;&#34;
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._LIBRARY)
-
-        if flag:
-            if response.json() and &#39;response&#39; in response.json():
-                libraries = response.json()[&#39;response&#39;]
-                libraries_dict = {}
-
-                for library in libraries:
-                    temp_name = library[&#39;entityInfo&#39;][&#39;name&#39;].lower()
-                    temp_id = str(library[&#39;entityInfo&#39;][&#39;id&#39;]).lower()
-                    libraries_dict[temp_name] = temp_id
-
-                return libraries_dict
-            else:
-                return {}
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-
     @property
     def all_disk_libraries(self):
         &#34;&#34;&#34;Returns dict of all the disk libraries on this commcell
@@ -2432,23 +2772,6 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         return self._libraries
 
-    def has_library(self, library_name):
-        &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
-
-            Args:
-                library_name (str)  --  name of the library
-
-            Returns:
-                bool - boolean output whether the library exists in the commcell or not
-
-            Raises:
-                SDKException:
-                    if type of the library name argument is not string
-        &#34;&#34;&#34;
-        if not isinstance(library_name, basestring):
-            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
-        return self._libraries and library_name.lower() in self._libraries
 
     def add(self, library_name, media_agent, mount_path, username=&#34;&#34;, password=&#34;&#34;, servertype=0,
             saved_credential_name=&#34;&#34;):
@@ -2620,11 +2943,13 @@ instance of the Commcell class</p>
             _stderr = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, _stdout.format(library_name, _stderr))
 
-    def get(self, library_name):
+    def get(self, library_name, library_details=None):
         &#34;&#34;&#34;Returns a DiskLibrary object of the specified disk library name.
 
             Args:
                 library_name (str)  --  name of the disk library
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
 
             Returns:
                 object - instance of the DiskLibrary class for the given library name
@@ -2643,16 +2968,16 @@ instance of the Commcell class</p>
             if self.has_library(library_name):
                 return DiskLibrary(self._commcell_object,
                                    library_name,
-                                   self._libraries[library_name])
+                                   self._libraries[library_name], library_details)
 
             raise SDKException(
                 &#39;Storage&#39;, &#39;102&#39;, &#39;No disk library exists with name: {0}&#39;.format(library_name)
-            )
-
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
-        self._libraries = self._get_libraries()</code></pre>
+            )</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.storage.Libraries" href="#cvpysdk.storage.Libraries">Libraries</a></li>
+</ul>
 <h3>Instance variables</h3>
 <dl>
 <dt id="cvpysdk.storage.DiskLibraries.all_disk_libraries"><code class="name">var <span class="ident">all_disk_libraries</span></code></dt>
@@ -2666,7 +2991,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1002-L1013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1113-L1124" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_disk_libraries(self):
@@ -2742,7 +3067,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1033-L1143" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1127-L1237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, library_name, media_agent, mount_path, username=&#34;&#34;, password=&#34;&#34;, servertype=0,
         saved_credential_name=&#34;&#34;):
@@ -2874,7 +3199,7 @@ if response is incorrect</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1145-L1201" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1239-L1295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, library_name):
     &#34;&#34;&#34;deletes the specified library.
@@ -2936,7 +3261,7 @@ if response is incorrect</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.storage.DiskLibraries.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, library_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, library_name, library_details=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a DiskLibrary object of the specified disk library name.</p>
@@ -2944,6 +3269,7 @@ if response is incorrect</p></div>
 <p>library_name (str)
 &ndash;
 name of the disk library</p>
+<p>library_details (dict) &ndash; dict containing mountpath and mediaagent details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the DiskLibrary class for the given library name</p>
 <h2 id="raises">Raises</h2>
@@ -2954,13 +3280,15 @@ if type of the library name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1203-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1297-L1326" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, library_name):
+<pre><code class="python">def get(self, library_name, library_details=None):
     &#34;&#34;&#34;Returns a DiskLibrary object of the specified disk library name.
 
         Args:
             library_name (str)  --  name of the disk library
+
+            library_details (dict) -- dict containing mountpath and mediaagent details
 
         Returns:
             object - instance of the DiskLibrary class for the given library name
@@ -2979,67 +3307,23 @@ if type of the library name argument is not string</p>
         if self.has_library(library_name):
             return DiskLibrary(self._commcell_object,
                                library_name,
-                               self._libraries[library_name])
+                               self._libraries[library_name], library_details)
 
         raise SDKException(
             &#39;Storage&#39;, &#39;102&#39;, &#39;No disk library exists with name: {0}&#39;.format(library_name)
         )</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.storage.DiskLibraries.has_library"><code class="name flex">
-<span>def <span class="ident">has_library</span></span>(<span>self, library_name)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Checks if a library exists in the commcell with the input library name.</p>
-<h2 id="args">Args</h2>
-<p>library_name (str)
-&ndash;
-name of the library</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the library exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the library name argument is not string</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1015-L1031" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def has_library(self, library_name):
-    &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
-
-        Args:
-            library_name (str)  --  name of the library
-
-        Returns:
-            bool - boolean output whether the library exists in the commcell or not
-
-        Raises:
-            SDKException:
-                if type of the library name argument is not string
-    &#34;&#34;&#34;
-    if not isinstance(library_name, basestring):
-        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
-    return self._libraries and library_name.lower() in self._libraries</code></pre>
-</details>
-</dd>
-<dt id="cvpysdk.storage.DiskLibraries.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Refresh the disk libraries associated with the Commcell.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1232-L1234" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
-    self._libraries = self._get_libraries()</code></pre>
-</details>
-</dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.storage.Libraries" href="#cvpysdk.storage.Libraries">Libraries</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.storage.Libraries.has_library" href="#cvpysdk.storage.Libraries.has_library">has_library</a></code></li>
+<li><code><a title="cvpysdk.storage.Libraries.refresh" href="#cvpysdk.storage.Libraries.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="cvpysdk.storage.DiskLibrary"><code class="flex name class">
 <span>class <span class="ident">DiskLibrary</span></span>
@@ -3062,12 +3346,14 @@ name of the disk library</p>
 &ndash;
 id of the disk library
 default: None</p>
+<p>library_details (dict) &ndash; dict containing mountpath and mediaagent details
+default: None</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the DiskLibrary class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1237-L1984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1330-L2080" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DiskLibrary(object):
     &#34;&#34;&#34;Class for a specific disk library.&#34;&#34;&#34;
@@ -3081,6 +3367,9 @@ default: None</p>
                 library_name     (str)     --  name of the disk library
 
                 library_id       (str)     --  id of the disk library
+                    default: None
+
+                library_details (dict) -- dict containing mountpath and mediaagent details
                     default: None
 
             Returns:
@@ -3826,7 +4115,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1752-L1755" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1848-L1851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def free_space(self):
@@ -3840,7 +4129,7 @@ def free_space(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1843-L1846" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1939-L1942" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -3854,7 +4143,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1838-L1841" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1934-L1937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -3868,7 +4157,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1848-L1852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1944-L1948" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_properties(self):
@@ -3883,7 +4172,7 @@ def library_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1864-L1867" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1960-L1963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -3897,7 +4186,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1824-L1831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1920-L1927" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agents_associated(self):
@@ -3915,7 +4204,7 @@ def media_agents_associated(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1854-L1857" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1950-L1953" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mount_path(self):
@@ -3929,7 +4218,7 @@ def mount_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1757-L1760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1853-L1856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mountpath_usage(self):
@@ -3943,7 +4232,7 @@ def mountpath_usage(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1833-L1836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1929-L1932" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3995,7 +4284,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1425-L1497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1521-L1593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_mount_path(self, mount_path, media_agent, username, password, server_type):
     &#34;&#34;&#34; Adds a mount path to the cloud library
@@ -4104,7 +4393,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1539-L1606" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1635-L1702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mount_path(self, mount_path, media_agent, username=&#39;&#39;, password=&#39;&#39;):
     &#34;&#34;&#34; Adds a mount path [local/remote] to the disk library
@@ -4215,7 +4504,7 @@ mountpath_id (int)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1634-L1694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1730-L1790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_device_access_type(self, mountpath_id, device_id, device_controller_id, media_agent_id,
                               device_access_type):
@@ -4315,7 +4604,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1275-L1353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1371-L1449" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def move_mountpath(self, mountpath_id, source_device_path,
                    source_mediaagent_id, target_device_path, target_mediaagent_id):
@@ -4406,7 +4695,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1535-L1537" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1631-L1633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of this disk library.&#34;&#34;&#34;
@@ -4430,7 +4719,7 @@ if failed to update</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1794-L1822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1890-L1918" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_mountpath_preferred_on_mediaagent(self, value):
     &#34;&#34;&#34;Sets select preferred mountPath according to mediaagent setting on the library.
@@ -4478,7 +4767,7 @@ reserve space to be set in MB</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1608-L1632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1704-L1728" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_mountpath_reserve_space(self, mount_path, size):
     &#34;&#34;&#34;
@@ -4575,7 +4864,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1874-L1984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1970-L2080" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
     &#34;&#34;&#34;
@@ -4716,7 +5005,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1355-L1423" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1451-L1519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def validate_mountpath(self, mountpath_drive_id, media_agent):
 
@@ -4803,7 +5092,7 @@ Slot Id of the media on the library</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1696-L1750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1792-L1846" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_media(self, media_name, location_id):
     &#34;&#34;&#34;
@@ -4864,6 +5153,162 @@ Slot Id of the media on the library</p></div>
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.storage.Libraries"><code class="flex name class">
+<span>class <span class="ident">Libraries</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for libraries</p>
+<p>Initialize object of the DiskLibraries class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the DiskLibraries class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1010-L1084" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Libraries(object):
+    &#34;&#34;&#34; Class for libraries&#34;&#34;&#34;
+    
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the DiskLibraries class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the DiskLibraries class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._LIBRARY = self._commcell_object._services[&#39;LIBRARY&#39;]
+
+        self._libraries = None
+        self.refresh()
+
+    def _get_libraries(self):
+        &#34;&#34;&#34;Gets all the disk libraries associated to the commcell specified by commcell object.
+
+            Returns:
+                dict - consists of all disk libraries of the commcell
+                    {
+                         &#34;disk_library1_name&#34;: disk_library1_id,
+                         &#34;disk_library2_name&#34;: disk_library2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._LIBRARY)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                libraries = response.json()[&#39;response&#39;]
+                libraries_dict = {}
+
+                for library in libraries:
+                    temp_name = library[&#39;entityInfo&#39;][&#39;name&#39;].lower()
+                    temp_id = str(library[&#39;entityInfo&#39;][&#39;id&#39;]).lower()
+                    libraries_dict[temp_name] = temp_id
+
+                return libraries_dict
+            else:
+                return {}
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+
+    def has_library(self, library_name):
+        &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
+
+            Args:
+                library_name (str)  --  name of the library
+
+            Returns:
+                bool - boolean output whether the library exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the library name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(library_name, basestring):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        return self._libraries and library_name.lower() in self._libraries
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
+        self._libraries = self._get_libraries()</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.storage.DiskLibraries" href="#cvpysdk.storage.DiskLibraries">DiskLibraries</a></li>
+<li><a title="cvpysdk.storage.TapeLibraries" href="#cvpysdk.storage.TapeLibraries">TapeLibraries</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.storage.Libraries.has_library"><code class="name flex">
+<span>def <span class="ident">has_library</span></span>(<span>self, library_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a library exists in the commcell with the input library name.</p>
+<h2 id="args">Args</h2>
+<p>library_name (str)
+&ndash;
+name of the library</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the library exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the library name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1064-L1080" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_library(self, library_name):
+    &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
+
+        Args:
+            library_name (str)  --  name of the library
+
+        Returns:
+            bool - boolean output whether the library exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the library name argument is not string
+    &#34;&#34;&#34;
+    if not isinstance(library_name, basestring):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    return self._libraries and library_name.lower() in self._libraries</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.Libraries.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the disk libraries associated with the Commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1082-L1084" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
+    self._libraries = self._get_libraries()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.storage.MediaAgent"><code class="flex name class">
 <span>class <span class="ident">MediaAgent</span></span>
 <span>(</span><span>commcell_object, media_agent_name, media_agent_id=None)</span>
@@ -4890,7 +5335,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L403-L926" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L436-L1007" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MediaAgent(object):
     &#34;&#34;&#34;Class for a specific media agent.&#34;&#34;&#34;
@@ -5356,7 +5801,55 @@ default: None</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def set_ransomware_protection(self, status):
+        &#34;&#34;&#34;Enables / Disables the ransomware protection on Windows MediaAgent.
 
+        Args:
+            status    (bool)        --  True or False value to turn it on/off
+                                        True - ransomware protection on MediaAgent - ON
+                                        False - ransomware protection on MediaAgent - OFF
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            Exception(Exception_Code, Exception_Message):
+                - if there is failure in executing the operation
+        &#34;&#34;&#34;
+        # this works only on WINDOWS MA
+        if self._platform != &#39;WINDOWS&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if type(status) != bool:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        media_id = int(self.media_agent_id)
+
+        request_json = {
+            &#34;mediaAgentInfo&#34;: {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: media_id
+                },
+                &#34;mediaAgentProps&#34;: {
+                    &#34;isRansomwareProtected&#34;: status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                    error_message = response.get(&#39;error&#39;, {}).get(&#39;errorString&#39;, &#39;&#39;)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
     @property
     def name(self):
@@ -5436,7 +5929,7 @@ Returns :
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L904-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L985-L1003" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def current_power_status(self):
@@ -5465,7 +5958,7 @@ def current_power_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L899-L902" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L980-L983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_cache_enabled(self):
@@ -5479,7 +5972,7 @@ def index_cache_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L894-L897" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L975-L978" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_cache_path(self):
@@ -5493,7 +5986,7 @@ def index_cache_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L884-L887" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L965-L968" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_online(self):
@@ -5507,7 +6000,7 @@ def is_online(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L879-L882" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L960-L963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent_id(self):
@@ -5521,7 +6014,7 @@ def media_agent_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L874-L877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L955-L958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent_name(self):
@@ -5535,7 +6028,7 @@ def media_agent_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L869-L872" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L950-L953" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5549,7 +6042,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L889-L892" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L970-L973" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def platform(self):
@@ -5582,7 +6075,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L677-L772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L710-L805" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_index_cache(self, old_index_cache_path, new_index_cache_path):
     &#34;&#34;&#34;
@@ -5698,7 +6191,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L545-L573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L578-L606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_power_management(self, pseudo_client_name):
     &#34;&#34;&#34;
@@ -5751,7 +6244,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L822-L865" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L855-L898" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_maintenance(self, mark=False):
     &#34;&#34;&#34;
@@ -5813,7 +6306,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L627-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L660-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def power_off(self, wait_till_stopped=True):
     &#34;&#34;&#34;
@@ -5847,7 +6340,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L610-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L643-L658" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def power_on(self, wait_till_online=True):
     &#34;&#34;&#34;
@@ -5875,11 +6368,86 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L924-L926" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L1005-L1007" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the MediaAgent.&#34;&#34;&#34;
     self._initialize_media_agent_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.MediaAgent.set_ransomware_protection"><code class="name flex">
+<span>def <span class="ident">set_ransomware_protection</span></span>(<span>self, status)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enables / Disables the ransomware protection on Windows MediaAgent.</p>
+<h2 id="args">Args</h2>
+<p>status
+(bool)
+&ndash;
+True or False value to turn it on/off
+True - ransomware protection on MediaAgent - ON
+False - ransomware protection on MediaAgent - OFF</p>
+<h2 id="returns">Returns</h2>
+<p>None
+&ndash;
+if operation performed successfully.</p>
+<h2 id="raises">Raises</h2>
+<p>Exception(Exception_Code, Exception_Message):
+- if there is failure in executing the operation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L900-L948" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_ransomware_protection(self, status):
+    &#34;&#34;&#34;Enables / Disables the ransomware protection on Windows MediaAgent.
+
+    Args:
+        status    (bool)        --  True or False value to turn it on/off
+                                    True - ransomware protection on MediaAgent - ON
+                                    False - ransomware protection on MediaAgent - OFF
+
+    Returns:
+        None                   --   if operation performed successfully.
+
+    Raises:
+        Exception(Exception_Code, Exception_Message):
+            - if there is failure in executing the operation
+    &#34;&#34;&#34;
+    # this works only on WINDOWS MA
+    if self._platform != &#39;WINDOWS&#39;:
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if type(status) != bool:
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    media_id = int(self.media_agent_id)
+
+    request_json = {
+        &#34;mediaAgentInfo&#34;: {
+            &#34;mediaAgent&#34;: {
+                &#34;mediaAgentId&#34;: media_id
+            },
+            &#34;mediaAgentProps&#34;: {
+                &#34;isRansomwareProtected&#34;: status
+            }
+        }
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;PUT&#39;, self._MEDIA_AGENTS, request_json
+    )
+
+    if flag:
+        if response and response.json():
+            response = response.json()
+            if response.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                error_message = response.get(&#39;error&#39;, {}).get(&#39;errorString&#39;, &#39;&#39;)
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.storage.MediaAgent.set_state"><code class="name flex">
@@ -5903,7 +6471,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L774-L819" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L807-L852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_state(self, enable=True):
     &#34;&#34;&#34;
@@ -5977,7 +6545,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L644-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L677-L708" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_power_status(self, expected_power_status, time_out_sec=600):
     &#34;&#34;&#34;
@@ -6031,7 +6599,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L174-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L207-L433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MediaAgents(object):
     &#34;&#34;&#34;Class for getting all the media agents associated with the commcell.&#34;&#34;&#34;
@@ -6288,7 +6856,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L268-L292" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L301-L325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_media_agents(self):
@@ -6347,7 +6915,7 @@ if no media agent exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L341-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L374-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, media_agent, force=False):
     &#34;&#34;&#34;Deletes the media agent from the commcell.
@@ -6426,7 +6994,7 @@ if type of the media agent name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L312-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L345-L372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, media_agent_name):
     &#34;&#34;&#34;Returns a MediaAgent object of the specified media agent name.
@@ -6475,7 +7043,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L294-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L327-L343" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_media_agent(self, media_agent_name):
     &#34;&#34;&#34;Checks if a media agent exists in the commcell with the input media agent name.
@@ -6504,7 +7072,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L398-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L431-L433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the media agents associated with the Commcell.&#34;&#34;&#34;
@@ -6522,7 +7090,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2096-L2108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2192-L2204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RPStore(object):
     def __init__(self, commcell, rpstore_name, rpstore_id):
@@ -6546,7 +7114,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2106-L2108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2202-L2204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def rpstore_id(self):
@@ -6559,7 +7127,7 @@ def rpstore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2102-L2104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2198-L2200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def rpstore_name(self):
@@ -6583,7 +7151,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L1987-L2093" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2083-L2189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RPStores(object):
     def __init__(self, commcell):
@@ -6720,7 +7288,7 @@ Name of the media agent</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2013-L2057" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2109-L2153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, name, path, storage, media_agent_name):
     &#34;&#34;&#34;
@@ -6783,7 +7351,7 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2073-L2089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2169-L2185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, rpstore_name):
     &#34;&#34;&#34;Fetches the given RPStore
@@ -6821,7 +7389,7 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2059-L2071" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2155-L2167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_rp_store(self, rpstore_name):
     &#34;&#34;&#34;Validates if the given RPStore is present
@@ -6846,11 +7414,564 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/storage.py#L2091-L2093" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2187-L2189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the media agents associated with the Commcell.&#34;&#34;&#34;
     self._rp_stores = self._get_rp_stores()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.storage.TapeLibraries"><code class="flex name class">
+<span>class <span class="ident">TapeLibraries</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for libraries</p>
+<p>Initialize object of the DiskLibraries class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the DiskLibraries class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2208-L2372" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class TapeLibraries(Libraries):
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the DiskLibraries class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the DiskLibraries class
+        &#34;&#34;&#34;
+        super().__init__(commcell_object)
+        self._commcell_object = commcell_object
+        self._DETECT_TAPE_LIBRARY = self._commcell_object._services[&#39;DETECT_TAPE_LIBRARY&#39;]
+        self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services[&#39;CONFIGURE_TAPE_LIBRARY&#39;]
+
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all tape libraries of the commcell.
+
+            Returns:
+                str - string of all the tape libraries associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Tape Library&#39;)
+
+        for index, library in enumerate(self._libraries):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, library)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the TapeLibraries class.&#34;&#34;&#34;
+        return &#34;TapeLibraries class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+
+
+    def get(self, tape_library_name):
+        &#34;&#34;&#34;
+        Returns the object of TapeLibrary class of the specified library name
+
+                    Args:
+                        library_name (str)  --  name of the library
+
+                    Returns:
+                        object - object of TapeLibrary class of the specified library name
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+        &#34;&#34;&#34;
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+        else:
+            if self.has_library(tape_library_name):
+                tape_library_name = tape_library_name.lower()
+                return TapeLibrary(self._commcell_object, tape_library_name, self._libraries[tape_library_name])
+
+    def delete(self, tape_library_name):
+        &#34;&#34;&#34;
+        Deletes the specified library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                    Returns:
+                        bool - returns true if the library deleted successfully
+
+                    Raises:
+                        SDKException:
+                            if type of the library name argument is not string
+                            if library does not exists
+                            if its failed to delete the library
+        &#34;&#34;&#34;
+
+        if not isinstance(tape_library_name, basestring):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if not self.has_library(tape_library_name):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Invalid library name&#34;)
+
+        pay_load={
+                &#34;isDeconfigLibrary&#34;: 1,
+                &#34;library&#34;: {
+                    &#34;opType&#34;: 2,
+                    &#34;libraryName&#34;: tape_library_name
+                }
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._LIBRARY, pay_load)
+
+        if not flag:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to DELETE the library&#34;)
+
+        self.refresh()
+
+    def detect_tape_library(self, mediaagents):
+        &#34;&#34;&#34;
+        Detect the tape libraries(s) of the provided MediaAgent(s)
+
+                    Args:
+                        mediaagents (list)  --  The list of the mediaagent(s)
+
+                    Returns:
+                        JSON - JSON of the tape library detections response
+
+                    Raises:
+                        SDKException:
+                            if its fails to detect
+        &#34;&#34;&#34;
+
+        pay_load ={
+        &#34;autoDetect&#34;: True,
+        &#34;mediaAgentIdList&#34;: mediaagents
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DETECT_TAPE_LIBRARY, pay_load )
+
+        if flag and response.json():
+            return response.json()
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to detect library&#34;)
+
+    def configure_tape_library(self,tape_library_name, mediaagents):
+        &#34;&#34;&#34;
+        Configure the tape library
+
+                    Args:
+                        tape_library_name (str)  --  name of the library
+
+                        mediaagents(list) -- list of MediaAgents to use for configuration
+
+                    Returns:
+                        object - object of the TapeLibrary class for the specified tape library
+
+                    Raises:
+                        SDKException:
+                            if fails to configure the tape library
+        &#34;&#34;&#34;
+
+        libraries=self.detect_tape_library(mediaagents)
+        flag=False
+        for lib in libraries[&#39;libraries&#39;]:
+
+            if lib[&#39;libraryName&#39;] == tape_library_name:
+                drive_list=lib[&#39;drives&#39;]
+
+                pay_load= {
+                    &#34;driveList&#34;: drive_list,
+                    &#34;hdr&#34;: {
+                        &#34;tag&#34;: 0
+                    }
+                }
+                flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._CONFIGURE_TAPE_LIBRARY,
+                                                                                    pay_load)
+                break
+
+        if not flag:
+            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to configure the library&#34;)
+        self.refresh()
+        tape_library_name = tape_library_name.lower()
+        for lib_name, lib_id in self._libraries.items():
+            if lib_name.startswith(tape_library_name + &#34; &#34;):
+                return self.get(lib_name)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.storage.Libraries" href="#cvpysdk.storage.Libraries">Libraries</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.storage.TapeLibraries.configure_tape_library"><code class="name flex">
+<span>def <span class="ident">configure_tape_library</span></span>(<span>self, tape_library_name, mediaagents)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Configure the tape library</p>
+<pre><code>        Args:
+            tape_library_name (str)  --  name of the library
+
+            mediaagents(list) -- list of MediaAgents to use for configuration
+
+        Returns:
+            object - object of the TapeLibrary class for the specified tape library
+
+        Raises:
+            SDKException:
+                if fails to configure the tape library
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2332-L2372" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def configure_tape_library(self,tape_library_name, mediaagents):
+    &#34;&#34;&#34;
+    Configure the tape library
+
+                Args:
+                    tape_library_name (str)  --  name of the library
+
+                    mediaagents(list) -- list of MediaAgents to use for configuration
+
+                Returns:
+                    object - object of the TapeLibrary class for the specified tape library
+
+                Raises:
+                    SDKException:
+                        if fails to configure the tape library
+    &#34;&#34;&#34;
+
+    libraries=self.detect_tape_library(mediaagents)
+    flag=False
+    for lib in libraries[&#39;libraries&#39;]:
+
+        if lib[&#39;libraryName&#39;] == tape_library_name:
+            drive_list=lib[&#39;drives&#39;]
+
+            pay_load= {
+                &#34;driveList&#34;: drive_list,
+                &#34;hdr&#34;: {
+                    &#34;tag&#34;: 0
+                }
+            }
+            flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._CONFIGURE_TAPE_LIBRARY,
+                                                                                pay_load)
+            break
+
+    if not flag:
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to configure the library&#34;)
+    self.refresh()
+    tape_library_name = tape_library_name.lower()
+    for lib_name, lib_id in self._libraries.items():
+        if lib_name.startswith(tape_library_name + &#34; &#34;):
+            return self.get(lib_name)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.TapeLibraries.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, tape_library_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the specified library</p>
+<pre><code>        Args:
+            tape_library_name (str)  --  name of the library
+
+        Returns:
+            bool - returns true if the library deleted successfully
+
+        Raises:
+            SDKException:
+                if type of the library name argument is not string
+                if library does not exists
+                if its failed to delete the library
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2269-L2304" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, tape_library_name):
+    &#34;&#34;&#34;
+    Deletes the specified library
+
+                Args:
+                    tape_library_name (str)  --  name of the library
+
+                Returns:
+                    bool - returns true if the library deleted successfully
+
+                Raises:
+                    SDKException:
+                        if type of the library name argument is not string
+                        if library does not exists
+                        if its failed to delete the library
+    &#34;&#34;&#34;
+
+    if not isinstance(tape_library_name, basestring):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if not self.has_library(tape_library_name):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Invalid library name&#34;)
+
+    pay_load={
+            &#34;isDeconfigLibrary&#34;: 1,
+            &#34;library&#34;: {
+                &#34;opType&#34;: 2,
+                &#34;libraryName&#34;: tape_library_name
+            }
+    }
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._LIBRARY, pay_load)
+
+    if not flag:
+        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to DELETE the library&#34;)
+
+    self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.TapeLibraries.detect_tape_library"><code class="name flex">
+<span>def <span class="ident">detect_tape_library</span></span>(<span>self, mediaagents)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Detect the tape libraries(s) of the provided MediaAgent(s)</p>
+<pre><code>        Args:
+            mediaagents (list)  --  The list of the mediaagent(s)
+
+        Returns:
+            JSON - JSON of the tape library detections response
+
+        Raises:
+            SDKException:
+                if its fails to detect
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2306-L2330" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def detect_tape_library(self, mediaagents):
+    &#34;&#34;&#34;
+    Detect the tape libraries(s) of the provided MediaAgent(s)
+
+                Args:
+                    mediaagents (list)  --  The list of the mediaagent(s)
+
+                Returns:
+                    JSON - JSON of the tape library detections response
+
+                Raises:
+                    SDKException:
+                        if its fails to detect
+    &#34;&#34;&#34;
+
+    pay_load ={
+    &#34;autoDetect&#34;: True,
+    &#34;mediaAgentIdList&#34;: mediaagents
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DETECT_TAPE_LIBRARY, pay_load )
+
+    if flag and response.json():
+        return response.json()
+    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#34;Failed to detect library&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.TapeLibraries.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, tape_library_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the object of TapeLibrary class of the specified library name</p>
+<pre><code>        Args:
+            library_name (str)  --  name of the library
+
+        Returns:
+            object - object of TapeLibrary class of the specified library name
+
+        Raises:
+            SDKException:
+                if type of the library name argument is not string
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2247-L2267" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, tape_library_name):
+    &#34;&#34;&#34;
+    Returns the object of TapeLibrary class of the specified library name
+
+                Args:
+                    library_name (str)  --  name of the library
+
+                Returns:
+                    object - object of TapeLibrary class of the specified library name
+
+                Raises:
+                    SDKException:
+                        if type of the library name argument is not string
+    &#34;&#34;&#34;
+
+    if not isinstance(tape_library_name, basestring):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+    else:
+        if self.has_library(tape_library_name):
+            tape_library_name = tape_library_name.lower()
+            return TapeLibrary(self._commcell_object, tape_library_name, self._libraries[tape_library_name])</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.storage.Libraries" href="#cvpysdk.storage.Libraries">Libraries</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.storage.Libraries.has_library" href="#cvpysdk.storage.Libraries.has_library">has_library</a></code></li>
+<li><code><a title="cvpysdk.storage.Libraries.refresh" href="#cvpysdk.storage.Libraries.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="cvpysdk.storage.TapeLibrary"><code class="flex name class">
+<span>class <span class="ident">TapeLibrary</span></span>
+<span>(</span><span>commcell_object, tape_library_name, tape_library_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize object of the TapeLibrary class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class
+tape_library_name (string) &ndash; name of the tape library
+tape_library_id (int) &ndash; tape library ID</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the TapeLibrary class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2376-L2460" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class TapeLibrary(object):
+
+    def __init__(self, commcell_object, tape_library_name, tape_library_id=None):
+        &#34;&#34;&#34;Initialize object of the TapeLibrary class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+                tape_library_name (string) -- name of the tape library
+                tape_library_id (int) -- tape library ID
+
+            Returns:
+                object - instance of the TapeLibrary class
+        &#34;&#34;&#34;
+
+        self._commcell_object = commcell_object
+        self._name = tape_library_name
+        if tape_library_id:
+            self._library_id = str(tape_library_id)
+        else:
+            self._library_id = self._get_library_id()
+
+        self._library_properties_service = self._commcell_object._services[
+                                               &#39;GET_LIBRARY_PROPERTIES&#39;] % (self._library_id)
+
+        self.library_properties = self._get_library_properties()
+
+        self._name = self.library_properties[&#39;library&#39;][&#39;libraryName&#39;]
+
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of the specified tape library.
+
+            Returns:
+                str - string of all the tape library associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#34;TapeLibrary instance of library : {0}&#34;
+
+        return representation_string.format(self._name)
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the TapeLibrary instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;TapeLibrary class instance for library: &#34;{0}&#34; of Commcell: &#34;{1}&#34;&#39;
+        return representation_string.format(
+            self._name, self._commcell_object.commserv_name
+        )
+
+
+
+    def _get_library_properties(self):
+        &#34;&#34;&#34;Gets the tape library properties.
+
+            Returns:
+                dict - dictionary consisting of the properties of this library
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if failed to get tape library properties
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._library_properties_service
+        )
+
+        if flag:
+            if response.json():
+                if &#39;libraryInfo&#39; in response.json():
+                    return response.json()[&#39;libraryInfo&#39;]
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, &#39;Failed to get tape Library properties&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+
+    @property
+    def library_name(self):
+        &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+        return self._name
+
+    @property
+    def library_id(self):
+        &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+        return self._library_id</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.storage.TapeLibrary.library_id"><code class="name">var <span class="ident">library_id</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the library name as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2457-L2460" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def library_id(self):
+    &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+    return self._library_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage.TapeLibrary.library_name"><code class="name">var <span class="ident">library_name</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the library name as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/storage.py#L2452-L2455" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def library_name(self):
+    &#34;&#34;&#34;Treats the library name as a read-only attribute.&#34;&#34;&#34;
+    return self._name</code></pre>
 </details>
 </dd>
 </dl>
@@ -6925,13 +8046,11 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.storage.DiskLibraries" href="#cvpysdk.storage.DiskLibraries">DiskLibraries</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.storage.DiskLibraries.add" href="#cvpysdk.storage.DiskLibraries.add">add</a></code></li>
 <li><code><a title="cvpysdk.storage.DiskLibraries.all_disk_libraries" href="#cvpysdk.storage.DiskLibraries.all_disk_libraries">all_disk_libraries</a></code></li>
 <li><code><a title="cvpysdk.storage.DiskLibraries.delete" href="#cvpysdk.storage.DiskLibraries.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.storage.DiskLibraries.get" href="#cvpysdk.storage.DiskLibraries.get">get</a></code></li>
-<li><code><a title="cvpysdk.storage.DiskLibraries.has_library" href="#cvpysdk.storage.DiskLibraries.has_library">has_library</a></code></li>
-<li><code><a title="cvpysdk.storage.DiskLibraries.refresh" href="#cvpysdk.storage.DiskLibraries.refresh">refresh</a></code></li>
 </ul>
 </li>
 <li>
@@ -6959,6 +8078,13 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
+<h4><code><a title="cvpysdk.storage.Libraries" href="#cvpysdk.storage.Libraries">Libraries</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.storage.Libraries.has_library" href="#cvpysdk.storage.Libraries.has_library">has_library</a></code></li>
+<li><code><a title="cvpysdk.storage.Libraries.refresh" href="#cvpysdk.storage.Libraries.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="cvpysdk.storage.MediaAgent" href="#cvpysdk.storage.MediaAgent">MediaAgent</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.storage.MediaAgent.change_index_cache" href="#cvpysdk.storage.MediaAgent.change_index_cache">change_index_cache</a></code></li>
@@ -6975,6 +8101,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.storage.MediaAgent.power_off" href="#cvpysdk.storage.MediaAgent.power_off">power_off</a></code></li>
 <li><code><a title="cvpysdk.storage.MediaAgent.power_on" href="#cvpysdk.storage.MediaAgent.power_on">power_on</a></code></li>
 <li><code><a title="cvpysdk.storage.MediaAgent.refresh" href="#cvpysdk.storage.MediaAgent.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.storage.MediaAgent.set_ransomware_protection" href="#cvpysdk.storage.MediaAgent.set_ransomware_protection">set_ransomware_protection</a></code></li>
 <li><code><a title="cvpysdk.storage.MediaAgent.set_state" href="#cvpysdk.storage.MediaAgent.set_state">set_state</a></code></li>
 <li><code><a title="cvpysdk.storage.MediaAgent.wait_for_power_status" href="#cvpysdk.storage.MediaAgent.wait_for_power_status">wait_for_power_status</a></code></li>
 </ul>
@@ -7003,6 +8130,22 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.storage.RPStores.get" href="#cvpysdk.storage.RPStores.get">get</a></code></li>
 <li><code><a title="cvpysdk.storage.RPStores.has_rp_store" href="#cvpysdk.storage.RPStores.has_rp_store">has_rp_store</a></code></li>
 <li><code><a title="cvpysdk.storage.RPStores.refresh" href="#cvpysdk.storage.RPStores.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.storage.TapeLibraries" href="#cvpysdk.storage.TapeLibraries">TapeLibraries</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.storage.TapeLibraries.configure_tape_library" href="#cvpysdk.storage.TapeLibraries.configure_tape_library">configure_tape_library</a></code></li>
+<li><code><a title="cvpysdk.storage.TapeLibraries.delete" href="#cvpysdk.storage.TapeLibraries.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.storage.TapeLibraries.detect_tape_library" href="#cvpysdk.storage.TapeLibraries.detect_tape_library">detect_tape_library</a></code></li>
+<li><code><a title="cvpysdk.storage.TapeLibraries.get" href="#cvpysdk.storage.TapeLibraries.get">get</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.storage.TapeLibrary" href="#cvpysdk.storage.TapeLibrary">TapeLibrary</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.storage.TapeLibrary.library_id" href="#cvpysdk.storage.TapeLibrary.library_id">library_id</a></code></li>
+<li><code><a title="cvpysdk.storage.TapeLibrary.library_name" href="#cvpysdk.storage.TapeLibrary.library_name">library_name</a></code></li>
 </ul>
 </li>
 </ul>

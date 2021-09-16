@@ -29,7 +29,7 @@ One is from job phase code to text, and the other is from enum to code.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/drorchestration/dr_orchestration_job_phase.py#L1-L103" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/drorchestration/dr_orchestration_job_phase.py#L1-L201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 #
@@ -40,7 +40,104 @@ One is from job phase code to text, and the other is from enum to code.</p>
 &#34;&#34;&#34;This file provides dicts.
 One is from job phase code to text, and the other is from enum to code.
 &#34;&#34;&#34;
+from enum import Enum, unique
 
+
+@unique
+class DRJobPhases(Enum):
+    SCRIPT_EXECUTION = 0
+    POWER_ON = 1
+    POWER_OFF = 2
+    REBOOT = 3
+    GUEST_TOOLS_STATUS_CHECK = 4
+    CREATE_NETWORK_SWITCH = 5
+    DELETE_NETWORK_SWITCH = 6
+    REPLICATION = 7
+    BACKUP = 8
+    CONFIGURE_NETWORK_SWITCH = 9
+    EXTERNAL_PORT_CONFIG = 10
+    IP_MASQUERADE = 11
+    STATIC_IP_MAPPING = 12
+    INTIALIZATION = 13
+    WAIT_ON_IP_ASSIGNMENT = 14
+    DISABLE_SYNC = 15
+    ENABLE_SYNC = 16
+    CREATE_SNAPSHOT = 17
+    DELETE_SNAPSHOT = 18
+    REVERT_SNAPSHOT = 19
+    DISABLE_NETWORK_ADAPTER = 20
+    AUX_COPY = 21
+    POST_OPERATION = 22
+    SNAP_TO_TAPE = 23
+    SHUTDOWN = 24
+    STORAGE_OPERATION = 25
+    FINALIZE = 26
+    DR_APPROVAL = 27
+    DELETE_VM = 28
+    CREATE_VM = 29
+    GET_VM_INFO = 30
+    CREATE_DR_VM = 31
+    POST_VM_FAILOVER = 32
+    MOUNT_SNAP_PRIMARY = 33
+    DR_VM_SNAP_MOUNT = 34
+    BREAK_VOLUME_RELATIONSHIP = 35
+    RESYNC_VOLUME_RELATIONSHIP = 36
+    DR_VM_SNAP_UNMOUNT = 37
+    DR_TEST_VM_SNAP_MOUNT = 38
+    DR_TEST_VM_SNAP_UNMOUNT = 39
+    DELETE_DR_VM = 40
+    POST_VM_FAILOVER_SNAP = 41
+    CLONE_VM = 42
+    REFRESH_VM = 43
+
+
+class DRJobPhaseToText(Enum):
+    SCRIPT_EXECUTION = &#34;Script Execution&#34;
+    POWER_ON = &#34;Power On&#34;
+    POWER_OFF = &#34;Power Off&#34;
+    REBOOT = &#34;Reboot&#34;
+    GUEST_TOOLS_STATUS_CHECK = &#34;Guest Tools Status Check&#34;
+    CREATE_NETWORK_SWITCH = &#34;Create Network Switch&#34;
+    DELETE_NETWORK_SWITCH = &#34;Delete Network Switch&#34;
+    REPLICATION = &#34;Replication&#34;
+    BACKUP = &#34;Backup&#34;
+    CONFIGURE_NETWORK_SWITCH = &#34;Configure Network Switch&#34;
+    EXTERNAL_PORT_CONFIG = &#34;Port Configuration&#34;
+    IP_MASQUERADE = &#34;IP Masquerading&#34;
+    STATIC_IP_MAPPING = &#34;Static IP Mapping&#34;
+    INTIALIZATION = &#34;Initialization&#34;
+    WAIT_ON_IP_ASSIGNMENT = &#34;Waiting on IP Assignment&#34;
+    DISABLE_SYNC = &#34;Disable Sync&#34;
+    ENABLE_SYNC = &#34;Enable Sync&#34;
+    CREATE_SNAPSHOT = &#34;Create Snapshot&#34;
+    DELETE_SNAPSHOT = &#34;Delete Snapshot&#34;
+    REVERT_SNAPSHOT = &#34;Revert Snapshot&#34;
+    DISABLE_NETWORK_ADAPTER = &#34;Disable Network Adapter&#34;
+    AUX_COPY = &#34;Auxiliary Copy&#34;
+    POST_OPERATION = &#34;Post Operation&#34;
+    SNAP_TO_TAPE = &#34;Backup Copy&#34;
+    SHUTDOWN = &#34;Shutdown&#34;
+    STORAGE_OPERATION = &#34;Storage Operation&#34;
+    FINALIZE = &#34;Finalize&#34;
+    DR_APPROVAL = &#34;DR Approval&#34;
+    DELETE_VM = &#34;Delete VM&#34;
+    CREATE_VM = &#34;Create VM&#34;
+    GET_VM_INFO = &#34;Get VM Information&#34;
+    CREATE_DR_VM = &#34;Create DR VM&#34;
+    POST_VM_FAILOVER = &#34;Post VM Failover&#34;
+    MOUNT_SNAP_PRIMARY = &#34;Mount Snap Primary&#34;
+    DR_VM_SNAP_MOUNT = &#34;DR VM Snap Mount&#34;
+    BREAK_VOLUME_RELATIONSHIP = &#34;Break Volume Relationship&#34;
+    RESYNC_VOLUME_RELATIONSHIP = &#34;Resync Volume Relationship&#34;
+    DR_VM_SNAP_UNMOUNT = &#34;DR VM Snap Unmount&#34;
+    DR_TEST_VM_SNAP_MOUNT = &#34;DR Test VM Snap Mount&#34;
+    DR_TEST_VM_SNAP_UNMOUNT = &#34;DR Test VM Snap Unmount&#34;
+    DELETE_DR_VM = &#34;Delete DR VM&#34;
+    POST_VM_FAILOVER_SNAP = &#34;Post VM Failover&#34;
+    CLONE_VM = &#34;Clone VM&#34;
+    REFRESH_VM = &#34;Refresh VM&#34;
+
+# TODO: Remove after discussing with teams
 DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
     &#34;0&#34;: &#34;Script Execution&#34;,
     &#34;1&#34;: &#34;Power On&#34;,
@@ -88,6 +185,7 @@ DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
     &#34;43&#34;: &#34;Refresh VM&#34;
 }
 
+# TODO: Remove after discussing with teams
 DR_ORCHESTRATION_JOB_PHASE_ENUM_TO_CODE = {
     &#34;SCRIPT_EXECUTION&#34;: 0,
     &#34;POWER_ON&#34;: 1,
@@ -143,6 +241,492 @@ DR_ORCHESTRATION_JOB_PHASE_ENUM_TO_CODE = {
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText"><code class="flex name class">
+<span>class <span class="ident">DRJobPhaseToText</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/drorchestration/dr_orchestration_job_phase.py#L61-L105" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class DRJobPhaseToText(Enum):
+    SCRIPT_EXECUTION = &#34;Script Execution&#34;
+    POWER_ON = &#34;Power On&#34;
+    POWER_OFF = &#34;Power Off&#34;
+    REBOOT = &#34;Reboot&#34;
+    GUEST_TOOLS_STATUS_CHECK = &#34;Guest Tools Status Check&#34;
+    CREATE_NETWORK_SWITCH = &#34;Create Network Switch&#34;
+    DELETE_NETWORK_SWITCH = &#34;Delete Network Switch&#34;
+    REPLICATION = &#34;Replication&#34;
+    BACKUP = &#34;Backup&#34;
+    CONFIGURE_NETWORK_SWITCH = &#34;Configure Network Switch&#34;
+    EXTERNAL_PORT_CONFIG = &#34;Port Configuration&#34;
+    IP_MASQUERADE = &#34;IP Masquerading&#34;
+    STATIC_IP_MAPPING = &#34;Static IP Mapping&#34;
+    INTIALIZATION = &#34;Initialization&#34;
+    WAIT_ON_IP_ASSIGNMENT = &#34;Waiting on IP Assignment&#34;
+    DISABLE_SYNC = &#34;Disable Sync&#34;
+    ENABLE_SYNC = &#34;Enable Sync&#34;
+    CREATE_SNAPSHOT = &#34;Create Snapshot&#34;
+    DELETE_SNAPSHOT = &#34;Delete Snapshot&#34;
+    REVERT_SNAPSHOT = &#34;Revert Snapshot&#34;
+    DISABLE_NETWORK_ADAPTER = &#34;Disable Network Adapter&#34;
+    AUX_COPY = &#34;Auxiliary Copy&#34;
+    POST_OPERATION = &#34;Post Operation&#34;
+    SNAP_TO_TAPE = &#34;Backup Copy&#34;
+    SHUTDOWN = &#34;Shutdown&#34;
+    STORAGE_OPERATION = &#34;Storage Operation&#34;
+    FINALIZE = &#34;Finalize&#34;
+    DR_APPROVAL = &#34;DR Approval&#34;
+    DELETE_VM = &#34;Delete VM&#34;
+    CREATE_VM = &#34;Create VM&#34;
+    GET_VM_INFO = &#34;Get VM Information&#34;
+    CREATE_DR_VM = &#34;Create DR VM&#34;
+    POST_VM_FAILOVER = &#34;Post VM Failover&#34;
+    MOUNT_SNAP_PRIMARY = &#34;Mount Snap Primary&#34;
+    DR_VM_SNAP_MOUNT = &#34;DR VM Snap Mount&#34;
+    BREAK_VOLUME_RELATIONSHIP = &#34;Break Volume Relationship&#34;
+    RESYNC_VOLUME_RELATIONSHIP = &#34;Resync Volume Relationship&#34;
+    DR_VM_SNAP_UNMOUNT = &#34;DR VM Snap Unmount&#34;
+    DR_TEST_VM_SNAP_MOUNT = &#34;DR Test VM Snap Mount&#34;
+    DR_TEST_VM_SNAP_UNMOUNT = &#34;DR Test VM Snap Unmount&#34;
+    DELETE_DR_VM = &#34;Delete DR VM&#34;
+    POST_VM_FAILOVER_SNAP = &#34;Post VM Failover&#34;
+    CLONE_VM = &#34;Clone VM&#34;
+    REFRESH_VM = &#34;Refresh VM&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.AUX_COPY"><code class="name">var <span class="ident">AUX_COPY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BACKUP"><code class="name">var <span class="ident">BACKUP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BREAK_VOLUME_RELATIONSHIP"><code class="name">var <span class="ident">BREAK_VOLUME_RELATIONSHIP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CLONE_VM"><code class="name">var <span class="ident">CLONE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CONFIGURE_NETWORK_SWITCH"><code class="name">var <span class="ident">CONFIGURE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_DR_VM"><code class="name">var <span class="ident">CREATE_DR_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_NETWORK_SWITCH"><code class="name">var <span class="ident">CREATE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_SNAPSHOT"><code class="name">var <span class="ident">CREATE_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_VM"><code class="name">var <span class="ident">CREATE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_DR_VM"><code class="name">var <span class="ident">DELETE_DR_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_NETWORK_SWITCH"><code class="name">var <span class="ident">DELETE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_SNAPSHOT"><code class="name">var <span class="ident">DELETE_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_VM"><code class="name">var <span class="ident">DELETE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_NETWORK_ADAPTER"><code class="name">var <span class="ident">DISABLE_NETWORK_ADAPTER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_SYNC"><code class="name">var <span class="ident">DISABLE_SYNC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_APPROVAL"><code class="name">var <span class="ident">DR_APPROVAL</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_MOUNT"><code class="name">var <span class="ident">DR_TEST_VM_SNAP_MOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_UNMOUNT"><code class="name">var <span class="ident">DR_TEST_VM_SNAP_UNMOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_MOUNT"><code class="name">var <span class="ident">DR_VM_SNAP_MOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_UNMOUNT"><code class="name">var <span class="ident">DR_VM_SNAP_UNMOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.ENABLE_SYNC"><code class="name">var <span class="ident">ENABLE_SYNC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.EXTERNAL_PORT_CONFIG"><code class="name">var <span class="ident">EXTERNAL_PORT_CONFIG</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.FINALIZE"><code class="name">var <span class="ident">FINALIZE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GET_VM_INFO"><code class="name">var <span class="ident">GET_VM_INFO</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GUEST_TOOLS_STATUS_CHECK"><code class="name">var <span class="ident">GUEST_TOOLS_STATUS_CHECK</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.INTIALIZATION"><code class="name">var <span class="ident">INTIALIZATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.IP_MASQUERADE"><code class="name">var <span class="ident">IP_MASQUERADE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.MOUNT_SNAP_PRIMARY"><code class="name">var <span class="ident">MOUNT_SNAP_PRIMARY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_OPERATION"><code class="name">var <span class="ident">POST_OPERATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER"><code class="name">var <span class="ident">POST_VM_FAILOVER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER_SNAP"><code class="name">var <span class="ident">POST_VM_FAILOVER_SNAP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_OFF"><code class="name">var <span class="ident">POWER_OFF</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_ON"><code class="name">var <span class="ident">POWER_ON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REBOOT"><code class="name">var <span class="ident">REBOOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REFRESH_VM"><code class="name">var <span class="ident">REFRESH_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REPLICATION"><code class="name">var <span class="ident">REPLICATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.RESYNC_VOLUME_RELATIONSHIP"><code class="name">var <span class="ident">RESYNC_VOLUME_RELATIONSHIP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REVERT_SNAPSHOT"><code class="name">var <span class="ident">REVERT_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SCRIPT_EXECUTION"><code class="name">var <span class="ident">SCRIPT_EXECUTION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SHUTDOWN"><code class="name">var <span class="ident">SHUTDOWN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SNAP_TO_TAPE"><code class="name">var <span class="ident">SNAP_TO_TAPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STATIC_IP_MAPPING"><code class="name">var <span class="ident">STATIC_IP_MAPPING</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STORAGE_OPERATION"><code class="name">var <span class="ident">STORAGE_OPERATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.WAIT_ON_IP_ASSIGNMENT"><code class="name">var <span class="ident">WAIT_ON_IP_ASSIGNMENT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases"><code class="flex name class">
+<span>class <span class="ident">DRJobPhases</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/drorchestration/dr_orchestration_job_phase.py#L13-L58" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@unique
+class DRJobPhases(Enum):
+    SCRIPT_EXECUTION = 0
+    POWER_ON = 1
+    POWER_OFF = 2
+    REBOOT = 3
+    GUEST_TOOLS_STATUS_CHECK = 4
+    CREATE_NETWORK_SWITCH = 5
+    DELETE_NETWORK_SWITCH = 6
+    REPLICATION = 7
+    BACKUP = 8
+    CONFIGURE_NETWORK_SWITCH = 9
+    EXTERNAL_PORT_CONFIG = 10
+    IP_MASQUERADE = 11
+    STATIC_IP_MAPPING = 12
+    INTIALIZATION = 13
+    WAIT_ON_IP_ASSIGNMENT = 14
+    DISABLE_SYNC = 15
+    ENABLE_SYNC = 16
+    CREATE_SNAPSHOT = 17
+    DELETE_SNAPSHOT = 18
+    REVERT_SNAPSHOT = 19
+    DISABLE_NETWORK_ADAPTER = 20
+    AUX_COPY = 21
+    POST_OPERATION = 22
+    SNAP_TO_TAPE = 23
+    SHUTDOWN = 24
+    STORAGE_OPERATION = 25
+    FINALIZE = 26
+    DR_APPROVAL = 27
+    DELETE_VM = 28
+    CREATE_VM = 29
+    GET_VM_INFO = 30
+    CREATE_DR_VM = 31
+    POST_VM_FAILOVER = 32
+    MOUNT_SNAP_PRIMARY = 33
+    DR_VM_SNAP_MOUNT = 34
+    BREAK_VOLUME_RELATIONSHIP = 35
+    RESYNC_VOLUME_RELATIONSHIP = 36
+    DR_VM_SNAP_UNMOUNT = 37
+    DR_TEST_VM_SNAP_MOUNT = 38
+    DR_TEST_VM_SNAP_UNMOUNT = 39
+    DELETE_DR_VM = 40
+    POST_VM_FAILOVER_SNAP = 41
+    CLONE_VM = 42
+    REFRESH_VM = 43</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.AUX_COPY"><code class="name">var <span class="ident">AUX_COPY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BACKUP"><code class="name">var <span class="ident">BACKUP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BREAK_VOLUME_RELATIONSHIP"><code class="name">var <span class="ident">BREAK_VOLUME_RELATIONSHIP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CLONE_VM"><code class="name">var <span class="ident">CLONE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CONFIGURE_NETWORK_SWITCH"><code class="name">var <span class="ident">CONFIGURE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_DR_VM"><code class="name">var <span class="ident">CREATE_DR_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_NETWORK_SWITCH"><code class="name">var <span class="ident">CREATE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_SNAPSHOT"><code class="name">var <span class="ident">CREATE_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_VM"><code class="name">var <span class="ident">CREATE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_DR_VM"><code class="name">var <span class="ident">DELETE_DR_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_NETWORK_SWITCH"><code class="name">var <span class="ident">DELETE_NETWORK_SWITCH</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_SNAPSHOT"><code class="name">var <span class="ident">DELETE_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_VM"><code class="name">var <span class="ident">DELETE_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_NETWORK_ADAPTER"><code class="name">var <span class="ident">DISABLE_NETWORK_ADAPTER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_SYNC"><code class="name">var <span class="ident">DISABLE_SYNC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_APPROVAL"><code class="name">var <span class="ident">DR_APPROVAL</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_MOUNT"><code class="name">var <span class="ident">DR_TEST_VM_SNAP_MOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_UNMOUNT"><code class="name">var <span class="ident">DR_TEST_VM_SNAP_UNMOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_MOUNT"><code class="name">var <span class="ident">DR_VM_SNAP_MOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_UNMOUNT"><code class="name">var <span class="ident">DR_VM_SNAP_UNMOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.ENABLE_SYNC"><code class="name">var <span class="ident">ENABLE_SYNC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.EXTERNAL_PORT_CONFIG"><code class="name">var <span class="ident">EXTERNAL_PORT_CONFIG</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.FINALIZE"><code class="name">var <span class="ident">FINALIZE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GET_VM_INFO"><code class="name">var <span class="ident">GET_VM_INFO</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GUEST_TOOLS_STATUS_CHECK"><code class="name">var <span class="ident">GUEST_TOOLS_STATUS_CHECK</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.INTIALIZATION"><code class="name">var <span class="ident">INTIALIZATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.IP_MASQUERADE"><code class="name">var <span class="ident">IP_MASQUERADE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.MOUNT_SNAP_PRIMARY"><code class="name">var <span class="ident">MOUNT_SNAP_PRIMARY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_OPERATION"><code class="name">var <span class="ident">POST_OPERATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER"><code class="name">var <span class="ident">POST_VM_FAILOVER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER_SNAP"><code class="name">var <span class="ident">POST_VM_FAILOVER_SNAP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_OFF"><code class="name">var <span class="ident">POWER_OFF</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_ON"><code class="name">var <span class="ident">POWER_ON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REBOOT"><code class="name">var <span class="ident">REBOOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REFRESH_VM"><code class="name">var <span class="ident">REFRESH_VM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REPLICATION"><code class="name">var <span class="ident">REPLICATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.RESYNC_VOLUME_RELATIONSHIP"><code class="name">var <span class="ident">RESYNC_VOLUME_RELATIONSHIP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REVERT_SNAPSHOT"><code class="name">var <span class="ident">REVERT_SNAPSHOT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SCRIPT_EXECUTION"><code class="name">var <span class="ident">SCRIPT_EXECUTION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SHUTDOWN"><code class="name">var <span class="ident">SHUTDOWN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SNAP_TO_TAPE"><code class="name">var <span class="ident">SNAP_TO_TAPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STATIC_IP_MAPPING"><code class="name">var <span class="ident">STATIC_IP_MAPPING</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STORAGE_OPERATION"><code class="name">var <span class="ident">STORAGE_OPERATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.WAIT_ON_IP_ASSIGNMENT"><code class="name">var <span class="ident">WAIT_ON_IP_ASSIGNMENT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -206,6 +790,108 @@ setTimeout(() => input.focus(), 100);
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="cvpysdk.drorchestration" href="index.html">cvpysdk.drorchestration</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText">DRJobPhaseToText</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.AUX_COPY" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.AUX_COPY">AUX_COPY</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BACKUP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BACKUP">BACKUP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BREAK_VOLUME_RELATIONSHIP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.BREAK_VOLUME_RELATIONSHIP">BREAK_VOLUME_RELATIONSHIP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CLONE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CLONE_VM">CLONE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CONFIGURE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CONFIGURE_NETWORK_SWITCH">CONFIGURE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_DR_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_DR_VM">CREATE_DR_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_NETWORK_SWITCH">CREATE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_SNAPSHOT">CREATE_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.CREATE_VM">CREATE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_DR_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_DR_VM">DELETE_DR_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_NETWORK_SWITCH">DELETE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_SNAPSHOT">DELETE_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DELETE_VM">DELETE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_NETWORK_ADAPTER" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_NETWORK_ADAPTER">DISABLE_NETWORK_ADAPTER</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_SYNC" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DISABLE_SYNC">DISABLE_SYNC</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_APPROVAL" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_APPROVAL">DR_APPROVAL</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_MOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_MOUNT">DR_TEST_VM_SNAP_MOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_UNMOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_TEST_VM_SNAP_UNMOUNT">DR_TEST_VM_SNAP_UNMOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_MOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_MOUNT">DR_VM_SNAP_MOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_UNMOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.DR_VM_SNAP_UNMOUNT">DR_VM_SNAP_UNMOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.ENABLE_SYNC" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.ENABLE_SYNC">ENABLE_SYNC</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.EXTERNAL_PORT_CONFIG" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.EXTERNAL_PORT_CONFIG">EXTERNAL_PORT_CONFIG</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.FINALIZE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.FINALIZE">FINALIZE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GET_VM_INFO" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GET_VM_INFO">GET_VM_INFO</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GUEST_TOOLS_STATUS_CHECK" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.GUEST_TOOLS_STATUS_CHECK">GUEST_TOOLS_STATUS_CHECK</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.INTIALIZATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.INTIALIZATION">INTIALIZATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.IP_MASQUERADE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.IP_MASQUERADE">IP_MASQUERADE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.MOUNT_SNAP_PRIMARY" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.MOUNT_SNAP_PRIMARY">MOUNT_SNAP_PRIMARY</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_OPERATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_OPERATION">POST_OPERATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER">POST_VM_FAILOVER</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER_SNAP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POST_VM_FAILOVER_SNAP">POST_VM_FAILOVER_SNAP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_OFF" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_OFF">POWER_OFF</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_ON" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.POWER_ON">POWER_ON</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REBOOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REBOOT">REBOOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REFRESH_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REFRESH_VM">REFRESH_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REPLICATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REPLICATION">REPLICATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.RESYNC_VOLUME_RELATIONSHIP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.RESYNC_VOLUME_RELATIONSHIP">RESYNC_VOLUME_RELATIONSHIP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REVERT_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.REVERT_SNAPSHOT">REVERT_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SCRIPT_EXECUTION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SCRIPT_EXECUTION">SCRIPT_EXECUTION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SHUTDOWN" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SHUTDOWN">SHUTDOWN</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SNAP_TO_TAPE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.SNAP_TO_TAPE">SNAP_TO_TAPE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STATIC_IP_MAPPING" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STATIC_IP_MAPPING">STATIC_IP_MAPPING</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STORAGE_OPERATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.STORAGE_OPERATION">STORAGE_OPERATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.WAIT_ON_IP_ASSIGNMENT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhaseToText.WAIT_ON_IP_ASSIGNMENT">WAIT_ON_IP_ASSIGNMENT</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases">DRJobPhases</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.AUX_COPY" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.AUX_COPY">AUX_COPY</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BACKUP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BACKUP">BACKUP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BREAK_VOLUME_RELATIONSHIP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.BREAK_VOLUME_RELATIONSHIP">BREAK_VOLUME_RELATIONSHIP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CLONE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CLONE_VM">CLONE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CONFIGURE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CONFIGURE_NETWORK_SWITCH">CONFIGURE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_DR_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_DR_VM">CREATE_DR_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_NETWORK_SWITCH">CREATE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_SNAPSHOT">CREATE_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.CREATE_VM">CREATE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_DR_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_DR_VM">DELETE_DR_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_NETWORK_SWITCH" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_NETWORK_SWITCH">DELETE_NETWORK_SWITCH</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_SNAPSHOT">DELETE_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DELETE_VM">DELETE_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_NETWORK_ADAPTER" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_NETWORK_ADAPTER">DISABLE_NETWORK_ADAPTER</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_SYNC" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DISABLE_SYNC">DISABLE_SYNC</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_APPROVAL" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_APPROVAL">DR_APPROVAL</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_MOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_MOUNT">DR_TEST_VM_SNAP_MOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_UNMOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_TEST_VM_SNAP_UNMOUNT">DR_TEST_VM_SNAP_UNMOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_MOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_MOUNT">DR_VM_SNAP_MOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_UNMOUNT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.DR_VM_SNAP_UNMOUNT">DR_VM_SNAP_UNMOUNT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.ENABLE_SYNC" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.ENABLE_SYNC">ENABLE_SYNC</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.EXTERNAL_PORT_CONFIG" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.EXTERNAL_PORT_CONFIG">EXTERNAL_PORT_CONFIG</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.FINALIZE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.FINALIZE">FINALIZE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GET_VM_INFO" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GET_VM_INFO">GET_VM_INFO</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GUEST_TOOLS_STATUS_CHECK" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.GUEST_TOOLS_STATUS_CHECK">GUEST_TOOLS_STATUS_CHECK</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.INTIALIZATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.INTIALIZATION">INTIALIZATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.IP_MASQUERADE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.IP_MASQUERADE">IP_MASQUERADE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.MOUNT_SNAP_PRIMARY" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.MOUNT_SNAP_PRIMARY">MOUNT_SNAP_PRIMARY</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_OPERATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_OPERATION">POST_OPERATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER">POST_VM_FAILOVER</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER_SNAP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POST_VM_FAILOVER_SNAP">POST_VM_FAILOVER_SNAP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_OFF" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_OFF">POWER_OFF</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_ON" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.POWER_ON">POWER_ON</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REBOOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REBOOT">REBOOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REFRESH_VM" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REFRESH_VM">REFRESH_VM</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REPLICATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REPLICATION">REPLICATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.RESYNC_VOLUME_RELATIONSHIP" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.RESYNC_VOLUME_RELATIONSHIP">RESYNC_VOLUME_RELATIONSHIP</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REVERT_SNAPSHOT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.REVERT_SNAPSHOT">REVERT_SNAPSHOT</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SCRIPT_EXECUTION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SCRIPT_EXECUTION">SCRIPT_EXECUTION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SHUTDOWN" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SHUTDOWN">SHUTDOWN</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SNAP_TO_TAPE" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.SNAP_TO_TAPE">SNAP_TO_TAPE</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STATIC_IP_MAPPING" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STATIC_IP_MAPPING">STATIC_IP_MAPPING</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STORAGE_OPERATION" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.STORAGE_OPERATION">STORAGE_OPERATION</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.WAIT_ON_IP_ASSIGNMENT" href="#cvpysdk.drorchestration.dr_orchestration_job_phase.DRJobPhases.WAIT_ON_IP_ASSIGNMENT">WAIT_ON_IP_ASSIGNMENT</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

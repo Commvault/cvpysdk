@@ -90,7 +90,7 @@ network topology</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L1-L888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L1-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -387,7 +387,7 @@ class NetworkTopologies(object):
 
                 Supported argument values:
 
-                use_wildcardproxy   (boolean)  --   option to use wildcard proxy for proxy type
+                use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
                                                  topology
                                                  Default value: False
 
@@ -398,9 +398,20 @@ class NetworkTopologies(object):
 
                 topology_description (str)     --   to specify topology description
 
-                display_type         (int)     --   to specify display type for firewall extended
-                                                 properties
-                                                 Default value: 0
+                display_type         (int)     --   to specify display type for firewall extended properties
+                                                    Default value: 0
+
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -449,10 +460,8 @@ class NetworkTopologies(object):
 
         display_type = kwargs.get(&#39;display_type&#39;, 0)
 
-        if display_type == 1:
-            d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;1\&#34; /&gt;&#34;
-        else:
-            d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;0\&#34; /&gt;&#34;
+        extended_properties = f&#39;&#39;&#39;&lt;App_TopologyExtendedProperties displayType=\&#34;{kwargs.get(&#39;display_type&#39;, 0)}\&#34; encryptTraffic=\&#34;{kwargs.get(&#39;encrypt_traffic&#39;, 0)}\&#34;
+        numberOfStreams =\&#34;{kwargs.get(&#39;number_of_streams&#39;, 1)}\&#34; regionId=\&#34;{kwargs.get(&#39;region_id&#39;, 0)}\&#34; connectionProtocol=\&#34;{kwargs.get(&#39;connection_protocol&#39;, 2)}\&#34; /&gt;&#39;&#39;&#39;
 
         firewall_groups_list, count_mnemonic = self.create_firewall_groups_list(client_groups)
 
@@ -465,7 +474,7 @@ class NetworkTopologies(object):
             request_json = {
                 &#34;firewallTopology&#34;: {
                     &#34;useWildcardProxy&#34;: kwargs.get(&#39;use_wildcard&#39;, False),
-                    &#34;extendedProperties&#34;: d_type,
+                    &#34;extendedProperties&#34;: extended_properties,
                     &#34;topologyType&#34;: kwargs.get(&#39;topology_type&#39;, 2),
                     &#34;description&#34;: kwargs.get(&#39;topology_description&#39;, &#39;&#39;),
                     &#34;isSmartTopology&#34;: kwargs.get(&#39;is_smart_topology&#39;, False),
@@ -747,6 +756,18 @@ class NetworkTopology(object):
                                                      proxy type topology
 
                 is_smart_topology       (boolean)   -- specified as true for smart topology
+                
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -793,6 +814,18 @@ class NetworkTopology(object):
         NetworkTopologies.verify_smart_topology_groups(is_smart_topology, count_mnemonic)
 
         extended_properties = self.extended_properties
+        properties = [&#39;display_type&#39;, &#39;encrypt_traffic&#39;, &#39;number_of_streams&#39;, &#39;region_id&#39;, &#39;connection_protocol&#39;]
+        for prop in properties:
+            if prop in kwargs:
+                temp = prop.split(&#39;_&#39;)
+                for i in range(1, len(temp)):
+                    temp[i] = temp[i][0].upper() + temp[i][1:]
+                camel_case_prop = &#39;&#39;.join(temp)
+
+                idx = extended_properties.find(camel_case_prop) + len(camel_case_prop) + len(&#34;\&#34;=&#34;)
+                temp = list(extended_properties)
+                temp[idx] = str(kwargs.get(prop))
+                extended_properties = &#39;&#39;.join(temp)
 
         request_json = {
             &#34;firewallTopology&#34;: {
@@ -1010,7 +1043,7 @@ instance of the NetworkTopologies class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L93-L506" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L93-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NetworkTopologies(object):
     &#34;&#34;&#34;Class for getting all the network topologies associated with client groups in commcell.&#34;&#34;&#34;
@@ -1215,7 +1248,7 @@ instance of the NetworkTopologies class</p></div>
 
                 Supported argument values:
 
-                use_wildcardproxy   (boolean)  --   option to use wildcard proxy for proxy type
+                use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
                                                  topology
                                                  Default value: False
 
@@ -1226,9 +1259,20 @@ instance of the NetworkTopologies class</p></div>
 
                 topology_description (str)     --   to specify topology description
 
-                display_type         (int)     --   to specify display type for firewall extended
-                                                 properties
-                                                 Default value: 0
+                display_type         (int)     --   to specify display type for firewall extended properties
+                                                    Default value: 0
+
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -1277,10 +1321,8 @@ instance of the NetworkTopologies class</p></div>
 
         display_type = kwargs.get(&#39;display_type&#39;, 0)
 
-        if display_type == 1:
-            d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;1\&#34; /&gt;&#34;
-        else:
-            d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;0\&#34; /&gt;&#34;
+        extended_properties = f&#39;&#39;&#39;&lt;App_TopologyExtendedProperties displayType=\&#34;{kwargs.get(&#39;display_type&#39;, 0)}\&#34; encryptTraffic=\&#34;{kwargs.get(&#39;encrypt_traffic&#39;, 0)}\&#34;
+        numberOfStreams =\&#34;{kwargs.get(&#39;number_of_streams&#39;, 1)}\&#34; regionId=\&#34;{kwargs.get(&#39;region_id&#39;, 0)}\&#34; connectionProtocol=\&#34;{kwargs.get(&#39;connection_protocol&#39;, 2)}\&#34; /&gt;&#39;&#39;&#39;
 
         firewall_groups_list, count_mnemonic = self.create_firewall_groups_list(client_groups)
 
@@ -1293,7 +1335,7 @@ instance of the NetworkTopologies class</p></div>
             request_json = {
                 &#34;firewallTopology&#34;: {
                     &#34;useWildcardProxy&#34;: kwargs.get(&#39;use_wildcard&#39;, False),
-                    &#34;extendedProperties&#34;: d_type,
+                    &#34;extendedProperties&#34;: extended_properties,
                     &#34;topologyType&#34;: kwargs.get(&#39;topology_type&#39;, 2),
                     &#34;description&#34;: kwargs.get(&#39;topology_description&#39;, &#39;&#39;),
                     &#34;isSmartTopology&#34;: kwargs.get(&#39;is_smart_topology&#39;, False),
@@ -1446,7 +1488,7 @@ instance of the NetworkTopologies class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L231-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L231-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def create_firewall_groups_list(client_groups):
@@ -1508,7 +1550,7 @@ def create_firewall_groups_list(client_groups):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L204-L229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L204-L229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
@@ -1553,7 +1595,7 @@ def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L165-L177" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L165-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_network_topologies(self):
@@ -1595,7 +1637,7 @@ client group types</p>
 &ndash; Key value pairs for supported
 arguments</p>
 <p>Supported argument values:</p>
-<p>use_wildcardproxy
+<p>use_wildcard
 (boolean)
 &ndash;
 option to use wildcard proxy for proxy type
@@ -1616,9 +1658,28 @@ to specify topology description</p>
 <p>display_type
 (int)
 &ndash;
-to specify display type for firewall extended
-properties
+to specify display type for firewall extended properties
 Default value: 0</p>
+<p>encrypt_traffic
+(int)
+&ndash;
+to specify whether encrypt traffic or not
+Default vaule: 0</p>
+<p>number_of_streams
+(int)
+&ndash;
+to specify number of streams
+Default vaule: 1</p>
+<p>region_id
+(int)
+&ndash;
+to sspecify region id
+Default value: 0</p>
+<p>connection_protocol
+(int)
+&ndash;
+to specify the protocols
+Default vaule: 2</p>
 <p>Possible input values:</p>
 <p>topology_type :
 1 &mdash; for proxy topology
@@ -1653,7 +1714,7 @@ if client group specified is already a part of some topology
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L277-L416" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L277-L425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, network_topology_name, client_groups=None, **kwargs):
     &#34;&#34;&#34;Adds a new Network Topology to the Commcell.
@@ -1674,7 +1735,7 @@ if client group specified is already a part of some topology
 
             Supported argument values:
 
-            use_wildcardproxy   (boolean)  --   option to use wildcard proxy for proxy type
+            use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
                                              topology
                                              Default value: False
 
@@ -1685,9 +1746,20 @@ if client group specified is already a part of some topology
 
             topology_description (str)     --   to specify topology description
 
-            display_type         (int)     --   to specify display type for firewall extended
-                                             properties
-                                             Default value: 0
+            display_type         (int)     --   to specify display type for firewall extended properties
+                                                Default value: 0
+
+            encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                Default vaule: 0
+
+            number_of_streams     (int)     --   to specify number of streams
+                                                Default vaule: 1
+
+            region_id            (int)     --   to sspecify region id
+                                                Default value: 0
+
+            connection_protocol  (int)     --   to specify the protocols
+                                                Default vaule: 2
 
             Possible input values:
 
@@ -1736,10 +1808,8 @@ if client group specified is already a part of some topology
 
     display_type = kwargs.get(&#39;display_type&#39;, 0)
 
-    if display_type == 1:
-        d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;1\&#34; /&gt;&#34;
-    else:
-        d_type = &#34;&lt;App_TopologyExtendedProperties displayType=\&#34;0\&#34; /&gt;&#34;
+    extended_properties = f&#39;&#39;&#39;&lt;App_TopologyExtendedProperties displayType=\&#34;{kwargs.get(&#39;display_type&#39;, 0)}\&#34; encryptTraffic=\&#34;{kwargs.get(&#39;encrypt_traffic&#39;, 0)}\&#34;
+    numberOfStreams =\&#34;{kwargs.get(&#39;number_of_streams&#39;, 1)}\&#34; regionId=\&#34;{kwargs.get(&#39;region_id&#39;, 0)}\&#34; connectionProtocol=\&#34;{kwargs.get(&#39;connection_protocol&#39;, 2)}\&#34; /&gt;&#39;&#39;&#39;
 
     firewall_groups_list, count_mnemonic = self.create_firewall_groups_list(client_groups)
 
@@ -1752,7 +1822,7 @@ if client group specified is already a part of some topology
         request_json = {
             &#34;firewallTopology&#34;: {
                 &#34;useWildcardProxy&#34;: kwargs.get(&#39;use_wildcard&#39;, False),
-                &#34;extendedProperties&#34;: d_type,
+                &#34;extendedProperties&#34;: extended_properties,
                 &#34;topologyType&#34;: kwargs.get(&#39;topology_type&#39;, 2),
                 &#34;description&#34;: kwargs.get(&#39;topology_description&#39;, &#39;&#39;),
                 &#34;isSmartTopology&#34;: kwargs.get(&#39;is_smart_topology&#39;, False),
@@ -1816,7 +1886,7 @@ if no network topology exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L448-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L457-L510" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, network_topology_name):
     &#34;&#34;&#34;Deletes the Network Topology from the commcell.
@@ -1893,7 +1963,7 @@ if type of the network topology name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L418-L446" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L427-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, network_topology_name):
     &#34;&#34;&#34;Returns the network topology object of the specified network topology name.
@@ -1943,7 +2013,7 @@ if type of the network topology name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L184-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L184-L202" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_network_topology(self, network_topology_name):
     &#34;&#34;&#34;Checks if a network topology exists in the commcell with the input network topology name.
@@ -1974,7 +2044,7 @@ if type of the network topology name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L503-L506" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L512-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the network topologies associated with the Commcell.&#34;&#34;&#34;
@@ -2010,7 +2080,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L509-L888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L518-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NetworkTopology(object):
     &#34;&#34;&#34;Class for performing operations for a specific network topology.&#34;&#34;&#34;
@@ -2159,6 +2229,18 @@ default: None</p>
                                                      proxy type topology
 
                 is_smart_topology       (boolean)   -- specified as true for smart topology
+                
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -2205,6 +2287,18 @@ default: None</p>
         NetworkTopologies.verify_smart_topology_groups(is_smart_topology, count_mnemonic)
 
         extended_properties = self.extended_properties
+        properties = [&#39;display_type&#39;, &#39;encrypt_traffic&#39;, &#39;number_of_streams&#39;, &#39;region_id&#39;, &#39;connection_protocol&#39;]
+        for prop in properties:
+            if prop in kwargs:
+                temp = prop.split(&#39;_&#39;)
+                for i in range(1, len(temp)):
+                    temp[i] = temp[i][0].upper() + temp[i][1:]
+                camel_case_prop = &#39;&#39;.join(temp)
+
+                idx = extended_properties.find(camel_case_prop) + len(camel_case_prop) + len(&#34;\&#34;=&#34;)
+                temp = list(extended_properties)
+                temp[idx] = str(kwargs.get(prop))
+                extended_properties = &#39;&#39;.join(temp)
 
         request_json = {
             &#34;firewallTopology&#34;: {
@@ -2401,7 +2495,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L762-L766" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L795-L799" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -2416,7 +2510,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L801-L805" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L834-L838" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def extended_properties(self):
@@ -2431,7 +2525,7 @@ def extended_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L807-L811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L840-L844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def firewall_groups(self):
@@ -2446,7 +2540,7 @@ def firewall_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L738-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L771-L775" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_topology_id(self):
@@ -2461,7 +2555,7 @@ def network_topology_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L744-L748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L777-L781" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_topology_name(self):
@@ -2476,7 +2570,7 @@ def network_topology_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L779-L783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L812-L816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_topology_type(self):
@@ -2491,7 +2585,7 @@ def network_topology_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L846-L850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L879-L883" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def wildcard_proxy(self):
@@ -2517,7 +2611,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L852-L883" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L885-L916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_network_config(self):
     &#34;&#34;&#34;Performs a push network configuration on network topology
@@ -2561,7 +2655,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L885-L888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L918-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of Network Topology&#34;&#34;&#34;
@@ -2604,6 +2698,26 @@ proxy type topology</p>
 <p>is_smart_topology
 (boolean)
 &ndash; specified as true for smart topology</p>
+<p>encrypt_traffic
+(int)
+&ndash;
+to specify whether encrypt traffic or not
+Default vaule: 0</p>
+<p>number_of_streams
+(int)
+&ndash;
+to specify number of streams
+Default vaule: 1</p>
+<p>region_id
+(int)
+&ndash;
+to sspecify region id
+Default value: 0</p>
+<p>connection_protocol
+(int)
+&ndash;
+to specify the protocols
+Default vaule: 2</p>
 <p>Possible input values:</p>
 <p>topology_type :
 1 &mdash; for proxy topology
@@ -2631,7 +2745,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/network_topology.py#L630-L736" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/network_topology.py#L639-L769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update(self, firewall_groups=None, **kwargs):
     &#34;&#34;&#34;Update the network topology properties of network topology.
@@ -2659,6 +2773,18 @@ if response is empty</p>
                                                  proxy type topology
 
             is_smart_topology       (boolean)   -- specified as true for smart topology
+            
+            encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                Default vaule: 0
+
+            number_of_streams     (int)     --   to specify number of streams
+                                                Default vaule: 1
+
+            region_id            (int)     --   to sspecify region id
+                                                Default value: 0
+
+            connection_protocol  (int)     --   to specify the protocols
+                                                Default vaule: 2
 
             Possible input values:
 
@@ -2705,6 +2831,18 @@ if response is empty</p>
     NetworkTopologies.verify_smart_topology_groups(is_smart_topology, count_mnemonic)
 
     extended_properties = self.extended_properties
+    properties = [&#39;display_type&#39;, &#39;encrypt_traffic&#39;, &#39;number_of_streams&#39;, &#39;region_id&#39;, &#39;connection_protocol&#39;]
+    for prop in properties:
+        if prop in kwargs:
+            temp = prop.split(&#39;_&#39;)
+            for i in range(1, len(temp)):
+                temp[i] = temp[i][0].upper() + temp[i][1:]
+            camel_case_prop = &#39;&#39;.join(temp)
+
+            idx = extended_properties.find(camel_case_prop) + len(camel_case_prop) + len(&#34;\&#34;=&#34;)
+            temp = list(extended_properties)
+            temp[idx] = str(kwargs.get(prop))
+            extended_properties = &#39;&#39;.join(temp)
 
     request_json = {
         &#34;firewallTopology&#34;: {

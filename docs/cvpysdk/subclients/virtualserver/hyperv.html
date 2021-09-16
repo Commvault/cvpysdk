@@ -51,7 +51,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L1-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L1-L678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -267,7 +267,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      add_to_failover=False,
                                      network=None,
                                      restored_vm_name=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     snap_proxy=None,
+                                     media_agent=None):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -293,6 +295,10 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
+
+                snap_proxy          (strig)     -- Snap proxy to be used for restore
+
+                media_agent          (string)    -- Media Agent to be used for Browse
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -352,9 +358,6 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = &#34;Delete&#34; + vm_to_restore
-
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
@@ -390,7 +393,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             add_to_failover=add_to_failover,
             datastore=destination_path,
             in_place=False,
-            network=network
+            destination_network=network,
+            snap_proxy=snap_proxy,
+            media_agent=media_agent
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -444,6 +449,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
+
+        if vm_to_restore and isinstance(vm_to_restore, basestring):
+            vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -752,7 +760,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L51-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L51-L678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -918,7 +926,9 @@ backupset class, subclient name, subclient id</p></div>
                                      add_to_failover=False,
                                      network=None,
                                      restored_vm_name=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     snap_proxy=None,
+                                     media_agent=None):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -944,6 +954,10 @@ backupset class, subclient name, subclient id</p></div>
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
+
+                snap_proxy          (strig)     -- Snap proxy to be used for restore
+
+                media_agent          (string)    -- Media Agent to be used for Browse
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -1003,9 +1017,6 @@ backupset class, subclient name, subclient id</p></div>
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = &#34;Delete&#34; + vm_to_restore
-
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
@@ -1041,7 +1052,9 @@ backupset class, subclient name, subclient id</p></div>
             add_to_failover=add_to_failover,
             datastore=destination_path,
             in_place=False,
-            network=network
+            destination_network=network,
+            snap_proxy=snap_proxy,
+            media_agent=media_agent
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -1095,6 +1108,9 @@ backupset class, subclient name, subclient id</p></div>
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
+
+        if vm_to_restore and isinstance(vm_to_restore, basestring):
+            vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -1438,7 +1454,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L90-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L90-L202" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1618,7 +1634,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L546-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L554-L678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -1815,7 +1831,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L412-L544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L420-L552" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -1999,7 +2015,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L344-L410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L349-L418" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2050,6 +2066,9 @@ if response is not success
     if copy_precedence:
         restore_option[&#34;copy_precedence_applicable&#34;] = True
 
+    if vm_to_restore and isinstance(vm_to_restore, basestring):
+        vm_to_restore = [vm_to_restore]
+
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
         restore_option,
@@ -2071,7 +2090,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.hyperv.HyperVVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, destination_client=None, proxy_client=None, destination_path=None, vm_to_restore=None, overwrite=False, power_on=False, copy_precedence=0, add_to_failover=False, network=None, restored_vm_name=None, restore_option=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, destination_client=None, proxy_client=None, destination_path=None, vm_to_restore=None, overwrite=False, power_on=False, copy_precedence=0, add_to_failover=False, network=None, restored_vm_name=None, restore_option=None, snap_proxy=None, media_agent=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2100,6 +2119,10 @@ at the specified destination location.</p>
 
     restore_option      (dict)     --  complete dictionary with all advanced optio
         default: {}
+
+    snap_proxy          (strig)     -- Snap proxy to be used for restore
+
+    media_agent          (string)    -- Media Agent to be used for Browse
 </code></pre>
 <p>value:
 preserve_level
@@ -2158,7 +2181,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/virtualserver/hyperv.py#L204-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/virtualserver/hyperv.py#L204-L347" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  destination_client=None,
@@ -2171,7 +2194,9 @@ Raises:
                                  add_to_failover=False,
                                  network=None,
                                  restored_vm_name=None,
-                                 restore_option=None):
+                                 restore_option=None,
+                                 snap_proxy=None,
+                                 media_agent=None):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
 
@@ -2197,6 +2222,10 @@ Raises:
 
             restore_option      (dict)     --  complete dictionary with all advanced optio
                 default: {}
+
+            snap_proxy          (strig)     -- Snap proxy to be used for restore
+
+            media_agent          (string)    -- Media Agent to be used for Browse
 
     value:
         preserve_level           (int)    -  set the preserve level in restore
@@ -2256,9 +2285,6 @@ Raises:
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-    if not restored_vm_name and isinstance(vm_to_restore, basestring):
-        restored_vm_name = &#34;Delete&#34; + vm_to_restore
-
     if copy_precedence:
         restore_option[&#34;copy_precedence_applicable&#34;] = True
 
@@ -2294,7 +2320,9 @@ Raises:
         add_to_failover=add_to_failover,
         datastore=destination_path,
         in_place=False,
-        network=network
+        destination_network=network,
+        snap_proxy=snap_proxy,
+        media_agent=media_agent
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -2357,6 +2385,7 @@ Raises:
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.storage_ma" href="../../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -2366,6 +2395,7 @@ Raises:
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>

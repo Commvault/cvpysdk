@@ -96,6 +96,8 @@ email()                             --  returns the email of this user
 associated_usergroups()             --  returns the usergroups associated with
                                         this user
 
+associated_external_usergroups()    -- returns the external usergroups associated with this user
+
 add_usergroups()                    --  associates the usergroups with this user
 
 remove_usergroups()                 --  disassociated the usergroups with this user
@@ -122,7 +124,7 @@ age_password_days()                 --  returns age password days for user
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L1-L1002" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L1-L1025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -204,6 +206,8 @@ User
 
     associated_usergroups()             --  returns the usergroups associated with
                                             this user
+
+    associated_external_usergroups()    -- returns the external usergroups associated with this user
 
     add_usergroups()                    --  associates the usergroups with this user
 
@@ -691,6 +695,7 @@ class User(object):
         self._user_status = None
         self._email = None
         self._description = None
+        self._associated_external_usergroups = None
         self._associated_usergroups = None
         self._properties = None
         self._tfa_status = None
@@ -738,6 +743,9 @@ class User(object):
 
                 if &#39;associatedUserGroups&#39; in self._properties:
                     self._associated_usergroups = self._properties[&#39;associatedUserGroups&#39;]
+
+                if &#39;associatedExternalUserGroups&#39; in self._properties:
+                    self._associated_external_usergroups = self._properties[&#39;associatedExternalUserGroups&#39;]
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -886,6 +894,15 @@ class User(object):
         return usergroups
 
     @property
+    def associated_external_usergroups(self):
+        &#34;&#34;&#34;Returns the list of associated external usergroups&#34;&#34;&#34;
+        usergroups = []
+        if self._associated_external_usergroups is not None:
+            for usergroup in self._associated_external_usergroups:
+                usergroups.append(usergroup[&#39;externalGroupName&#39;])
+        return usergroups
+
+    @property
     def user_security_associations(self):
         &#34;&#34;&#34;Returns security associations from properties of the User.&#34;&#34;&#34;
         return self._security_associations
@@ -934,6 +951,14 @@ class User(object):
         returns age password days
         &#34;&#34;&#34;
         return self._properties.get(&#39;agePasswordDays&#39;)
+
+    @property
+    def user_company_name(self):
+        &#34;&#34;&#34;
+        returns user associated company name
+        &#34;&#34;&#34;
+
+        return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
 
     @age_password_days.setter
     def age_password_days(self, days):
@@ -1160,7 +1185,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L541-L1002" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L543-L1025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class User(object):
     &#34;&#34;&#34;Class for representing a particular user configured on this commcell&#34;&#34;&#34;
@@ -1189,6 +1214,7 @@ default: None</p></div>
         self._user_status = None
         self._email = None
         self._description = None
+        self._associated_external_usergroups = None
         self._associated_usergroups = None
         self._properties = None
         self._tfa_status = None
@@ -1236,6 +1262,9 @@ default: None</p></div>
 
                 if &#39;associatedUserGroups&#39; in self._properties:
                     self._associated_usergroups = self._properties[&#39;associatedUserGroups&#39;]
+
+                if &#39;associatedExternalUserGroups&#39; in self._properties:
+                    self._associated_external_usergroups = self._properties[&#39;associatedExternalUserGroups&#39;]
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1384,6 +1413,15 @@ default: None</p></div>
         return usergroups
 
     @property
+    def associated_external_usergroups(self):
+        &#34;&#34;&#34;Returns the list of associated external usergroups&#34;&#34;&#34;
+        usergroups = []
+        if self._associated_external_usergroups is not None:
+            for usergroup in self._associated_external_usergroups:
+                usergroups.append(usergroup[&#39;externalGroupName&#39;])
+        return usergroups
+
+    @property
     def user_security_associations(self):
         &#34;&#34;&#34;Returns security associations from properties of the User.&#34;&#34;&#34;
         return self._security_associations
@@ -1432,6 +1470,14 @@ default: None</p></div>
         returns age password days
         &#34;&#34;&#34;
         return self._properties.get(&#39;agePasswordDays&#39;)
+
+    @property
+    def user_company_name(self):
+        &#34;&#34;&#34;
+        returns user associated company name
+        &#34;&#34;&#34;
+
+        return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
 
     @age_password_days.setter
     def age_password_days(self, days):
@@ -1633,7 +1679,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L805-L810" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L820-L825" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def age_password_days(self):
@@ -1643,13 +1689,31 @@ def age_password_days(self):
     return self._properties.get(&#39;agePasswordDays&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.security.user.User.associated_external_usergroups"><code class="name">var <span class="ident">associated_external_usergroups</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the list of associated external usergroups</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L768-L775" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def associated_external_usergroups(self):
+    &#34;&#34;&#34;Returns the list of associated external usergroups&#34;&#34;&#34;
+    usergroups = []
+    if self._associated_external_usergroups is not None:
+        for usergroup in self._associated_external_usergroups:
+            usergroups.append(usergroup[&#39;externalGroupName&#39;])
+    return usergroups</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.user.User.associated_usergroups"><code class="name">var <span class="ident">associated_usergroups</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the list of associated usergroups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L753-L760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L759-L766" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_usergroups(self):
@@ -1667,7 +1731,7 @@ def associated_usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L727-L730" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L733-L736" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1681,7 +1745,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L732-L735" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L738-L741" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email(self):
@@ -1698,7 +1762,7 @@ tfa status</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L995-L1002" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L1018-L1025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -1716,7 +1780,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L712-L715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L718-L721" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -1730,12 +1794,29 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L767-L770" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L782-L785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
     &#34;&#34;&#34;Returns the status of this commcell user&#34;&#34;&#34;
     return self._user_status</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.user_company_name"><code class="name">var <span class="ident">user_company_name</span></code></dt>
+<dd>
+<div class="desc"><p>returns user associated company name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L827-L833" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_company_name(self):
+    &#34;&#34;&#34;
+    returns user associated company name
+    &#34;&#34;&#34;
+
+    return self._properties.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.security.user.User.user_guid"><code class="name">var <span class="ident">user_guid</span></code></dt>
@@ -1744,7 +1825,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L798-L803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L813-L818" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_guid(self):
@@ -1760,7 +1841,7 @@ def user_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L722-L725" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L728-L731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_id(self):
@@ -1774,7 +1855,7 @@ def user_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L717-L720" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L723-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_name(self):
@@ -1788,7 +1869,7 @@ def user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L762-L765" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L777-L780" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_security_associations(self):
@@ -1812,7 +1893,7 @@ list of usergroups to be added</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L848-L854" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L871-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_usergroups(self, usergroups_list):
     &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
@@ -1836,7 +1917,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L864-L871" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L887-L894" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def overwrite_usergroups(self, usergroups_list):
     &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
@@ -1856,7 +1937,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L873-L876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L896-L899" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
@@ -1877,7 +1958,7 @@ list of usergroups to be deleted</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L856-L862" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L879-L885" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_usergroups(self, usergroups_list):
     &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
@@ -1901,7 +1982,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L945-L968" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L968-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def request_otp(self):
     &#34;&#34;&#34;fetches OTP for user
@@ -1988,7 +2069,7 @@ OVERWRITE user security association.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L878-L943" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L901-L966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
     &#34;&#34;&#34;handles three way associations (role-user-entities)
@@ -2075,7 +2156,7 @@ the password) for validation.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L828-L846" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L851-L869" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_user_password(self, new_password, logged_in_user_password):
     &#34;&#34;&#34;updates new passwords of user
@@ -2116,7 +2197,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L113-L538" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L115-L540" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Users(object):
     &#34;&#34;&#34;Class for maintaining all the configured users on this commcell&#34;&#34;&#34;
@@ -2557,7 +2638,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L529-L538" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L531-L540" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_users(self):
@@ -2579,7 +2660,7 @@ def all_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L512-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L514-L523" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def service_commcell_users_space(self):
@@ -2691,7 +2772,7 @@ if failed to add user to commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L241-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L243-L371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         user_name,
@@ -2865,7 +2946,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L406-L479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L408-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, user_name, new_user=None, new_usergroup=None):
     &#34;&#34;&#34;Deletes the specified user from the existing commcell users
@@ -2960,7 +3041,7 @@ if user doesn't exist with specified name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L387-L404" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L389-L406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, user_name):
     &#34;&#34;&#34;Returns the user object for the specified user name
@@ -2999,7 +3080,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L371-L385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L373-L387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_user(self, user_name):
     &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
@@ -3026,7 +3107,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/security/user.py#L524-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/security/user.py#L526-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of Users on this commcell.&#34;&#34;&#34;
@@ -3109,6 +3190,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.security.user.User.add_usergroups" href="#cvpysdk.security.user.User.add_usergroups">add_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.age_password_days" href="#cvpysdk.security.user.User.age_password_days">age_password_days</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.associated_external_usergroups" href="#cvpysdk.security.user.User.associated_external_usergroups">associated_external_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.associated_usergroups" href="#cvpysdk.security.user.User.associated_usergroups">associated_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.description" href="#cvpysdk.security.user.User.description">description</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.email" href="#cvpysdk.security.user.User.email">email</a></code></li>
@@ -3121,6 +3203,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.security.user.User.status" href="#cvpysdk.security.user.User.status">status</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_security_associations" href="#cvpysdk.security.user.User.update_security_associations">update_security_associations</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_user_password" href="#cvpysdk.security.user.User.update_user_password">update_user_password</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.user_company_name" href="#cvpysdk.security.user.User.user_company_name">user_company_name</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_guid" href="#cvpysdk.security.user.User.user_guid">user_guid</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_id" href="#cvpysdk.security.user.User.user_id">user_id</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_name" href="#cvpysdk.security.user.User.user_name">user_name</a></code></li>

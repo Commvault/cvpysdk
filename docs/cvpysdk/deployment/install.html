@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/install.py#L1-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/install.py#L1-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -392,6 +392,7 @@ class Install(object):
             log_file_loc=None,
             client_group_name=None,
             storage_policy_name=None,
+            sw_cache_client=None,
             **kwargs):
         &#34;&#34;&#34;
         Installs the features selected on the given machines
@@ -433,6 +434,10 @@ class Install(object):
             storage_policy_name (str)       -- Storage policy for the default subclient
 
                  default : None
+
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
@@ -571,8 +576,11 @@ class Install(object):
                                         },
                                         &#34;clientComposition&#34;: [
                                             {
+                                                &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                                &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                    &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                                },
                                                 &#34;packageDeliveryOption&#34;: 0,
-                                                &#34;overrideSoftwareCache&#34;: False,
                                                 &#34;components&#34;: {
                                                     &#34;commonInfo&#34;: {
                                                         &#34;globalFilters&#34;: 2,
@@ -658,7 +666,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/install.py#L40-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/install.py#L40-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
     &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
@@ -973,6 +981,7 @@ instance of the Commcell class</p>
             log_file_loc=None,
             client_group_name=None,
             storage_policy_name=None,
+            sw_cache_client=None,
             **kwargs):
         &#34;&#34;&#34;
         Installs the features selected on the given machines
@@ -1014,6 +1023,10 @@ instance of the Commcell class</p>
             storage_policy_name (str)       -- Storage policy for the default subclient
 
                  default : None
+
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
@@ -1152,8 +1165,11 @@ instance of the Commcell class</p>
                                         },
                                         &#34;clientComposition&#34;: [
                                             {
+                                                &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                                &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                    &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                                },
                                                 &#34;packageDeliveryOption&#34;: 0,
-                                                &#34;overrideSoftwareCache&#34;: False,
                                                 &#34;components&#34;: {
                                                     &#34;commonInfo&#34;: {
                                                         &#34;globalFilters&#34;: 2,
@@ -1216,7 +1232,7 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.install.Install.install_software"><code class="name flex">
-<span>def <span class="ident">install_software</span></span>(<span>self, client_computers=None, windows_features=None, unix_features=None, username=None, password=None, install_path=None, log_file_loc=None, client_group_name=None, storage_policy_name=None, **kwargs)</span>
+<span>def <span class="ident">install_software</span></span>(<span>self, client_computers=None, windows_features=None, unix_features=None, username=None, password=None, install_path=None, log_file_loc=None, client_group_name=None, storage_policy_name=None, sw_cache_client=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Installs the features selected on the given machines</p>
@@ -1259,6 +1275,10 @@ features on</p>
 <p>storage_policy_name (str)
 &ndash; Storage policy for the default subclient</p>
 <pre><code> default : None
+</code></pre>
+<p>sw_cache_client (str)
+&ndash; Remote Cache Client Name/ Over-riding Software Cache</p>
+<pre><code>default : None (Use CS Cache by default)
 </code></pre>
 <dl>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1317,7 +1337,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/install.py#L342-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/install.py#L342-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -1330,6 +1350,7 @@ not both
         log_file_loc=None,
         client_group_name=None,
         storage_policy_name=None,
+        sw_cache_client=None,
         **kwargs):
     &#34;&#34;&#34;
     Installs the features selected on the given machines
@@ -1371,6 +1392,10 @@ not both
         storage_policy_name (str)       -- Storage policy for the default subclient
 
              default : None
+
+        sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+            default : None (Use CS Cache by default)
 
         **kwargs: (dict) -- Key value pairs for supporting conditional initializations
         Supported -
@@ -1509,8 +1534,11 @@ not both
                                     },
                                     &#34;clientComposition&#34;: [
                                         {
+                                            &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                            &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                            },
                                             &#34;packageDeliveryOption&#34;: 0,
-                                            &#34;overrideSoftwareCache&#34;: False,
                                             &#34;components&#34;: {
                                                 &#34;commonInfo&#34;: {
                                                     &#34;globalFilters&#34;: 2,
@@ -1619,7 +1647,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/install.py#L193-L340" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/install.py#L193-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -1813,7 +1841,7 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/deployment/install.py#L58-L191" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/deployment/install.py#L58-L191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
                     client=None,

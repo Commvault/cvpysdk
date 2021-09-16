@@ -35,7 +35,7 @@ Method to create object based on specific cloud apps instance type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/casubclient.py#L1-L76" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/casubclient.py#L1-L80" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -84,6 +84,8 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.google_subclient import GoogleSubclient
         from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
         from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
+        from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
+        from .cloudapps.teams_subclient import TeamsSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -102,6 +104,8 @@ class CloudAppsSubclient(Subclient):
             25: CloudStorageSubclient,  # AliBaba
             24: CloudStorageSubclient,  #IBM
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
+            35: MSDynamics365Subclient,  # MS Dynamics 365 Subclient
+            36: TeamsSubclient, # Office 365 Teams
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
@@ -149,7 +153,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/subclients/casubclient.py#L40-L76" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/subclients/casubclient.py#L40-L80" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudAppsSubclient(Subclient):
     &#34;&#34;&#34;Class for representing a subclient of the Cloud Apps agent.&#34;&#34;&#34;
@@ -159,6 +163,8 @@ default: None</p>
         from .cloudapps.google_subclient import GoogleSubclient
         from .cloudapps.cloud_storage_subclient import CloudStorageSubclient
         from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
+        from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
+        from .cloudapps.teams_subclient import TeamsSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -177,6 +183,8 @@ default: None</p>
             25: CloudStorageSubclient,  # AliBaba
             24: CloudStorageSubclient,  #IBM
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
+            35: MSDynamics365Subclient,  # MS Dynamics 365 Subclient
+            36: TeamsSubclient, # Office 365 Teams
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
@@ -197,8 +205,10 @@ default: None</p>
 <ul class="hlist">
 <li><a title="cvpysdk.subclients.cloudapps.cloud_database_subclient.CloudDatabaseSubclient" href="cloudapps/cloud_database_subclient.html#cvpysdk.subclients.cloudapps.cloud_database_subclient.CloudDatabaseSubclient">CloudDatabaseSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient" href="cloudapps/cloud_storage_subclient.html#cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient">CloudStorageSubclient</a></li>
+<li><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient" href="cloudapps/dynamics365_subclient.html#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient">MSDynamics365Subclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient" href="cloudapps/google_subclient.html#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient">GoogleSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient" href="cloudapps/salesforce_subclient.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient">SalesforceSubclient</a></li>
+<li><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient" href="cloudapps/teams_subclient.html#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient">TeamsSubclient</a></li>
 </ul>
 <h3>Inherited members</h3>
 <ul class="hlist">
@@ -240,6 +250,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.restore_in_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.storage_ma" href="../subclient.html#cvpysdk.subclient.Subclient.storage_ma">storage_ma</a></code></li>
@@ -248,6 +259,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

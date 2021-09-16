@@ -27,10 +27,13 @@
 <p>IndexServerConstants
 -
 Maintains constants for index server</p>
+<p>ContentAnalyzerConstants
+-
+Maintains constants for Content Analyzer</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/constants.py#L1-L109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/datacube/constants.py#L1-L103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -54,6 +57,8 @@ Maintains constants for index server</p>
 
 IndexServerConstants            -       Maintains constants for index server
 
+ContentAnalyzerConstants        -       Maintains constants for Content Analyzer
+
 &#34;&#34;&#34;
 
 
@@ -64,6 +69,7 @@ class IndexServerConstants:
     INDEX_SERVER_INSTANCE_NAME = &#34;dynamicIndexInstance&#34;
 
     ROLE_DATA_ANALYTICS = &#34;Data Analytics&#34;
+    ROLE_FILE_SYSTEM_INDEX = &#34;FileSystem Index&#34;
     ROLE_EXCHANGE_INDEX = &#34;Exchange Index&#34;
     ROLE_ONEDRIVE_INDEX = &#34;OneDrive Index&#34;
     ROLE_SYSTEM_DEFAULT = &#34;System Default&#34;
@@ -81,17 +87,23 @@ class IndexServerConstants:
     SERVER_TYPE = &#39;serverType&#39;
     INDEX_SERVER_CLIENT_ID = &#39;indexServerClientId&#39;
 
+    FSINDEX = &#39;fsindex_&#39;
+    MULTINODE = &#39;_multinode&#39;
+
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
+    DEFAULT_JVM_MAX_MEMORY = &#39;8191&#39;
+    DEFAULT_SOLR_PORT = &#39;20000&#39;
+
     SOLR_PORT_META_INFO = {
         &#34;name&#34;: &#34;PORTNO&#34;,
-        &#34;value&#34;: None
+        &#34;value&#34;: DEFAULT_SOLR_PORT
     }
     SOLR_JVM_META_INFO = {
         &#34;name&#34;: &#34;JVMMAXMEMORY&#34;,
-        &#34;value&#34;: None
+        &#34;value&#34;: DEFAULT_JVM_MAX_MEMORY
     }
 
     UPDATE_ADD_ROLE = {
@@ -125,21 +137,6 @@ class ContentAnalyzerConstants:
         &#34;configureNodes&#34;: True,
         &#34;cloudNodes&#34;: [],
         &#34;cloudInfoEntity&#34;: {},
-    }
-
-
-class ActivateEntityConstants:
-    &#34;&#34;&#34;Class to maintain all the Activate entity related constants&#34;&#34;&#34;
-
-    REQUEST_JSON = {
-        &#34;regularExpression&#34;: &#34;&#34;,
-        &#34;flags&#34;: 0,
-        &#34;enabled&#34;: True,
-        &#34;entityName&#34;: &#34;&#34;,
-        &#34;entityXML&#34;: {
-            &#34;keywords&#34;: &#34;&#34;,
-            &#34;isSystemDefinedEntity&#34;: False
-        }
     }</code></pre>
 </details>
 </section>
@@ -152,38 +149,6 @@ class ActivateEntityConstants:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="cvpysdk.datacube.constants.ActivateEntityConstants"><code class="flex name class">
-<span>class <span class="ident">ActivateEntityConstants</span></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Class to maintain all the Activate entity related constants</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/constants.py#L97-L109" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">class ActivateEntityConstants:
-    &#34;&#34;&#34;Class to maintain all the Activate entity related constants&#34;&#34;&#34;
-
-    REQUEST_JSON = {
-        &#34;regularExpression&#34;: &#34;&#34;,
-        &#34;flags&#34;: 0,
-        &#34;enabled&#34;: True,
-        &#34;entityName&#34;: &#34;&#34;,
-        &#34;entityXML&#34;: {
-            &#34;keywords&#34;: &#34;&#34;,
-            &#34;isSystemDefinedEntity&#34;: False
-        }
-    }</code></pre>
-</details>
-<h3>Class variables</h3>
-<dl>
-<dt id="cvpysdk.datacube.constants.ActivateEntityConstants.REQUEST_JSON"><code class="name">var <span class="ident">REQUEST_JSON</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
-</dd>
 <dt id="cvpysdk.datacube.constants.ContentAnalyzerConstants"><code class="flex name class">
 <span>class <span class="ident">ContentAnalyzerConstants</span></span>
 </code></dt>
@@ -192,7 +157,7 @@ class ActivateEntityConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/constants.py#L81-L94" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/datacube/constants.py#L90-L103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentAnalyzerConstants:
     &#34;&#34;&#34;Class to maintain all the content analyzer cloud related constants&#34;&#34;&#34;
@@ -237,7 +202,7 @@ class ActivateEntityConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ec40c964eb387f435de53daedf35366608b0001f/cvpysdk/datacube/constants.py#L26-L78" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/4d7305086b2627f8aea7960778819d7cead463fc/cvpysdk/datacube/constants.py#L28-L87" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServerConstants:
     &#34;&#34;&#34;Class to maintain all the index server related constants&#34;&#34;&#34;
@@ -246,6 +211,7 @@ class ActivateEntityConstants:
     INDEX_SERVER_INSTANCE_NAME = &#34;dynamicIndexInstance&#34;
 
     ROLE_DATA_ANALYTICS = &#34;Data Analytics&#34;
+    ROLE_FILE_SYSTEM_INDEX = &#34;FileSystem Index&#34;
     ROLE_EXCHANGE_INDEX = &#34;Exchange Index&#34;
     ROLE_ONEDRIVE_INDEX = &#34;OneDrive Index&#34;
     ROLE_SYSTEM_DEFAULT = &#34;System Default&#34;
@@ -263,17 +229,23 @@ class ActivateEntityConstants:
     SERVER_TYPE = &#39;serverType&#39;
     INDEX_SERVER_CLIENT_ID = &#39;indexServerClientId&#39;
 
+    FSINDEX = &#39;fsindex_&#39;
+    MULTINODE = &#39;_multinode&#39;
+
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
+    DEFAULT_JVM_MAX_MEMORY = &#39;8191&#39;
+    DEFAULT_SOLR_PORT = &#39;20000&#39;
+
     SOLR_PORT_META_INFO = {
         &#34;name&#34;: &#34;PORTNO&#34;,
-        &#34;value&#34;: None
+        &#34;value&#34;: DEFAULT_SOLR_PORT
     }
     SOLR_JVM_META_INFO = {
         &#34;name&#34;: &#34;JVMMAXMEMORY&#34;,
-        &#34;value&#34;: None
+        &#34;value&#34;: DEFAULT_JVM_MAX_MEMORY
     }
 
     UPDATE_ADD_ROLE = {
@@ -319,7 +291,19 @@ class ActivateEntityConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_JVM_MAX_MEMORY"><code class="name">var <span class="ident">DEFAULT_JVM_MAX_MEMORY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_SOLR_PORT"><code class="name">var <span class="ident">DEFAULT_SOLR_PORT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.datacube.constants.IndexServerConstants.ENGINE_NAME"><code class="name">var <span class="ident">ENGINE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.datacube.constants.IndexServerConstants.FSINDEX"><code class="name">var <span class="ident">FSINDEX</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -336,6 +320,10 @@ class ActivateEntityConstants:
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_INSTANCE_NAME"><code class="name">var <span class="ident">INDEX_SERVER_INSTANCE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.datacube.constants.IndexServerConstants.MULTINODE"><code class="name">var <span class="ident">MULTINODE</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -364,6 +352,10 @@ class ActivateEntityConstants:
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.datacube.constants.IndexServerConstants.ROLE_EXCHANGE_INDEX"><code class="name">var <span class="ident">ROLE_EXCHANGE_INDEX</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.datacube.constants.IndexServerConstants.ROLE_FILE_SYSTEM_INDEX"><code class="name">var <span class="ident">ROLE_FILE_SYSTEM_INDEX</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -466,12 +458,6 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="cvpysdk.datacube.constants.ActivateEntityConstants" href="#cvpysdk.datacube.constants.ActivateEntityConstants">ActivateEntityConstants</a></code></h4>
-<ul class="">
-<li><code><a title="cvpysdk.datacube.constants.ActivateEntityConstants.REQUEST_JSON" href="#cvpysdk.datacube.constants.ActivateEntityConstants.REQUEST_JSON">REQUEST_JSON</a></code></li>
-</ul>
-</li>
-<li>
 <h4><code><a title="cvpysdk.datacube.constants.ContentAnalyzerConstants" href="#cvpysdk.datacube.constants.ContentAnalyzerConstants">ContentAnalyzerConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.datacube.constants.ContentAnalyzerConstants.OPERATION_ADD" href="#cvpysdk.datacube.constants.ContentAnalyzerConstants.OPERATION_ADD">OPERATION_ADD</a></code></li>
@@ -489,11 +475,15 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.CLIENT_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.CLIENT_NAME">CLIENT_NAME</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.CLOUD_ID" href="#cvpysdk.datacube.constants.IndexServerConstants.CLOUD_ID">CLOUD_ID</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.CLOUD_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.CLOUD_NAME">CLOUD_NAME</a></code></li>
+<li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_JVM_MAX_MEMORY" href="#cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_JVM_MAX_MEMORY">DEFAULT_JVM_MAX_MEMORY</a></code></li>
+<li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_SOLR_PORT" href="#cvpysdk.datacube.constants.IndexServerConstants.DEFAULT_SOLR_PORT">DEFAULT_SOLR_PORT</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ENGINE_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.ENGINE_NAME">ENGINE_NAME</a></code></li>
+<li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.FSINDEX" href="#cvpysdk.datacube.constants.IndexServerConstants.FSINDEX">FSINDEX</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.HOST_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.HOST_NAME">HOST_NAME</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_CLIENT_ID" href="#cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_CLIENT_ID">INDEX_SERVER_CLIENT_ID</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_IDA_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_IDA_NAME">INDEX_SERVER_IDA_NAME</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_INSTANCE_NAME" href="#cvpysdk.datacube.constants.IndexServerConstants.INDEX_SERVER_INSTANCE_NAME">INDEX_SERVER_INSTANCE_NAME</a></code></li>
+<li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.MULTINODE" href="#cvpysdk.datacube.constants.IndexServerConstants.MULTINODE">MULTINODE</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.OPERATION_ADD" href="#cvpysdk.datacube.constants.IndexServerConstants.OPERATION_ADD">OPERATION_ADD</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.OPERATION_DELETE" href="#cvpysdk.datacube.constants.IndexServerConstants.OPERATION_DELETE">OPERATION_DELETE</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.OPERATION_EDIT" href="#cvpysdk.datacube.constants.IndexServerConstants.OPERATION_EDIT">OPERATION_EDIT</a></code></li>
@@ -501,6 +491,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLES" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLES">ROLES</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLE_DATA_ANALYTICS" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLE_DATA_ANALYTICS">ROLE_DATA_ANALYTICS</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLE_EXCHANGE_INDEX" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLE_EXCHANGE_INDEX">ROLE_EXCHANGE_INDEX</a></code></li>
+<li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLE_FILE_SYSTEM_INDEX" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLE_FILE_SYSTEM_INDEX">ROLE_FILE_SYSTEM_INDEX</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLE_ONEDRIVE_INDEX" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLE_ONEDRIVE_INDEX">ROLE_ONEDRIVE_INDEX</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.ROLE_SYSTEM_DEFAULT" href="#cvpysdk.datacube.constants.IndexServerConstants.ROLE_SYSTEM_DEFAULT">ROLE_SYSTEM_DEFAULT</a></code></li>
 <li><code><a title="cvpysdk.datacube.constants.IndexServerConstants.SERVER_TYPE" href="#cvpysdk.datacube.constants.IndexServerConstants.SERVER_TYPE">SERVER_TYPE</a></code></li>
