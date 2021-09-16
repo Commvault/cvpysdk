@@ -86,12 +86,15 @@ Store:
 
     get()                      - gets a substore class object for provided substore id
 
+    seal_deduplication_database() - Seals the deduplication database
+
     recover_deduplication_database()    - starts DDB Reconstruction job for store
 
     run_space_reclaimation()    - starts DDB space reclaimation job for store
 
     run_ddb_verification()      - starts DDB verification job for store
 
+    enable_store_pruning        -  Property to get the current state of store pruning or enable/disable store pruning
 
 Substore:
     __init__(commcell_object, storage_policy_name, copy_name,
@@ -107,17 +110,21 @@ Substore:
 
     mark_for_recovery()         - marks a substore for recovery
 """
-
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from past.builtins import basestring
 from future.standard_library import install_aliases
+from enum import Enum
 
 from .exception import SDKException
 from .job import Job
 
 install_aliases()
+
+
+class StoreFlags(Enum):
+    IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
 
 
 class DeduplicationEngines(object):
@@ -591,6 +598,12 @@ class Store(object):
         )
 
     @property
+    def store_flags(self):
+        """returns the deduplication flags on store"""
+        self.refresh()
+        return self._store_flags
+
+    @property
     def store_name(self):
         """returns the store display name"""
         return self._store_properties.get('storeName')
@@ -632,6 +645,45 @@ class Store(object):
             return False
         return True
 
+    @property
+    def enable_store_pruning(self):
+        """returns if purning is enabled or disabled on store"""
+        return self._store_flags & StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value != 0
+
+    @enable_store_pruning.setter
+    def enable_store_pruning(self, value):
+        """sets store purning value to true or false
+        Args:
+              value (bool) -- value to enable or disable store pruning
+        """
+        if not value:
+            new_value = self._store_flags & ~StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+        else:
+            new_value = self._store_flags | StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED.value
+
+        request_json = {
+            "EVGui_ParallelDedupConfigReq": {
+                "processinginstructioninfo": "",
+                "SIDBStore": {
+                    "SIDBStoreId": self.store_id,
+                    "SIDBStoreName": self.store_name,
+                    "extendedFlags": self._extended_flags,
+                    "flags": new_value,
+                    "minObjSizeKB": 50,
+                    "oldestEligibleObjArchiveTime": -1
+                },
+                "appTypeGroupId": 0,
+                "commCellId": 2,
+                "copyId": self.copy_id,
+                "operation": 3
+            }
+        }
+        output = self._commcell_object.qoperation_execute(request_json)
+        if output['error']['errorString'] != '':
+            raise SDKException('Storage', '102', output['error']['errorString'])
+
+        self.refresh()
+
     @enable_garbage_collection.setter
     def enable_garbage_collection(self, value):
         """sets enable garbage collection with true or false
@@ -663,6 +715,16 @@ class Store(object):
             }
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
+
+    def seal_deduplication_database(self):
+        """ Seals the deduplication database """
+
+        request_json = {
+                        "App_SealSIDBStoreReq":{
+                                "SidbStoreId": self.store_id
+                            }
+                        }
+        self._commcell_object._qoperation_execute(request_json)
 
     def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
         """

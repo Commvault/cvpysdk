@@ -24,6 +24,7 @@ IndexServer:    Class for a instance of a single index server of the commcell
 
 _Roles:         Class for storing all the cloud role details
 
+"IndexServerOSType" is the enum class used to represent os type of IS
 
 IndexServers
 ============
@@ -98,6 +99,8 @@ IndexServer
 
     get_index_node()                    --  returns an Index server node object for given node name
 
+    get_os_info()                       --  returns the OS type for the Index server
+
 IndexServer Attributes
 ----------------------
 
@@ -135,6 +138,8 @@ IndexServer Attributes
     **is_cloud**                        --  returns boolean True if the Index server is cloud else returns False
 
     **node_count**                      --  returns the number of Index server nodes
+
+    **os_info**                         --  returns the OS type for the Index server
 
 
 IndexNode
@@ -186,6 +191,7 @@ _Roles Attributes
     """
 
 from copy import deepcopy
+import enum
 from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
@@ -463,8 +469,8 @@ class IndexServers(object):
             'LANGUAGE': '0'
         }
         node_meta_infos = {
-            'PORTNO': '20000',
-            'JVMMAXMEMORY': '8191'
+            'PORTNO': IndexServerConstants.DEFAULT_SOLR_PORT,
+            'JVMMAXMEMORY': IndexServerConstants.DEFAULT_JVM_MAX_MEMORY
         }
         role_meta_infos = {}
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
@@ -585,6 +591,13 @@ class IndexServers(object):
         self._response_not_success(response)
 
 
+class IndexServerOSType(enum.Enum):
+    """Enum class for Index Server OS Type"""
+    WINDOWS = "Windows"
+    UNIX = "Unix"
+    MIXED = "Mixed"
+
+
 class IndexServer(object):
     """Class for performing index server operations for a specific index server"""
 
@@ -612,6 +625,7 @@ class IndexServer(object):
             self._cloud_id = self._get_cloud_id()
         self._properties = None
         self._roles_obj = None
+        self.os_type = None
         self.refresh()
 
     def __repr__(self):
@@ -636,6 +650,8 @@ class IndexServer(object):
         """Refresh the index server properties"""
         self._commcell_obj.index_servers.refresh()
         self._get_properties()
+        if self.os_type is None:
+            self.os_type = self.get_os_info()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
 
@@ -770,7 +786,7 @@ class IndexServer(object):
 
                 Args:
                     client_name     (str)       --  name of the client node
-                        ***Applicable only for solr cloud mode***
+                        ***Applicable only for solr cloud mode or multi node Index Server***
 
                 Returns:
                     (list,dict)     -- list containing core names
@@ -790,7 +806,7 @@ class IndexServer(object):
 
         """
         server_url = self.server_url[0]
-        if self.is_cloud:
+        if self.is_cloud or len(self.client_name) > 1:
             if client_name is None:
                 raise SDKException('IndexServers', '104', 'Client name param missing for solr cloud')
             if client_name not in self.client_name:
@@ -870,6 +886,8 @@ class IndexServer(object):
                 for item in attr_list:
                     field_query += f'{str(item)},'
                 field_query = field_query[:-1]
+            if attr_list and 'content' in attr_list:
+                field_query = f"{field_query}&exclude=false"
 
             ex_query = ""
             if not op_params:
@@ -968,6 +986,28 @@ class IndexServer(object):
         if node_name in self.client_name:
             return IndexNode(self._commcell_obj, self.engine_name, node_name)
         raise SDKException("IndexServers", '104', 'Index server node not found')
+
+    def get_os_info(self):
+        """Returns the OS type for the Index server"""
+
+        nodes_name = self.client_name
+        nodes = [self._commcell_obj.clients.get(node) for node in nodes_name]
+        nodes_os_info = [node.os_info for node in nodes]
+        if IndexServerOSType.WINDOWS.value.lower() in nodes_os_info[0].lower():
+            for node in nodes_os_info[1:]:
+                if IndexServerOSType.UNIX.value.lower() in node.lower():
+                    return IndexServerOSType.MIXED.value
+            return IndexServerOSType.WINDOWS.value
+        else:
+            for node in nodes_os_info[1:]:
+                if IndexServerOSType.WINDOWS.value.lower() in node.lower():
+                    return IndexServerOSType.MIXED.value
+            return IndexServerOSType.UNIX.value
+
+    @property
+    def os_info(self):
+        """Returns the OS type for the Index server"""
+        return self.os_type
 
     @property
     def is_cloud(self):

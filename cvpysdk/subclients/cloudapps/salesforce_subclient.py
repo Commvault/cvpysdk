@@ -861,7 +861,7 @@ class SalesforceSubclient(CloudAppsSubclient):
                 db_type             (str)   :   database type. if database details does not
                                                     provided, it will use syncdb database
                                                     for restore
-                    default: SQLSERVER
+                default: SQLSERVER
 
                 db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
 
@@ -1023,6 +1023,145 @@ class SalesforceSubclient(CloudAppsSubclient):
         db_base64_password = b64encode(sf_options['db_user_password'].encode()).decode()
         file_restore_option["db_user_password"] = db_base64_password
         file_restore_option["override_table"] = sf_options.get("override_table", True)
+
+        # set the browse option
+        file_restore_option["client_name"] = self._backupset_object._agent_object._client_object.client_name
+        file_restore_option["copy_precedence_applicable"] = True
+        file_restore_option["copy_precedence"] = sf_options.get("copy_precedence", 0)
+        file_restore_option["from_time"] = sf_options.get("from_time", 0)
+        file_restore_option["to_time"] = sf_options.get("to_time", 0)
+
+        # prepare and execute the Json
+        request_json = self._prepare_salesforce_restore_json(file_restore_option)
+
+        return self._process_restore_response(request_json)
+
+    def metadata_restore_to_salesforce(
+            self,
+            metadata_list=None,
+            destination_client=None,
+            destination_instance=None,
+            destination_backupset=None,
+            **sf_options):
+        """perform Restore to Salesforce from Media.
+
+        Args:
+            metadata_list           (list)  --  List of metadata components to restore like "folder/component.type"
+
+            destination_client      (str)   --  destination pseudo client name.
+                                                    if this value not provided, it will
+                                                    automatically select source client
+
+            destination_instance    (str)   --  destination instance name.
+                                                    if this value not provided, it will
+                                                    automatically select source instance name
+
+            destination_backupset   (str)   --  destination backupset name.
+                                                    if this value not provided, it will
+                                                    automatically select source backupset
+            sf_options:
+
+                destination_path    (str)   :   staging path for salesforce restore data
+
+                streams             (int)   :   no of streams to use for restore
+                    default: 2
+
+                copy_precedence     (int)   :   copy number to use for restore
+                    default: 0
+
+                from_time           (str)   :   date to get the contents after
+                                                    format: dd/MM/YYYY
+                                                    gets contents from 01/01/1970 if not specified
+                    default: None
+
+                to_time             (str)   :   date to get the contents before
+                                                    format: dd/MM/YYYY
+                                                    gets contents till current day if not specified
+                    default: None
+
+                show_deleted_files  (bool)  :   include deleted files in the content or not
+                    default: True
+
+        Raises:
+                SDKException:
+                    if from date value is incorrect
+
+                    if to date value is incorrect
+
+                    if to date is less than from date
+
+                    if failed to browse content
+
+                    if response is empty
+
+                    if response is not success
+
+                    if destination client does not exist
+
+                    if destination instance does not exist
+
+                    if destination backupset does not exist
+
+        """
+
+        file_restore_option = {}
+
+        if not sf_options:
+            sf_options = {}
+
+        # check if client name is correct
+        if destination_client is None:
+            destination_client = self._backupset_object._agent_object._client_object
+
+        if isinstance(destination_client, Client):
+            dest_client = destination_client
+        elif isinstance(destination_client, basestring):
+            dest_client = self._commcell_object.clients.get(destination_client)
+        else:
+            raise SDKException('Subclient', '105')
+
+        dest_agent = Agent(dest_client, 'Cloud Apps')
+
+        # check if instance name is correct
+        if destination_instance is None:
+            destination_instance = self._backupset_object._instance_object
+
+        if isinstance(destination_instance, Instance):
+            dest_instance = destination_instance
+        elif isinstance(destination_instance, basestring):
+            dest_instance = dest_agent.instances.get(destination_instance)
+        else:
+            raise SDKException('Subclient', '113')
+
+        # check if backupset name is correct
+        if destination_backupset is None:
+            destination_backupset = self._backupset_object
+
+        if isinstance(destination_backupset, SalesforceBackupset):
+            dest_backupset = destination_backupset
+        elif isinstance(destination_backupset, basestring):
+            dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
+        else:
+            raise SDKException('Subclient', '114')
+
+        file_restore_option["dest_client_name"] = dest_client.client_name
+        file_restore_option["dest_instance_name"] = dest_instance.instance_name
+        file_restore_option["dest_backupset_name"] = dest_backupset.backupset_name
+
+        self._restore_salesforce_destination_json(file_restore_option)
+
+        file_restore_option["paths"] = [f"/Metadata/unpackaged/{metadata_path}" for metadata_path in metadata_list]
+
+        # set the salesforce options
+        file_restore_option["staging_path"] = sf_options.get(
+            "destination_path", dest_backupset.download_cache_path
+        )
+        file_restore_option["dependent_level"] = sf_options.get("dependent_level", 0)
+        file_restore_option["streams"] = sf_options.get("streams", 2)
+        file_restore_option["to_fs"] = False
+        file_restore_option["to_cloud"] = True
+        file_restore_option["from_database"] = False
+        file_restore_option["is_metadata"] = True
 
         # set the browse option
         file_restore_option["client_name"] = self._backupset_object._agent_object._client_object.client_name

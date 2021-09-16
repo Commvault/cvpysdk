@@ -35,6 +35,10 @@ FileSystemSubclient:
 
     _advanced_backup_options()          --  sets the advanced backup options
 
+    enable_content_indexing             --  Enables Content indexing and add the policy associations
+
+    disable_content_indexing            --  Disables Content indexing and disassociate the CI policy
+
     find_all_versions()                 --  returns the dict containing list of all the backed up
                                             versions of specified file
 
@@ -84,6 +88,12 @@ FileSystemSubclient Instance Attributes:
     **trueup_days**                       --  update trueup after **n** days value of the subclient
 
     **generate_signature_on_ibmi**        --  enable or disable signature generation on ibmi
+
+    **backup_using_multiple_drives**      --  enable or disable VTL multiple drives for ibmi subclient.
+
+    **pending_record_changes**            --  Updates the pending record changes value on ibmi subclient.
+
+    **other_pending_changes**             --  Updates the other pending changes value on ibmi subclient.
 
     **object_level_backup**               --  enable or disable object level backup for ibmi subclient
 
@@ -192,7 +202,7 @@ class FileSystemSubclient(Subclient):
 
         """
         super(FileSystemSubclient, self)._get_subclient_properties()
-
+        self._impersonateUser={}
         if 'impersonateUser' in self._subclient_properties:
             self._impersonateUser = self._subclient_properties['impersonateUser']
 
@@ -1209,6 +1219,81 @@ class FileSystemSubclient(Subclient):
         )
 
     @property
+    def backup_using_multiple_drives(self):
+        """Gets the value of VTL multiple drives on ibmi option for IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('backupUsingMultipleDrives',False))
+
+    @backup_using_multiple_drives.setter
+    def backup_using_multiple_drives(self, set_vtl_multiple_drives):
+        """Updates the VTL multiple drives property value on ibmi subclient.
+
+            Args:
+                set_vtl_multiple_drives (bool)  --  Enable or disable VTL multiple drives on IBMi
+        """
+        update_properties = self.properties
+        if isinstance(set_vtl_multiple_drives, bool):
+            update_properties['fsSubClientProp']['backupUsingMultipleDrives'] = set_vtl_multiple_drives
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+    
+    @property
+    def pending_record_changes(self):
+        """Gets the value of pending record changes option for  IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('pendingRecordChange'))
+
+    @pending_record_changes.setter
+    def pending_record_changes(self, value):
+        """Updates the pending record changes value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set pending records changes value for backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['pendingRecordChange'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
+    def other_pending_changes(self):
+        """Gets the value of other pending changes for IBMi subclient.
+
+            Returns:
+                False   -   if multiple drives is not enabled.
+
+                True    -   if multiple drives is enabled.
+        """
+        return bool(self._fsSubClientProp.get('otherPendingChange'))
+
+    @other_pending_changes.setter
+    def other_pending_changes(self, value):
+        """Updates the other pending changes value on ibmi subclient.
+
+            Args:
+                value   (str)  --  To set other pending changes value for backup data.
+        """
+        update_properties = self.properties
+        if isinstance(value, str):
+            update_properties['fsSubClientProp']['otherPendingChange'] = value
+        else:
+            raise SDKException('Subclient', '101')
+        self.update_properties(update_properties)
+
+    @property
     def object_level_backup(self):
         """Gets the value of object level backup option for IBMi subclient.
 
@@ -1869,6 +1954,17 @@ class FileSystemSubclient(Subclient):
                 schedule_pattern=schedule_pattern,
                 advanced_options=advanced_options
             )
+
+    def enable_content_indexing(self, policy_id):
+        """Enables Content indexing and add the policy associations"""
+        self._set_subclient_properties('enableContentIndexing', True)
+        self._set_subclient_properties('enableContentIndexing', int(policy_id))
+
+    def disable_content_indexing(self):
+        """Disables Content indexing and disassociate the CI policy"""
+        update_properties = self.properties
+        update_properties['fsSubClientProp']['enableContentIndexing'] = False
+        self.update_properties(update_properties)
 
     @property
     def catalog_acl(self):

@@ -178,8 +178,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             amazon_options=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0,
-            indexing_v2=False
+            copy_precedence=0
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided virtualization client along with the zone and instance type.
@@ -224,9 +223,6 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
 
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
-
-                indexing_v2           (bool)        --  true if restore has to be performed from
-                                                        child vm for v2
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -278,75 +274,159 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         instance_dict = self._backupset_object._instance_object._properties['instance']
 
         # set attr for all the option in restore xml from user inputs
-        if indexing_v2:
-            vm_to_restore = self._set_vm_to_restore(vm_to_restore)
-            job_objects = []
-            for eachvm in vm_to_restore:
-                restore_option = {}
-                self._set_restore_inputs(
-                    restore_option,
-                    vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-                    in_place=False,
-                    esx_server_name=instance_dict["clientName"],
-                    volume_level_restore=1,
-                    unconditional_overwrite=overwrite,
-                    power_on=power_on,
-                    copy_precedence=copy_precedence,
-                    is_aws_proxy=is_aws_proxy,
-                    datacenter=None,
-                    resourcePoolPath=None,
-                    optimizationEnabled=False,
-                    availability_zone=availability_zone,
-                    esx_host=availability_zone,
-                    ami=amazon_options.get('ami', None),
-                    vmSize=amazon_options.get('instance_type', None),
-                    iamRole=amazon_options.get('iam_role', None),
-                    securityGroups=amazon_options.get('security_groups', None),
-                    keyPairList=amazon_options.get('keypair_list', None),
-                    terminationProtected=amazon_options.get('termination_protected', False)
-                )
-                request_json = self._prepare_fullvm_restore_json(restore_option)
-                _vmclient_obj = self._commcell_object.clients.get(eachvm)
-                _vmagent_obj = _vmclient_obj.agents.get(self._agent_object._agent_name)
-                _vminstance_obj = _vmagent_obj.instances.get('VMInstance')
-                _vmbackupset_obj = _vminstance_obj.backupsets.get(
-                    self._backupset_object._backupset_name)
-                _vmsub_obj = _vmbackupset_obj.subclients.get('default')
-                request_json['taskInfo']['associations'][0]['clientName'] = eachvm
-                request_json['taskInfo']['associations'][0]['clientId'] = _vmsub_obj._subClientEntity['clientId']
-                request_json['taskInfo']['associations'][0]['instanceName'] = 'VMInstance'
-                request_json['taskInfo']['associations'][0]['backupsetId'] = _vmsub_obj._subClientEntity['backupsetId']
-                request_json['taskInfo']['associations'][0]['instanceId'] = _vmsub_obj._subClientEntity['instanceId']
-                request_json['taskInfo']['associations'][0]['subclientGUID'] = _vmsub_obj._subClientEntity['subclientGUID']
-                request_json['taskInfo']['associations'][0]['subclientName'] = 'default'
-                request_json['taskInfo']['associations'][0]['subclientId'] = _vmsub_obj._subClientEntity['subclientId']
-                job_objects.append(self._process_restore_response(request_json))
-            return job_objects
-        else:
-            self._set_restore_inputs(
-                restore_option,
-                vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-                in_place=False,
-                esx_server_name=instance_dict["clientName"],
-                volume_level_restore=1,
-                unconditional_overwrite=overwrite,
-                power_on=power_on,
-                copy_precedence=copy_precedence,
-                is_aws_proxy=is_aws_proxy,
-                datacenter=None,
-                resourcePoolPath=None,
-                optimizationEnabled=False,
-                availability_zone=availability_zone,
-                esx_host=availability_zone,
-                ami=amazon_options.get('ami', None),
-                vmSize=amazon_options.get('instance_type', None),
-                iamRole=amazon_options.get('iam_role', None),
-                securityGroups=amazon_options.get('security_groups', None),
-                keyPairList=amazon_options.get('keypair_list', None),
-                terminationProtected=amazon_options.get('termination_protected', False),
-            )
+        self._set_restore_inputs(
+            restore_option,
+            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            in_place=False,
+            esx_server_name=instance_dict["clientName"],
+            volume_level_restore=1,
+            unconditional_overwrite=overwrite,
+            power_on=power_on,
+            copy_precedence=copy_precedence,
+            is_aws_proxy=is_aws_proxy,
+            datacenter=None,
+            resourcePoolPath=None,
+            optimizationEnabled=False,
+            availability_zone=availability_zone,
+            esx_host=availability_zone,
+            ami=amazon_options.get('ami', None),
+            vmSize=amazon_options.get('instance_type', None),
+            iamRole=amazon_options.get('iam_role', None),
+            securityGroups=amazon_options.get('security_groups', None),
+            keyPairList=amazon_options.get('keypair_list', None),
+            terminationProtected=amazon_options.get('termination_protected', False),
+        )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def attach_disk_restore(
+            self,
+            vm_to_restore,
+            destination_vm,
+            proxy_client=None,
+            amazon_options=None,
+            overwrite=True,
+            copy_precedence=0,
+            destination_vm_guid=None,
+            disk_prefix=None,
+            availability_zone=None,
+            media_agent=None,
+            disk_name=None
+    ):
+        """Restores the Attach Disk restore with  specified in the input list
+            to the provided instance.
+
+            Args:
+                vm_to_restore         (basestring)  --  provide the source vm name
+
+                destination_vm        (basestring)  --  provide the destination VM name to restore
+
+                disk_prefix       (basestring)        --  provide the new display name for the
+                                                    restored disk
+                                                    default: None
+
+                disk_name       (basestring)        --  provide the new display name for the source disk
+                                                    default: None
+
+                proxy_client          (basestring)  --  proxy client to be used for restore
+                                                    default: proxy added in subclient
+
+                destination_vm_guid     (basestring)  --  instance id of the vm
+                                                            default:None
+
+                media_agent             (basestring)  --  media agent to be used browse and restore
+
+                amazon_options        (dict)        --  dict containing configuration options for
+                                                        restored VM. Permissible keys are below
+                    availability_zone
+
+                    ami
+
+                    instance_type
+
+                overwrite             (bool)        --  overwrite the existing VM
+                                                        default: True
+
+                copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        _attach_disk_restore_option = {}
+        if not amazon_options:
+            amazon_options = {}
+
+        # check input parameters are correct
+        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+            raise SDKException('Subclient', '101')
+
+        if copy_precedence:
+            _attach_disk_restore_option['copy_precedence_applicable'] = True
+
+        # populating proxy client. It assumes the proxy controller added in instance
+        # properties if not specified
+        if proxy_client is not None:
+            _attach_disk_restore_option['client'] = proxy_client
+
+        disk_list, disk_info_dict = self.disk_level_browse(
+            "\\" + vm_ids[vm_to_restore])
+        if not disk_name:
+            disk_name = []
+            for each_disk_path in disk_list:
+                disk_name.append(each_disk_path.split('\\')[-1])
+
+        else:
+            for each_disk in disk_name:
+                each_disk_path = "\\" + str(vm_to_restore) + "\\" + each_disk
+                if each_disk_path not in disk_list:
+                    raise SDKException('Subclient', '111')
+
+        src_item_list = []
+        for each_disk in disk_name:
+            src_item_list.append("\\" + vm_ids[vm_to_restore] + "\\" + each_disk.split("\\")[-1])
+        _attach_disk_restore_option['paths'] = src_item_list
+        if proxy_client is not None:
+            _attach_disk_restore_option['client'] = proxy_client
+        if not destination_vm:
+            destination_vm = vm_to_restore
+        instance_dict = self._backupset_object._instance_object._properties['instance']
+        _attach_disk_restore_option = self.amazon_defaults(vm_to_restore, _attach_disk_restore_option)
+
+        # set attr for all the option in restore xml from user inputs
+        self._set_restore_inputs(
+            _attach_disk_restore_option,
+            vm_to_restore=vm_to_restore,
+            esx_server_name=instance_dict["clientName"],
+            volume_level_restore=6,
+            unconditional_overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            paths=src_item_list,
+            datacenter=None,
+            resourcePoolPath=None,
+            availability_zone=availability_zone,
+            esx_host=availability_zone,
+            newName=destination_vm,
+            newGUID=destination_vm_guid,
+            disk_name_prefix=disk_prefix,
+            ami=_attach_disk_restore_option.get('ami', None),
+            vmSize=_attach_disk_restore_option.get('instance_type', None)
+        )
+
+        request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
         return self._process_restore_response(request_json)
 
     def full_vm_conversion_azurerm(

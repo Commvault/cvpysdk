@@ -33,6 +33,7 @@ Download
 from ..job import Job
 from ..exception import SDKException
 from .deploymentconstants import DownloadOptions
+from cvpysdk.schedules import Schedules, SchedulePattern
 
 
 class Download(object):
@@ -60,7 +61,8 @@ class Download(object):
             os_list=None,
             service_pack=None,
             cu_number=0,
-            sync_cache=True):
+            sync_cache=True,
+            schedule_pattern=None):
         """Downloads the os packages on the commcell
 
             Args:
@@ -236,6 +238,9 @@ class Download(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
         )
@@ -244,6 +249,9 @@ class Download(object):
             if response.json():
                 if "jobIds" in response.json():
                     return Job(self.commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Download', '101')
