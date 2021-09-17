@@ -248,7 +248,7 @@ class VsaLiveSync:
                     else:
                         temp_name = dictionary['subTask']['subtaskName']
                     temp_id = str(dictionary['subTask']['taskId'])
-                    live_sync_pairs_dict[temp_name] = {
+                    live_sync_pairs_dict[temp_name.lower()] = {
                         'id': temp_id
                     }
 
@@ -377,6 +377,7 @@ class VsaLiveSync:
         """
         if not isinstance(live_sync_name, basestring):
             raise SDKException('LiveSync', '101')
+        live_sync_name = live_sync_name.lower()
         if self.has_live_sync_pair(live_sync_name):
             return LiveSyncPairs(
                 self._subclient_object,
@@ -400,7 +401,7 @@ class VsaLiveSync:
                 if type of the live sync name argument is not string
 
         """
-        return self.live_sync_pairs and live_sync_name in self.live_sync_pairs
+        return self.live_sync_pairs and live_sync_name.lower() in self.live_sync_pairs
 
     def refresh(self):
         """Refresh the live sync pairs associated with the subclient"""
@@ -425,7 +426,7 @@ class LiveSyncPairs:
         self._subclient_id = self._subclient_object.subclient_id
         self._subclient_name = self._subclient_object.name
 
-        self._live_sync_name = live_sync_name
+        self._live_sync_name = live_sync_name.lower()
 
         self._commcell_object = self._subclient_object._commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
@@ -643,6 +644,10 @@ class LiveSyncVMPair:
         representation_string = 'LiveSyncVMPair class instance for Live Sync: "{0}"'
         return representation_string.format(self.live_sync_pair.live_sync_name)
 
+    def __str__(self):
+        """String representation of the instance of BLR pair"""
+        return f'Live sync pair: {self._source_vm} -> {self._destination_vm}'
+
     def _get_vm_pair_id(self):
         """Gets the VM pair id associated with the LiveSyncPair
 
@@ -749,7 +754,7 @@ class LiveSyncVMPair:
     def last_replication_job(self):
         """Returns (int): the last replication job that has been run for the Live sync VM pair"""
         for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2216:
+            if prop.get('propertyId', 0) == 2215 and prop.get('propertyValue'):
                 return int(prop.get('propertyValue'))
         return None
 
@@ -757,9 +762,17 @@ class LiveSyncVMPair:
     def latest_replication_job(self):
         """Returns (int): the latest successful replication job for the Live sync VM pair"""
         for prop in self._properties.get('VMReplInfoProperties', []):
-            if prop.get('propertyId', 0) == 2208:
+            if prop.get('propertyId', 0) == 2208 and prop.get('propertyValue'):
                 self._latest_replication_job = int(prop.get('propertyValue'))
                 return self._latest_replication_job
+        return None
+
+    @property
+    def failover_job_id(self):
+        """Returns (int): the job ID of the failover job"""
+        for prop in self._properties.get('VMReplInfoProperties', []):
+            if prop.get('propertyId', 0) == 2216 and prop.get('propertyValue'):
+                return int(prop.get('propertyValue'))
         return None
 
     def refresh(self):

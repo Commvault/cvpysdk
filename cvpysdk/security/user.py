@@ -104,6 +104,8 @@ User
 
     age_password_days()                 --  returns age password days for user
 
+    user_company_name()                 -- returns company name if user is a company user else returns empty str
+
 """
 
 from base64 import b64encode

@@ -80,6 +80,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
+    'VM_BACKUP': '{0}v2/vsa/vm/%s/backup?backupLevel=%s',
 
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
@@ -151,6 +152,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
     'LIVE_SYNC': '{0}Task',
+    'LIVE_SYNC_DETAILS': '{0}/Task/%s/Details',
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
@@ -218,6 +220,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
     'ACTIVATE_ENTITIES': '{0}dcube/entity',
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
+    'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',
     'GET_TAGS': '{0}EDiscovery/Tags',
     'ADD_CONTAINER': '{0}PerformContainerOperation',
     'DELETE_CONTAINER': '{0}Containers/Action/Delete',
@@ -281,7 +284,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
-
+    'ENTITY_SECURITY_ASSOCIATION': '{0}Security/%s/%s',
     'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s',
 
     'GET_DC_DATA': '{0}getDownloadCenterLookupData',
@@ -299,6 +302,7 @@ SERVICES_DICT_TEMPLATE = {
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
     'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
     'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
+    'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -306,6 +310,9 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
+
+    'KEY_MANAGEMENT_SERVER_ADD_GET': '{0}CommCell/KeyManagementServers',
+    'KEY_MANAGEMENT_SERVER_DELETE': '{0}CommCell/KeyManagementServers/%s',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -315,6 +322,10 @@ SERVICES_DICT_TEMPLATE = {
     'RUN_MONITORING_POLICY': '{0}logmonitoring/Policy/%s/Action/Run',
 
     'LICENSE': '{0}CommcellRegistrationInformation',
+
+    'REPLICATION_GROUPS': '{0}ReplicationGroups',
+    'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
+    'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
 
     'DR_GROUPS': '{0}DRGroups',
     'GET_DR_GROUP': '{0}DRGroups/%s',

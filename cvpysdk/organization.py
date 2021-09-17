@@ -125,6 +125,11 @@ Organization
     disable_tfa()               --      Disable tfa option for the organization
 
     get_alerts()                --  get all the alerts associated to organization
+
+    add_client_association()        --  Associates a client to an organization
+
+    remove_client_association()     --  Removes the client from an organization
+
 Organization Attributes
 -----------------------
 
@@ -1661,6 +1666,98 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def add_client_association(self, client_name):
+        """To associate a client to an organization
+
+            Args:
+
+                client_name   (str) -- name of the client which has to be associated to organization
+
+            Raises:
+                SDKException:
+
+                    if client association to organization fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not self._commcell_object.clients.has_client(client_name):
+            raise SDKException('Organization', '101')
+        else:
+            client_obj = self._commcell_object.clients.get(client_name)
+        request_json = {
+            "entities": [
+                {
+                    "clientId": int(client_obj.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATION_ASSOCIATION'] % self.organization_id, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if error_code != 0:
+                    raise SDKException('Organization', '115')
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
+    def remove_client_association(self, client_name):
+        """To de-associate a client to an organization
+
+            Args:
+
+                client_name   (str) -- name of the client which has to be associated to organization
+
+            Raises:
+                SDKException:
+
+                    if client de-association to organization fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not self._commcell_object.clients.has_client(client_name):
+            raise SDKException('Organization', '101')
+        else:
+            client_obj = self._commcell_object.clients.get(client_name)
+        request_json = {
+            "entities": [
+                {
+                    "clientId": int(client_obj.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATION_ASSOCIATION'] % 0, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if error_code != 0:
+                    raise SDKException('Organization', '115')
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     @property
     def is_tfa_enabled(self):

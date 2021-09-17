@@ -20,7 +20,7 @@
 
 VirualServerSubclient is the only class defined in this file.
 
-VirtualServerSubclient: Derived class from Subclient Base class, representing a
+VirtualServerSubclient: Derived class from the Subclient Base class, representing a
                             virtual server subclient, and to perform operations
                             on that subclient
 
@@ -205,10 +205,11 @@ class VirtualServerSubclient(Subclient):
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
             '3': 'Virtual Device Node',
-            '4': 'Repository',
+            '4': 'Container',
             '5': 'Disk Label',
             '6': 'Disk Type',
-            '9': 'Disk Tag Name/Value'
+            '9': 'Disk Tag Name/Value',
+            '10':'Repository'
         }
 
         self._disk_option = {

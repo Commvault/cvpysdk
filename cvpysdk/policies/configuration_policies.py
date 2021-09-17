@@ -1844,7 +1844,7 @@ class ContentIndexingPolicy():
             sets values for creating the add policy json
         """
         if not isinstance(self._index_server_name, basestring) or not isinstance(self._data_access_node, basestring) \
-            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, list) \
+            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, basestring) \
                 or not isinstance(self._name, basestring) or not isinstance(self._min_doc_size, int) \
                 or not isinstance(self._max_doc_size, int):
             raise SDKException('ConfigurationPolicies', '101')

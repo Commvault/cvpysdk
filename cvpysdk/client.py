@@ -233,6 +233,10 @@ Client
 
     get_needs_attention_details()   -- Gets needs attention tile details from dashboard page
 
+    enable_content_indexing()   --  Enables the v1 content indexing on the client
+
+    disable_content_indexing()   --  Disables the v1 content indexing on the client
+
 
 Client Attributes
 -----------------
@@ -314,6 +318,8 @@ Client Attributes
 
     **cvd_port**                    -- returns cvd port of the client
 
+    **vm_guid**                     -- returns guid of the vm client
+
 """
 
 from __future__ import absolute_import
@@ -369,7 +375,8 @@ class Clients(object):
         self._OFFICE_365_CLIENTS = self._services['GET_OFFICE_365_ENTITIES']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
-        self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
+            self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
@@ -981,12 +988,13 @@ class Clients(object):
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
                 self._get_hidden_client_from_hostname(client_name) is not None)
 
-    def _process_add_response(self, request_json):
+    def _process_add_response(self, request_json, endpoint=None):
         """Runs the Client Add API with the request JSON provided,
             and returns the contents after parsing the response.
 
             Args:
                 request_json    (dict)  --  JSON request to run for the API
+                endpoint        (str)   --  Endpoint for making request to (default is '/Client')
 
             Returns:
                 (bool, basestring, basestring):
@@ -1002,7 +1010,9 @@ class Clients(object):
 
                     if response is not success
         """
-        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
+        if not endpoint:
+            endpoint = self._ADD_CLIENT
+        flag, response = self._cvpysdk_object.make_request('POST', endpoint, request_json)
 
         if flag:
             if response.json():
@@ -2118,9 +2128,13 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_salesforce_client(
-            self, client_name, access_node,
+            self,
+            client_name,
+            access_node,
             salesforce_options,
-            db_options=None, **kwargs):
+            db_options=None,
+            **kwargs
+    ):
         """Adds a new Salesforce Client to the Commcell.
 
             Args:
@@ -2130,11 +2144,12 @@ class Clients(object):
                 salesforce_options   (dict)   --    salesforce options
                                                     {
                                                         "login_url": 'salesforce login url',
-                                                        "consume_id": 'salesforce consumer key',
+                                                        "consumer_id": 'salesforce consumer key',
                                                         "consumer_secret": 'salesforce consumer secret',
                                                         "salesforce_user_name": 'salesforce login user',
                                                         "salesforce_user_password": 'salesforce user password',
-                                                        "salesforce_user_token": 'salesforce user token'
+                                                        "salesforce_user_token": 'salesforce user token',
+                                                        "sandbox": True or False (default False)
                                                     }
 
                 db_options           (dict)   --    database options to configure sync db
@@ -2172,20 +2187,13 @@ class Clients(object):
 
                     if response is not success
         """
-
-        if db_options is None:
-            db_options = {'db_enabled': False}
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
-
-        salesforce_password = b64encode(salesforce_options.get('salesforce_user_password').encode()).decode()
-        salesforce_consumer_secret = b64encode(
-            salesforce_options.get('consumer_secret', '3951207263309722430').encode()).decode()
-        salesforce_token = b64encode(salesforce_options.get('salesforce_user_token', '').encode()).decode()
-        db_user_password = ""
-        if db_options.get('db_enabled', False):
-            db_user_password = b64encode(db_options.get('db_user_password', '').encode()).decode()
-
+        if not salesforce_options.get("consumer_secret", None) or \
+                not salesforce_options.get('salesforce_user_password', None):
+            raise SDKException('Client', '102', 'Missing inputs. Check salesforce_options dictionary')
+        if db_options is None:
+            db_options = {'db_enabled': False}
         request_json = {
             "clientInfo": {
                 "clientType": 15,
@@ -2194,62 +2202,71 @@ class Clients(object):
                     "instance": {
                         "instance": {
                             "clientName": client_name,
-                            "instanceName": kwargs.get('instance_name', 'ORG1'),
+                            "instanceName": kwargs.get("instance_name", client_name),
                         },
                         "cloudAppsInstance": {
                             "instanceType": 3,
                             "salesforceInstance": {
                                 "enableREST": True,
-                                "endpoint": salesforce_options.get('login_url', "https://login.salesforce.com"),
-                                "consumerId": salesforce_options.get('consumer_id',
-                                                                     '3MVG9Nc1qcZ7BbZ0Ep18pfQsltTkZtbcMG9GMQzsVHGS8268yaOqmZ1lEEakAs8Xley85RBH1xKR1.eoUu1Z4'),
-                                "consumerSecret": salesforce_consumer_secret,
+                                "endpoint": salesforce_options.get("login_url", "https://login.salesforce.com"),
+                                "consumerId": salesforce_options.get("consumer_id"),
+                                "consumerSecret": b64encode(
+                                    salesforce_options.get("consumer_secret").encode()).decode(),
                                 "defaultBackupsetProp": {
-                                    "downloadCachePath": kwargs.get('download_cache_path', '/tmp'),
-                                    "mutualAuthPath": kwargs.get('mutual_auth_path', ''),
-                                    "token": salesforce_token,
+                                    "downloadCachePath": kwargs.get("download_cache_path", "/tmp"),
+                                    "mutualAuthPath": kwargs.get("mutual_auth_path", ""),
+                                    "token": b64encode(
+                                        salesforce_options.get("salesforce_user_token", "").encode()).decode(),
                                     "userPassword": {
-                                        "userName": salesforce_options.get('salesforce_user_name'),
-                                        "password": salesforce_password,
-                                    },
-                                    "syncDatabase": {
-                                        "dbEnabled": db_options.get('db_enabled', False),
-                                        "dbPort": db_options.get('db_port', '1433'),
-                                        "dbInstance": db_options.get('db_instance', ''),
-                                        "dbName": db_options.get('db_name', kwargs.get('instance_name', 'ORG1')),
-                                        "dbType": db_options.get('db_type', "SQLSERVER"),
-                                        "dbHost": db_options.get('db_host_name', ''),
-                                        "dbUserPassword": {
-                                            "userName": db_options.get('db_user_name', ''),
-                                            "password": db_user_password,
-
-                                        },
-                                    },
-                                },
+                                        "userName": salesforce_options.get("salesforce_user_name"),
+                                        "password": b64encode(
+                                            salesforce_options.get("salesforce_user_password").encode()).decode()
+                                    }
+                                }
                             },
                             "generalCloudProperties": {
-                                "numberOfBackupStreams": kwargs.get('streams', 2),
-                                "proxyServers": [
-                                    {
-                                        "clientName": access_node
-                                    }
-                                ],
+                                "numberOfBackupStreams": kwargs.get("streams", 2),
+                                "accessNodes": {
+                                    "memberServers": [{
+                                        "client": {
+                                            "clientName": access_node,
+                                            "_type_": 3
+                                        }
+                                    }]
+                                },
                                 "storageDevice": {
                                     "dataBackupStoragePolicy": {
-                                        "storagePolicyName": kwargs.get('storage_policy', '')
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                                        "storagePolicyName": kwargs.get("storage_policy", "")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             },
-
             "entity": {
                 "clientName": client_name
             }
         }
-        self._process_add_response(request_json)
+        if db_options.get("db_enabled", True):
+            if not db_options.get('db_password', None):
+                raise SDKException('Client', '102', 'Missing inputs. Check db_options dictionary')
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
+                ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"] = {
+                "dbPort": str(db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
+                "dbEnabled": True,
+                "dbName": db_options.get("db_name"),
+                "dbType": db_options.get("db_type", "POSTGRESQL"),
+                "dbHost": db_options.get("db_host_name"),
+                "dbUserPassword": {
+                    "userName": db_options.get("db_user_name"),
+                    "password": b64encode(db_options.get("db_password").encode()).decode()
+                }
+            }
+            if instance := db_options.get('db_instance', None):
+                request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
+                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = instance
+        self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
     def add_azure_client(self, client_name, access_node, azure_options):
         """
@@ -3045,6 +3062,8 @@ class Client(object):
 
         self._readiness = None
 
+        self._vm_guid = None
+
         self.refresh()
 
     def __repr__(self):
@@ -3088,6 +3107,8 @@ class Client(object):
                     os_info['SubType'],
                     os_name
                 )
+
+                self._vm_guid = self._properties.get('vmStatusInfo', {}).get('strGUID')
 
                 client_props = self._properties['clientProps']
 
@@ -5622,6 +5643,12 @@ class Client(object):
         """Returns client Type"""
 
         return self._properties.get('pseudoClientInfo', {}).get('clientType', "")
+    
+    @property
+    def vm_guid(self):
+        """Returns guid of the vm client"""
+
+        return self._vm_guid
 
     def set_job_start_time(self, job_start_time_value):
         """Sets the jobstarttime for this Client.
@@ -5794,6 +5821,18 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def enable_content_indexing(self):
+        """Enables the v1 content indexing on the client"""
+        update_properties = self.properties
+        update_properties['client']['EnableContentIndexing'] = 'true'
+        self.update_properties(update_properties)
+
+    def disable_content_indexing(self):
+        """Disables the v1 content indexing on the client"""
+        update_properties = self.properties
+        update_properties['client']['EnableContentIndexing'] = 'false'
+        self.update_properties(update_properties)
 
 
 class _Readiness:

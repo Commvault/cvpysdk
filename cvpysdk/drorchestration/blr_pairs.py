@@ -151,6 +151,11 @@ class BLRPairs:
         FILESYSTEM = 2
         DATABASE = 3
 
+    class AgentTypes(Enum):
+        VIRTUALIZATION = 'Virtual Server'
+        FILESYSTEM = 'File system'
+        DATABASE = 'Database'
+
     class PendingStatus(Enum):
         NOLAG = 0
 
@@ -181,15 +186,22 @@ class BLRPairs:
         ABORT_VSA_FAILBACK = 18
         ABORT_FS_FAILBACK = 19
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object, replication_group_name: str = ''):
         """Initialize object of the BLR Pairs
             Args:
                 commcell_object (Commcell)  --  instance of the Commcell class
+                replication_group_name (str)--  Name of the replication group (only for VSA BLR)
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
+        self._replication_group_name = replication_group_name.lower()
 
-        self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
+        if replication_group_name:
+            self._LIST_BLR_PAIRS = (f"{self._services['GET_BLR_PAIRS']}"
+                                    f"?replicationGroupId={self._get_replication_group_id()}")
+        else:
+            self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
+
         self._DELETE_BLR = self._services['DELETE_BLR_PAIR']
         self._QEXEC = self._services['EXEC_QCOMMAND']
 
@@ -200,7 +212,22 @@ class BLRPairs:
 
     def __repr__(self):
         """Representation string for the instance of the BLR Pairs class."""
-        return "BLR Pairs for Commserv: '{0}'".format(self._commcell_object.commserv_name)
+        if not self._replication_group_name:
+            return "BLR Pairs for Commserv: '{0}'".format(self._commcell_object.commserv_name)
+        else:
+            return "BLR Pairs for Replication group: '{0}'".format(self._replication_group_name)
+
+    def _get_replication_group_id(self):
+        """Returns the replication group ID
+            Args:
+            Returns:
+                replication_group_id (str):  The ID of the associated replication group
+            Raises:
+        """
+        if not self._replication_group_name:
+            return ''
+        return (self._commcell_object.replication_groups.replication_groups
+                .get(self._replication_group_name, {}).get('id'))
 
     def _update_data(self):
         """REST API call for getting all the info for all pairs in the commcell.
@@ -218,7 +245,7 @@ class BLRPairs:
                 self._summary = response.json().get('summary', {})
                 self._site_info = response.json().get('siteInfo', [])
             else:
-                raise SDKException('Response', 102)
+                raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -231,21 +258,27 @@ class BLRPairs:
             Returns:
                 dict - consists of all BLR pairs
                     {
-                         "blr_pair_1": "blr_id1",
-                         "blr_pair_2": "blr_id2",
+                         "blr_id_1": {
+                             "sourceName": "vm1",
+                             "destinationName": "DRvm1",
+                             "subclientName": "BLR_vm1(<guid>)"
+                         },
+                         "blr_id_2": {
+                             "sourceName": "vm1",
+                             "destinationName": "DRvm1",
+                             "subclientName": "BLRSC_vm1_DRvm1_E:"
+                         },
                     }
-
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
         """
         pairs = {}
         for pair_row in self._site_info:
-            pair_name = pair_row.get('entity', {}).get('subclientName', '').lower()
             pair_id = pair_row.get('id')
-            if pair_name and pair_id:
-                pairs[pair_name] = str(pair_id)
+            if pair_id:
+                pairs[str(pair_id)] = {
+                    'sourceName': pair_row.get('sourceName', ''),
+                    'destinationName': pair_row.get('destinationName', ''),
+                    'subclientName': pair_row.get('entity', {}).get('subclientName', '')
+                }
         return pairs
 
     def has_blr_pair(self, source_name, destination_name):
@@ -264,7 +297,7 @@ class BLRPairs:
             raise SDKException('BLRPairs', '101')
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get('sourceName', '').lower() and
                     destination_name == pair_row.get('destinationName', '').lower()):
                 return True
@@ -385,11 +418,10 @@ class BLRPairs:
             raise SDKException('BLRPairs', '101')
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get('sourceName', '').lower() and
                     destination_name == pair_row.get('destinationName', '').lower()):
-                pair_name = pair_row.get('entity', {}).get('subclientName', '').lower()
-                return BLRPair(self._commcell_object, pair_name)
+                return BLRPair(self._commcell_object, source_name, destination_name)
         else:
             raise SDKException('BLRPairs', '102',
                                'No BLR pair exists with source: "{0}" and destination: "{1}"'
@@ -413,10 +445,9 @@ class BLRPairs:
         source_name = source_name.lower()
         destination_name = destination_name.lower()
         if self.has_blr_pair(source_name, destination_name):
-            for pair_row in self._site_info:
+            for pair_id, pair_row in self.blr_pairs.items():
                 if (source_name == pair_row.get('sourceName', '').lower() and
                         destination_name == pair_row.get('destinationName', '').lower()):
-                    pair_id = str(pair_row.get('id'))
                     flag, response = self._commcell_object._cvpysdk_object.make_request(
                         method='DELETE', url=self._DELETE_BLR % pair_id)
                     if flag:
@@ -426,7 +457,7 @@ class BLRPairs:
                             o_str = 'Failed to delete Source: {0} and Destination: {1} \nError: "{2}"' \
                                 .format(source_name, destination_name, error_message)
 
-                            raise SDKException('BLRPairs', '102', o_str)
+                            raise SDKException('Response', '101', o_str)
                         else:
                             self.refresh()
                     else:
@@ -458,36 +489,42 @@ class BLRPairs:
 
         response = self._commcell_object.qoperation_execute('<EVGui_GetLibraryListWCReq libraryType="RPSTORE" />')
 
-        if response.ok:
-            if response.json() and 'libraryList' in response.json():
-                rpstore_list = response.json().get('libraryList', [])
-                for rpstore in rpstore_list:
-                    if rpstore.get('library', {}).get('libraryName') == rpstore_name and rpstore.get('MountPathList'):
-                        return str(rpstore.get('MountPathList')[0]
-                                   .get('rpStoreLibraryInfo', {}).get('rpStoreId'))
-                else:
-                    raise SDKException('BLRPairs', '102', f'No RP Store found with name {rpstore_name}')
+        if response and 'libraryList' in response:
+            rpstore_list = response.get('libraryList', [])
+            for rpstore in rpstore_list:
+                if rpstore.get('library', {}).get('libraryName') == rpstore_name and rpstore.get('MountPathList', ''):
+                    return str(rpstore.get('MountPathList')[0]
+                               .get('rpStoreLibraryInfo', {}).get('rpStoreId', ''))
             else:
-                raise SDKException('Response', '102')
+                raise SDKException('BLRPairs', '103', f'No RP Store found with name {rpstore_name}')
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            raise SDKException('Response', '102')
 
 
 class BLRPair:
-    def __init__(self, commcell_object, pair_name):
+    class PairOperationsStatus(Enum):
+        SUSPEND = BLRPairs.PairStatus.SUSPENDED
+        START = BLRPairs.PairStatus.REPLICATING
+        RESUME = BLRPairs.PairStatus.REPLICATING
+        STOP = BLRPairs.PairStatus.STOPPED
+        RESYNC = BLRPairs.PairStatus.RESYNCING
+
+    def __init__(self, commcell_object, source_name, destination_name):
         """Initialise the ReplicationGroup object for the given group name
             Args:
-                commcell_object (Commcell)  --  instance of the Commcell class
-                pair_name (str)             --  Name of the BLR pair
+                commcell_object (Commcell)      --  instance of the Commcell class
+                source_name (str)               --  Name of the source of BLR pair
+                destination_name (str)          --  Name of the destination of BLR pair
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
 
-        self._pair_name = pair_name.lower()
+        self._source_name = source_name.lower()
+        self._destination_name = destination_name.lower()
         self._pair_id = self._get_pair_id()
         self._pair_properties = None
+        self._source_instance = None
+        self._destination_instance = None
 
         self._GET_PAIR = self._services['GET_BLR_PAIR']
         self._PAIR_STATS = self._services['GET_BLR_PAIR_STATS']
@@ -498,13 +535,20 @@ class BLRPair:
 
     def __repr__(self):
         """String representation of the instance of the BLR pair"""
-        representation_string = 'BLR pair class instance for pair: "{0}"'
-        return representation_string.format(self._pair_name)
+        representation_string = 'BLR pair class instance for pair: "{0} -> {1}"'
+        return representation_string.format(self._source_name, self._destination_name)
+
+    def __str__(self):
+        """String representation of the instance of BLR pair"""
+        return f'BLR Pair: {self._source_name} -> {self._destination_name}'
 
     def _get_pair_id(self):
         """ Gets BLR pair Id from the BLRPairs class"""
-        rgs_obj = BLRPairs(self._commcell_object)
-        return str(rgs_obj.blr_pairs.get(self._pair_name))
+        for pair_id, blr_pair in self._commcell_object.blr_pairs.blr_pairs.items():
+            if (blr_pair.get('sourceName').lower() == self._source_name and
+                    blr_pair.get('destinationName').lower() == self._destination_name):
+                return pair_id
+        raise SDKException('BLRPairs', '102')
 
     def _get_pair_properties(self):
         """ Gets BLR pair properties
@@ -530,6 +574,35 @@ class BLRPair:
                 response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _perform_action(self, operation_type):
+        """Performs an action on BLR pair
+            Args:
+                operation_type (PairOperations): An enum of pair operations of BLRPair class
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        status_to_be_set = operation_type.value
+        site_info = [self._pair_properties.copy()]
+        site_info[0]['status'] = status_to_be_set.value
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT',
+                                                                            self._services['GET_BLR_PAIRS'],
+                                                                            {'siteInfo': site_info})
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', -1)
+                if error_code != 0:
+                    raise SDKException('Response', '101')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def pair_properties(self):
         """Returns a dictionary of the pair properties"""
@@ -538,6 +611,7 @@ class BLRPair:
     @property
     def pair_status(self):
         """Returns the status of the pair according the to PairStatus enum"""
+        self.refresh()
         return BLRPairs.PairStatus(self._pair_properties.get('status'))
 
     @property
@@ -560,6 +634,11 @@ class BLRPair:
         }
 
     @property
+    def source_vm(self):
+        """Returns (str): the source VM name"""
+        return self.source.get('name')
+
+    @property
     def destination(self):
         """Returns: (dict) The properties of the destination client
         eg: {
@@ -576,6 +655,11 @@ class BLRPair:
             "guid": self.pair_properties.get('destinationGuid'),
             "endpoint": BLRPairs.EndPointTypes(self.pair_properties.get('destEndPointType')),
         }
+
+    @property
+    def destination_vm(self):
+        """Returns (str): the destination VM name"""
+        return self.destination.get('name')
 
     @property
     def lag_time(self):
@@ -706,13 +790,78 @@ class BLRPair:
                                                                              destination_client.client_guid))
         if flag:
             if response.json() and 'vmScale' in response.json():
-                return response.json().get('vmScale', [])
+                return response.json().get('vmScale', {}).get('restorePoints', [])
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException('Response', '101', response_string)
+
+    def stop(self):
+        """Stops the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.STOP)
+
+    def start(self):
+        """Starts the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.START)
+
+    def resume(self):
+        """Resumes the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.RESUME)
+
+    def resync(self):
+        """Resyncs the BLR pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.RESYNC)
+
+    def suspend(self):
+        """Suspends the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        """
+        self._perform_action(self.PairOperationsStatus.SUSPEND)
 
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         """Perform the DR operation for the BLR pair
@@ -802,6 +951,9 @@ class BLRPair:
                 ]
             }
         }
+        if restore_point is None:
+            admin_opts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
+            del admin_opts['blockOperation']['operations'][0]['fsMountInfo']['rp']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request('POST',
                                                                             self._services['RESTORE'],
@@ -818,9 +970,9 @@ class BLRPair:
                     error_message = response.json()['errorMessage']
 
                     o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
-                    raise SDKException('Subclient', '102', o_str)
+                    raise SDKException('Job', '102', o_str)
                 else:
-                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
+                    raise SDKException('Job', '102', 'Failed to run the restore job')
             else:
                 raise SDKException('Response', '102')
         else:
