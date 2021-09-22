@@ -220,9 +220,9 @@ class FailoverGroups(object):
             Args:
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
@@ -398,9 +398,9 @@ class FailoverGroups(object):
             Args:
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
@@ -527,7 +527,7 @@ class FailoverGroups(object):
                     "syncStatus": 1,
                     "failoverStatus": 0,
                     "destinationClient": {
-                        "clientName": "vsa-vc6",
+                        "clientName": "",
                         "clientId": 3
                     },
                     "destVendor": "VMW"
@@ -563,9 +563,9 @@ class FailoverGroups(object):
         Args: input dict of failover group options
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
@@ -622,9 +622,9 @@ class FailoverGroups(object):
         Args: input dict of failover group options
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
@@ -666,9 +666,9 @@ class FailoverGroups(object):
         Args: input dict of failover group options
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
@@ -724,9 +724,9 @@ class FailoverGroup(object):
                 input dict of failover group options
                 failover_group_options (json) -- failover group options for creating group
                 {
-                    "failoverGroupName": "FailoverAutomation-vApp",
-                    "failoverGroupVMs": "DRautoVM1, DRautoVM2",
-                    "VirtualizationClient": "vsa-vc6.testlab.commvault.com",
+                    "failoverGroupName": "",
+                    "failoverGroupVMs": "",
+                    "VirtualizationClient": "",
                     "approvalRequired": false,
                     "initiatedFromMonitor": false
                 }
