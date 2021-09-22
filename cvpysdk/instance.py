@@ -484,10 +484,10 @@ class Instances(object):
                             'onconfig_file': 'onconfig.ol_informix1210',
                             'sql_host_file': 'C:\\IBM\\etc\\sqlhosts.ol_informix1210',
                             'informix_dir': 'C:\\IBM',
-                            'user_name':'informix',
-                            'domain_name':'test_vm',
-                            'password':'commvault!12',
-                            'storage_policy':'gk_pg_policy',
+                            'user_name':'',
+                            'domain_name':'',
+                            'password':'',
+                            'storage_policy':'',
                             'description':'created from automation'
                         }
 
@@ -666,19 +666,19 @@ class Instances(object):
                 Dictionary of sybase instance creation options:
                     Example:
                        sybase_options = {
-                            'instance_name': 'SAISYB',
-                            'sybase_ocs': 'OCS-16_0',
-                            'sybase_ase': 'ASE-16_0',
-                            'backup_server': 'SAISYB_BS',
-                            'sybase_home':'C:\\SAP',
-                            'config_file':'C:\\SAP\\SAISYB.cfg',
+                            'instance_name': '',
+                            'sybase_ocs': '',
+                            'sybase_ase': '',
+                            'backup_server': '',
+                            'sybase_home':'',
+                            'config_file':'',
                             'enable_auto_discovery':True,
-                            'shared_memory_directory':'C:\\SAP\\ASE-16_0',
-                            'storage_policy':'sai-sp',
-                            'sa_username':'sa',
-                            'sa_password':'commvault!12',
-                            'localadmin_username':'saisyb\\administrator',
-                            'localadmin_password':'commvault!12'
+                            'shared_memory_directory':'',
+                            'storage_policy':'',
+                            'sa_username':'',
+                            'sa_password':'',
+                            'localadmin_username':'',
+                            'localadmin_password':''
                         }
             Raises:
                 SDKException:
