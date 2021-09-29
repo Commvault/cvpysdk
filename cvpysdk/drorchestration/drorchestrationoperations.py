@@ -90,7 +90,7 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 from ..exception import SDKException
 
-from .dr_orchestration_job_phase import DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT
+from .dr_orchestration_job_phase import DRJobPhaseToText, DRJobPhases
 
 
 class DROrchestrationOperations(object):
@@ -134,7 +134,7 @@ class DROrchestrationOperations(object):
         Raises:
         """
         if not self._dr_orchestration_job_phase:
-            _dr_orchestration_job_phase = DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT
+            _dr_orchestration_job_phase = DRJobPhases
 
             self._dr_orchestration_job_phase = _dr_orchestration_job_phase
         return self._dr_orchestration_job_phase
@@ -488,8 +488,7 @@ class DROrchestrationOperations(object):
 
                     for phase in dr_orchestration_job_stats_json["phase"]:
 
-                        phase_type = self.dr_orchestration_job_phase[str(
-                            phase["phase"])]
+                        phase_type = DRJobPhaseToText(self.dr_orchestration_job_phase(phase["phase"])).value
                         phase_state = phase["status"]
 
                         if phase_state == 1:

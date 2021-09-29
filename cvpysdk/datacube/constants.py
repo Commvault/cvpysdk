@@ -20,6 +20,8 @@
 
 IndexServerConstants            -       Maintains constants for index server
 
+ContentAnalyzerConstants        -       Maintains constants for Content Analyzer
+
 """
 
 
@@ -30,6 +32,7 @@ class IndexServerConstants:
     INDEX_SERVER_INSTANCE_NAME = "dynamicIndexInstance"
 
     ROLE_DATA_ANALYTICS = "Data Analytics"
+    ROLE_FILE_SYSTEM_INDEX = "FileSystem Index"
     ROLE_EXCHANGE_INDEX = "Exchange Index"
     ROLE_ONEDRIVE_INDEX = "OneDrive Index"
     ROLE_SYSTEM_DEFAULT = "System Default"
@@ -47,17 +50,23 @@ class IndexServerConstants:
     SERVER_TYPE = 'serverType'
     INDEX_SERVER_CLIENT_ID = 'indexServerClientId'
 
+    FSINDEX = 'fsindex_'
+    MULTINODE = '_multinode'
+
     OPERATION_ADD = 1
     OPERATION_DELETE = 2
     OPERATION_EDIT = 3
 
+    DEFAULT_JVM_MAX_MEMORY = '8191'
+    DEFAULT_SOLR_PORT = '20000'
+
     SOLR_PORT_META_INFO = {
         "name": "PORTNO",
-        "value": None
+        "value": DEFAULT_SOLR_PORT
     }
     SOLR_JVM_META_INFO = {
         "name": "JVMMAXMEMORY",
-        "value": None
+        "value": DEFAULT_JVM_MAX_MEMORY
     }
 
     UPDATE_ADD_ROLE = {
@@ -91,19 +100,4 @@ class ContentAnalyzerConstants:
         "configureNodes": True,
         "cloudNodes": [],
         "cloudInfoEntity": {},
-    }
-
-
-class ActivateEntityConstants:
-    """Class to maintain all the Activate entity related constants"""
-
-    REQUEST_JSON = {
-        "regularExpression": "",
-        "flags": 0,
-        "enabled": True,
-        "entityName": "",
-        "entityXML": {
-            "keywords": "",
-            "isSystemDefinedEntity": False
-        }
     }

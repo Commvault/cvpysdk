@@ -196,7 +196,8 @@ EXCEPTION_DICT = {
         '102': 'Data type of the input(s) is not valid',
         '103': 'Invalid operation type passed to Schedules class',
         '104': 'Provided Option cannot be updated',
-        '105': 'Could not find the provided schedule name/id'
+        '105': 'Could not find the provided schedule name/id',
+        '106': ''
     },
     'ClientGroup': {
         '101': 'Data type of the input(s) is not valid',
@@ -241,6 +242,30 @@ EXCEPTION_DICT = {
         '104': 'Unable to create regex entity in the commcell',
         '105': 'Unable to delete regex entity in the commcell',
         '106': 'Unable to modify regex entity in the commcell'
+    },
+    'Classifier': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get classifier details from commcell',
+        '104': 'Unable to create classifier in the commcell',
+        '105': 'Unable to delete classifier in the commcell',
+        '106': 'Unable to modify classifier in the commcell',
+        '107': 'Training model data zip file not exists in given path',
+        '108': 'Model Data Training failed on this classifier',
+        '109': 'Cancel Training failed on this classifier'
+    },
+    'Tags': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get TagSet details from commcell',
+        '104': 'Unable to create TagSet in the commcell',
+        '105': 'Unable to modify TagSet in the commcell',
+        '106': 'Unable to find given tag name in this tagset',
+        '107': 'Unable to do TagSet security association in the commcell'
+    },
+    'EntityManager': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     },
     'GlobalFilter': {
         '101': 'Data type of the input(s) is not valid',
@@ -397,7 +422,10 @@ EXCEPTION_DICT = {
         '101': 'Failed to register commcell',
         '102': '',
         '103': 'Failed to unregister commcell',
-        '104': 'Datatype of the input is not valid'
+        '104': 'Datatype of the input is not valid',
+        '105': 'Failed to reach remote commcell.',
+        '106': 'Failed to authenticate remote commcell. Invalid user name and password.',
+        '107': 'Insufficient permissions'
     },
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',
@@ -418,7 +446,9 @@ EXCEPTION_DICT = {
         '105': 'Unsupported backup level specified. Please check',
         '106': 'Storage policy is not associated with subclient. Please associate',
         '107': 'Backup is not enabled for client/subclient',
-        '108': 'Client name not specified for solr cloud restore'
+        '108': 'Client name not specified for solr cloud restore',
+        '109': 'Provide the Index Server Node name for browse to work',
+        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',
@@ -429,6 +459,10 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': 'Index pool not found',
         '103': 'Index pool node not found',
+    },
+    'Metallic': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 

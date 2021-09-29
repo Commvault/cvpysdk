@@ -48,7 +48,6 @@ ArrayManagement:
 """
 
 from __future__ import unicode_literals
-import json
 from .job import Job
 from .exception import SDKException
 
@@ -78,29 +77,45 @@ class ArrayManagement(object):
                         do_vssprotection=True,
                         control_host=None,
                         flags=None,
-                        reconcile=False):
+                        reconcile=False,
+                        user_credentials=None,
+                        server_name=None,
+                        instance_details=None):
         """ Common Method for Snap Operations
 
             Args :
 
-                operation    (int)        -- snap Operation value
+                operation    (int)         -- snap Operation value
+                                              0- mount, 1-unmount, 2-delete, 3-revert
 
                 volume_id    (list)        -- volume id's of the snap backup job
 
-                client_name  (str)        -- name of the destination client, default: None
+                client_name  (str)         -- name of the destination client, default: None
 
-                MountPath    (str)        -- MountPath for Snap operation, default: None
+                MountPath    (str)         -- MountPath for Snap operation, default: None
 
-                do_vssprotection  (int)   -- Performs VSS protected snapshot mount
+                do_vssprotection  (bool)   -- Performs VSS protected snapshot mount
 
-                control_host (int)        -- Control host for the Snap recon operation,
+                control_host (int)         -- Control host for the Snap recon operation,
                 defaullt: None
 
-                flags        (int)       -- value to define when snap operation to be forced
+                flags        (int)         -- value to define when snap operation to be forced
                 1 - to force unmount
                 2 - to force delete
 
-                reconcile    (bool)       -- Uses Reconcile json if true
+                reconcile    (bool)        -- Uses Reconcile json if true
+
+                user_credentials  (dict)   -- dict containing userName of vcenter
+                eg: user_credentials = {"userName":"vcentername"}
+
+                server_name      (str)     -- vcenter name for mount operation
+
+                instance_details (dict)    -- dict containing apptypeId, InstanceId, InstanceName
+                eg: instance_details = {
+                "apptypeId": 106,
+                "instanceId": 7,
+                "instanceName": "VMWare"
+                }
 
             Return :
 
@@ -114,6 +129,14 @@ class ArrayManagement(object):
 
         if flags is None:
             flags = 0
+
+        if user_credentials is None:
+            user_credentials = {}
+            server_name = ""
+            server_type = 0
+            instance_details = {}
+        else:
+            server_type = 1
 
         if reconcile:
             request_json = {
@@ -138,17 +161,18 @@ class ArrayManagement(object):
                 "serverType": 0,
                 "operation": operation,
                 "userCredentials": {},
-                "volumes": []
+                "volumes": [],
+                "appId": instance_details
             }
             for i in range(len(volume_id)):
                 if i == 0:
                     request_json['volumes'].append({'doVSSProtection': int(do_vssprotection),
                                                     'destClientId': client_id,
                                                     'destPath': mountpath,
-                                                    'serverType':0,
+                                                    'serverType': server_type,
                                                     'flags': flags,
-                                                    'serverName':"",
-                                                    'userCredentials': {},
+                                                    'serverName': server_name,
+                                                    'userCredentials': user_credentials,
                                                     'volumeId':int(volume_id[i][0]),
                                                     'CommCellId': self._commcell_object.commcell_id})
 
@@ -171,7 +195,8 @@ class ArrayManagement(object):
         else:
             raise SDKException('Snap', '102')
 
-    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True):
+    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
+              user_credentials=None, server_name=None, instance_details=None):
         """ Mounts Snap of the given volume id
 
             Args:
@@ -183,8 +208,20 @@ class ArrayManagement(object):
                 MountPath    (str)        -- MountPath for Snap operation, default: None
 
                 do_vssprotection (int)    -- Performs VSS protected mount
+
+                user_credentials (dict)   -- dict containing userName of vcenter
+
+                server_name   (str)       -- vcenter name for mount operation
+
+                instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
         """
-        return self._snap_operation(0, volume_id, client_name, mountpath, do_vssprotection)
+        return self._snap_operation(0, volume_id,
+                                    client_name,
+                                    mountpath,
+                                    do_vssprotection,
+                                    user_credentials=user_credentials,
+                                    server_name=server_name,
+                                    instance_details=instance_details)
 
     def unmount(self, volume_id):
         """ UnMounts Snap of the given volume id
@@ -245,6 +282,8 @@ class ArrayManagement(object):
                   array_name,
                   username,
                   password,
+                  vendor_id,
+                  config_data,
                   control_host=None,
                   array_access_node=None,
                   is_ocum=False):
@@ -258,6 +297,10 @@ class ArrayManagement(object):
 
                     password            (str)               -- password to access array
 
+                    vendor_id           (int)               -- vendor id of the array
+
+                    config_data         (list)              -- SNap configs list to be updated
+
                     control_host        (str)               -- control host of the array
 
                     array_access_node   (list)              -- Array Access Node MediaAgent's Name list
@@ -269,6 +312,23 @@ class ArrayManagement(object):
 
                 errorMessage   (string) :  Error message
         """
+
+        snap_configs = {}
+        assocType = 0
+        if config_data is not None:
+            assocType = 3
+            request_json_service = self.storage_arrays + '/Vendors/{0}'.format(vendor_id)
+            flag, snap_configs = self._commcell_object._cvpysdk_object.make_request(
+                'GET', request_json_service
+            )
+            snap_configs = snap_configs.json()
+            for m_config, value in config_data.items():
+                for config in snap_configs['configs']['configList']:
+                    if int(config['masterConfigId']) == int(m_config):
+                        config['value'] = str(value)
+
+        else:
+            snap_configs['configs'] = {}
 
         selectedMAs = []
         if array_access_node is not None:
@@ -295,7 +355,7 @@ class ArrayManagement(object):
         request_json = {
             "clientId": 0,
             "flags": 0,
-            "assocType": 0,
+            "assocType": assocType,
             "copyId": 0,
             "appId": 0,
             "selectedMAs":selectedMAs,
@@ -314,7 +374,7 @@ class ArrayManagement(object):
                 "disableDG": False,
                 "useDevicesFromThisDG": False
             },
-            "configList": {},
+            "configs": snap_configs['configs'],
             "array": {
                 "name": "",
                 "id": 0
@@ -389,7 +449,7 @@ class ArrayManagement(object):
             error_message = response.json()['errorMessage']
 
             if error_code != 0:
-                if error_code == 1:
+                if error_code in [1, 10]:
                     raise SDKException('StorageArray', '101')
 
                 error_message = response.json().get('errorMessage', '')
@@ -446,24 +506,35 @@ class ArrayManagement(object):
         """
 
         copy_level_id = app_level_id = client_level_id = 0
-        request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
-        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
-            'GET', request_json_service
-        )
 
         if config_update_level == "array":
             config_update_level = 3
+            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+
         elif config_update_level == "copy":
             config_update_level = 6
             copy_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?copyId={1}&assocType={2}'.format(
+                control_host_id, copy_level_id, config_update_level)
+
         elif config_update_level == "subclient":
             config_update_level = 9
             app_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?appId={1}&assocType={2}'.format(
+                control_host_id, app_level_id, config_update_level)
+
         elif config_update_level == "client":
             config_update_level = 8
             client_level_id = level_id
+            request_json_service = self.storage_arrays + '/{0}?clientId={1}&assocType={2}'.format(
+                control_host_id, client_level_id, config_update_level)
+
         else:
             config_update_level = 3
+            request_json_service = self.storage_arrays + '/{0}'.format(control_host_id)
+
+        flag, request_json = self._commcell_object._cvpysdk_object.make_request(
+            'GET', request_json_service)
 
         request_json = request_json.json()
 

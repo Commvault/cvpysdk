@@ -186,7 +186,7 @@ class Agents(object):
             return self.all_agents[value]
         else:
             try:
-                return list(filter(lambda x: x[1]['id'] == value, self.all_agents.items()))[0][0]
+                return list(filter(lambda x: x[1] == value, self.all_agents.items()))[0][0]
             except IndexError:
                 raise IndexError('No agent exists with the given Name / Id')
 

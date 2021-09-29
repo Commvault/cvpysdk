@@ -293,7 +293,7 @@ class NetworkTopologies(object):
 
                 Supported argument values:
 
-                use_wildcardproxy   (boolean)  --   option to use wildcard proxy for proxy type
+                use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
                                                  topology
                                                  Default value: False
 
@@ -304,9 +304,20 @@ class NetworkTopologies(object):
 
                 topology_description (str)     --   to specify topology description
 
-                display_type         (int)     --   to specify display type for firewall extended
-                                                 properties
-                                                 Default value: 0
+                display_type         (int)     --   to specify display type for firewall extended properties
+                                                    Default value: 0
+
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -355,10 +366,8 @@ class NetworkTopologies(object):
 
         display_type = kwargs.get('display_type', 0)
 
-        if display_type == 1:
-            d_type = "<App_TopologyExtendedProperties displayType=\"1\" />"
-        else:
-            d_type = "<App_TopologyExtendedProperties displayType=\"0\" />"
+        extended_properties = f'''<App_TopologyExtendedProperties displayType=\"{kwargs.get('display_type', 0)}\" encryptTraffic=\"{kwargs.get('encrypt_traffic', 0)}\"
+        numberOfStreams =\"{kwargs.get('number_of_streams', 1)}\" regionId=\"{kwargs.get('region_id', 0)}\" connectionProtocol=\"{kwargs.get('connection_protocol', 2)}\" />'''
 
         firewall_groups_list, count_mnemonic = self.create_firewall_groups_list(client_groups)
 
@@ -371,7 +380,7 @@ class NetworkTopologies(object):
             request_json = {
                 "firewallTopology": {
                     "useWildcardProxy": kwargs.get('use_wildcard', False),
-                    "extendedProperties": d_type,
+                    "extendedProperties": extended_properties,
                     "topologyType": kwargs.get('topology_type', 2),
                     "description": kwargs.get('topology_description', ''),
                     "isSmartTopology": kwargs.get('is_smart_topology', False),
@@ -653,6 +662,18 @@ class NetworkTopology(object):
                                                      proxy type topology
 
                 is_smart_topology       (boolean)   -- specified as true for smart topology
+                
+                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
+                                                    Default vaule: 0
+
+                number_of_streams     (int)     --   to specify number of streams
+                                                    Default vaule: 1
+
+                region_id            (int)     --   to sspecify region id
+                                                    Default value: 0
+
+                connection_protocol  (int)     --   to specify the protocols
+                                                    Default vaule: 2
 
                 Possible input values:
 
@@ -699,6 +720,18 @@ class NetworkTopology(object):
         NetworkTopologies.verify_smart_topology_groups(is_smart_topology, count_mnemonic)
 
         extended_properties = self.extended_properties
+        properties = ['display_type', 'encrypt_traffic', 'number_of_streams', 'region_id', 'connection_protocol']
+        for prop in properties:
+            if prop in kwargs:
+                temp = prop.split('_')
+                for i in range(1, len(temp)):
+                    temp[i] = temp[i][0].upper() + temp[i][1:]
+                camel_case_prop = ''.join(temp)
+
+                idx = extended_properties.find(camel_case_prop) + len(camel_case_prop) + len("\"=")
+                temp = list(extended_properties)
+                temp[idx] = str(kwargs.get(prop))
+                extended_properties = ''.join(temp)
 
         request_json = {
             "firewallTopology": {

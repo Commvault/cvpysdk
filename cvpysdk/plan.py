@@ -486,6 +486,15 @@ class Plans(object):
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
+        request_json['plan']['schedule']['subTasks'][1]['options']['commonOpts'][
+            'automaticSchedulePattern'].update({
+                'minBackupInterval': 0,
+                'maxBackupIntervalMinutes': 0,
+                'minSyncInterval': 0,
+                'minSyncIntervalMinutes': 0
+            })
+        request_json['plan']['schedule']['subTasks'][1]['options']['commonOpts'][
+            'automaticSchedulePattern']['ignoreOpWindowPastMaxInterval'] = True
         del request_json['plan']['schedule']['task']['taskName']
         if not plan_sub_type == 'ExchangeUser':
             request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {

@@ -17,14 +17,23 @@
 
 """File for operating on a Sharepoint Subclient
 
-SharepointSubclient is the only class defined in this file.
+SharepointSuperSubclient: Derived class from Subclient Base class, containing common methods for both Sharepoint v1 and v2 subclients.
 
-SharepointSubclient: Derived class from Subclient Base class, representing a sharepoint subclient,
+SharepointSuperSubclient:
+
+    backup()                            --  Runs a backup job for the subclient of the level specified.
+    
+    _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.
+    
+    _json_out_of_place_destination_option() -- setter for the SharePoint Online out of place restore
+        option in restore json
+    
+
+SharepointSubclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint subclient,
 and to perform operations on that subclient
 
 SharepointSubclient:
 
-    _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.
 
     _get_subclient_properties_json()    --  gets all the subclient related properties of the Sharepoint subclient.
 
@@ -46,6 +55,20 @@ SharepointSubclient:
 
     restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client
 
+SharepointV1Subclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint v1 subclient,
+and to perform operations on that subclient
+
+SharepointV1Subclient:
+
+    discover_sharepoint_sites()         --  Checks whether SP content i.e, sites/webs are available
+
+    _get_subclient_properties_json()    --  gets all the subclient related properties of the Sharepoint subclient.
+
+    content()                           --  sets the content of the subclient.
+
+    restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client
+
+
 """
 
 from __future__ import unicode_literals
@@ -55,19 +78,85 @@ from ..exception import SDKException
 from ..constants import SQLDefines
 from ..constants import SharepointDefines
 
+class SharepointSuperSubclient(Subclient):
 
-class SharepointSubclient(Subclient):
-    """Derived class from Subclient Base class, representing a Sharepoint subclient,
-        and to perform operations on that subclient."""
+    def backup(self,
+               backup_level="Incremental",
+               incremental_backup=False,
+               incremental_level='BEFORE_SYNTH',
+               collect_metadata=False,
+               advanced_options=None):
+        """Runs a backup job for the subclient of the level specified.
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+                collect_metadata        (bool)  --  Collect Meta data for the backup
+                advanced_options       (dict)  --  advanced backup options to be included while
+                                                    making the request
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+                         instance of the Schedule class for the backup job if its a scheduled Job
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+                    if response is empty
+                    if response is not success
+        """
+        backup_level = backup_level.lower()
+        if backup_level not in ['full', 'incremental']:
+            raise SDKException('Subclient', '103')
+        if advanced_options:
+            request_json = self._backup_json(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                advanced_options=advanced_options
+            )
+            backup_service = self._commcell_object._services['CREATE_TASK']
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', backup_service, request_json
+            )
+            return self._process_backup_response(flag, response)
+        else:
+            return super(SharepointSuperSubclient, self).backup(backup_level=backup_level,
+                                                           incremental_backup=incremental_backup,
+                                                           incremental_level=incremental_level,
+                                                           collect_metadata=collect_metadata)
+
+    def _json_out_of_place_destination_option(self, value):
+        """setter for the SharePoint Online out of place restore
+        option in restore json
+            Args:
+                value (dict)    --  restore option need to be included
+            Returns:
+                (dict)          --  generated exchange restore options JSON
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+        self._out_of_place_destination_json = {
+            "inPlace": False,
+            "destPath": [value.get("destination_path")],
+            "destClient": {
+                "clientId": int(self._client_object.client_id),
+                "clientName": self._client_object.client_name
+            },
+        }
 
     def _get_subclient_properties(self):
         """Gets the subclient related properties of the Sharepoint subclient.
-
         """
-        super(SharepointSubclient, self)._get_subclient_properties()
-
+        super(SharepointSuperSubclient, self)._get_subclient_properties()
         self._sharepoint_subclient_prop = self._subclient_properties.get('sharepointsubclientprop', {})
         self._content = self._subclient_properties.get('content', {})
+
+class SharepointSubclient(SharepointSuperSubclient):
+    """Derived class from Subclient Base class, representing a Sharepoint subclient,
+        and to perform operations on that subclient."""
 
     def _get_subclient_properties_json(self):
         """get the all subclient related properties of this subclient.
@@ -331,7 +420,7 @@ class SharepointSubclient(Subclient):
                                 }
                             }]
                         }
-            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"]\
+            request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
                 ["fileOption"]["sourceItem"] = source_items
             request_json['taskInfo']['subTasks'][0]['options']["restoreOptions"] \
                 ["sqlServerRstOption"]["database"] = database_list
@@ -412,30 +501,6 @@ class SharepointSubclient(Subclient):
             "spRestoreToDisk"] = self._sharepoint_disk_option_restore_json
 
         return request_json
-
-    def _json_out_of_place_destination_option(self, value):
-        """setter for the SharePoint Online out of place restore
-        option in restore json
-
-            Args:
-                value (dict)    --  restore option need to be included
-
-            Returns:
-                (dict)          --  generated exchange restore options JSON
-
-        """
-
-        if not isinstance(value, dict):
-            raise SDKException('Subclient', '101')
-
-        self._out_of_place_destination_json = {
-            "inPlace": False,
-            "destPath": [value.get("destination_path")],
-            "destClient": {
-                "clientId": int(self._client_object.client_id),
-                "clientName": self._client_object.client_name
-            },
-        }
 
     def _prepare_out_of_place_restore_json(self, _restore_option):
         """
@@ -619,7 +684,8 @@ class SharepointSubclient(Subclient):
                                 raise SDKException('Subclient', '102', o_str)
                     elif 'errorMessage' in response.json():
                         error_string = response.json().get('errorMessage', "")
-                        o_str = 'Failed to set category based content for association\nError: "{0}"'.format(error_string)
+                        o_str = 'Failed to set category based content for association\nError: "{0}"'.format(
+                            error_string)
                         raise SDKException('Subclient', '102', o_str)
             else:
                 raise SDKException('Response', '101', self._update_response_(response.text))
@@ -861,69 +927,6 @@ class SharepointSubclient(Subclient):
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
 
-    def backup(self,
-               backup_level="Incremental",
-               incremental_backup=False,
-               incremental_level='BEFORE_SYNTH',
-               collect_metadata=False,
-               advanced_options=None):
-        """Runs a backup job for the subclient of the level specified.
-
-            Args:
-                backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental
-
-                incremental_backup      (bool)  --  run incremental backup
-                                                    only applicable in case of Synthetic_full backup
-
-                incremental_level       (str)   --  run incremental backup before/after synthetic full
-                                                    BEFORE_SYNTH / AFTER_SYNTH
-                                                    only applicable in case of Synthetic_full backup
-
-                collect_metadata        (bool)  --  Collect Meta data for the backup
-
-                advanced_options       (dict)  --  advanced backup options to be included while
-                                                    making the request
-
-            Returns:
-                object - instance of the Job class for this backup job if its an immediate Job
-
-                         instance of the Schedule class for the backup job if its a scheduled Job
-
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
-
-                    if response is empty
-
-                    if response is not success
-        """
-
-        backup_level = backup_level.lower()
-        if backup_level not in ['full', 'incremental']:
-            raise SDKException('Subclient', '103')
-
-        if advanced_options:
-            request_json = self._backup_json(
-                backup_level=backup_level,
-                incremental_backup=incremental_backup,
-                incremental_level=incremental_level,
-                advanced_options=advanced_options
-            )
-            backup_service = self._commcell_object._services['CREATE_TASK']
-
-            flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'POST', backup_service, request_json
-            )
-
-            return self._process_backup_response(flag, response)
-
-        else:
-            return super(SharepointSubclient, self).backup(backup_level=backup_level,
-                                                           incremental_backup=incremental_backup,
-                                                           incremental_level=incremental_level,
-                                                           collect_metadata=collect_metadata)
-
     def restore_in_place(self, **kwargs):
         """Runs a in-place restore job on the specified Sharepoint pseudo client
            This is used by Sharepoint V2 pseudo client
@@ -1102,3 +1105,225 @@ class SharepointSubclient(Subclient):
                 raise SDKException('Response', '101', self._update_response_(response.text))
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+
+class SharepointV1Subclient(SharepointSuperSubclient):
+    """Derived class from Subclient Base class, representing a Sharepoint v1 subclient,
+            and to perform operations on that subclient."""
+
+    def discover_sharepoint_sites(self, paths):
+        """Checks whether SP content i.e, sites/webs are available
+
+                    Args:
+                            paths (list)          --      list of paths of SharePoint sites to be checked
+
+                """
+        request_json = {
+            "opType": 0,
+            "session": {
+                "sessionId": ""
+            },
+            "paths": [{"path": path} for path in paths],
+            "entity": {
+                "clientId": int(self._client_object.client_id),
+                "applicationId": int(self._agent_object.agent_id),
+                "instanceId": int(self._instance_object.instance_id),
+                "backupsetId": int(self._backupset_object.backupset_id),
+            },
+            "advOptions": {
+                "advConfig": {
+                    "applicationMining": {
+                        "isApplicationMiningReq": True,
+                        "appType": int(self._agent_object._agent_id),
+                        "agentVersion": 2013,
+                        "browseReq": {
+                            "spBrowseReq": {
+                                "spBrowseType": 2,
+                                "spBrowseLevel": 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', self._BROWSE, request_json)
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if len(response['browseResponses'][0]['browseResult']['advConfig']['applicationMining']['browseResp'][
+                           'spBrowseResp']['dataPathContents']) > 0:
+                    return \
+                    response['browseResponses'][0]['browseResult']['advConfig']['applicationMining']['browseResp'][
+                        'spBrowseResp']['dataPathContents']
+                else:
+                    raise SDKException('Sites not found')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    @property
+    def content(self):
+        """Gets the appropriate content from the Subclient relevant to the user.
+
+            Returns:
+                list - list of content associated with the subclient
+        """
+
+        return self._content
+
+    @content.setter
+    def content(self, subclient_content):
+        """Creates the list of content JSON to pass to the API to add a new Sharepoint server Subclient
+            with the content passed in subclient content.
+
+            Args:
+                subclient_content (list)  --  list of the content to add to the subclient
+
+        """
+
+        self._set_subclient_properties("_content", subclient_content)
+
+    def _get_subclient_properties_json(self):
+        """get the all subclient related properties of this subclient.
+
+           Returns:
+                dict - all subclient properties put inside a dict
+
+        """
+        subclient_json = {
+            "subClientProperties":
+                {
+                    "subClientEntity": self._subClientEntity,
+                    "sharepointsubclientprop": self._sharepoint_subclient_prop,
+                    "content": self._content,
+                    "commonProperties": self._commonProperties,
+                    "contentOperationType": 1,
+                    "planEntity": self._planEntity,
+                },
+            "association": {
+                "entity": [
+                    {
+                        "subclientId": int(self.subclient_id),
+                        "applicationId": self._subClientEntity["applicationId"],
+                        "backupsetId": int(self._backupset_object.backupset_id),
+                        "instanceId": int(self._instance_object.instance_id),
+                        "clientId": int(self._client_object.client_id),
+                        "subclientName": self.subclient_name
+                    }
+                ]
+            }
+        }
+        return subclient_json
+
+    def restore_in_place(self, **kwargs):
+        """Runs a in-place restore job on the specified Sharepoint pseudo client
+           This is used by Sharepoint V2 pseudo client
+
+             Kwargs:
+
+                 paths     (list)   --  list of sites or webs to be restored
+                 Example: [
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents",
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List"
+                    ]
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        """
+        self._instance_object._restore_association = self._subClientEntity
+        parameter_dict = self._restore_json(**kwargs, v1=True )
+        return self._process_restore_response(parameter_dict)
+
+    def out_of_place_restore(
+            self,
+            paths,
+            destination_path,
+            overwrite=True):
+        """Restores the SharePoint list/libraries specified in the input paths list to the different site
+
+            Args:
+                paths                   (list)  --  list of paths of SharePoint list/libraries to restore
+
+                destination_path        (str)   --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+
+        """
+        restore_option = {}
+        if not paths:
+            raise SDKException('Subclient', '104')
+        restore_option['overwrite'] = overwrite
+        restore_option['paths'] = paths
+        restore_option['destination_path'] = destination_path
+        restore_option['in_place'] = False
+        request_json = self._prepare_out_of_place_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def _prepare_out_of_place_restore_json(self, _restore_option):
+        """
+        Prepare out of place retsore Json with all getters
+
+        Args:
+            _restore_option - dictionary with all out of place restore options
+
+            value:
+
+                paths (list)            --  list of paths of SharePoint list/libraries to restore
+
+                destination_path (str)  --  path where the SharePoint Site where list/libraries needs to be restored
+
+                overwrite (bool)        --  unconditional overwrite files during restore
+                    default: True
+
+
+        returns:
+            request_json        -  complete json for performing disk Restore options
+
+        """
+
+        if _restore_option is None:
+            _restore_option = {}
+
+        paths = self._filter_paths(_restore_option['paths'])
+        self._json_out_of_place_destination_option(_restore_option)
+        _restore_option['paths'] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_restore_option, v1=True )
+
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions'][
+            'destination'] = self._out_of_place_destination_json
+        return request_json
+

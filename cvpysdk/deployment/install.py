@@ -350,6 +350,7 @@ class Install(object):
             log_file_loc=None,
             client_group_name=None,
             storage_policy_name=None,
+            sw_cache_client=None,
             **kwargs):
         """
         Installs the features selected on the given machines
@@ -391,6 +392,10 @@ class Install(object):
             storage_policy_name (str)       -- Storage policy for the default subclient
 
                  default : None
+
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
@@ -529,8 +534,11 @@ class Install(object):
                                         },
                                         "clientComposition": [
                                             {
+                                                "overrideSoftwareCache": True if sw_cache_client else False,
+                                                "softwareCacheOrSrmProxyClient": {
+                                                    "clientName": sw_cache_client if sw_cache_client else ""
+                                                },
                                                 "packageDeliveryOption": 0,
-                                                "overrideSoftwareCache": False,
                                                 "components": {
                                                     "commonInfo": {
                                                         "globalFilters": 2,

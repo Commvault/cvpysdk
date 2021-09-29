@@ -212,7 +212,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      add_to_failover=False,
                                      network=None,
                                      restored_vm_name=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     snap_proxy=None,
+                                     media_agent=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -238,6 +240,10 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
+
+                snap_proxy          (strig)     -- Snap proxy to be used for restore
+
+                media_agent          (string)    -- Media Agent to be used for Browse
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -297,9 +303,6 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = "Delete" + vm_to_restore
-
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
 
@@ -335,7 +338,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             add_to_failover=add_to_failover,
             datastore=destination_path,
             in_place=False,
-            network=network
+            destination_network=network,
+            snap_proxy=snap_proxy,
+            media_agent=media_agent
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
@@ -389,6 +394,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
+
+        if vm_to_restore and isinstance(vm_to_restore, basestring):
+            vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(

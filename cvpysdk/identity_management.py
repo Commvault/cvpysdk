@@ -48,6 +48,8 @@ IdentityManagementApps
 
     configure_commcell_app()        --  creates a commcell identity app for the specified commcell
 
+    configure_openid_app()          --  creates a OpenID app for the specified commcell
+
     refresh()                       --  refresh the apps in the commcell
 
 
@@ -435,6 +437,77 @@ class IdentityManagementApps(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('', '101', response_string)
+
+    def configure_openid_app(self, appname, props, user_to_be_added):
+        """
+        Adding OpenID app
+
+        Args:
+            appname (str)           :       Name of the app to be created
+
+            props      (list)       :  dict containing properties of the IDP's identity app
+
+                    [
+                        {
+                                "name": "clientId",
+                                "value": "13445"
+                            },
+                            {
+                                "name": "clientSecret",
+                                "value": "ABC13567"
+                            },
+                            {
+                                "name": "endPointUrl",
+                                "value": "https://dev123.okta.com/.well-known/openid-configuration"
+                            },
+                            {
+                                "name": "webConsoleUrls",
+                                "values": [
+                                    https://mydomain:443/webconsole
+                                ]
+                            }
+                    ]
+
+            user_to_be_added   (list) :   list of users for association
+
+        Raises:
+            SDKException:
+                if failed to configure identity app
+
+        """
+        third_party_json = {
+            "App_SetClientThirdPartyAppPropReq":{
+            "opType": 1,
+            "clientThirdPartyApps": [
+                {
+                    "appName": appname,
+                    "flags": 0,
+                    "appType": 5,
+                    "isEnabled": 1,
+                    "props": {
+                        "nameValues": props
+                    },
+                    "assocTree": [
+                        {
+                            "_type_": 13,
+                            "userName": user_name
+                        } for user_name in user_to_be_added
+                    ]
+                }
+            ]
+        }
+        }
+
+        response_json = self._commcell_object.qoperation_execute(third_party_json)
+
+        if response_json.get('errorCode', 0) != 0:
+            raise SDKException(
+                'IdentityManagement',
+                '103',
+                'Error: "{}"'.format(response_json['errorMessage'])
+            )
+        else:
+            self.refresh()
 
     def has_identity_app(self, app_name):
         """Checks if an identity app exits in the commcell

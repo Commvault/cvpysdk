@@ -55,6 +55,8 @@ Backupsets:
     
     add_archiveset(archiveset_name)   -- adds a new archiveset to the agent of the specified client
 
+    add_v1_sharepoint_client()      -- Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
     add_salesforce_backupset()      -- adds a new salesforce backupset
 
     get(backupset_name)             -- returns the Backupset class object
@@ -115,6 +117,9 @@ Backupset:
 
     delete_data()                   -- deletes items from the backupset and makes then unavailable
     to browse and restore
+
+    backed_up_files_count()         -- Returns the count of the total number of files present in the backed up data
+                                       of all the subclients of the given backupset.
 
 Backupset instance Attributes
 -----------------------------
@@ -182,7 +187,8 @@ class Backupsets(object):
         self._update_response_ = self._commcell_object._update_response_
 
         self._BACKUPSETS = self._services['GET_ALL_BACKUPSETS'] % (self._client_object.client_id)
-
+        if self._agent_object:
+            self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
@@ -690,6 +696,116 @@ request_json['backupSetInfo'].update({
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_v1_sharepoint_client(
+            self,
+            backupset_name,
+            server_plan,
+            client_name,
+            **kwargs):
+        """
+        for sharepoint v1 client creation is a backupset
+        Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+
+                Args:
+                    backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+
+                    server_plan                 (str)   --  server_plan to associate with the client
+
+                    client_name                 (str) -- the access node for which Pseudo Client will be created
+
+
+                Kwargs :
+
+                    tenant_url                  (str)   --  url of sharepoint tenant
+
+                    azure_username              (str)   --  username of azure app
+
+                    azure_secret                (str)   --  secret key of azure app
+
+                    user_username        (str)   --  username of Sharepoint admin
+
+                    user_password           (str)  -- password of Sharepoint admin
+
+                    azure_app_id            (str)       --  azure app id for sharepoint online
+
+                    azure_app_key_id        (str)       --  app key for sharepoint online
+
+                    azure_directory_id    (str)   --  azure directory id for sharepoint online
+
+
+                Returns:
+                    object  -   instance of the Client class for this new client
+
+                Raises:
+                    SDKException:
+                        if client with given name already exists
+
+                        if index_server is not found
+
+                        if server_plan is not found
+
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+
+        """
+        if self.has_backupset(backupset_name):
+            raise SDKException(
+                'Backupset', '102', 'Backupset "{0}" already exists.'.format(backupset_name))
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id)
+            }
+        else:
+            raise SDKException('Backupset', '102')
+        backup_set = {
+            "_type_": 6,
+            "applicationId": 78,
+            "backupsetName": backupset_name,
+            "clientId": int(self._client_object.client_id)
+        }
+        request_json = {
+            "backupSetInfo": {
+                "planEntity": server_plan_dict,
+                "backupSetEntity": backup_set,
+                "sharepointBackupSet": {
+                    "sharepointBackupSetType": 4
+                }
+            }
+        }
+        tenant_url = kwargs.get('tenant_url')
+        user_username = kwargs.get('user_username')
+        is_modern_auth_enabled = kwargs.get('is_modern_auth_enabled',False)
+        azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
+        azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+        user_password = b64encode(kwargs.get('user_password').encode()).decode()
+        request_json["backupSetInfo"]["sharepointBackupSet"][
+            "spOffice365BackupSetProp"] = {
+            "azureUserAccount": kwargs.get('azure_username'),
+            "azureAccountKey": azure_secret,
+            "tenantUrlItem": tenant_url,
+            "isModernAuthEnabled": is_modern_auth_enabled,
+            "office365Credentials": {
+                "userName": user_username,
+                "password": user_password
+            },
+        }
+        if is_modern_auth_enabled:
+            request_json["backupSetInfo"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["azureAppList"] = {
+                "azureApps": [
+                    {
+                        "azureAppId": kwargs.get('azure_app_id'),
+                        "azureAppKeyValue": azure_app_key_id,
+                        "azureDirectoryId": kwargs.get('azure_directory_id')
+                    }
+                ]
+            }
+
+        self._process_add_response(backupset_name, request_json)
 
     def add_salesforce_backupset(
             self,
@@ -1010,11 +1126,13 @@ class Backupset(object):
             'include_meta_data':False,
             'include_hidden': False,
             'include_running_jobs': False,
+            'compute_folder_size': False,
             'vs_volume_browse': False,
             'browse_view_name': 'VOLUMEVIEW',
 
             '_subclient_id': 0,
-            '_raw_response': False
+            '_raw_response': False,
+            '_custom_queries': False
         }
 
     def __getattr__(self, attribute):
@@ -1402,10 +1520,16 @@ class Backupset(object):
         if options['include_running_jobs']:
             request_json['options']['includeRunningJobs'] = True
 
+        if options['compute_folder_size']:
+            request_json['options']['computeFolderSizeForFilteredBrowse'] = True
+
         if options['vs_volume_browse']:
             request_json['mode']['mode'] = 3
             request_json['options']['vsVolumeBrowse'] = True
             request_json['advOptions']['browseViewName'] = options['browse_view_name']
+
+        if options['_custom_queries']:
+            request_json['queries'] = options['_custom_queries']
 
         return request_json
 
@@ -2043,7 +2167,8 @@ class Backupset(object):
         else:
             options = kwargs
 
-        options['operation'] = 'find'
+        if 'operation' not in options:
+            options['operation'] = 'find'
 
         if 'path' not in options:
             options['path'] = '\\**\\*'
@@ -2120,3 +2245,20 @@ class Backupset(object):
 
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
+
+    def backed_up_files_count(self):
+        """Returns the count of the total number of files present in the backed up data
+         of all the subclients of the given backupset.
+         """
+        options_dic = {"operation": "find", "opType": 1, "path": "\**\*",
+               "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
+                                    "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
+                       "criteria": {
+                           "field": "Flags",
+                           "dataOperator": "IN",
+                           "values": ["file"]
+                       }
+                   }]}], "_raw_response": True}
+
+        browse_response = self._do_browse(options_dic)
+        return browse_response[1]['browseResponses'][0]['browseResult']['aggrResultSet'][0]['count']
