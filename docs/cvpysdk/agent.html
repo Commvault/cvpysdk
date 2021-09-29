@@ -1,0 +1,2930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.agent API documentation</title>
+<meta name="description" content="Main file for performing agent specific operations …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.agent</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing agent specific operations.</p>
+<p>Agents and Agent are 2 classes defined in this file.</p>
+<p>Agents:
+Class for representing all the agents associated with a specific client</p>
+<p>Agent:
+Class for a single agent selected for a client, and to perform operations on that agent</p>
+<h2 id="agents">Agents</h2>
+<p><strong>init</strong>(client_object)
+&ndash;
+initialize object of Agents class associated with
+the specified client</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the agents associated with the client</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string for the instance of the Agents class</p>
+<p><strong>len</strong>()
+&ndash; returns the number of agents licensed for the selected Client</p>
+<p><strong>getitem</strong>()
+&ndash; returns the name of the agent for the given agent Id or the
+details for the given agent name</p>
+<p>_get_agents()
+&ndash;
+gets all the agents associated with the client specified</p>
+<p>all_agents()
+&ndash;
+returns the dict of all the agents installed on client</p>
+<p>has_agent(agent_name)
+&ndash;
+checks if an agent exists with the given name</p>
+<p>get(agent_name)
+&ndash;
+returns the Agent class object of the input agent name</p>
+<p>refresh()
+&ndash;
+refresh the agents installed on the client</p>
+<p>_process_add_response()
+&ndash;
+processes add agent request response</p>
+<p>add_database_agent()
+&ndash;
+adds database agent</p>
+<h2 id="agent">Agent</h2>
+<p><strong>init</strong>(client_object,
+agent_name,
+agent_id=None)
+&ndash;
+initialize object of Agent with the specified agent name
+and id, and associated to the specified client</p>
+<p><strong>repr</strong>()
+&ndash;
+return the agent name, the instance is associated with</p>
+<p>_get_agent_id()
+&ndash;
+method to get the agent id</p>
+<p>_get_agent_properties()
+&ndash;
+get the properties of this agent</p>
+<p>_process_update_request()
+&ndash;
+to process the request using API call</p>
+<p>update_properties()
+&ndash;
+to update the agent properties</p>
+<p>enable_backup()
+&ndash;
+enables the backup for the agent</p>
+<p>enable_backup_at_time()
+&ndash;
+enables the backup for the agent at the input time specified</p>
+<p>disble_backup()
+&ndash;
+disbles the backup for the agent</p>
+<p>enable_restore()
+&ndash;
+enables the restore for the agent</p>
+<p>enable_restore_at_time()
+&ndash;
+enables the restore for the agent at the input time specified</p>
+<p>disble_restore()
+&ndash;
+disbles the restore for the agent</p>
+<p>is_backup_enabled()
+&ndash;
+returns boolean specifying whether backup is enabled or not</p>
+<p>is_restore_enabled()
+&ndash;
+returns boolean specifying whether restore is enabled or not</p>
+<p>refresh()
+&ndash;
+refresh the object properties</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L1-L938" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing agent specific operations.
+
+Agents and Agent are 2 classes defined in this file.
+
+Agents:     Class for representing all the agents associated with a specific client
+
+Agent:      Class for a single agent selected for a client, and to perform operations on that agent
+
+
+Agents:
+    __init__(client_object)     --  initialize object of Agents class associated with
+    the specified client
+
+    __str__()                   --  returns all the agents associated with the client
+
+    __repr__()                  --  returns the string for the instance of the Agents class
+
+    __len__()                   -- returns the number of agents licensed for the selected Client
+
+    __getitem__()               -- returns the name of the agent for the given agent Id or the
+    details for the given agent name
+
+    _get_agents()               --  gets all the agents associated with the client specified
+
+    all_agents()                --  returns the dict of all the agents installed on client
+
+    has_agent(agent_name)       --  checks if an agent exists with the given name
+
+    get(agent_name)             --  returns the Agent class object of the input agent name
+
+    refresh()                   --  refresh the agents installed on the client
+
+    _process_add_response()     --  processes add agent request response
+
+    add_database_agent()        --  adds database agent
+
+
+Agent:
+    __init__(client_object,
+             agent_name,
+             agent_id=None)     --   initialize object of Agent with the specified agent name
+    and id, and associated to the specified client
+
+    __repr__()                  --   return the agent name, the instance is associated with
+
+    _get_agent_id()             --   method to get the agent id
+
+    _get_agent_properties()     --   get the properties of this agent
+
+    _process_update_request()   --  to process the request using API call
+
+    update_properties()         --  to update the agent properties
+
+    enable_backup()             --   enables the backup for the agent
+
+    enable_backup_at_time()     --   enables the backup for the agent at the input time specified
+
+    disble_backup()             --   disbles the backup for the agent
+
+    enable_restore()            --   enables the restore for the agent
+
+    enable_restore_at_time()    --   enables the restore for the agent at the input time specified
+
+    disble_restore()            --   disbles the restore for the agent
+
+    is_backup_enabled()         --   returns boolean specifying whether backup is enabled or not
+
+    is_restore_enabled()        --   returns boolean specifying whether restore is enabled or not
+
+    refresh()                   --   refresh the object properties
+
+&#34;&#34;&#34;
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+import string
+import time
+import copy
+
+from past.builtins import basestring
+
+from .instance import Instances
+from .backupset import Backupsets
+from .schedules import Schedules
+from .exception import SDKException
+
+
+class Agents(object):
+    &#34;&#34;&#34;Class for getting all the agents associated with a client.&#34;&#34;&#34;
+
+    def __init__(self, client_object):
+        &#34;&#34;&#34;Initialize object of the Agents class.
+
+            Args:
+                client_object (object)  --  instance of the Client class
+
+            Returns:
+                object - instance of the Agents class
+        &#34;&#34;&#34;
+        self._client_object = client_object
+        self._commcell_object = self._client_object._commcell_object
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENTS = self._services[&#39;GET_ALL_AGENTS&#39;] % (self._client_object.client_id)
+
+        self._agents = None
+        self.refresh()
+
+        from .agents.exchange_database_agent import ExchangeDatabaseAgent
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        self._agents_dict = {
+            &#39;exchange database&#39;: ExchangeDatabaseAgent
+        }
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all agents of the client.
+
+            Returns:
+                str     -   string of all the agents of a client
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Agent&#39;, &#39;Client&#39;)
+
+        for index, agent in enumerate(self._agents):
+            sub_str = &#39;{:^5}\t{:20}\t{:20}\n&#39;.format(
+                index + 1,
+                agent,
+                self._client_object.client_name
+            )
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Agents class.&#34;&#34;&#34;
+        return &#34;Agents class instance for Client: &#39;{0}&#39;&#34;.format(self._client_object.client_name)
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the number of the Agents licensed for the selected Client.&#34;&#34;&#34;
+        return len(self.all_agents)
+
+    def __getitem__(self, value):
+        &#34;&#34;&#34;Returns the name of the agent for the given agent ID or
+            the details of the agent for given agent Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the agent
+
+            Returns:
+                str     -   name of the agent, if the agent id was given
+
+                dict    -   dict of details of the agent, if agent name was given
+
+            Raises:
+                IndexError:
+                    no agent exists with the given Name / Id
+
+        &#34;&#34;&#34;
+        value = str(value)
+
+        if value in self.all_agents:
+            return self.all_agents[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1] == value, self.all_agents.items()))[0][0]
+            except IndexError:
+                raise IndexError(&#39;No agent exists with the given Name / Id&#39;)
+
+    def _get_agents(self):
+        &#34;&#34;&#34;Gets all the agents associated to the client specified with this client object.
+
+            Returns:
+                dict - consists of all agents in the client
+                    {
+                         &#34;agent1_name&#34;: agent1_id,
+                         &#34;agent2_name&#34;: agent2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._AGENTS)
+
+        if flag:
+            if response.json() and &#39;agentProperties&#39; in response.json():
+
+                agent_dict = {}
+
+                for dictionary in response.json()[&#39;agentProperties&#39;]:
+                    temp_name = dictionary[&#39;idaEntity&#39;][&#39;appName&#39;].lower()
+                    temp_id = str(dictionary[&#39;idaEntity&#39;][&#39;applicationId&#39;]).lower()
+                    agent_dict[temp_name] = temp_id
+
+                return agent_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_agents(self):
+        &#34;&#34;&#34;Returns dict of all the agents installed on client.
+
+            dict    -   consists of all agents in the client
+
+                {
+                    &#34;agent1_name&#34;: agent1_id,
+
+                    &#34;agent2_name&#34;: agent2_id
+                }
+
+        &#34;&#34;&#34;
+        return self._agents
+
+    def has_agent(self, agent_name):
+        &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+
+            Args:
+                agent_name (str)  --  name of the agent
+
+            Returns:
+                bool - boolean output whether the agent is installed for the client or not
+
+            Raises:
+                SDKException:
+                    if type of the agent name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(agent_name, basestring):
+            raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+
+        return self._agents and agent_name.lower() in self._agents
+
+    def get(self, agent_name):
+        &#34;&#34;&#34;Returns a agent object of the specified client.
+
+            Args:
+                agent_name (str)  --  name of the agent
+
+            Returns:
+                object - instance of the Agent class for the given agent name
+
+            Raises:
+                SDKException:
+                    if type of the agent name argument is not string
+
+                    if no agent exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(agent_name, basestring):
+            raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+        else:
+            agent_name = agent_name.lower()
+
+            if self.has_agent(agent_name):
+                updated_agent_name = agent_name
+                if &#34;file system&#34; in agent_name:
+                    updated_agent_name = &#34;file system&#34;
+                return self._agents_dict.get(agent_name, Agent)(
+                    self._client_object, updated_agent_name, self._agents[agent_name]
+                )
+
+            raise SDKException(&#39;Agent&#39;, &#39;102&#39;, &#39;No agent exists with name: {0}&#39;.format(agent_name))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+        self._agents = self._get_agents()
+
+    def _process_add_response(self, request_json):
+        &#34;&#34;&#34;Runs the Agent Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._services[&#39;AGENT&#39;], request_json)
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                    if error_code != 0:
+                        error_string = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+                        o_str = &#39;Failed to create agent\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+                    else:
+                        # initialize the agetns again
+                        # so the agent object has all the agents
+                        agent_name = request_json[&#39;association&#39;][&#39;entity&#39;][0][&#39;appName&#39;]
+                        self.refresh()
+                        return self.get(agent_name)
+                elif &#39;errorMessage&#39; in response.json():
+                    error_string = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Failed to create agent\nError: &#34;{0}&#34;&#39;.format(error_string)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def add_database_agent(self, agent_name, access_node, **kwargs):
+        &#34;&#34;&#34;Adds database agent to cloud client
+            Args:
+                agent_name      (str)   --  agent name
+                access_node     (str)   --  access node name
+                **kwargs        (dict)  --  dict of keyword arguments as follows
+                                            install_dir     (str)   --  database client install directory
+                                            version         (str)   --  database version
+            Returns:
+                object - instance of the Agent class
+
+            Raises:
+                SDKException:
+                  if agent with given name already exists
+
+                    if failed to add the agent
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+
+        if self.has_agent(agent_name):
+            raise SDKException(
+                &#39;Agent&#39;, &#39;102&#39;, &#39;Agent &#34;{0}&#34; already exists.&#39;.format(
+                    agent_name)
+            )
+
+        request_json = {
+            &#34;createAgent&#34;: True,
+            &#34;association&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;clientName&#34;: self._client_object.client_name,
+                        &#34;appName&#34;: agent_name
+                    }
+                ]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;AgentProperties&#34;: {
+                    &#34;createIndexOnFail&#34;: False,
+                    &#34;createIndexOnFull&#34;: False,
+                    &#34;installDate&#34;: 0,
+                    &#34;userDescription&#34;: &#34;&#34;,
+                    &#34;runTrueUpJobAfterDaysForOnePass&#34;: 0,
+                    &#34;maxSimultaneousStubRecoveries&#34;: 0,
+                    &#34;agentVersion&#34;: &#34;&#34;,
+                    &#34;isTrueUpOptionEnabledForOnePass&#34;: False
+                },
+                &#34;cloudDbConfig&#34;: {
+                    &#34;enabled&#34;: True,
+                    &#34;dbProxyClientList&#34;: [
+                        {
+                            &#34;dbSoftwareConfigList&#34;: [
+                                {
+                                    &#34;installDir&#34;: kwargs.get(&#34;install_dir&#34;, &#34;&#34;),
+                                    &#34;version&#34;: kwargs.get(&#34;version&#34;, &#34;10.0&#34;)
+                                }
+                            ],
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: access_node
+                            }
+                        }
+                    ]
+                },
+                &#34;idaEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: agent_name
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
+
+class Agent(object):
+    &#34;&#34;&#34;Class for performing agent operations of an agent for a specific client.&#34;&#34;&#34;
+
+    def __init__(self, client_object, agent_name, agent_id=None):
+        &#34;&#34;&#34;Initialize the instance of the Agent class.
+
+            Args:
+                client_object   (object)    --  instance of the Client class
+
+                agent_name      (str)       --  name of the agent
+
+                    (File System, Virtual Server, etc.)
+
+                agent_id        (str)       --  id of the agent
+
+                    default: None
+
+            Returns:
+                object  -   instance of the Agent class
+
+        &#34;&#34;&#34;
+        self._client_object = client_object
+        self._commcell_object = self._client_object._commcell_object
+        self._agent_name = agent_name.lower()
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENT = self._services[&#39;AGENT&#39;]
+
+        if agent_id:
+            # Use the agent id mentioned in the arguments
+            self._agent_id = str(agent_id)
+        else:
+            # Get the agent id if agent id is not provided
+            self._agent_id = self._get_agent_id()
+
+        self.GET_AGENT = self._services[&#39;GET_AGENT&#39;] % (self._client_object.client_id, self._agent_id)
+
+        self._agent_properties = None
+
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None
+
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;&#34;{0}&#34; Agent instance for Client: &#34;{1}&#34;&#39;
+
+        return representation_string.format(
+            string.capwords(self.agent_name), self._client_object.client_name
+        )
+
+    def _get_agent_id(self):
+        &#34;&#34;&#34;Gets the agent id associated with this agent.
+
+            Returns:
+                str - id associated with this agent
+        &#34;&#34;&#34;
+        agents = Agents(self._client_object)
+        return agents.get(self.agent_name).agent_id
+
+    def _get_agent_properties(self):
+        &#34;&#34;&#34;Gets the agent properties of this agent.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self.GET_AGENT)
+
+        if flag:
+            if response.json() and &#39;agentProperties&#39; in response.json():
+                self._agent_properties = response.json()[&#39;agentProperties&#39;][0]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _request_json_(self, option, enable=True, enable_time=None):
+        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                option  (str)   --  string option for which to run the API for
+
+                    e.g.; Backup / Restore
+
+            Returns:
+                dict    -   JSON request to pass to the API
+
+        &#34;&#34;&#34;
+        options_dict = {
+            &#34;Backup&#34;: 1,
+            &#34;Restore&#34;: 2
+        }
+
+        request_json1 = {
+            &#34;association&#34;: {
+                &#34;entity&#34;: [{
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self.agent_name
+                }]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;idaActivityControl&#34;: {
+                    &#34;activityControlOptions&#34;: [{
+                        &#34;activityType&#34;: options_dict[option],
+                        &#34;enableAfterADelay&#34;: False,
+                        &#34;enableActivityType&#34;: enable
+                    }]
+                }
+            }
+        }
+
+        request_json2 = {
+            &#34;association&#34;: {
+                &#34;entity&#34;: [{
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self.agent_name
+                }]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;idaActivityControl&#34;: {
+                    &#34;activityControlOptions&#34;: [{
+                        &#34;activityType&#34;: options_dict[option],
+                        &#34;enableAfterADelay&#34;: True,
+                        &#34;enableActivityType&#34;: False,
+                        &#34;dateTime&#34;: {
+                            &#34;TimeZoneName&#34;: self._commcell_object.default_timezone,
+                            &#34;timeValue&#34;: enable_time
+                        }
+                    }]
+                }
+            }
+        }
+
+        if enable_time:
+            return request_json2
+        else:
+            return request_json1
+
+    def _process_update_request(self, request_json):
+        &#34;&#34;&#34;Runs the Agent update API
+
+            Args:
+                request_json    (dict)  -- request json sent as payload
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self.GET_AGENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    if response.json()[&#39;response&#39;][0].get(&#39;errorCode&#39;, 0):
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        raise SDKException(
+                            &#39;Agent&#39;, &#39;102&#39;, &#39;Failed to update Agent properties\nError: &#34;{0}&#34;&#39;.format(error_message))
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def update_properties(self, properties_dict):
+        &#34;&#34;&#34;Updates the agent properties
+
+            Args:
+                properties_dict (dict)  --  agent property dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;agentProperties&#34;:
+                {
+                    &#34;AgentProperties&#34;: {},
+                    &#34;idaEntity&#34;: {
+                        &#34;appName&#34;: self.agent_name,
+                        &#34;clientName&#34;: self._client_object.client_name,
+                        &#34;commCellName&#34;: self._commcell_object.commserv_name
+                    },
+                }
+        }
+
+        request_json[&#39;agentProperties&#39;].update(properties_dict)
+
+        self._process_update_request(request_json)
+
+    @property
+    def properties(self):
+        &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+        return copy.deepcopy(self._agent_properties)
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+        return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+        return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)
+
+    @description.setter
+    def description(self, description):
+        &#34;&#34;&#34;Sets the description for the agent
+
+        Args:
+            description (str)   -- Description to be set for the agent
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#39;AgentProperties&#39;][&#39;userDescription&#39;] = description
+        self.update_properties(update_properties)
+
+    @property
+    def agent_id(self):
+        &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+        return self._agent_id
+
+    @property
+    def agent_name(self):
+        &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+        return self._agent_name
+
+    @property
+    def is_backup_enabled(self):
+        &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+        for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+            if activitytype[&#39;activityType&#39;] == 1:
+                return activitytype[&#39;enableActivityType&#39;]
+
+        return False
+
+    @property
+    def is_restore_enabled(self):
+        &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+        for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+            if activitytype[&#39;activityType&#39;] == 2:
+                return activitytype[&#39;enableActivityType&#39;]
+
+        return False
+
+    @property
+    def instances(self):
+        &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._instances is None:
+            self._instances = Instances(self)
+
+        return self._instances
+
+    @property
+    def backupsets(self):
+        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._backupsets is None:
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def schedules(self):
+        &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._schedules is None:
+            self._schedules = Schedules(self)
+
+        return self._schedules
+
+    def enable_backup(self):
+        &#34;&#34;&#34;Enable Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Backup&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_backup_at_time(self, enable_time):
+        &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+                **Note** In case of linux CommServer provide time in GMT timezone
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+
+                    if time value entered is not of correct format
+
+                    if failed to enable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        try:
+            time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+            if time.mktime(time_tuple) &lt; time.time():
+                raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+        except ValueError:
+            raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+        request_json = self._request_json_(&#39;Backup&#39;, False, enable_time)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def disable_backup(self):
+        &#34;&#34;&#34;Disables Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Backup&#39;, False)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_restore(self):
+        &#34;&#34;&#34;Enable Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Restore&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_restore_at_time(self, enable_time):
+        &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+
+                    if time value entered is not of correct format
+
+                    if failed to enable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        try:
+            time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+            if time.mktime(time_tuple) &lt; time.time():
+                raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+        except ValueError:
+            raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+        request_json = self._request_json_(&#39;Restore&#39;, False, enable_time)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def disable_restore(self):
+        &#34;&#34;&#34;Disables Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Restore&#39;, False)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+                    o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+        self._get_agent_properties()
+
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.agent.Agent"><code class="flex name class">
+<span>class <span class="ident">Agent</span></span>
+<span>(</span><span>client_object, agent_name, agent_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing agent operations of an agent for a specific client.</p>
+<p>Initialize the instance of the Agent class.</p>
+<h2 id="args">Args</h2>
+<p>client_object
+(object)
+&ndash;
+instance of the Client class</p>
+<p>agent_name
+(str)
+&ndash;
+name of the agent</p>
+<pre><code>(File System, Virtual Server, etc.)
+</code></pre>
+<p>agent_id
+(str)
+&ndash;
+id of the agent</p>
+<pre><code>default: None
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Agent class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L416-L938" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Agent(object):
+    &#34;&#34;&#34;Class for performing agent operations of an agent for a specific client.&#34;&#34;&#34;
+
+    def __init__(self, client_object, agent_name, agent_id=None):
+        &#34;&#34;&#34;Initialize the instance of the Agent class.
+
+            Args:
+                client_object   (object)    --  instance of the Client class
+
+                agent_name      (str)       --  name of the agent
+
+                    (File System, Virtual Server, etc.)
+
+                agent_id        (str)       --  id of the agent
+
+                    default: None
+
+            Returns:
+                object  -   instance of the Agent class
+
+        &#34;&#34;&#34;
+        self._client_object = client_object
+        self._commcell_object = self._client_object._commcell_object
+        self._agent_name = agent_name.lower()
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENT = self._services[&#39;AGENT&#39;]
+
+        if agent_id:
+            # Use the agent id mentioned in the arguments
+            self._agent_id = str(agent_id)
+        else:
+            # Get the agent id if agent id is not provided
+            self._agent_id = self._get_agent_id()
+
+        self.GET_AGENT = self._services[&#39;GET_AGENT&#39;] % (self._client_object.client_id, self._agent_id)
+
+        self._agent_properties = None
+
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None
+
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;&#34;{0}&#34; Agent instance for Client: &#34;{1}&#34;&#39;
+
+        return representation_string.format(
+            string.capwords(self.agent_name), self._client_object.client_name
+        )
+
+    def _get_agent_id(self):
+        &#34;&#34;&#34;Gets the agent id associated with this agent.
+
+            Returns:
+                str - id associated with this agent
+        &#34;&#34;&#34;
+        agents = Agents(self._client_object)
+        return agents.get(self.agent_name).agent_id
+
+    def _get_agent_properties(self):
+        &#34;&#34;&#34;Gets the agent properties of this agent.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self.GET_AGENT)
+
+        if flag:
+            if response.json() and &#39;agentProperties&#39; in response.json():
+                self._agent_properties = response.json()[&#39;agentProperties&#39;][0]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _request_json_(self, option, enable=True, enable_time=None):
+        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+                option  (str)   --  string option for which to run the API for
+
+                    e.g.; Backup / Restore
+
+            Returns:
+                dict    -   JSON request to pass to the API
+
+        &#34;&#34;&#34;
+        options_dict = {
+            &#34;Backup&#34;: 1,
+            &#34;Restore&#34;: 2
+        }
+
+        request_json1 = {
+            &#34;association&#34;: {
+                &#34;entity&#34;: [{
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self.agent_name
+                }]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;idaActivityControl&#34;: {
+                    &#34;activityControlOptions&#34;: [{
+                        &#34;activityType&#34;: options_dict[option],
+                        &#34;enableAfterADelay&#34;: False,
+                        &#34;enableActivityType&#34;: enable
+                    }]
+                }
+            }
+        }
+
+        request_json2 = {
+            &#34;association&#34;: {
+                &#34;entity&#34;: [{
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self.agent_name
+                }]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;idaActivityControl&#34;: {
+                    &#34;activityControlOptions&#34;: [{
+                        &#34;activityType&#34;: options_dict[option],
+                        &#34;enableAfterADelay&#34;: True,
+                        &#34;enableActivityType&#34;: False,
+                        &#34;dateTime&#34;: {
+                            &#34;TimeZoneName&#34;: self._commcell_object.default_timezone,
+                            &#34;timeValue&#34;: enable_time
+                        }
+                    }]
+                }
+            }
+        }
+
+        if enable_time:
+            return request_json2
+        else:
+            return request_json1
+
+    def _process_update_request(self, request_json):
+        &#34;&#34;&#34;Runs the Agent update API
+
+            Args:
+                request_json    (dict)  -- request json sent as payload
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self.GET_AGENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    if response.json()[&#39;response&#39;][0].get(&#39;errorCode&#39;, 0):
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        raise SDKException(
+                            &#39;Agent&#39;, &#39;102&#39;, &#39;Failed to update Agent properties\nError: &#34;{0}&#34;&#39;.format(error_message))
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def update_properties(self, properties_dict):
+        &#34;&#34;&#34;Updates the agent properties
+
+            Args:
+                properties_dict (dict)  --  agent property dict which is to be updated
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+        need to change and use the update_properties method to set the properties
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;agentProperties&#34;:
+                {
+                    &#34;AgentProperties&#34;: {},
+                    &#34;idaEntity&#34;: {
+                        &#34;appName&#34;: self.agent_name,
+                        &#34;clientName&#34;: self._client_object.client_name,
+                        &#34;commCellName&#34;: self._commcell_object.commserv_name
+                    },
+                }
+        }
+
+        request_json[&#39;agentProperties&#39;].update(properties_dict)
+
+        self._process_update_request(request_json)
+
+    @property
+    def properties(self):
+        &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+        return copy.deepcopy(self._agent_properties)
+
+    @property
+    def name(self):
+        &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+        return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+        return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)
+
+    @description.setter
+    def description(self, description):
+        &#34;&#34;&#34;Sets the description for the agent
+
+        Args:
+            description (str)   -- Description to be set for the agent
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#39;AgentProperties&#39;][&#39;userDescription&#39;] = description
+        self.update_properties(update_properties)
+
+    @property
+    def agent_id(self):
+        &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+        return self._agent_id
+
+    @property
+    def agent_name(self):
+        &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+        return self._agent_name
+
+    @property
+    def is_backup_enabled(self):
+        &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+        for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+            if activitytype[&#39;activityType&#39;] == 1:
+                return activitytype[&#39;enableActivityType&#39;]
+
+        return False
+
+    @property
+    def is_restore_enabled(self):
+        &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+        for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+            if activitytype[&#39;activityType&#39;] == 2:
+                return activitytype[&#39;enableActivityType&#39;]
+
+        return False
+
+    @property
+    def instances(self):
+        &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._instances is None:
+            self._instances = Instances(self)
+
+        return self._instances
+
+    @property
+    def backupsets(self):
+        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._backupsets is None:
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def schedules(self):
+        &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
+        installed / configured on the Client for the selected Agent.
+        &#34;&#34;&#34;
+        if self._schedules is None:
+            self._schedules = Schedules(self)
+
+        return self._schedules
+
+    def enable_backup(self):
+        &#34;&#34;&#34;Enable Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Backup&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_backup_at_time(self, enable_time):
+        &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+                **Note** In case of linux CommServer provide time in GMT timezone
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+
+                    if time value entered is not of correct format
+
+                    if failed to enable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        try:
+            time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+            if time.mktime(time_tuple) &lt; time.time():
+                raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+        except ValueError:
+            raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+        request_json = self._request_json_(&#39;Backup&#39;, False, enable_time)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def disable_backup(self):
+        &#34;&#34;&#34;Disables Backup for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable backup
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Backup&#39;, False)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_restore(self):
+        &#34;&#34;&#34;Enable Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to enable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Restore&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable_restore_at_time(self, enable_time):
+        &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+
+            Args:
+                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                    format: YYYY-MM-DD HH:mm:ss
+
+            Raises:
+                SDKException:
+                    if time value entered is less than the current time
+
+                    if time value entered is not of correct format
+
+                    if failed to enable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        try:
+            time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+            if time.mktime(time_tuple) &lt; time.time():
+                raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+        except ValueError:
+            raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+        request_json = self._request_json_(&#39;Restore&#39;, False, enable_time)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                    o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def disable_restore(self):
+        &#34;&#34;&#34;Disables Restore for this Agent.
+
+            Raises:
+                SDKException:
+                    if failed to disable restore
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        request_json = self._request_json_(&#39;Restore&#39;, False)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                if error_code == 0:
+                    return
+                elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                    error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+                    o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+        self._get_agent_properties()
+
+        self._instances = None
+        self._backupsets = None
+        self._schedules = None</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.agents.exchange_database_agent.ExchangeDatabaseAgent" href="agents/exchange_database_agent.html#cvpysdk.agents.exchange_database_agent.ExchangeDatabaseAgent">ExchangeDatabaseAgent</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.agent.Agent.agent_id"><code class="name">var <span class="ident">agent_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the id of the Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L657-L660" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def agent_id(self):
+    &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+    return self._agent_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.agent_name"><code class="name">var <span class="ident">agent_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the name of the Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L662-L665" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def agent_name(self):
+    &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+    return self._agent_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.backupsets"><code class="name">var <span class="ident">backupsets</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Backupsets class representing the list of Backupsets
+installed / configured on the Client for the selected Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L695-L703" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def backupsets(self):
+    &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+    installed / configured on the Client for the selected Agent.
+    &#34;&#34;&#34;
+    if self._backupsets is None:
+        self._backupsets = Backupsets(self)
+
+    return self._backupsets</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.description"><code class="name">var <span class="ident">description</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the description of the Agent</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L640-L643" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def description(self):
+    &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+    return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.instances"><code class="name">var <span class="ident">instances</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Instances class representing the list of Instances
+installed / configured on the Client for the selected Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L685-L693" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def instances(self):
+    &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
+    installed / configured on the Client for the selected Agent.
+    &#34;&#34;&#34;
+    if self._instances is None:
+        self._instances = Instances(self)
+
+    return self._instances</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.is_backup_enabled"><code class="name">var <span class="ident">is_backup_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean specifying whether backup is enabled for this agent or not.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L667-L674" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_backup_enabled(self):
+    &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+    for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+        if activitytype[&#39;activityType&#39;] == 1:
+            return activitytype[&#39;enableActivityType&#39;]
+
+    return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.is_restore_enabled"><code class="name">var <span class="ident">is_restore_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean specifying whether restore is enabled for this agent or not.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L676-L683" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_restore_enabled(self):
+    &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+    for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
+        if activitytype[&#39;activityType&#39;] == 2:
+            return activitytype[&#39;enableActivityType&#39;]
+
+    return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Agent display name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L635-L638" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def name(self):
+    &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+    return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.properties"><code class="name">var <span class="ident">properties</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the agent properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L630-L633" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def properties(self):
+    &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+    return copy.deepcopy(self._agent_properties)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.schedules"><code class="name">var <span class="ident">schedules</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Schedules class representing the list of Schedules
+installed / configured on the Client for the selected Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L705-L713" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def schedules(self):
+    &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
+    installed / configured on the Client for the selected Agent.
+    &#34;&#34;&#34;
+    if self._schedules is None:
+        self._schedules = Schedules(self)
+
+    return self._schedules</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.agent.Agent.disable_backup"><code class="name flex">
+<span>def <span class="ident">disable_backup</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disables Backup for this Agent.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to disable backup</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L794-L823" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable_backup(self):
+    &#34;&#34;&#34;Disables Backup for this Agent.
+
+        Raises:
+            SDKException:
+                if failed to disable backup
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    request_json = self._request_json_(&#39;Backup&#39;, False)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.disable_restore"><code class="name flex">
+<span>def <span class="ident">disable_restore</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disables Restore for this Agent.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to disable restore</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L902-L930" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable_restore(self):
+    &#34;&#34;&#34;Disables Restore for this Agent.
+
+        Raises:
+            SDKException:
+                if failed to disable restore
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    request_json = self._request_json_(&#39;Restore&#39;, False)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+                o_str = &#39;Failed to disable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.enable_backup"><code class="name flex">
+<span>def <span class="ident">enable_backup</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enable Backup for this Agent.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to enable backup</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L715-L744" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_backup(self):
+    &#34;&#34;&#34;Enable Backup for this Agent.
+
+        Raises:
+            SDKException:
+                if failed to enable backup
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    request_json = self._request_json_(&#39;Backup&#39;)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.enable_backup_at_time"><code class="name flex">
+<span>def <span class="ident">enable_backup_at_time</span></span>(<span>self, enable_time)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disables Backup if not already disabled, and enables at the time specified.</p>
+<h2 id="args">Args</h2>
+<p>enable_time (str)
+&ndash;
+UTC time to enable the backup at, in 24 Hour format
+format: YYYY-MM-DD HH:mm:ss</p>
+<p><strong>Note</strong> In case of linux CommServer provide time in GMT timezone</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if time value entered is less than the current time</p>
+<pre><code>if time value entered is not of correct format
+
+if failed to enable backup
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L746-L792" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_backup_at_time(self, enable_time):
+    &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+
+        Args:
+            enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
+                format: YYYY-MM-DD HH:mm:ss
+
+            **Note** In case of linux CommServer provide time in GMT timezone
+
+        Raises:
+            SDKException:
+                if time value entered is less than the current time
+
+                if time value entered is not of correct format
+
+                if failed to enable backup
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    try:
+        time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+        if time.mktime(time_tuple) &lt; time.time():
+            raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+    except ValueError:
+        raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+    request_json = self._request_json_(&#39;Backup&#39;, False, enable_time)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                o_str = &#39;Failed to enable Backup\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.enable_restore"><code class="name flex">
+<span>def <span class="ident">enable_restore</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enable Restore for this Agent.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to enable restore</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L825-L854" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_restore(self):
+    &#34;&#34;&#34;Enable Restore for this Agent.
+
+        Raises:
+            SDKException:
+                if failed to enable restore
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    request_json = self._request_json_(&#39;Restore&#39;)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.enable_restore_at_time"><code class="name flex">
+<span>def <span class="ident">enable_restore_at_time</span></span>(<span>self, enable_time)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disables Restore if not already disabled, and enables at the time specified.</p>
+<h2 id="args">Args</h2>
+<p>enable_time (str)
+&ndash;
+UTC time to enable the restore at, in 24 Hour format
+format: YYYY-MM-DD HH:mm:ss</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if time value entered is less than the current time</p>
+<pre><code>if time value entered is not of correct format
+
+if failed to enable restore
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L856-L900" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_restore_at_time(self, enable_time):
+    &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+
+        Args:
+            enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
+                format: YYYY-MM-DD HH:mm:ss
+
+        Raises:
+            SDKException:
+                if time value entered is less than the current time
+
+                if time value entered is not of correct format
+
+                if failed to enable restore
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    try:
+        time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
+        if time.mktime(time_tuple) &lt; time.time():
+            raise SDKException(&#39;Agent&#39;, &#39;103&#39;)
+    except ValueError:
+        raise SDKException(&#39;Agent&#39;, &#39;104&#39;)
+
+    request_json = self._request_json_(&#39;Restore&#39;, False, enable_time)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._AGENT, request_json)
+
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+            if error_code == 0:
+                return
+            elif &#39;errorString&#39; in response.json()[&#39;response&#39;][0]:
+                error_message = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+
+                o_str = &#39;Failed to enable Restore\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the properties of the Agent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L932-L938" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+    self._get_agent_properties()
+
+    self._instances = None
+    self._backupsets = None
+    self._schedules = None</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agent.update_properties"><code class="name flex">
+<span>def <span class="ident">update_properties</span></span>(<span>self, properties_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Updates the agent properties</p>
+<pre><code>Args:
+    properties_dict (dict)  --  agent property dict which is to be updated
+
+Returns:
+    None
+
+Raises:
+    SDKException:
+        if failed to add
+
+        if response is empty
+
+        if response code is not as expected
+</code></pre>
+<p><strong>Note</strong> self.properties can be used to get a deep copy of all the properties, modify the properties which you
+need to change and use the update_properties method to set the properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L593-L628" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_properties(self, properties_dict):
+    &#34;&#34;&#34;Updates the agent properties
+
+        Args:
+            properties_dict (dict)  --  agent property dict which is to be updated
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to add
+
+                if response is empty
+
+                if response code is not as expected
+
+    **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
+    need to change and use the update_properties method to set the properties
+
+    &#34;&#34;&#34;
+    request_json = {
+        &#34;agentProperties&#34;:
+            {
+                &#34;AgentProperties&#34;: {},
+                &#34;idaEntity&#34;: {
+                    &#34;appName&#34;: self.agent_name,
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;commCellName&#34;: self._commcell_object.commserv_name
+                },
+            }
+    }
+
+    request_json[&#39;agentProperties&#39;].update(properties_dict)
+
+    self._process_update_request(request_json)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.agent.Agents"><code class="flex name class">
+<span>class <span class="ident">Agents</span></span>
+<span>(</span><span>client_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for getting all the agents associated with a client.</p>
+<p>Initialize object of the Agents class.</p>
+<h2 id="args">Args</h2>
+<p>client_object (object)
+&ndash;
+instance of the Client class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Agents class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L107-L413" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Agents(object):
+    &#34;&#34;&#34;Class for getting all the agents associated with a client.&#34;&#34;&#34;
+
+    def __init__(self, client_object):
+        &#34;&#34;&#34;Initialize object of the Agents class.
+
+            Args:
+                client_object (object)  --  instance of the Client class
+
+            Returns:
+                object - instance of the Agents class
+        &#34;&#34;&#34;
+        self._client_object = client_object
+        self._commcell_object = self._client_object._commcell_object
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._AGENTS = self._services[&#39;GET_ALL_AGENTS&#39;] % (self._client_object.client_id)
+
+        self._agents = None
+        self.refresh()
+
+        from .agents.exchange_database_agent import ExchangeDatabaseAgent
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        self._agents_dict = {
+            &#39;exchange database&#39;: ExchangeDatabaseAgent
+        }
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all agents of the client.
+
+            Returns:
+                str     -   string of all the agents of a client
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Agent&#39;, &#39;Client&#39;)
+
+        for index, agent in enumerate(self._agents):
+            sub_str = &#39;{:^5}\t{:20}\t{:20}\n&#39;.format(
+                index + 1,
+                agent,
+                self._client_object.client_name
+            )
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Agents class.&#34;&#34;&#34;
+        return &#34;Agents class instance for Client: &#39;{0}&#39;&#34;.format(self._client_object.client_name)
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the number of the Agents licensed for the selected Client.&#34;&#34;&#34;
+        return len(self.all_agents)
+
+    def __getitem__(self, value):
+        &#34;&#34;&#34;Returns the name of the agent for the given agent ID or
+            the details of the agent for given agent Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the agent
+
+            Returns:
+                str     -   name of the agent, if the agent id was given
+
+                dict    -   dict of details of the agent, if agent name was given
+
+            Raises:
+                IndexError:
+                    no agent exists with the given Name / Id
+
+        &#34;&#34;&#34;
+        value = str(value)
+
+        if value in self.all_agents:
+            return self.all_agents[value]
+        else:
+            try:
+                return list(filter(lambda x: x[1] == value, self.all_agents.items()))[0][0]
+            except IndexError:
+                raise IndexError(&#39;No agent exists with the given Name / Id&#39;)
+
+    def _get_agents(self):
+        &#34;&#34;&#34;Gets all the agents associated to the client specified with this client object.
+
+            Returns:
+                dict - consists of all agents in the client
+                    {
+                         &#34;agent1_name&#34;: agent1_id,
+                         &#34;agent2_name&#34;: agent2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._AGENTS)
+
+        if flag:
+            if response.json() and &#39;agentProperties&#39; in response.json():
+
+                agent_dict = {}
+
+                for dictionary in response.json()[&#39;agentProperties&#39;]:
+                    temp_name = dictionary[&#39;idaEntity&#39;][&#39;appName&#39;].lower()
+                    temp_id = str(dictionary[&#39;idaEntity&#39;][&#39;applicationId&#39;]).lower()
+                    agent_dict[temp_name] = temp_id
+
+                return agent_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_agents(self):
+        &#34;&#34;&#34;Returns dict of all the agents installed on client.
+
+            dict    -   consists of all agents in the client
+
+                {
+                    &#34;agent1_name&#34;: agent1_id,
+
+                    &#34;agent2_name&#34;: agent2_id
+                }
+
+        &#34;&#34;&#34;
+        return self._agents
+
+    def has_agent(self, agent_name):
+        &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+
+            Args:
+                agent_name (str)  --  name of the agent
+
+            Returns:
+                bool - boolean output whether the agent is installed for the client or not
+
+            Raises:
+                SDKException:
+                    if type of the agent name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(agent_name, basestring):
+            raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+
+        return self._agents and agent_name.lower() in self._agents
+
+    def get(self, agent_name):
+        &#34;&#34;&#34;Returns a agent object of the specified client.
+
+            Args:
+                agent_name (str)  --  name of the agent
+
+            Returns:
+                object - instance of the Agent class for the given agent name
+
+            Raises:
+                SDKException:
+                    if type of the agent name argument is not string
+
+                    if no agent exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(agent_name, basestring):
+            raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+        else:
+            agent_name = agent_name.lower()
+
+            if self.has_agent(agent_name):
+                updated_agent_name = agent_name
+                if &#34;file system&#34; in agent_name:
+                    updated_agent_name = &#34;file system&#34;
+                return self._agents_dict.get(agent_name, Agent)(
+                    self._client_object, updated_agent_name, self._agents[agent_name]
+                )
+
+            raise SDKException(&#39;Agent&#39;, &#39;102&#39;, &#39;No agent exists with name: {0}&#39;.format(agent_name))
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+        self._agents = self._get_agents()
+
+    def _process_add_response(self, request_json):
+        &#34;&#34;&#34;Runs the Agent Add API with the request JSON provided,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                (bool, basestring, basestring):
+                    bool -  flag specifies whether success / failure
+
+                    str  -  error code received in the response
+
+                    str  -  error message received
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._services[&#39;AGENT&#39;], request_json)
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    error_code = response.json()[&#39;response&#39;][0][&#39;errorCode&#39;]
+
+                    if error_code != 0:
+                        error_string = response.json()[&#39;response&#39;][0][&#39;errorString&#39;]
+                        o_str = &#39;Failed to create agent\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+                    else:
+                        # initialize the agetns again
+                        # so the agent object has all the agents
+                        agent_name = request_json[&#39;association&#39;][&#39;entity&#39;][0][&#39;appName&#39;]
+                        self.refresh()
+                        return self.get(agent_name)
+                elif &#39;errorMessage&#39; in response.json():
+                    error_string = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Failed to create agent\nError: &#34;{0}&#34;&#39;.format(error_string)
+                    raise SDKException(&#39;Agent&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def add_database_agent(self, agent_name, access_node, **kwargs):
+        &#34;&#34;&#34;Adds database agent to cloud client
+            Args:
+                agent_name      (str)   --  agent name
+                access_node     (str)   --  access node name
+                **kwargs        (dict)  --  dict of keyword arguments as follows
+                                            install_dir     (str)   --  database client install directory
+                                            version         (str)   --  database version
+            Returns:
+                object - instance of the Agent class
+
+            Raises:
+                SDKException:
+                  if agent with given name already exists
+
+                    if failed to add the agent
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+
+        if self.has_agent(agent_name):
+            raise SDKException(
+                &#39;Agent&#39;, &#39;102&#39;, &#39;Agent &#34;{0}&#34; already exists.&#39;.format(
+                    agent_name)
+            )
+
+        request_json = {
+            &#34;createAgent&#34;: True,
+            &#34;association&#34;: {
+                &#34;entity&#34;: [
+                    {
+                        &#34;clientName&#34;: self._client_object.client_name,
+                        &#34;appName&#34;: agent_name
+                    }
+                ]
+            },
+            &#34;agentProperties&#34;: {
+                &#34;AgentProperties&#34;: {
+                    &#34;createIndexOnFail&#34;: False,
+                    &#34;createIndexOnFull&#34;: False,
+                    &#34;installDate&#34;: 0,
+                    &#34;userDescription&#34;: &#34;&#34;,
+                    &#34;runTrueUpJobAfterDaysForOnePass&#34;: 0,
+                    &#34;maxSimultaneousStubRecoveries&#34;: 0,
+                    &#34;agentVersion&#34;: &#34;&#34;,
+                    &#34;isTrueUpOptionEnabledForOnePass&#34;: False
+                },
+                &#34;cloudDbConfig&#34;: {
+                    &#34;enabled&#34;: True,
+                    &#34;dbProxyClientList&#34;: [
+                        {
+                            &#34;dbSoftwareConfigList&#34;: [
+                                {
+                                    &#34;installDir&#34;: kwargs.get(&#34;install_dir&#34;, &#34;&#34;),
+                                    &#34;version&#34;: kwargs.get(&#34;version&#34;, &#34;10.0&#34;)
+                                }
+                            ],
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: access_node
+                            }
+                        }
+                    ]
+                },
+                &#34;idaEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: agent_name
+                }
+            }
+        }
+        self._process_add_response(request_json)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.agent.Agents.all_agents"><code class="name">var <span class="ident">all_agents</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dict of all the agents installed on client.</p>
+<p>dict
+-
+consists of all agents in the client</p>
+<pre><code>{
+    "agent1_name": agent1_id,
+
+    "agent2_name": agent2_id
+}
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L227-L240" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_agents(self):
+    &#34;&#34;&#34;Returns dict of all the agents installed on client.
+
+        dict    -   consists of all agents in the client
+
+            {
+                &#34;agent1_name&#34;: agent1_id,
+
+                &#34;agent2_name&#34;: agent2_id
+            }
+
+    &#34;&#34;&#34;
+    return self._agents</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.agent.Agents.add_database_agent"><code class="name flex">
+<span>def <span class="ident">add_database_agent</span></span>(<span>self, agent_name, access_node, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds database agent to cloud client</p>
+<h2 id="args">Args</h2>
+<p>agent_name
+(str)
+&ndash;
+agent name
+access_node
+(str)
+&ndash;
+access node name
+**kwargs
+(dict)
+&ndash;
+dict of keyword arguments as follows
+install_dir
+(str)
+&ndash;
+database client install directory
+version
+(str)
+&ndash;
+database version</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Agent class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if agent with given name already exists</p>
+<pre><code>if failed to add the agent
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L342-L413" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_database_agent(self, agent_name, access_node, **kwargs):
+    &#34;&#34;&#34;Adds database agent to cloud client
+        Args:
+            agent_name      (str)   --  agent name
+            access_node     (str)   --  access node name
+            **kwargs        (dict)  --  dict of keyword arguments as follows
+                                        install_dir     (str)   --  database client install directory
+                                        version         (str)   --  database version
+        Returns:
+            object - instance of the Agent class
+
+        Raises:
+            SDKException:
+              if agent with given name already exists
+
+                if failed to add the agent
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+
+    if self.has_agent(agent_name):
+        raise SDKException(
+            &#39;Agent&#39;, &#39;102&#39;, &#39;Agent &#34;{0}&#34; already exists.&#39;.format(
+                agent_name)
+        )
+
+    request_json = {
+        &#34;createAgent&#34;: True,
+        &#34;association&#34;: {
+            &#34;entity&#34;: [
+                {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: agent_name
+                }
+            ]
+        },
+        &#34;agentProperties&#34;: {
+            &#34;AgentProperties&#34;: {
+                &#34;createIndexOnFail&#34;: False,
+                &#34;createIndexOnFull&#34;: False,
+                &#34;installDate&#34;: 0,
+                &#34;userDescription&#34;: &#34;&#34;,
+                &#34;runTrueUpJobAfterDaysForOnePass&#34;: 0,
+                &#34;maxSimultaneousStubRecoveries&#34;: 0,
+                &#34;agentVersion&#34;: &#34;&#34;,
+                &#34;isTrueUpOptionEnabledForOnePass&#34;: False
+            },
+            &#34;cloudDbConfig&#34;: {
+                &#34;enabled&#34;: True,
+                &#34;dbProxyClientList&#34;: [
+                    {
+                        &#34;dbSoftwareConfigList&#34;: [
+                            {
+                                &#34;installDir&#34;: kwargs.get(&#34;install_dir&#34;, &#34;&#34;),
+                                &#34;version&#34;: kwargs.get(&#34;version&#34;, &#34;10.0&#34;)
+                            }
+                        ],
+                        &#34;client&#34;: {
+                            &#34;clientName&#34;: access_node
+                        }
+                    }
+                ]
+            },
+            &#34;idaEntity&#34;: {
+                &#34;clientName&#34;: self._client_object.client_name,
+                &#34;appName&#34;: agent_name
+            }
+        }
+    }
+    self._process_add_response(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agents.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, agent_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a agent object of the specified client.</p>
+<h2 id="args">Args</h2>
+<p>agent_name (str)
+&ndash;
+name of the agent</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Agent class for the given agent name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the agent name argument is not string</p>
+<pre><code>if no agent exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L260-L288" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, agent_name):
+    &#34;&#34;&#34;Returns a agent object of the specified client.
+
+        Args:
+            agent_name (str)  --  name of the agent
+
+        Returns:
+            object - instance of the Agent class for the given agent name
+
+        Raises:
+            SDKException:
+                if type of the agent name argument is not string
+
+                if no agent exists with the given name
+    &#34;&#34;&#34;
+    if not isinstance(agent_name, basestring):
+        raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+    else:
+        agent_name = agent_name.lower()
+
+        if self.has_agent(agent_name):
+            updated_agent_name = agent_name
+            if &#34;file system&#34; in agent_name:
+                updated_agent_name = &#34;file system&#34;
+            return self._agents_dict.get(agent_name, Agent)(
+                self._client_object, updated_agent_name, self._agents[agent_name]
+            )
+
+        raise SDKException(&#39;Agent&#39;, &#39;102&#39;, &#39;No agent exists with name: {0}&#39;.format(agent_name))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agents.has_agent"><code class="name flex">
+<span>def <span class="ident">has_agent</span></span>(<span>self, agent_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if an agent is installed for the client with the input agent name.</p>
+<h2 id="args">Args</h2>
+<p>agent_name (str)
+&ndash;
+name of the agent</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the agent is installed for the client or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the agent name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L242-L258" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_agent(self, agent_name):
+    &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+
+        Args:
+            agent_name (str)  --  name of the agent
+
+        Returns:
+            bool - boolean output whether the agent is installed for the client or not
+
+        Raises:
+            SDKException:
+                if type of the agent name argument is not string
+    &#34;&#34;&#34;
+    if not isinstance(agent_name, basestring):
+        raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
+
+    return self._agents and agent_name.lower() in self._agents</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.agent.Agents.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the agents installed on the Client.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/agent.py#L290-L292" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+    self._agents = self._get_agents()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.agent.Agent" href="#cvpysdk.agent.Agent">Agent</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.agent.Agent.agent_id" href="#cvpysdk.agent.Agent.agent_id">agent_id</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.agent_name" href="#cvpysdk.agent.Agent.agent_name">agent_name</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.backupsets" href="#cvpysdk.agent.Agent.backupsets">backupsets</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.description" href="#cvpysdk.agent.Agent.description">description</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.disable_backup" href="#cvpysdk.agent.Agent.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.disable_restore" href="#cvpysdk.agent.Agent.disable_restore">disable_restore</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.enable_backup" href="#cvpysdk.agent.Agent.enable_backup">enable_backup</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.enable_backup_at_time" href="#cvpysdk.agent.Agent.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.enable_restore" href="#cvpysdk.agent.Agent.enable_restore">enable_restore</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.enable_restore_at_time" href="#cvpysdk.agent.Agent.enable_restore_at_time">enable_restore_at_time</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.instances" href="#cvpysdk.agent.Agent.instances">instances</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.is_backup_enabled" href="#cvpysdk.agent.Agent.is_backup_enabled">is_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.is_restore_enabled" href="#cvpysdk.agent.Agent.is_restore_enabled">is_restore_enabled</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.name" href="#cvpysdk.agent.Agent.name">name</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.properties" href="#cvpysdk.agent.Agent.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.refresh" href="#cvpysdk.agent.Agent.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.schedules" href="#cvpysdk.agent.Agent.schedules">schedules</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.update_properties" href="#cvpysdk.agent.Agent.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.agent.Agents" href="#cvpysdk.agent.Agents">Agents</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.agent.Agents.add_database_agent" href="#cvpysdk.agent.Agents.add_database_agent">add_database_agent</a></code></li>
+<li><code><a title="cvpysdk.agent.Agents.all_agents" href="#cvpysdk.agent.Agents.all_agents">all_agents</a></code></li>
+<li><code><a title="cvpysdk.agent.Agents.get" href="#cvpysdk.agent.Agents.get">get</a></code></li>
+<li><code><a title="cvpysdk.agent.Agents.has_agent" href="#cvpysdk.agent.Agents.has_agent">has_agent</a></code></li>
+<li><code><a title="cvpysdk.agent.Agents.refresh" href="#cvpysdk.agent.Agents.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

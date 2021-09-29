@@ -1,0 +1,4864 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.workflow API documentation</title>
+<meta name="description" content="File for performing Workflow related operations on Commcell …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.workflow</code></h1>
+</header>
+<section id="section-intro">
+<p>File for performing Workflow related operations on Commcell.</p>
+<p>WorkFlows and WorkFlow are the two classes defined in this file.</p>
+<p>WorkFlows:
+Class for representing all the workflows associated with the commcell</p>
+<p>Workflow:
+Class for a single workflow of the commcell</p>
+<h2 id="workflows">Workflows</h2>
+<p><strong>init</strong>(commcell_object)
+&ndash;
+initialize instance of the WorkFlow class</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the workflows associated with the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns all the workflows deployed in the commcell</p>
+<p><strong>len</strong>()
+&ndash;
+returns the number of workflows associated with the Commcell</p>
+<p><strong>getitem</strong>()
+&ndash;
+returns the name of the workflow for the given WF ID
+or the details for the given workflow name</p>
+<p>_get_workflows()
+&ndash;
+gets all the workflows deployed on the commcell</p>
+<p>_get_activities()
+&ndash;
+gets all the workflow activities deployed
+on the commcell</p>
+<p>has_workflow(workflow_name)
+&ndash;
+checks if the workflow exists with given name or not</p>
+<p>has_activity(activity_name)
+&ndash;
+checks if the workflow activity exists with given name
+or not</p>
+<p>import_workflow(workflow_xml)
+&ndash;
+imports a workflow to the Commcell</p>
+<p>import_activity(activity_xml)
+&ndash;
+imports a workflow activity to the Commcell</p>
+<p>download_workflow_from_store()
+&ndash;
+downloads given workflow from the cloud.commvault.com</p>
+<p>get()
+&ndash;
+returns the instance of a specific workflow on commcell</p>
+<p>delete_workflow()
+&ndash;
+deletes a workflow from the commcell</p>
+<p>refresh()
+&ndash;
+refresh the workflows added to the Commcell</p>
+<p>refresh_activities()
+&ndash;
+refresh the workflow activities added to the commcell</p>
+<p>get_interaction_properties()
+&ndash;
+Returns a workflow interaction properties to the user</p>
+<p>submit_initeraction()
+&ndash;
+Submits a given interaction with specified action</p>
+<p>all_interactions()
+&ndash;
+Returns all interactive interactions for workflows on commcell</p>
+<p>@Property
+all_workflows
+&ndash;
+returns all workflows on Commcell</p>
+<p>all_activities
+&ndash;
+returns all activities on Commcell</p>
+<h2 id="workflow">Workflow</h2>
+<p>@Private Modules
+_read_inputs()
+&ndash;
+gets the values for a workflow input</p>
+<p>_get_workflow_id()
+&ndash;
+Get Workflow id</p>
+<p>_read_inputs()
+&ndash;
+Gets the values from the user for a workflow input.</p>
+<p>_set_workflow_properties()
+&ndash;
+Sets Workflow properties</p>
+<p>_get_workflow_properties()
+&ndash;
+Get workflow properties</p>
+<p>_get_workflow_definition()
+&ndash;
+Get workflow definition properties</p>
+<p>@Class Modules
+set_workflow_configuration()
+&ndash; Set workflow configuration</p>
+<p>enable()
+&ndash;
+Enables the workflow</p>
+<p>disable()
+&ndash;
+Disables the workflow</p>
+<p>deploy_workflow()
+&ndash;
+Deploys a workflow to the Commcell</p>
+<p>execute_workflow()
+&ndash;
+Executes a workflow and returns the job instance</p>
+<p>export_workflow()
+&ndash;
+Exports a workflow and returns the workflow xml path</p>
+<p>clone_workflow()
+&ndash;
+Clones the workflow</p>
+<p>schedule_workflow()
+&ndash;
+Creates a schedule for the workflow</p>
+<p>_process_workflow_schedule_response &ndash; processes the response received schedule creation request</p>
+<p>refresh()
+&ndash;
+Refreshes the workflow properties</p>
+<p>@Property
+workflow_name
+&ndash; Returns workflow name</p>
+<p>workflow_id
+&ndash; Returns workflow id</p>
+<p>workflow_description
+&ndash; Returns workflow description</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1-L1541" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;File for performing Workflow related operations on Commcell.
+
+WorkFlows and WorkFlow are the two classes defined in this file.
+
+WorkFlows:   Class for representing all the workflows associated with the commcell
+
+Workflow:    Class for a single workflow of the commcell
+
+WorkFlows:
+
+    __init__(commcell_object)           --  initialize instance of the WorkFlow class
+
+    __str__()                           --  returns all the workflows associated with the commcell
+
+    __repr__()                          --  returns all the workflows deployed in the commcell
+
+    __len__()                           --  returns the number of workflows associated with the Commcell
+
+    __getitem__()                       --  returns the name of the workflow for the given WF ID
+                                                or the details for the given workflow name
+
+    _get_workflows()                    --  gets all the workflows deployed on the commcell
+
+    _get_activities()                   --  gets all the workflow activities deployed
+                                                on the commcell
+
+    has_workflow(workflow_name)         --  checks if the workflow exists with given name or not
+
+    has_activity(activity_name)         --  checks if the workflow activity exists with given name
+                                                or not
+
+    import_workflow(workflow_xml)       --  imports a workflow to the Commcell
+
+    import_activity(activity_xml)       --  imports a workflow activity to the Commcell
+
+    download_workflow_from_store()      --  downloads given workflow from the cloud.commvault.com
+
+    get()                               --  returns the instance of a specific workflow on commcell
+
+    delete_workflow()                   --  deletes a workflow from the commcell
+
+    refresh()                           --  refresh the workflows added to the Commcell
+
+    refresh_activities()                --  refresh the workflow activities added to the commcell
+
+    get_interaction_properties()        --  Returns a workflow interaction properties to the user
+
+    submit_initeraction()               --  Submits a given interaction with specified action
+
+    all_interactions()                  --  Returns all interactive interactions for workflows on commcell
+
+    @Property
+    all_workflows                       --  returns all workflows on Commcell
+
+    all_activities                      --  returns all activities on Commcell
+
+
+Workflow:
+
+    @Private Modules
+    _read_inputs()                      --  gets the values for a workflow input
+
+    _get_workflow_id()                  --  Get Workflow id
+
+    _read_inputs()                      --  Gets the values from the user for a workflow input.
+
+    _set_workflow_properties()          --  Sets Workflow properties
+
+    _get_workflow_properties()          --  Get workflow properties
+
+    _get_workflow_definition()          --  Get workflow definition properties
+
+    @Class Modules
+    set_workflow_configuration()        -- Set workflow configuration
+
+    enable()                            --  Enables the workflow
+
+    disable()                           --  Disables the workflow
+
+    deploy_workflow()                   --  Deploys a workflow to the Commcell
+
+    execute_workflow()                  --  Executes a workflow and returns the job instance
+
+    export_workflow()                   --  Exports a workflow and returns the workflow xml path
+
+    clone_workflow()                    --  Clones the workflow
+
+    schedule_workflow()                 --  Creates a schedule for the workflow
+
+    _process_workflow_schedule_response -- processes the response received schedule creation request
+
+    refresh()                           --  Refreshes the workflow properties
+
+    @Property
+    workflow_name                       -- Returns workflow name
+
+    workflow_id                         -- Returns workflow id
+
+    workflow_description                -- Returns workflow description
+
+&#34;&#34;&#34;
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from base64 import b64decode
+from xml.parsers.expat import ExpatError
+
+import os
+import xmltodict
+
+from past.builtins import basestring
+from past.builtins import raw_input
+
+from .job import Job
+from .exception import SDKException
+
+
+class WorkFlows(object):
+    &#34;&#34;&#34;Class for representing all workflows associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize the WorkFlow class instance for performing workflow related
+            operations.
+
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+            Returns:
+                object  -   instance of the WorkFlow class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._WORKFLOWS = self._services[&#39;GET_WORKFLOWS&#39;]
+        self._INTERACTIONS = self._services[&#39;GET_INTERACTIONS&#39;]
+        self._INTERACTION = self._services[&#39;GET_INTERACTION&#39;]
+
+        self._workflows = None
+        self._activities = None
+
+        self.refresh()
+        self.refresh_activities()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all workflows of the Commcell.
+
+            Returns:
+                str     -   string of all the workflows associated with the commcell
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^50}\t{:^60}\t{:^30}\n\n&#39;.format(
+            &#39;S. No.&#39;, &#39;Workflow Name&#39;, &#39;Description&#39;, &#39;Client&#39;
+        )
+
+        for index, workflow in enumerate(self._workflows):
+            workflow_vals = self._workflows[workflow]
+            workflow_desciption = workflow_vals.get(&#39;description&#39;, &#39;&#39;)
+
+            if &#39;client&#39; in workflow_vals:
+                workflow_client = workflow_vals[&#39;client&#39;]
+            else:
+                workflow_client = &#34;  --  &#34;
+
+            sub_str = &#39;{:^5}\t{:50}\t{:60}\t{:^30}\n&#39;.format(
+                index + 1,
+                workflow,
+                workflow_desciption,
+                workflow_client
+            )
+
+            representation_string += sub_str
+
+            if &#39;inputs&#39; in workflow_vals and workflow_vals[&#39;inputs&#39;] != []:
+                workflow_inputs = workflow_vals[&#39;inputs&#39;]
+
+                sub_str = &#39;\n\t\tWorkFlow Inputs:\n\n&#39;
+
+                sub_str += &#39;\t\t{:^5}\t{:^35}\t{:^35}\t{:^70}\t{:^20}\t{:^20}\n\n&#39;.format(
+                    &#39;S. No.&#39;,
+                    &#39;Input Name&#39;,
+                    &#39;Display Name&#39;,
+                    &#39;Description&#39;,
+                    &#39;Default Value&#39;,
+                    &#39;Is Required&#39;
+                )
+
+                for index1, wf_input in enumerate(workflow_inputs):
+                    input_name = wf_input[&#39;input_name&#39;]
+                    is_required = wf_input[&#39;is_required&#39;]
+
+                    if wf_input[&#39;display_name&#39;] is None:
+                        display_name = &#39;  ----  &#39;
+                    else:
+                        display_name = wf_input[&#39;display_name&#39;]
+
+                    if wf_input[&#39;documentation&#39;] is None:
+                        description = &#39;  ----  &#39;
+                    else:
+                        description = wf_input[&#39;documentation&#39;]
+
+                    if wf_input[&#39;default_value&#39;] is None:
+                        default_value = &#39;  ----  &#39;
+                    else:
+                        default_value = wf_input[&#39;default_value&#39;]
+
+                    sub_str += &#39;\t\t{:^5}\t{:35}\t{:35}\t{:70}\t{:20}\t{:^20}\n&#39;.format(
+                        index1 + 1,
+                        input_name,
+                        display_name,
+                        description,
+                        default_value,
+                        str(bool(is_required))
+                    )
+
+                    sub_str += &#39;\n&#39;
+
+                representation_string += sub_str
+
+            representation_string += &#34;\n\n&#34;
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the WorkFlow class.&#34;&#34;&#34;
+        return &#34;WorkFlow class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the number of the workflows associated to the Commcell.&#34;&#34;&#34;
+        return len(self.all_workflows)
+
+    def __getitem__(self, value):
+        &#34;&#34;&#34;Returns the name of the workflow for the given workflow ID or
+            the details of the workflow for given workflow Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the workflow
+
+            Returns:
+                str     -   name of the workflow, if the workflow id was given
+
+                dict    -   dict of details of the workflow, if workflow name was given
+
+            Raises:
+                IndexError:
+                    no workflow exists with the given Name / Id
+
+        &#34;&#34;&#34;
+        value = str(value)
+
+        if value in self.all_workflows:
+            return self.all_workflows[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1][&#39;id&#39;] == value, self.all_workflows.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError(&#39;No workflow exists with the given Name / Id&#39;)
+
+    def _get_workflows(self):
+        &#34;&#34;&#34;Gets all the workflows associated to the commcell.
+
+            Returns:
+                dict    -   consists of all workflows in the commcell
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._WORKFLOWS)
+
+        if flag:
+            if response.json() and &#39;container&#39; in response.json():
+                workflow_dict = {}
+
+                for workflow in response.json()[&#39;container&#39;]:
+                    workflow_name = workflow[&#39;entity&#39;][&#39;workflowName&#39;].lower()
+                    workflow_id = str(workflow[&#39;entity&#39;][&#39;workflowId&#39;])
+                    workflow_description = workflow.get(&#39;description&#39;, &#39;&#39;)
+
+                    if &#39;deployments&#39; in workflow:
+                        workflow_client = workflow[&#39;deployments&#39;][0][&#39;client&#39;][&#39;clientName&#39;]
+
+                        if &#39;entries&#39; in workflow[&#39;deployments&#39;][0][&#39;inputForm&#39;]:
+                            workflow_inputs = []
+
+                            for a_input in workflow[&#39;deployments&#39;][0][&#39;inputForm&#39;][&#39;entries&#39;]:
+                                workflow_input = {}
+
+                                workflow_input[&#39;input_name&#39;] = a_input.get(&#39;inputName&#39;)
+                                workflow_input[&#39;display_name&#39;] = a_input.get(&#39;displayName&#39;)
+                                workflow_input[&#39;documentation&#39;] = a_input.get(&#39;documentation&#39;)
+                                workflow_input[&#39;default_value&#39;] = a_input.get(&#39;defaultValue&#39;)
+                                workflow_input[&#39;is_required&#39;] = a_input.get(&#39;required&#39;, False)
+
+                                workflow_inputs.append(workflow_input)
+                        else:
+                            workflow_inputs = []
+
+                        workflow_dict[workflow_name] = {
+                            &#39;description&#39;: workflow_description,
+                            &#39;client&#39;: workflow_client,
+                            &#39;id&#39;: workflow_id,
+                            &#39;inputs&#39;: workflow_inputs
+                        }
+                    else:
+                        workflow_dict[workflow_name] = {
+                            &#39;description&#39;: workflow_description,
+                            &#39;id&#39;: workflow_id,
+                        }
+
+                return workflow_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_activities(self):
+        &#34;&#34;&#34;Gets all the workflow activities associated to the commcell.
+
+            Returns:
+                dict    -   consists of all activities in the commcell
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        request_xml = &#34;&lt;Workflow_GetActivitiesRequest/&gt;&#34;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;activities&#39; in response.json():
+                activities_dict = {}
+
+                for activity in response.json()[&#39;activities&#39;]:
+                    name = activity[&#39;activity&#39;][&#39;activityName&#39;].lower()
+                    activity_id = str(activity[&#39;activity&#39;][&#39;schemaId&#39;])
+                    description = activity.get(&#39;description&#39;)
+                    activities_dict[name] = {
+                        &#39;description&#39;: description,
+                        &#39;id&#39;: activity_id,
+                    }
+
+                return activities_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def has_workflow(self, workflow_name):
+        &#34;&#34;&#34;Checks if a workflow exists in the commcell with the input workflow name.
+
+            Args:
+                workflow_name   (str)   --  name of the workflow
+
+            Returns:
+                bool    -   boolean output whether the workflow exists in the
+                            commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        return self._workflows and workflow_name.lower() in self._workflows
+
+    def has_activity(self, activity_name):
+        &#34;&#34;&#34;Checks if a workflow activity exists in the commcell with the input
+            activity name.
+
+            Args:
+                activity_name   (str)   --  name of the activity
+
+            Returns:
+                bool    -   boolean output whether the workflow activity exists
+                            in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the workflow activity name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(activity_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        return self._activities and activity_name.lower() in self._activities
+
+    def import_workflow(self, workflow_xml):
+        &#34;&#34;&#34;Imports a workflow to the Commcell.
+
+            Args:
+                workflow_xml    (str)   --  path of the workflow xml file / XML contents
+
+                    checks whether the given value is a local file, and reads its contents
+
+                    otherwise, uses the value given as the body for the POST request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow xml argument is not string
+
+                    if workflow xml is not a valid xml / a valid file path
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_xml, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if os.path.isfile(workflow_xml):
+            with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                workflow_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(workflow_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+        )
+
+        self.refresh()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Importing Workflow failed. {0}&#39;.format(response_string)
+            )
+
+    def import_activity(self, activity_xml):
+        &#34;&#34;&#34;Imports a workflow activity to the Commcell.
+
+            Args:
+                activity_xml    (str)   --  path of the workflow activity xml
+                                            file / XMl contents.
+
+                    Checks whether the given value is a local file, and reads its
+
+                    contents otherwise, uses the value given as the body for the
+
+                    POST request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow activity xml argument is not string
+
+                    if workflow activity xml is not a valid xml / a valid file path
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(activity_xml, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if os.path.isfile(activity_xml):
+            with open(activity_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                activity_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(activity_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, activity_xml
+        )
+
+        self.refresh_activities()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Importing Workflow activity failed. {0}&#39;.format(response_string)
+            )
+
+    def download_workflow_from_store(
+            self,
+            workflow_name,
+            download_location,
+            cloud_username,
+            cloud_password):
+        &#34;&#34;&#34;Downloads workflow from Software Store.
+
+            Args:
+                workflow_name       (str)   --  name of the workflow to download
+
+                download_location   (str)   --  location to download the workflow at
+
+                cloud_username      (str)   --  username for the cloud account
+
+                cloud_password      (str)   --  password for the above username
+
+            Returns:
+                str     -   full path of the workflow XML
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if HTTP Status Code is not SUCCESS / download workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        from .commcell import Commcell
+
+        cloud_commcell = Commcell(&#39;cloud.commvault.com&#39;, cloud_username, cloud_password)
+        cvpysdk_object = cloud_commcell._cvpysdk_object
+        services = cloud_commcell._services
+
+        flag, response = cvpysdk_object.make_request(
+            &#39;GET&#39;, services[&#39;SOFTWARESTORE_PKGINFO&#39;] % (workflow_name)
+        )
+
+        if flag is False:
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Getting Pacakge id for workflow failed. {0}&#39;.format(response.text)
+            )
+
+        if response.json():
+            if &#34;packageId&#34; in response.json():
+                package_id = response.json()[&#34;packageId&#34;]
+            else:
+                raise SDKException(
+                    &#39;Workflow&#39;, &#39;102&#39;, response.json()[&#39;errorDetail&#39;][&#39;errorMessage&#39;]
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        download_xml = &#34;&#34;&#34;
+        &lt;DM2ContentIndexing_OpenFileReq&gt;
+            &lt;fileParams id=&#34;3&#34; name=&#34;Package&#34;/&gt;
+            &lt;fileParams id=&#34;2&#34; name=&#34;{0}&#34;/&gt;
+            &lt;fileParams id=&#34;9&#34; name=&#34;1&#34;/&gt;
+        &lt;/DM2ContentIndexing_OpenFileReq&gt;
+        &#34;&#34;&#34;.format(package_id)
+
+        flag, response = cvpysdk_object.make_request(
+            &#39;POST&#39;, services[&#39;SOFTWARESTORE_DOWNLOADITEM&#39;], download_xml
+        )
+
+        if flag:
+            if response.json():
+                file_content = response.json()[&#34;fileContent&#34;][&#34;data&#34;]
+                file_content = b64decode(file_content).decode(&#39;utf-8&#39;)
+
+                if not os.path.exists(download_location):
+                    try:
+                        os.makedirs(download_location)
+                    except FileExistsError:
+                        pass
+
+                download_path = os.path.join(download_location, workflow_name + &#34;.xml&#34;)
+
+                with open(download_path, &#34;w&#34;) as file_pointer:
+                    file_pointer.write(file_content)
+
+                return download_path
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get(self, workflow_name):
+        &#34;&#34;&#34;Returns a workflow object if workflow name matches specified name
+            We check if specified name matches any of the existing workflow names.
+
+            Args:
+                workflow_name (str)  --  name of the workflow
+
+            Returns:
+                object - instance of the Workflow class for the given workflow name
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if no workflow exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+        else:
+            workflow_name = workflow_name.lower()
+
+        workflow_id = self._workflows[workflow_name].get(&#39;id&#39;)
+
+        if self.has_workflow(workflow_name):
+            return WorkFlow(self._commcell_object, workflow_name, workflow_id)
+        else:
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;No workflow exists with name: {0}&#39;.format(workflow_name)
+            )
+
+    def delete_workflow(self, workflow_name):
+        &#34;&#34;&#34;Deletes a workflow from the Commcell.
+
+            Args:
+                workflow_name   (str)   --  name of the workflow to remove
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        workflow_xml = &#34;&#34;&#34;
+            &lt;Workflow_DeleteWorkflow&gt;
+                &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+            &lt;/Workflow_DeleteWorkflow&gt;
+        &#34;&#34;&#34;.format(workflow_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+        )
+
+        self.refresh()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;, &#39;102&#39;, &#39;Deleting Workflow failed. {0}&#39;.format(response_string)
+            )
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of workflows deployed on the Commcell.&#34;&#34;&#34;
+        self._workflows = self._get_workflows()
+
+    def refresh_activities(self):
+        &#34;&#34;&#34;Refresh the list of workflow activities deployed on the Commcell.&#34;&#34;&#34;
+        self._activities = self._get_activities()
+
+    def get_interaction_properties(self, interaction_id):
+        &#34;&#34;&#34;Returns a workflow interaction properties to the user
+
+            Args:
+                interaction_id (int)  --  Workflow interaction id
+
+            Returns:
+                dictionary - Workflow interaction id properties
+
+            Raises:
+                SDKException:
+                    - if response is empty
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTION % interaction_id)
+
+        if flag:
+            if response.json() and &#39;request&#39; in response.json():
+                return response.json()[&#39;request&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def submit_interaction(self, interaction, input_xml, action):
+        &#34;&#34;&#34; Submits a given interaction with specified action
+
+            Args:
+                interaction (dict)    --  Interaction dictionary
+                e.g:
+                    {
+                        &#34;interactionId&#34;: 3871,
+                        &#34;created&#34;: 1547524940,
+                        &#34;subject&#34;: &#34;Delete Backupset [  -&gt;  -&gt;  ] requested by [ 11111_Automation_45_651 ]&#34;,
+                        &#34;activityName&#34;: &#34;Get Authorization&#34;,
+                        &#34;flags&#34;: 1,
+                        &#34;description&#34;: &#34;&#34;,
+                        &#34;sessionId&#34;: &#34;a38b32dc-f505-45c5-9d61-3eaee226b50c&#34;,
+                        &#34;processStepId&#34;: 648993,
+                        &#34;jobId&#34;: 2804488,
+                        &#34;status&#34;: 0,
+                        &#34;workflow&#34;: {
+                            &#34;workflowName&#34;: &#34;GetAndProcessAuthorization&#34;,
+                            &#34;workflowId&#34;: 2095
+                        },
+                        &#34;commCell&#34;: {
+                            &#34;commCellName&#34;: &#34;WIN-K2DCEJR56MG&#34;,
+                            &#34;commCellId&#34;: 2
+                        },
+                        &#34;client&#34;: {
+                            &#34;clientId&#34;: 2,
+                            &#34;clientName&#34;: &#34;WIN-K2DCEJR56MG&#34;
+                        },
+                        &#34;user&#34;: {
+                            &#34;userName&#34;: &#34;11111_Automation_01-14-2019_23_01_45_651&#34;,
+                            &#34;userId&#34;: 1418
+                        }
+                    }
+
+                input_xml (str)       --  Input XML string for completing the interaction.
+                                            e.g : This is very specific to the user input interaction.
+                                                    Construct the input XML based on workflow being executed and send
+                                                    to this module.
+
+                action   (str)        --  Interaction action
+                                            This is very specific to workflow being executed and the expected options
+                                                for the given interaction
+
+            Raises:
+                Exception:
+                    Failed to submit workflow interaction request
+        &#34;&#34;&#34;
+        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(input_xml)
+        commserve_name = self._commcell_object.commserv_name
+
+        request_xml = &#34;&#34;&#34;
+            &lt;Workflow_SetWebFormInteractionRequest action=&#34;{0}&#34; flags=&#34;1&#34; inputXml=&#34;{1}&#34; interactionId=&#34;{2}&#34;
+                jobId=&#34;{3}&#34; okClicked=&#34;0&#34; processStepId=&#34;{4}&#34; sessionId=&#34;&#34;&gt;
+                &lt;commCell commCellName=&#34;{5}&#34;/&gt;
+                &lt;client clientName=&#34;{6}&#34;/&gt;
+            &lt;/Workflow_SetWebFormInteractionRequest&gt;&#34;&#34;&#34;.format(
+                action, escaped_xml, str(interaction[&#39;interactionId&#39;]), str(interaction[&#39;jobId&#39;]),
+                str(interaction[&#39;processStepId&#39;]), commserve_name, commserve_name
+            )
+        response = self._commcell_object._qoperation_execute(request_xml)
+
+        if response.get(&#39;errorCode&#39;, 1) != 0:
+            o_str = &#39;Error: &#39; + response.get(&#39;errorMessage&#39;, &#39;&#39;)
+            raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to submit workflow interaction request. Error: &#39;+o_str)
+
+    def all_interactions(self):
+        &#34;&#34;&#34; Returns all interactive interactions for workflows on commcell
+            Args:
+                None
+
+            Raises:
+                SDKException:
+
+                    if response is empty
+
+                    if there are no interactions
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTIONS)
+
+        if flag:
+            if response.json() and &#39;request&#39; in response.json():
+                return response.json()[&#39;request&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_workflows(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the workflows and their info.&#34;&#34;&#34;
+        return self._workflows
+
+    @property
+    def all_activities(self):
+        &#34;&#34;&#34;Treats the activities as a read-only attribute.&#34;&#34;&#34;
+        return self._activities
+
+
+class WorkFlow(object):
+    &#34;&#34;&#34;Class for representing a workflow on a commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, workflow_name, workflow_id=None):
+        &#34;&#34;&#34;Initialize the WorkFlow class instance for performing workflow related operations.
+
+            Args:
+                commcell_object      (object)   --  instance of the Commcell class
+
+                workflow_name        (str)      --  Name of the workflow
+
+                workflow_id          (str)      --  id of the workflow
+                    default: None
+
+            Returns:
+                object  -   instance of the WorkFlow class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._workflow_name = workflow_name.lower()
+        self._workflow_id = str(workflow_id) if workflow_id else self._get_workflow_id()
+
+        self._DEPLOY_WORKFLOW = self._services[&#39;DEPLOY_WORKFLOW&#39;]
+        self._EXECUTE_WORKFLOW = self._services[&#39;EXECUTE_WORKFLOW&#39;]
+        self._GET_WORKFLOW = self._services[&#39;GET_WORKFLOW&#39;] % (self._workflow_id)
+        self._GET_WORKFLOW_DEFINITION = self._services[&#39;GET_WORKFLOW_DEFINITION&#39;]
+        self._CREATE_SCHEDULE = self._services[&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._MODIFY_SCHEDULE = self._services[&#39;EXECUTE_QCOMMAND&#39;]
+
+        self._workflows = self._commcell_object.workflows.all_workflows
+        self._activities = self._commcell_object.workflows.all_activities
+
+        self._properties = None
+        self._description = None
+        self.refresh()
+
+    def _get_workflow_id(self):
+        &#34;&#34;&#34;Gets the workflow id associated with this Workflow.
+
+            Returns:
+                str - id associated with this workflow
+        &#34;&#34;&#34;
+        return self._commcell_object.workflows.get(self._workflow_name).workflow_id
+
+    def _read_inputs(self, input_dict):
+        &#34;&#34;&#34;Gets the values from the user for a workflow input.
+
+            If user provides empty value, then default value is returned for the
+            workflow input, if it is specified.
+
+            Else, prompts the user again for the input.
+
+            Args:
+                input_dict (dict)   --  dictionary containing the values for a
+                workflow input
+
+                    {
+                        &#39;input_name&#39;,
+
+                        &#39;display_name&#39;,
+
+                        &#39;documentation&#39;,
+
+                        &#39;default_value&#39;,
+
+                        &#39;is_required&#39;
+                    }
+
+            Returns:
+                str     -   value entered by the user for the workflow input
+
+        &#34;&#34;&#34;
+        if input_dict[&#39;display_name&#39;] in [None, &#39;&#39;]:
+            prompt = input_dict[&#39;input_name&#39;]
+        else:
+            prompt = input_dict[&#39;display_name&#39;]
+
+        if input_dict[&#39;is_required&#39;]:
+            value = raw_input(prompt + &#39;*&#39; + &#39;::  &#39;)
+        else:
+            value = raw_input(prompt + &#39;::  &#39;)
+
+        if value:
+            return value
+        elif input_dict[&#39;default_value&#39;]:
+            return input_dict[&#39;default_value&#39;]
+        else:
+            return self._read_inputs(input_dict)
+
+    def _set_workflow_properties(self, attrname, attrval, disabled=&#39;0&#39;):
+        &#34;&#34;&#34;Set Workflow Properties
+
+            Args:
+                attrname    (str)    : Attribute Name
+                                            e.g:    flags,
+                                                    description
+
+                attrval     (str)    : Attribute value
+                                                    0, 1, 2, 19
+                                                    &#34;This is workflow description&#34;
+
+                disabled    (str)   : Set to 1 to disable a workflow
+                                        default is &#39;0&#39;
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow properties failed
+        &#34;&#34;&#34;
+        request_xml = {
+            &#34;Workflow_SetWorkflowProperties&#34;:
+            {
+                attrname: attrval,
+                &#34;disabled&#34;: disabled,
+                &#34;workflow&#34;: {
+                    &#34;workflowName&#34;: self._workflow_name,
+                    &#34;workflowId&#34;: self._workflow_id
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Workflow&#39;, &#39;105&#39;)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_workflow_properties(self):
+        &#34;&#34;&#34;Gets the workflow properties
+
+            Returns:
+                dict - dictionary consisting of the properties of workflow
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._GET_WORKFLOW)
+
+        if flag:
+            if response.json() and &#39;container&#39; in response.json():
+                self._properties = response.json()[&#39;container&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_workflow_definition(self):
+        &#34;&#34;&#34;Get the workflow definition from the workflow properties
+
+        Returns:
+                definition  (str)   - workflow attribute of workflow property response
+
+            Raises:
+                SDKException:
+                    if response is not success
+        &#34;&#34;&#34;
+        workflow = self._workflow_name
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;,
+            self._GET_WORKFLOW_DEFINITION % (
+                self._workflow_id
+            )
+        )
+        if flag:
+            if not response.json():
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Failed to clone workflow&#39;)
+            return response.json()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def set_workflow_configuration(self, config_xml):
+        &#34;&#34;&#34;Set Workflow configuration
+
+            Args:
+                config_xml    (xml)    : Configuration inputs for the workflow&#39;s properties-&gt;configuration tab
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
+        &#34;&#34;&#34;
+        config_xml = &#34;&lt;configuration&gt;{0}&lt;/configuration&gt;&#34;.format(config_xml)
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(config_xml)
+
+        request_xml = &#34;&#34;&#34;&lt;Workflow_SetConfigurationSettings configSettings=&#34;{0}&#34;&gt;
+            &lt;workflow workflowId=&#34;{1}&#34; workflowName=&#34;{2}&#34;/&gt;
+        &lt;/Workflow_SetConfigurationSettings&gt; &#34;&#34;&#34;.format(escaped_xml, self._workflow_id, self._workflow_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Workflow&#39;, &#39;105&#39;)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable(self):
+        &#34;&#34;&#34; Enable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Enabling workflow fails
+        &#34;&#34;&#34;
+        self._set_workflow_properties(&#39;flags&#39;, &#39;0&#39;, disabled=&#39;0&#39;)
+
+    def disable(self):
+        &#34;&#34;&#34; Disable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Disabling workflow fails
+        &#34;&#34;&#34;
+        self._set_workflow_properties(&#39;flags&#39;, &#39;1&#39;, disabled=&#39;1&#39;)
+
+    def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
+        &#34;&#34;&#34;Deploys a workflow on the Commcell.
+
+            Args:
+                workflow_engine     (str)   --  name of the client to deploy the workflow on
+
+                    default: None
+
+                workflow_xml    (str)   --  path of the workflow xml file / XMl contents
+
+                        checks whether the given value is a local file, and reads its contents
+
+                        otherwise, uses the value given as the body for the POST request
+
+                    default: None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if workflow xml argument is given and is not of type string
+
+                    if no workflow exists with the given name
+
+                    if workflow xml is given and is not a valid xml / a valid file path
+
+                    if failed to deploy workflow
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        workflow_name = self._workflow_name.lower()
+
+        if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
+                (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if not self._commcell_object.workflows.has_workflow(workflow_name):
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        workflow_deploy_service = self._DEPLOY_WORKFLOW % self._workflows[workflow_name][&#39;id&#39;]
+
+        if workflow_xml is None:
+            workflow_xml = {
+                &#34;Workflow_DeployWorkflow&#34;: {}
+            }
+
+            if workflow_engine is not None:
+                workflow_deploy_service=&#39;%s?clientName=%s&#39;%(workflow_deploy_service,workflow_engine)
+
+        elif os.path.isfile(workflow_xml):
+            with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                workflow_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(workflow_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, workflow_deploy_service, workflow_xml
+        )
+
+        self._commcell_object.workflows.refresh()
+
+        if flag:
+            if response.json():
+                error_code = str(response.json()[&#39;errorCode&#39;])
+
+                if error_code != &#34;0&#34;:
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    raise SDKException(
+                        &#39;Workflow&#39;,
+                        &#39;102&#39;,
+                        &#39;Failed to deploy workflow\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def execute_workflow(self, workflow_inputs=None, hidden=False):
+        &#34;&#34;&#34;Executes the workflow with the workflow name given as input, and returns its job id.
+
+            Args:
+
+                workflow_inputs     (dict)  --  dictionary consisting of inputs for the workflow
+
+                    if inputs are not given, user will be prompted for inputs on the command line
+
+                    default: None
+
+                    inputs dict format:
+
+                        {
+                            &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                            &#39;input2_name&#39;: &#39;input2_value&#39;
+                        }
+
+                    e.g.:
+
+                        for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                            {
+                                &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                            }
+
+                hidden (bool) -- Is the workflow hidden ? True/False
+
+            Returns:
+                **tuple**   -   (`dict`, `str` **/** `dict` **/** `object`)
+
+                    **dict**    -   returns the outputs dictionary received in the
+                    response of the API
+
+                    **str / dict / object**
+
+                        str     -   when workflow is executed in API mode
+
+                            when no job id was returned / job ID or error code is 0
+
+                        dict    -   complete response received from the server
+
+                            when the response did not had any expected values
+
+                        object  -   instance of the Job class for this workflow job
+
+                            object of the Job class is mainly returned when the Workflow being
+                            executed has User Sessions, OR the workflow is executed in JOB mode
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if failed to execute workflow
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no workflow exists with the given name
+
+        &#34;&#34;&#34;
+        workflow_name = self._workflow_name.lower()
+
+        if not hidden and workflow_name not in self._workflows:
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        execute_workflow_json = {}
+
+        if workflow_inputs is None:
+            workflow_vals = self._workflows[workflow_name]
+            if &#39;inputs&#39; in workflow_vals:
+                o_str = &#39;Workflow Name: \t\t&#34;{0}&#34;\n&#39;.format(workflow_name)
+                o_str += &#39;Workflow Description: \t&#34;{0}&#34;\n&#39;.format(workflow_vals.get(&#39;description&#39;, &#39;&#39;))
+
+                print(o_str)
+
+                for a_input in workflow_vals[&#39;inputs&#39;]:
+                    execute_workflow_json[a_input[&#39;input_name&#39;]] = self._read_inputs(a_input)
+        else:
+            execute_workflow_json = workflow_inputs
+
+        import urllib.parse
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json)
+
+        if flag:
+            if response.json():
+                output = response.json().get(&#34;outputs&#34;, {})
+
+                if &#34;jobId&#34; in response.json():
+                    if response.json()[&#34;jobId&#34;] == 0:
+                        return output, &#39;Workflow Execution Finished Successfully&#39;
+                    else:
+                        return output, Job(self._commcell_object, response.json()[&#39;jobId&#39;])
+                elif &#34;errorCode&#34; in response.json():
+                    if response.json()[&#39;errorCode&#39;] == 0:
+                        return output, &#39;Workflow Execution Finished Successfully&#39;
+                    else:
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        o_str = &#39;Executing Workflow failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+
+                        raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, o_str)
+                else:
+                    return output, response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def export_workflow(self, export_location=None):
+        &#34;&#34;&#34;Exports the workflow to the directory location specified by the user.
+
+            Args:
+                export_location     (str)   --  Directory where the workflow would be exported
+
+                    default: None
+
+            Returns:
+                str     -   absolute path of the exported workflow xml file
+
+            Raises:
+                SDKException:
+                    if export_location does not exist
+
+                    if no workflow exists with the given name
+
+                    if response is empty
+
+                    if response is not success
+
+                    if failed to write to export file
+
+        &#34;&#34;&#34;
+        workflow_name = self._workflow_name
+
+        if not self._commcell_object.workflows.has_workflow(workflow_name):
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        if export_location is None:
+            export_location = os.getcwd()
+        else:
+            if not isinstance(export_location, basestring):
+                raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+            if not os.path.exists(export_location):
+                os.makedirs(export_location)
+
+        request_xml = &#34;&#34;&#34;
+            &lt;Workflow_GetWorkflowRequest exportOnly=&#34;1&#34;&gt;
+                &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+            &lt;/Workflow_GetWorkflowRequest&gt;
+        &#34;&#34;&#34;.format(workflow_name)
+
+        workflow_xml = os.path.join(export_location, workflow_name + &#39;.xml&#39;)
+
+        headers = self._commcell_object._headers.copy()
+        headers[&#39;Accept&#39;] = &#39;application/xml&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;],
+            request_xml,
+            headers=headers
+        )
+
+        if flag and xmltodict.parse(response.text).get(&#39;Workflow_WorkflowDefinition&#39;):
+            try:
+                with open(workflow_xml, &#39;w&#39;) as export_file:
+                    export_file.write(response.text)
+                return workflow_xml
+            except Exception as excp:
+                raise SDKException(
+                    &#39;Workflow&#39;,
+                    &#39;102&#39;,
+                    &#39;Failed to write workflow definition: &#34;{0}&#34; to file.\nError: &#34;{1}&#34;&#39;.format(
+                        workflow_xml, excp
+                    )
+                )
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def clone_workflow(self, clone_workflow_name):
+        &#34;&#34;&#34;Clones the workflow
+
+        Args:
+            clone_workflow_name (str)   : name for the new workflow(clone)
+
+        Raises:
+            SDKException:
+                if response is not status
+
+                If cloning workflow operation fails
+        &#34;&#34;&#34;
+        workflow_definition = self._get_workflow_definition()
+        workflow_definition[&#39;name&#39;] = clone_workflow_name
+        workflow_definition[&#39;uniqueGuid&#39;] = &#39;&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;,
+            self._services[&#39;GET_WORKFLOWS&#39;],
+            workflow_definition,
+        )
+
+        if flag and response.json():
+            if not response.json()[&#39;workflow&#39;][&#39;workflowId&#39;]:
+                raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to clone the workflow&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
+        &#34;&#34;&#34; Creates a schedule for a workflow
+
+             Args:
+                  schedule_pattern(dict)    -- Please refer SchedulePattern.create_schedule in
+                                            schedules.py for the types of pattern to be sent
+
+                                     eg: {
+                                            &#34;schedule_name: &#39;schedule1&#39;,
+                                            &#34;freq_type&#34;: &#39;daily&#39;,
+                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                            &#34;repeat_days&#34;: days_to_repeat (int)
+                                         }
+
+                  workflow_inputs(dict) --  dictionary consisting of inputs for the workflow
+
+                    if inputs are not given, user will be prompted for inputs on the command line
+
+                    default: None
+
+                    inputs dict format:
+
+                    {
+                            &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                            &#39;input2_name&#39;: &#39;input2_value&#39;
+                    }
+
+                    e.g.:
+
+                    for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                    {
+                    &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                    }
+
+             Returns:
+                     Object : An instance of the Schedule class for the schedule created
+            &#34;&#34;&#34;
+        from cvpysdk.schedules import SchedulePattern
+        if workflow_inputs is not None:
+            xml = str(xmltodict.unparse(input_dict={&#34;inputs&#34;: workflow_inputs}).split(&#39;\n&#39;)[1])
+        task_req = {
+            &#34;processinginstructioninfo&#34;: {},
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;workflowName&#34;: self._workflow_name
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 2001
+                        },
+                        &#34;options&#34;: {
+                            &#34;workflowJobOptions&#34;: xml if workflow_inputs else &#34;&#34;,
+                            &#34;adminOpts&#34;: {
+                                &#34;contentIndexingOption&#34;: {
+                                    &#34;subClientBasedAnalytics&#34;: False
+                                }
+                            }
+                        }
+                    }
+                ]
+                }
+        }
+        request_json = SchedulePattern().create_schedule(task_req, schedule_pattern)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._CREATE_SCHEDULE, request_json)
+        output = self._process_workflow_schedule_response(flag, response)
+        if output[0]:
+            self._commcell_object.schedules.refresh()
+            return self._commcell_object.schedules.get(task_id=response.json()[&#34;taskId&#34;])
+        o_str = &#39;Failed to create Schedule\nError: &#34;{0}&#34;&#39;
+        raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
+
+    def _process_workflow_schedule_response(self, flag, response):
+        &#34;&#34;&#34;
+        processes the response received post create schedule request
+        Args:
+        flag: (bool) -- True or false based on response
+        response: (dict) response from modify request
+        Returns:
+            flag: (Bool) -- based on success and failure
+            error_code: (int) -- error_code from response
+            error_message: (str) -- error_message from the response if any
+        &#34;&#34;&#34;
+
+        if flag:
+            if response.json():
+                if &#34;taskId&#34; in response.json():
+                    task_id = str(response.json()[&#34;taskId&#34;])
+
+                    if task_id:
+                        return True, &#34;0&#34;, &#34;&#34;
+
+                elif &#34;errorCode&#34; in response.json():
+                    error_code = str(response.json()[&#39;errorCode&#39;])
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    if error_code == &#34;0&#34;:
+                        return True, &#34;0&#34;, &#34;&#34;
+
+                    if error_message:
+                        return False, error_code, error_message
+                    else:
+                        return False, error_code, &#34;&#34;
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refreshes the properties of the workflow.&#34;&#34;&#34;
+        self._get_workflow_properties()
+
+    @property
+    def workflow_name(self):
+        &#34;&#34;&#34;Treats the workflow name as a read-only attribute.&#34;&#34;&#34;
+        return self._workflow_name
+
+    @property
+    def workflow_id(self):
+        &#34;&#34;&#34;Treats the workflow id as a read-only attribute.&#34;&#34;&#34;
+        return self._workflow_id
+
+    @property
+    def version(self):
+        &#34;&#34;&#34;Treats the workflow version as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;version&#39;]
+
+    @property
+    def revision(self):
+        &#34;&#34;&#34;Treats the workflow revision as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;revision&#39;]
+
+    @property
+    def flags(self):
+        &#34;&#34;&#34;Treats the workflow flags as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;flags&#39;]
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Treats the workflow description as a property of the Workflow class.&#34;&#34;&#34;
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        &#34;&#34;&#34;Sets the description of the workflow
+
+            Raises:
+                SDKException:
+                    if failed to update description of workflow
+
+                    if the type of value input is not string
+        &#34;&#34;&#34;
+        if isinstance(value, basestring):
+            self._set_workflow_properties(&#34;description&#34;, value)
+        else:
+            raise SDKException(
+                &#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to set workflow description&#39;
+            )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.workflow.WorkFlow"><code class="flex name class">
+<span>class <span class="ident">WorkFlow</span></span>
+<span>(</span><span>commcell_object, workflow_name, workflow_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing a workflow on a commcell.</p>
+<p>Initialize the WorkFlow class instance for performing workflow related operations.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the Commcell class</p>
+<p>workflow_name
+(str)
+&ndash;
+Name of the workflow</p>
+<p>workflow_id
+(str)
+&ndash;
+id of the workflow
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the WorkFlow class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L822-L1541" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class WorkFlow(object):
+    &#34;&#34;&#34;Class for representing a workflow on a commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, workflow_name, workflow_id=None):
+        &#34;&#34;&#34;Initialize the WorkFlow class instance for performing workflow related operations.
+
+            Args:
+                commcell_object      (object)   --  instance of the Commcell class
+
+                workflow_name        (str)      --  Name of the workflow
+
+                workflow_id          (str)      --  id of the workflow
+                    default: None
+
+            Returns:
+                object  -   instance of the WorkFlow class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._workflow_name = workflow_name.lower()
+        self._workflow_id = str(workflow_id) if workflow_id else self._get_workflow_id()
+
+        self._DEPLOY_WORKFLOW = self._services[&#39;DEPLOY_WORKFLOW&#39;]
+        self._EXECUTE_WORKFLOW = self._services[&#39;EXECUTE_WORKFLOW&#39;]
+        self._GET_WORKFLOW = self._services[&#39;GET_WORKFLOW&#39;] % (self._workflow_id)
+        self._GET_WORKFLOW_DEFINITION = self._services[&#39;GET_WORKFLOW_DEFINITION&#39;]
+        self._CREATE_SCHEDULE = self._services[&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._MODIFY_SCHEDULE = self._services[&#39;EXECUTE_QCOMMAND&#39;]
+
+        self._workflows = self._commcell_object.workflows.all_workflows
+        self._activities = self._commcell_object.workflows.all_activities
+
+        self._properties = None
+        self._description = None
+        self.refresh()
+
+    def _get_workflow_id(self):
+        &#34;&#34;&#34;Gets the workflow id associated with this Workflow.
+
+            Returns:
+                str - id associated with this workflow
+        &#34;&#34;&#34;
+        return self._commcell_object.workflows.get(self._workflow_name).workflow_id
+
+    def _read_inputs(self, input_dict):
+        &#34;&#34;&#34;Gets the values from the user for a workflow input.
+
+            If user provides empty value, then default value is returned for the
+            workflow input, if it is specified.
+
+            Else, prompts the user again for the input.
+
+            Args:
+                input_dict (dict)   --  dictionary containing the values for a
+                workflow input
+
+                    {
+                        &#39;input_name&#39;,
+
+                        &#39;display_name&#39;,
+
+                        &#39;documentation&#39;,
+
+                        &#39;default_value&#39;,
+
+                        &#39;is_required&#39;
+                    }
+
+            Returns:
+                str     -   value entered by the user for the workflow input
+
+        &#34;&#34;&#34;
+        if input_dict[&#39;display_name&#39;] in [None, &#39;&#39;]:
+            prompt = input_dict[&#39;input_name&#39;]
+        else:
+            prompt = input_dict[&#39;display_name&#39;]
+
+        if input_dict[&#39;is_required&#39;]:
+            value = raw_input(prompt + &#39;*&#39; + &#39;::  &#39;)
+        else:
+            value = raw_input(prompt + &#39;::  &#39;)
+
+        if value:
+            return value
+        elif input_dict[&#39;default_value&#39;]:
+            return input_dict[&#39;default_value&#39;]
+        else:
+            return self._read_inputs(input_dict)
+
+    def _set_workflow_properties(self, attrname, attrval, disabled=&#39;0&#39;):
+        &#34;&#34;&#34;Set Workflow Properties
+
+            Args:
+                attrname    (str)    : Attribute Name
+                                            e.g:    flags,
+                                                    description
+
+                attrval     (str)    : Attribute value
+                                                    0, 1, 2, 19
+                                                    &#34;This is workflow description&#34;
+
+                disabled    (str)   : Set to 1 to disable a workflow
+                                        default is &#39;0&#39;
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow properties failed
+        &#34;&#34;&#34;
+        request_xml = {
+            &#34;Workflow_SetWorkflowProperties&#34;:
+            {
+                attrname: attrval,
+                &#34;disabled&#34;: disabled,
+                &#34;workflow&#34;: {
+                    &#34;workflowName&#34;: self._workflow_name,
+                    &#34;workflowId&#34;: self._workflow_id
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Workflow&#39;, &#39;105&#39;)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_workflow_properties(self):
+        &#34;&#34;&#34;Gets the workflow properties
+
+            Returns:
+                dict - dictionary consisting of the properties of workflow
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._GET_WORKFLOW)
+
+        if flag:
+            if response.json() and &#39;container&#39; in response.json():
+                self._properties = response.json()[&#39;container&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_workflow_definition(self):
+        &#34;&#34;&#34;Get the workflow definition from the workflow properties
+
+        Returns:
+                definition  (str)   - workflow attribute of workflow property response
+
+            Raises:
+                SDKException:
+                    if response is not success
+        &#34;&#34;&#34;
+        workflow = self._workflow_name
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;,
+            self._GET_WORKFLOW_DEFINITION % (
+                self._workflow_id
+            )
+        )
+        if flag:
+            if not response.json():
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Failed to clone workflow&#39;)
+            return response.json()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def set_workflow_configuration(self, config_xml):
+        &#34;&#34;&#34;Set Workflow configuration
+
+            Args:
+                config_xml    (xml)    : Configuration inputs for the workflow&#39;s properties-&gt;configuration tab
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
+        &#34;&#34;&#34;
+        config_xml = &#34;&lt;configuration&gt;{0}&lt;/configuration&gt;&#34;.format(config_xml)
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(config_xml)
+
+        request_xml = &#34;&#34;&#34;&lt;Workflow_SetConfigurationSettings configSettings=&#34;{0}&#34;&gt;
+            &lt;workflow workflowId=&#34;{1}&#34; workflowName=&#34;{2}&#34;/&gt;
+        &lt;/Workflow_SetConfigurationSettings&gt; &#34;&#34;&#34;.format(escaped_xml, self._workflow_id, self._workflow_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Workflow&#39;, &#39;105&#39;)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def enable(self):
+        &#34;&#34;&#34; Enable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Enabling workflow fails
+        &#34;&#34;&#34;
+        self._set_workflow_properties(&#39;flags&#39;, &#39;0&#39;, disabled=&#39;0&#39;)
+
+    def disable(self):
+        &#34;&#34;&#34; Disable Worklfow
+
+            Raises:
+                SDKException:
+
+                    if HTTP Status Code is not SUCCESS / Disabling workflow fails
+        &#34;&#34;&#34;
+        self._set_workflow_properties(&#39;flags&#39;, &#39;1&#39;, disabled=&#39;1&#39;)
+
+    def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
+        &#34;&#34;&#34;Deploys a workflow on the Commcell.
+
+            Args:
+                workflow_engine     (str)   --  name of the client to deploy the workflow on
+
+                    default: None
+
+                workflow_xml    (str)   --  path of the workflow xml file / XMl contents
+
+                        checks whether the given value is a local file, and reads its contents
+
+                        otherwise, uses the value given as the body for the POST request
+
+                    default: None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if workflow xml argument is given and is not of type string
+
+                    if no workflow exists with the given name
+
+                    if workflow xml is given and is not a valid xml / a valid file path
+
+                    if failed to deploy workflow
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        workflow_name = self._workflow_name.lower()
+
+        if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
+                (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if not self._commcell_object.workflows.has_workflow(workflow_name):
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        workflow_deploy_service = self._DEPLOY_WORKFLOW % self._workflows[workflow_name][&#39;id&#39;]
+
+        if workflow_xml is None:
+            workflow_xml = {
+                &#34;Workflow_DeployWorkflow&#34;: {}
+            }
+
+            if workflow_engine is not None:
+                workflow_deploy_service=&#39;%s?clientName=%s&#39;%(workflow_deploy_service,workflow_engine)
+
+        elif os.path.isfile(workflow_xml):
+            with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                workflow_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(workflow_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, workflow_deploy_service, workflow_xml
+        )
+
+        self._commcell_object.workflows.refresh()
+
+        if flag:
+            if response.json():
+                error_code = str(response.json()[&#39;errorCode&#39;])
+
+                if error_code != &#34;0&#34;:
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    raise SDKException(
+                        &#39;Workflow&#39;,
+                        &#39;102&#39;,
+                        &#39;Failed to deploy workflow\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def execute_workflow(self, workflow_inputs=None, hidden=False):
+        &#34;&#34;&#34;Executes the workflow with the workflow name given as input, and returns its job id.
+
+            Args:
+
+                workflow_inputs     (dict)  --  dictionary consisting of inputs for the workflow
+
+                    if inputs are not given, user will be prompted for inputs on the command line
+
+                    default: None
+
+                    inputs dict format:
+
+                        {
+                            &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                            &#39;input2_name&#39;: &#39;input2_value&#39;
+                        }
+
+                    e.g.:
+
+                        for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                            {
+                                &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                            }
+
+                hidden (bool) -- Is the workflow hidden ? True/False
+
+            Returns:
+                **tuple**   -   (`dict`, `str` **/** `dict` **/** `object`)
+
+                    **dict**    -   returns the outputs dictionary received in the
+                    response of the API
+
+                    **str / dict / object**
+
+                        str     -   when workflow is executed in API mode
+
+                            when no job id was returned / job ID or error code is 0
+
+                        dict    -   complete response received from the server
+
+                            when the response did not had any expected values
+
+                        object  -   instance of the Job class for this workflow job
+
+                            object of the Job class is mainly returned when the Workflow being
+                            executed has User Sessions, OR the workflow is executed in JOB mode
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if failed to execute workflow
+
+                    if response is empty
+
+                    if response is not success
+
+                    if no workflow exists with the given name
+
+        &#34;&#34;&#34;
+        workflow_name = self._workflow_name.lower()
+
+        if not hidden and workflow_name not in self._workflows:
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        execute_workflow_json = {}
+
+        if workflow_inputs is None:
+            workflow_vals = self._workflows[workflow_name]
+            if &#39;inputs&#39; in workflow_vals:
+                o_str = &#39;Workflow Name: \t\t&#34;{0}&#34;\n&#39;.format(workflow_name)
+                o_str += &#39;Workflow Description: \t&#34;{0}&#34;\n&#39;.format(workflow_vals.get(&#39;description&#39;, &#39;&#39;))
+
+                print(o_str)
+
+                for a_input in workflow_vals[&#39;inputs&#39;]:
+                    execute_workflow_json[a_input[&#39;input_name&#39;]] = self._read_inputs(a_input)
+        else:
+            execute_workflow_json = workflow_inputs
+
+        import urllib.parse
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json)
+
+        if flag:
+            if response.json():
+                output = response.json().get(&#34;outputs&#34;, {})
+
+                if &#34;jobId&#34; in response.json():
+                    if response.json()[&#34;jobId&#34;] == 0:
+                        return output, &#39;Workflow Execution Finished Successfully&#39;
+                    else:
+                        return output, Job(self._commcell_object, response.json()[&#39;jobId&#39;])
+                elif &#34;errorCode&#34; in response.json():
+                    if response.json()[&#39;errorCode&#39;] == 0:
+                        return output, &#39;Workflow Execution Finished Successfully&#39;
+                    else:
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        o_str = &#39;Executing Workflow failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+
+                        raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, o_str)
+                else:
+                    return output, response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def export_workflow(self, export_location=None):
+        &#34;&#34;&#34;Exports the workflow to the directory location specified by the user.
+
+            Args:
+                export_location     (str)   --  Directory where the workflow would be exported
+
+                    default: None
+
+            Returns:
+                str     -   absolute path of the exported workflow xml file
+
+            Raises:
+                SDKException:
+                    if export_location does not exist
+
+                    if no workflow exists with the given name
+
+                    if response is empty
+
+                    if response is not success
+
+                    if failed to write to export file
+
+        &#34;&#34;&#34;
+        workflow_name = self._workflow_name
+
+        if not self._commcell_object.workflows.has_workflow(workflow_name):
+            raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+        if export_location is None:
+            export_location = os.getcwd()
+        else:
+            if not isinstance(export_location, basestring):
+                raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+            if not os.path.exists(export_location):
+                os.makedirs(export_location)
+
+        request_xml = &#34;&#34;&#34;
+            &lt;Workflow_GetWorkflowRequest exportOnly=&#34;1&#34;&gt;
+                &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+            &lt;/Workflow_GetWorkflowRequest&gt;
+        &#34;&#34;&#34;.format(workflow_name)
+
+        workflow_xml = os.path.join(export_location, workflow_name + &#39;.xml&#39;)
+
+        headers = self._commcell_object._headers.copy()
+        headers[&#39;Accept&#39;] = &#39;application/xml&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;],
+            request_xml,
+            headers=headers
+        )
+
+        if flag and xmltodict.parse(response.text).get(&#39;Workflow_WorkflowDefinition&#39;):
+            try:
+                with open(workflow_xml, &#39;w&#39;) as export_file:
+                    export_file.write(response.text)
+                return workflow_xml
+            except Exception as excp:
+                raise SDKException(
+                    &#39;Workflow&#39;,
+                    &#39;102&#39;,
+                    &#39;Failed to write workflow definition: &#34;{0}&#34; to file.\nError: &#34;{1}&#34;&#39;.format(
+                        workflow_xml, excp
+                    )
+                )
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def clone_workflow(self, clone_workflow_name):
+        &#34;&#34;&#34;Clones the workflow
+
+        Args:
+            clone_workflow_name (str)   : name for the new workflow(clone)
+
+        Raises:
+            SDKException:
+                if response is not status
+
+                If cloning workflow operation fails
+        &#34;&#34;&#34;
+        workflow_definition = self._get_workflow_definition()
+        workflow_definition[&#39;name&#39;] = clone_workflow_name
+        workflow_definition[&#39;uniqueGuid&#39;] = &#39;&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;,
+            self._services[&#39;GET_WORKFLOWS&#39;],
+            workflow_definition,
+        )
+
+        if flag and response.json():
+            if not response.json()[&#39;workflow&#39;][&#39;workflowId&#39;]:
+                raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to clone the workflow&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
+        &#34;&#34;&#34; Creates a schedule for a workflow
+
+             Args:
+                  schedule_pattern(dict)    -- Please refer SchedulePattern.create_schedule in
+                                            schedules.py for the types of pattern to be sent
+
+                                     eg: {
+                                            &#34;schedule_name: &#39;schedule1&#39;,
+                                            &#34;freq_type&#34;: &#39;daily&#39;,
+                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                            &#34;repeat_days&#34;: days_to_repeat (int)
+                                         }
+
+                  workflow_inputs(dict) --  dictionary consisting of inputs for the workflow
+
+                    if inputs are not given, user will be prompted for inputs on the command line
+
+                    default: None
+
+                    inputs dict format:
+
+                    {
+                            &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                            &#39;input2_name&#39;: &#39;input2_value&#39;
+                    }
+
+                    e.g.:
+
+                    for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                    {
+                    &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                    }
+
+             Returns:
+                     Object : An instance of the Schedule class for the schedule created
+            &#34;&#34;&#34;
+        from cvpysdk.schedules import SchedulePattern
+        if workflow_inputs is not None:
+            xml = str(xmltodict.unparse(input_dict={&#34;inputs&#34;: workflow_inputs}).split(&#39;\n&#39;)[1])
+        task_req = {
+            &#34;processinginstructioninfo&#34;: {},
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;workflowName&#34;: self._workflow_name
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 2001
+                        },
+                        &#34;options&#34;: {
+                            &#34;workflowJobOptions&#34;: xml if workflow_inputs else &#34;&#34;,
+                            &#34;adminOpts&#34;: {
+                                &#34;contentIndexingOption&#34;: {
+                                    &#34;subClientBasedAnalytics&#34;: False
+                                }
+                            }
+                        }
+                    }
+                ]
+                }
+        }
+        request_json = SchedulePattern().create_schedule(task_req, schedule_pattern)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._CREATE_SCHEDULE, request_json)
+        output = self._process_workflow_schedule_response(flag, response)
+        if output[0]:
+            self._commcell_object.schedules.refresh()
+            return self._commcell_object.schedules.get(task_id=response.json()[&#34;taskId&#34;])
+        o_str = &#39;Failed to create Schedule\nError: &#34;{0}&#34;&#39;
+        raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
+
+    def _process_workflow_schedule_response(self, flag, response):
+        &#34;&#34;&#34;
+        processes the response received post create schedule request
+        Args:
+        flag: (bool) -- True or false based on response
+        response: (dict) response from modify request
+        Returns:
+            flag: (Bool) -- based on success and failure
+            error_code: (int) -- error_code from response
+            error_message: (str) -- error_message from the response if any
+        &#34;&#34;&#34;
+
+        if flag:
+            if response.json():
+                if &#34;taskId&#34; in response.json():
+                    task_id = str(response.json()[&#34;taskId&#34;])
+
+                    if task_id:
+                        return True, &#34;0&#34;, &#34;&#34;
+
+                elif &#34;errorCode&#34; in response.json():
+                    error_code = str(response.json()[&#39;errorCode&#39;])
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    if error_code == &#34;0&#34;:
+                        return True, &#34;0&#34;, &#34;&#34;
+
+                    if error_message:
+                        return False, error_code, error_message
+                    else:
+                        return False, error_code, &#34;&#34;
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refreshes the properties of the workflow.&#34;&#34;&#34;
+        self._get_workflow_properties()
+
+    @property
+    def workflow_name(self):
+        &#34;&#34;&#34;Treats the workflow name as a read-only attribute.&#34;&#34;&#34;
+        return self._workflow_name
+
+    @property
+    def workflow_id(self):
+        &#34;&#34;&#34;Treats the workflow id as a read-only attribute.&#34;&#34;&#34;
+        return self._workflow_id
+
+    @property
+    def version(self):
+        &#34;&#34;&#34;Treats the workflow version as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;version&#39;]
+
+    @property
+    def revision(self):
+        &#34;&#34;&#34;Treats the workflow revision as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;revision&#39;]
+
+    @property
+    def flags(self):
+        &#34;&#34;&#34;Treats the workflow flags as a property of the Workflow class.&#34;&#34;&#34;
+        return self._properties[&#39;flags&#39;]
+
+    @property
+    def description(self):
+        &#34;&#34;&#34;Treats the workflow description as a property of the Workflow class.&#34;&#34;&#34;
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        &#34;&#34;&#34;Sets the description of the workflow
+
+            Raises:
+                SDKException:
+                    if failed to update description of workflow
+
+                    if the type of value input is not string
+        &#34;&#34;&#34;
+        if isinstance(value, basestring):
+            self._set_workflow_properties(&#34;description&#34;, value)
+        else:
+            raise SDKException(
+                &#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to set workflow description&#39;
+            )</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.workflow.WorkFlow.description"><code class="name">var <span class="ident">description</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow description as a property of the Workflow class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1521-L1524" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def description(self):
+    &#34;&#34;&#34;Treats the workflow description as a property of the Workflow class.&#34;&#34;&#34;
+    return self._description</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.flags"><code class="name">var <span class="ident">flags</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow flags as a property of the Workflow class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1516-L1519" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def flags(self):
+    &#34;&#34;&#34;Treats the workflow flags as a property of the Workflow class.&#34;&#34;&#34;
+    return self._properties[&#39;flags&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.revision"><code class="name">var <span class="ident">revision</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow revision as a property of the Workflow class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1511-L1514" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def revision(self):
+    &#34;&#34;&#34;Treats the workflow revision as a property of the Workflow class.&#34;&#34;&#34;
+    return self._properties[&#39;revision&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.version"><code class="name">var <span class="ident">version</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow version as a property of the Workflow class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1506-L1509" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def version(self):
+    &#34;&#34;&#34;Treats the workflow version as a property of the Workflow class.&#34;&#34;&#34;
+    return self._properties[&#39;version&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.workflow_id"><code class="name">var <span class="ident">workflow_id</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow id as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1501-L1504" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def workflow_id(self):
+    &#34;&#34;&#34;Treats the workflow id as a read-only attribute.&#34;&#34;&#34;
+    return self._workflow_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.workflow_name"><code class="name">var <span class="ident">workflow_name</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the workflow name as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1496-L1499" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def workflow_name(self):
+    &#34;&#34;&#34;Treats the workflow name as a read-only attribute.&#34;&#34;&#34;
+    return self._workflow_name</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.workflow.WorkFlow.clone_workflow"><code class="name flex">
+<span>def <span class="ident">clone_workflow</span></span>(<span>self, clone_workflow_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clones the workflow</p>
+<h2 id="args">Args</h2>
+<p>clone_workflow_name (str)
+: name for the new workflow(clone)</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is not status</p>
+<pre><code>If cloning workflow operation fails
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1337-L1363" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def clone_workflow(self, clone_workflow_name):
+    &#34;&#34;&#34;Clones the workflow
+
+    Args:
+        clone_workflow_name (str)   : name for the new workflow(clone)
+
+    Raises:
+        SDKException:
+            if response is not status
+
+            If cloning workflow operation fails
+    &#34;&#34;&#34;
+    workflow_definition = self._get_workflow_definition()
+    workflow_definition[&#39;name&#39;] = clone_workflow_name
+    workflow_definition[&#39;uniqueGuid&#39;] = &#39;&#39;
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;PUT&#39;,
+        self._services[&#39;GET_WORKFLOWS&#39;],
+        workflow_definition,
+    )
+
+    if flag and response.json():
+        if not response.json()[&#39;workflow&#39;][&#39;workflowId&#39;]:
+            raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to clone the workflow&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.deploy_workflow"><code class="name flex">
+<span>def <span class="ident">deploy_workflow</span></span>(<span>self, workflow_engine=None, workflow_xml=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deploys a workflow on the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>workflow_engine
+(str)
+&ndash;
+name of the client to deploy the workflow on</p>
+<pre><code>default: None
+</code></pre>
+<p>workflow_xml
+(str)
+&ndash;
+path of the workflow xml file / XMl contents</p>
+<pre><code>    checks whether the given value is a local file, and reads its contents
+
+    otherwise, uses the value given as the body for the POST request
+
+default: None
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p>
+<pre><code>if workflow xml argument is given and is not of type string
+
+if no workflow exists with the given name
+
+if workflow xml is given and is not a valid xml / a valid file path
+
+if failed to deploy workflow
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1063-L1150" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
+    &#34;&#34;&#34;Deploys a workflow on the Commcell.
+
+        Args:
+            workflow_engine     (str)   --  name of the client to deploy the workflow on
+
+                default: None
+
+            workflow_xml    (str)   --  path of the workflow xml file / XMl contents
+
+                    checks whether the given value is a local file, and reads its contents
+
+                    otherwise, uses the value given as the body for the POST request
+
+                default: None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+                if workflow xml argument is given and is not of type string
+
+                if no workflow exists with the given name
+
+                if workflow xml is given and is not a valid xml / a valid file path
+
+                if failed to deploy workflow
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    workflow_name = self._workflow_name.lower()
+
+    if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
+            (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    if not self._commcell_object.workflows.has_workflow(workflow_name):
+        raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+    workflow_deploy_service = self._DEPLOY_WORKFLOW % self._workflows[workflow_name][&#39;id&#39;]
+
+    if workflow_xml is None:
+        workflow_xml = {
+            &#34;Workflow_DeployWorkflow&#34;: {}
+        }
+
+        if workflow_engine is not None:
+            workflow_deploy_service=&#39;%s?clientName=%s&#39;%(workflow_deploy_service,workflow_engine)
+
+    elif os.path.isfile(workflow_xml):
+        with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+            workflow_xml = file_object.read()
+    else:
+        try:
+            __ = xmltodict.parse(workflow_xml)
+        except ExpatError:
+            raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, workflow_deploy_service, workflow_xml
+    )
+
+    self._commcell_object.workflows.refresh()
+
+    if flag:
+        if response.json():
+            error_code = str(response.json()[&#39;errorCode&#39;])
+
+            if error_code != &#34;0&#34;:
+                error_message = response.json()[&#39;errorMessage&#39;]
+
+                raise SDKException(
+                    &#39;Workflow&#39;,
+                    &#39;102&#39;,
+                    &#39;Failed to deploy workflow\nError: &#34;{0}&#34;&#39;.format(error_message)
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.disable"><code class="name flex">
+<span>def <span class="ident">disable</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disable Worklfow</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if HTTP Status Code is not SUCCESS / Disabling workflow fails
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1053-L1061" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable(self):
+    &#34;&#34;&#34; Disable Worklfow
+
+        Raises:
+            SDKException:
+
+                if HTTP Status Code is not SUCCESS / Disabling workflow fails
+    &#34;&#34;&#34;
+    self._set_workflow_properties(&#39;flags&#39;, &#39;1&#39;, disabled=&#39;1&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.enable"><code class="name flex">
+<span>def <span class="ident">enable</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enable Worklfow</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if HTTP Status Code is not SUCCESS / Enabling workflow fails
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1043-L1051" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable(self):
+    &#34;&#34;&#34; Enable Worklfow
+
+        Raises:
+            SDKException:
+
+                if HTTP Status Code is not SUCCESS / Enabling workflow fails
+    &#34;&#34;&#34;
+    self._set_workflow_properties(&#39;flags&#39;, &#39;0&#39;, disabled=&#39;0&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.execute_workflow"><code class="name flex">
+<span>def <span class="ident">execute_workflow</span></span>(<span>self, workflow_inputs=None, hidden=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Executes the workflow with the workflow name given as input, and returns its job id.</p>
+<h2 id="args">Args</h2>
+<p>workflow_inputs
+(dict)
+&ndash;
+dictionary consisting of inputs for the workflow</p>
+<pre><code>if inputs are not given, user will be prompted for inputs on the command line
+
+default: None
+
+inputs dict format:
+
+    {
+        'input1_name': 'input1_value',
+
+        'input2_name': 'input2_value'
+    }
+
+e.g.:
+
+    for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+        {
+            "ClientGroupName": "client_group_value"
+        }
+</code></pre>
+<p>hidden (bool) &ndash; Is the workflow hidden ? True/False</p>
+<h2 id="returns">Returns</h2>
+<p><strong>tuple</strong>
+-
+(<code>dict</code>, <code>str</code> <strong>/</strong> <code>dict</code> <strong>/</strong> <code>object</code>)</p>
+<pre><code>**dict**    -   returns the outputs dictionary received in the
+response of the API
+
+**str / dict / object**
+
+    str     -   when workflow is executed in API mode
+
+        when no job id was returned / job ID or error code is 0
+
+    dict    -   complete response received from the server
+
+        when the response did not had any expected values
+
+    object  -   instance of the Job class for this workflow job
+
+        object of the Job class is mainly returned when the Workflow being
+        executed has User Sessions, OR the workflow is executed in JOB mode
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p>
+<pre><code>if failed to execute workflow
+
+if response is empty
+
+if response is not success
+
+if no workflow exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1152-L1262" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def execute_workflow(self, workflow_inputs=None, hidden=False):
+    &#34;&#34;&#34;Executes the workflow with the workflow name given as input, and returns its job id.
+
+        Args:
+
+            workflow_inputs     (dict)  --  dictionary consisting of inputs for the workflow
+
+                if inputs are not given, user will be prompted for inputs on the command line
+
+                default: None
+
+                inputs dict format:
+
+                    {
+                        &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                        &#39;input2_name&#39;: &#39;input2_value&#39;
+                    }
+
+                e.g.:
+
+                    for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                        {
+                            &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                        }
+
+            hidden (bool) -- Is the workflow hidden ? True/False
+
+        Returns:
+            **tuple**   -   (`dict`, `str` **/** `dict` **/** `object`)
+
+                **dict**    -   returns the outputs dictionary received in the
+                response of the API
+
+                **str / dict / object**
+
+                    str     -   when workflow is executed in API mode
+
+                        when no job id was returned / job ID or error code is 0
+
+                    dict    -   complete response received from the server
+
+                        when the response did not had any expected values
+
+                    object  -   instance of the Job class for this workflow job
+
+                        object of the Job class is mainly returned when the Workflow being
+                        executed has User Sessions, OR the workflow is executed in JOB mode
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+                if failed to execute workflow
+
+                if response is empty
+
+                if response is not success
+
+                if no workflow exists with the given name
+
+    &#34;&#34;&#34;
+    workflow_name = self._workflow_name.lower()
+
+    if not hidden and workflow_name not in self._workflows:
+        raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+    execute_workflow_json = {}
+
+    if workflow_inputs is None:
+        workflow_vals = self._workflows[workflow_name]
+        if &#39;inputs&#39; in workflow_vals:
+            o_str = &#39;Workflow Name: \t\t&#34;{0}&#34;\n&#39;.format(workflow_name)
+            o_str += &#39;Workflow Description: \t&#34;{0}&#34;\n&#39;.format(workflow_vals.get(&#39;description&#39;, &#39;&#39;))
+
+            print(o_str)
+
+            for a_input in workflow_vals[&#39;inputs&#39;]:
+                execute_workflow_json[a_input[&#39;input_name&#39;]] = self._read_inputs(a_input)
+    else:
+        execute_workflow_json = workflow_inputs
+
+    import urllib.parse
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._EXECUTE_WORKFLOW % urllib.parse.quote(workflow_name), execute_workflow_json)
+
+    if flag:
+        if response.json():
+            output = response.json().get(&#34;outputs&#34;, {})
+
+            if &#34;jobId&#34; in response.json():
+                if response.json()[&#34;jobId&#34;] == 0:
+                    return output, &#39;Workflow Execution Finished Successfully&#39;
+                else:
+                    return output, Job(self._commcell_object, response.json()[&#39;jobId&#39;])
+            elif &#34;errorCode&#34; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    return output, &#39;Workflow Execution Finished Successfully&#39;
+                else:
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Executing Workflow failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+
+                    raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, o_str)
+            else:
+                return output, response.json()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.export_workflow"><code class="name flex">
+<span>def <span class="ident">export_workflow</span></span>(<span>self, export_location=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Exports the workflow to the directory location specified by the user.</p>
+<h2 id="args">Args</h2>
+<p>export_location
+(str)
+&ndash;
+Directory where the workflow would be exported</p>
+<pre><code>default: None
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>str
+-
+absolute path of the exported workflow xml file</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if export_location does not exist</p>
+<pre><code>if no workflow exists with the given name
+
+if response is empty
+
+if response is not success
+
+if failed to write to export file
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1264-L1335" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def export_workflow(self, export_location=None):
+    &#34;&#34;&#34;Exports the workflow to the directory location specified by the user.
+
+        Args:
+            export_location     (str)   --  Directory where the workflow would be exported
+
+                default: None
+
+        Returns:
+            str     -   absolute path of the exported workflow xml file
+
+        Raises:
+            SDKException:
+                if export_location does not exist
+
+                if no workflow exists with the given name
+
+                if response is empty
+
+                if response is not success
+
+                if failed to write to export file
+
+    &#34;&#34;&#34;
+    workflow_name = self._workflow_name
+
+    if not self._commcell_object.workflows.has_workflow(workflow_name):
+        raise SDKException(&#39;Workflow&#39;, &#39;104&#39;)
+
+    if export_location is None:
+        export_location = os.getcwd()
+    else:
+        if not isinstance(export_location, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if not os.path.exists(export_location):
+            os.makedirs(export_location)
+
+    request_xml = &#34;&#34;&#34;
+        &lt;Workflow_GetWorkflowRequest exportOnly=&#34;1&#34;&gt;
+            &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+        &lt;/Workflow_GetWorkflowRequest&gt;
+    &#34;&#34;&#34;.format(workflow_name)
+
+    workflow_xml = os.path.join(export_location, workflow_name + &#39;.xml&#39;)
+
+    headers = self._commcell_object._headers.copy()
+    headers[&#39;Accept&#39;] = &#39;application/xml&#39;
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;,
+        self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;],
+        request_xml,
+        headers=headers
+    )
+
+    if flag and xmltodict.parse(response.text).get(&#39;Workflow_WorkflowDefinition&#39;):
+        try:
+            with open(workflow_xml, &#39;w&#39;) as export_file:
+                export_file.write(response.text)
+            return workflow_xml
+        except Exception as excp:
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Failed to write workflow definition: &#34;{0}&#34; to file.\nError: &#34;{1}&#34;&#39;.format(
+                    workflow_xml, excp
+                )
+            )
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refreshes the properties of the workflow.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1492-L1494" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refreshes the properties of the workflow.&#34;&#34;&#34;
+    self._get_workflow_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.schedule_workflow"><code class="name flex">
+<span>def <span class="ident">schedule_workflow</span></span>(<span>self, schedule_pattern, workflow_inputs=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates a schedule for a workflow</p>
+<h2 id="args">Args</h2>
+<p>schedule_pattern(dict)
+&ndash; Please refer SchedulePattern.create_schedule in
+schedules.py for the types of pattern to be sent</p>
+<pre><code>               eg: {
+                      "schedule_name: 'schedule1',
+                      "freq_type": 'daily',
+                      "active_start_time": time_in_%H/%S (str),
+                      "repeat_days": days_to_repeat (int)
+                   }
+</code></pre>
+<p>workflow_inputs(dict) &ndash;
+dictionary consisting of inputs for the workflow</p>
+<p>if inputs are not given, user will be prompted for inputs on the command line</p>
+<p>default: None</p>
+<p>inputs dict format:</p>
+<p>{
+'input1_name': 'input1_value',</p>
+<pre><code>      'input2_name': 'input2_value'
+</code></pre>
+<p>}</p>
+<p>e.g.:</p>
+<p>for executing the Demo_CheckReadiness workflow, inputs dict would be:</p>
+<p>{
+"ClientGroupName": "client_group_value"
+}</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Object </code></dt>
+<dd>An instance of the Schedule class for the schedule created</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1365-L1450" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
+    &#34;&#34;&#34; Creates a schedule for a workflow
+
+         Args:
+              schedule_pattern(dict)    -- Please refer SchedulePattern.create_schedule in
+                                        schedules.py for the types of pattern to be sent
+
+                                 eg: {
+                                        &#34;schedule_name: &#39;schedule1&#39;,
+                                        &#34;freq_type&#34;: &#39;daily&#39;,
+                                        &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                        &#34;repeat_days&#34;: days_to_repeat (int)
+                                     }
+
+              workflow_inputs(dict) --  dictionary consisting of inputs for the workflow
+
+                if inputs are not given, user will be prompted for inputs on the command line
+
+                default: None
+
+                inputs dict format:
+
+                {
+                        &#39;input1_name&#39;: &#39;input1_value&#39;,
+
+                        &#39;input2_name&#39;: &#39;input2_value&#39;
+                }
+
+                e.g.:
+
+                for executing the Demo_CheckReadiness workflow, inputs dict would be:
+
+                {
+                &#34;ClientGroupName&#34;: &#34;client_group_value&#34;
+                }
+
+         Returns:
+                 Object : An instance of the Schedule class for the schedule created
+        &#34;&#34;&#34;
+    from cvpysdk.schedules import SchedulePattern
+    if workflow_inputs is not None:
+        xml = str(xmltodict.unparse(input_dict={&#34;inputs&#34;: workflow_inputs}).split(&#39;\n&#39;)[1])
+    task_req = {
+        &#34;processinginstructioninfo&#34;: {},
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;workflowName&#34;: self._workflow_name
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 2,
+                &#34;policyType&#34;: 0,
+                &#34;taskFlags&#34;: {
+                    &#34;disabled&#34;: False
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTaskOperation&#34;: 1,
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 2001
+                    },
+                    &#34;options&#34;: {
+                        &#34;workflowJobOptions&#34;: xml if workflow_inputs else &#34;&#34;,
+                        &#34;adminOpts&#34;: {
+                            &#34;contentIndexingOption&#34;: {
+                                &#34;subClientBasedAnalytics&#34;: False
+                            }
+                        }
+                    }
+                }
+            ]
+            }
+    }
+    request_json = SchedulePattern().create_schedule(task_req, schedule_pattern)
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._CREATE_SCHEDULE, request_json)
+    output = self._process_workflow_schedule_response(flag, response)
+    if output[0]:
+        self._commcell_object.schedules.refresh()
+        return self._commcell_object.schedules.get(task_id=response.json()[&#34;taskId&#34;])
+    o_str = &#39;Failed to create Schedule\nError: &#34;{0}&#34;&#39;
+    raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlow.set_workflow_configuration"><code class="name flex">
+<span>def <span class="ident">set_workflow_configuration</span></span>(<span>self, config_xml)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set Workflow configuration</p>
+<h2 id="args">Args</h2>
+<p>config_xml
+(xml)
+: Configuration inputs for the workflow's properties-&gt;configuration tab</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L1009-L1041" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_workflow_configuration(self, config_xml):
+    &#34;&#34;&#34;Set Workflow configuration
+
+        Args:
+            config_xml    (xml)    : Configuration inputs for the workflow&#39;s properties-&gt;configuration tab
+
+        Raises:
+            SDKException:
+
+                if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
+    &#34;&#34;&#34;
+    config_xml = &#34;&lt;configuration&gt;{0}&lt;/configuration&gt;&#34;.format(config_xml)
+    from xml.sax.saxutils import escape
+    escaped_xml = escape(config_xml)
+
+    request_xml = &#34;&#34;&#34;&lt;Workflow_SetConfigurationSettings configSettings=&#34;{0}&#34;&gt;
+        &lt;workflow workflowId=&#34;{1}&#34; workflowName=&#34;{2}&#34;/&gt;
+    &lt;/Workflow_SetConfigurationSettings&gt; &#34;&#34;&#34;.format(escaped_xml, self._workflow_id, self._workflow_name)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+    )
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            if response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(&#39;Workflow&#39;, &#39;105&#39;)
+            else:
+                self.refresh()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows"><code class="flex name class">
+<span>class <span class="ident">WorkFlows</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all workflows associated with the commcell.</p>
+<p>Initialize the WorkFlow class instance for performing workflow related
+operations.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the WorkFlow class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L138-L819" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class WorkFlows(object):
+    &#34;&#34;&#34;Class for representing all workflows associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize the WorkFlow class instance for performing workflow related
+            operations.
+
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+            Returns:
+                object  -   instance of the WorkFlow class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+
+        self._WORKFLOWS = self._services[&#39;GET_WORKFLOWS&#39;]
+        self._INTERACTIONS = self._services[&#39;GET_INTERACTIONS&#39;]
+        self._INTERACTION = self._services[&#39;GET_INTERACTION&#39;]
+
+        self._workflows = None
+        self._activities = None
+
+        self.refresh()
+        self.refresh_activities()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all workflows of the Commcell.
+
+            Returns:
+                str     -   string of all the workflows associated with the commcell
+
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^50}\t{:^60}\t{:^30}\n\n&#39;.format(
+            &#39;S. No.&#39;, &#39;Workflow Name&#39;, &#39;Description&#39;, &#39;Client&#39;
+        )
+
+        for index, workflow in enumerate(self._workflows):
+            workflow_vals = self._workflows[workflow]
+            workflow_desciption = workflow_vals.get(&#39;description&#39;, &#39;&#39;)
+
+            if &#39;client&#39; in workflow_vals:
+                workflow_client = workflow_vals[&#39;client&#39;]
+            else:
+                workflow_client = &#34;  --  &#34;
+
+            sub_str = &#39;{:^5}\t{:50}\t{:60}\t{:^30}\n&#39;.format(
+                index + 1,
+                workflow,
+                workflow_desciption,
+                workflow_client
+            )
+
+            representation_string += sub_str
+
+            if &#39;inputs&#39; in workflow_vals and workflow_vals[&#39;inputs&#39;] != []:
+                workflow_inputs = workflow_vals[&#39;inputs&#39;]
+
+                sub_str = &#39;\n\t\tWorkFlow Inputs:\n\n&#39;
+
+                sub_str += &#39;\t\t{:^5}\t{:^35}\t{:^35}\t{:^70}\t{:^20}\t{:^20}\n\n&#39;.format(
+                    &#39;S. No.&#39;,
+                    &#39;Input Name&#39;,
+                    &#39;Display Name&#39;,
+                    &#39;Description&#39;,
+                    &#39;Default Value&#39;,
+                    &#39;Is Required&#39;
+                )
+
+                for index1, wf_input in enumerate(workflow_inputs):
+                    input_name = wf_input[&#39;input_name&#39;]
+                    is_required = wf_input[&#39;is_required&#39;]
+
+                    if wf_input[&#39;display_name&#39;] is None:
+                        display_name = &#39;  ----  &#39;
+                    else:
+                        display_name = wf_input[&#39;display_name&#39;]
+
+                    if wf_input[&#39;documentation&#39;] is None:
+                        description = &#39;  ----  &#39;
+                    else:
+                        description = wf_input[&#39;documentation&#39;]
+
+                    if wf_input[&#39;default_value&#39;] is None:
+                        default_value = &#39;  ----  &#39;
+                    else:
+                        default_value = wf_input[&#39;default_value&#39;]
+
+                    sub_str += &#39;\t\t{:^5}\t{:35}\t{:35}\t{:70}\t{:20}\t{:^20}\n&#39;.format(
+                        index1 + 1,
+                        input_name,
+                        display_name,
+                        description,
+                        default_value,
+                        str(bool(is_required))
+                    )
+
+                    sub_str += &#39;\n&#39;
+
+                representation_string += sub_str
+
+            representation_string += &#34;\n\n&#34;
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the WorkFlow class.&#34;&#34;&#34;
+        return &#34;WorkFlow class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the number of the workflows associated to the Commcell.&#34;&#34;&#34;
+        return len(self.all_workflows)
+
+    def __getitem__(self, value):
+        &#34;&#34;&#34;Returns the name of the workflow for the given workflow ID or
+            the details of the workflow for given workflow Name.
+
+            Args:
+                value   (str / int)     --  Name or ID of the workflow
+
+            Returns:
+                str     -   name of the workflow, if the workflow id was given
+
+                dict    -   dict of details of the workflow, if workflow name was given
+
+            Raises:
+                IndexError:
+                    no workflow exists with the given Name / Id
+
+        &#34;&#34;&#34;
+        value = str(value)
+
+        if value in self.all_workflows:
+            return self.all_workflows[value]
+        else:
+            try:
+                return list(
+                    filter(lambda x: x[1][&#39;id&#39;] == value, self.all_workflows.items())
+                )[0][0]
+            except IndexError:
+                raise IndexError(&#39;No workflow exists with the given Name / Id&#39;)
+
+    def _get_workflows(self):
+        &#34;&#34;&#34;Gets all the workflows associated to the commcell.
+
+            Returns:
+                dict    -   consists of all workflows in the commcell
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._WORKFLOWS)
+
+        if flag:
+            if response.json() and &#39;container&#39; in response.json():
+                workflow_dict = {}
+
+                for workflow in response.json()[&#39;container&#39;]:
+                    workflow_name = workflow[&#39;entity&#39;][&#39;workflowName&#39;].lower()
+                    workflow_id = str(workflow[&#39;entity&#39;][&#39;workflowId&#39;])
+                    workflow_description = workflow.get(&#39;description&#39;, &#39;&#39;)
+
+                    if &#39;deployments&#39; in workflow:
+                        workflow_client = workflow[&#39;deployments&#39;][0][&#39;client&#39;][&#39;clientName&#39;]
+
+                        if &#39;entries&#39; in workflow[&#39;deployments&#39;][0][&#39;inputForm&#39;]:
+                            workflow_inputs = []
+
+                            for a_input in workflow[&#39;deployments&#39;][0][&#39;inputForm&#39;][&#39;entries&#39;]:
+                                workflow_input = {}
+
+                                workflow_input[&#39;input_name&#39;] = a_input.get(&#39;inputName&#39;)
+                                workflow_input[&#39;display_name&#39;] = a_input.get(&#39;displayName&#39;)
+                                workflow_input[&#39;documentation&#39;] = a_input.get(&#39;documentation&#39;)
+                                workflow_input[&#39;default_value&#39;] = a_input.get(&#39;defaultValue&#39;)
+                                workflow_input[&#39;is_required&#39;] = a_input.get(&#39;required&#39;, False)
+
+                                workflow_inputs.append(workflow_input)
+                        else:
+                            workflow_inputs = []
+
+                        workflow_dict[workflow_name] = {
+                            &#39;description&#39;: workflow_description,
+                            &#39;client&#39;: workflow_client,
+                            &#39;id&#39;: workflow_id,
+                            &#39;inputs&#39;: workflow_inputs
+                        }
+                    else:
+                        workflow_dict[workflow_name] = {
+                            &#39;description&#39;: workflow_description,
+                            &#39;id&#39;: workflow_id,
+                        }
+
+                return workflow_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_activities(self):
+        &#34;&#34;&#34;Gets all the workflow activities associated to the commcell.
+
+            Returns:
+                dict    -   consists of all activities in the commcell
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        request_xml = &#34;&lt;Workflow_GetActivitiesRequest/&gt;&#34;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], request_xml
+        )
+
+        if flag:
+            if response.json() and &#39;activities&#39; in response.json():
+                activities_dict = {}
+
+                for activity in response.json()[&#39;activities&#39;]:
+                    name = activity[&#39;activity&#39;][&#39;activityName&#39;].lower()
+                    activity_id = str(activity[&#39;activity&#39;][&#39;schemaId&#39;])
+                    description = activity.get(&#39;description&#39;)
+                    activities_dict[name] = {
+                        &#39;description&#39;: description,
+                        &#39;id&#39;: activity_id,
+                    }
+
+                return activities_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def has_workflow(self, workflow_name):
+        &#34;&#34;&#34;Checks if a workflow exists in the commcell with the input workflow name.
+
+            Args:
+                workflow_name   (str)   --  name of the workflow
+
+            Returns:
+                bool    -   boolean output whether the workflow exists in the
+                            commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        return self._workflows and workflow_name.lower() in self._workflows
+
+    def has_activity(self, activity_name):
+        &#34;&#34;&#34;Checks if a workflow activity exists in the commcell with the input
+            activity name.
+
+            Args:
+                activity_name   (str)   --  name of the activity
+
+            Returns:
+                bool    -   boolean output whether the workflow activity exists
+                            in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the workflow activity name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(activity_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        return self._activities and activity_name.lower() in self._activities
+
+    def import_workflow(self, workflow_xml):
+        &#34;&#34;&#34;Imports a workflow to the Commcell.
+
+            Args:
+                workflow_xml    (str)   --  path of the workflow xml file / XML contents
+
+                    checks whether the given value is a local file, and reads its contents
+
+                    otherwise, uses the value given as the body for the POST request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow xml argument is not string
+
+                    if workflow xml is not a valid xml / a valid file path
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_xml, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if os.path.isfile(workflow_xml):
+            with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                workflow_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(workflow_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+        )
+
+        self.refresh()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Importing Workflow failed. {0}&#39;.format(response_string)
+            )
+
+    def import_activity(self, activity_xml):
+        &#34;&#34;&#34;Imports a workflow activity to the Commcell.
+
+            Args:
+                activity_xml    (str)   --  path of the workflow activity xml
+                                            file / XMl contents.
+
+                    Checks whether the given value is a local file, and reads its
+
+                    contents otherwise, uses the value given as the body for the
+
+                    POST request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if type of the workflow activity xml argument is not string
+
+                    if workflow activity xml is not a valid xml / a valid file path
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(activity_xml, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        if os.path.isfile(activity_xml):
+            with open(activity_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+                activity_xml = file_object.read()
+        else:
+            try:
+                __ = xmltodict.parse(activity_xml)
+            except ExpatError:
+                raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, activity_xml
+        )
+
+        self.refresh_activities()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Importing Workflow activity failed. {0}&#39;.format(response_string)
+            )
+
+    def download_workflow_from_store(
+            self,
+            workflow_name,
+            download_location,
+            cloud_username,
+            cloud_password):
+        &#34;&#34;&#34;Downloads workflow from Software Store.
+
+            Args:
+                workflow_name       (str)   --  name of the workflow to download
+
+                download_location   (str)   --  location to download the workflow at
+
+                cloud_username      (str)   --  username for the cloud account
+
+                cloud_password      (str)   --  password for the above username
+
+            Returns:
+                str     -   full path of the workflow XML
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if HTTP Status Code is not SUCCESS / download workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        from .commcell import Commcell
+
+        cloud_commcell = Commcell(&#39;cloud.commvault.com&#39;, cloud_username, cloud_password)
+        cvpysdk_object = cloud_commcell._cvpysdk_object
+        services = cloud_commcell._services
+
+        flag, response = cvpysdk_object.make_request(
+            &#39;GET&#39;, services[&#39;SOFTWARESTORE_PKGINFO&#39;] % (workflow_name)
+        )
+
+        if flag is False:
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;Getting Pacakge id for workflow failed. {0}&#39;.format(response.text)
+            )
+
+        if response.json():
+            if &#34;packageId&#34; in response.json():
+                package_id = response.json()[&#34;packageId&#34;]
+            else:
+                raise SDKException(
+                    &#39;Workflow&#39;, &#39;102&#39;, response.json()[&#39;errorDetail&#39;][&#39;errorMessage&#39;]
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        download_xml = &#34;&#34;&#34;
+        &lt;DM2ContentIndexing_OpenFileReq&gt;
+            &lt;fileParams id=&#34;3&#34; name=&#34;Package&#34;/&gt;
+            &lt;fileParams id=&#34;2&#34; name=&#34;{0}&#34;/&gt;
+            &lt;fileParams id=&#34;9&#34; name=&#34;1&#34;/&gt;
+        &lt;/DM2ContentIndexing_OpenFileReq&gt;
+        &#34;&#34;&#34;.format(package_id)
+
+        flag, response = cvpysdk_object.make_request(
+            &#39;POST&#39;, services[&#39;SOFTWARESTORE_DOWNLOADITEM&#39;], download_xml
+        )
+
+        if flag:
+            if response.json():
+                file_content = response.json()[&#34;fileContent&#34;][&#34;data&#34;]
+                file_content = b64decode(file_content).decode(&#39;utf-8&#39;)
+
+                if not os.path.exists(download_location):
+                    try:
+                        os.makedirs(download_location)
+                    except FileExistsError:
+                        pass
+
+                download_path = os.path.join(download_location, workflow_name + &#34;.xml&#34;)
+
+                with open(download_path, &#34;w&#34;) as file_pointer:
+                    file_pointer.write(file_content)
+
+                return download_path
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get(self, workflow_name):
+        &#34;&#34;&#34;Returns a workflow object if workflow name matches specified name
+            We check if specified name matches any of the existing workflow names.
+
+            Args:
+                workflow_name (str)  --  name of the workflow
+
+            Returns:
+                object - instance of the Workflow class for the given workflow name
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if no workflow exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+        else:
+            workflow_name = workflow_name.lower()
+
+        workflow_id = self._workflows[workflow_name].get(&#39;id&#39;)
+
+        if self.has_workflow(workflow_name):
+            return WorkFlow(self._commcell_object, workflow_name, workflow_id)
+        else:
+            raise SDKException(
+                &#39;Workflow&#39;,
+                &#39;102&#39;,
+                &#39;No workflow exists with name: {0}&#39;.format(workflow_name)
+            )
+
+    def delete_workflow(self, workflow_name):
+        &#34;&#34;&#34;Deletes a workflow from the Commcell.
+
+            Args:
+                workflow_name   (str)   --  name of the workflow to remove
+
+            Raises:
+                SDKException:
+                    if type of the workflow name argument is not string
+
+                    if HTTP Status Code is not SUCCESS / importing workflow failed
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_name, basestring):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        workflow_xml = &#34;&#34;&#34;
+            &lt;Workflow_DeleteWorkflow&gt;
+                &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+            &lt;/Workflow_DeleteWorkflow&gt;
+        &#34;&#34;&#34;.format(workflow_name)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+        )
+
+        self.refresh()
+
+        if flag is False:
+            response_string = self._update_response_(response.text)
+            raise SDKException(
+                &#39;Workflow&#39;, &#39;102&#39;, &#39;Deleting Workflow failed. {0}&#39;.format(response_string)
+            )
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of workflows deployed on the Commcell.&#34;&#34;&#34;
+        self._workflows = self._get_workflows()
+
+    def refresh_activities(self):
+        &#34;&#34;&#34;Refresh the list of workflow activities deployed on the Commcell.&#34;&#34;&#34;
+        self._activities = self._get_activities()
+
+    def get_interaction_properties(self, interaction_id):
+        &#34;&#34;&#34;Returns a workflow interaction properties to the user
+
+            Args:
+                interaction_id (int)  --  Workflow interaction id
+
+            Returns:
+                dictionary - Workflow interaction id properties
+
+            Raises:
+                SDKException:
+                    - if response is empty
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTION % interaction_id)
+
+        if flag:
+            if response.json() and &#39;request&#39; in response.json():
+                return response.json()[&#39;request&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def submit_interaction(self, interaction, input_xml, action):
+        &#34;&#34;&#34; Submits a given interaction with specified action
+
+            Args:
+                interaction (dict)    --  Interaction dictionary
+                e.g:
+                    {
+                        &#34;interactionId&#34;: 3871,
+                        &#34;created&#34;: 1547524940,
+                        &#34;subject&#34;: &#34;Delete Backupset [  -&gt;  -&gt;  ] requested by [ 11111_Automation_45_651 ]&#34;,
+                        &#34;activityName&#34;: &#34;Get Authorization&#34;,
+                        &#34;flags&#34;: 1,
+                        &#34;description&#34;: &#34;&#34;,
+                        &#34;sessionId&#34;: &#34;a38b32dc-f505-45c5-9d61-3eaee226b50c&#34;,
+                        &#34;processStepId&#34;: 648993,
+                        &#34;jobId&#34;: 2804488,
+                        &#34;status&#34;: 0,
+                        &#34;workflow&#34;: {
+                            &#34;workflowName&#34;: &#34;GetAndProcessAuthorization&#34;,
+                            &#34;workflowId&#34;: 2095
+                        },
+                        &#34;commCell&#34;: {
+                            &#34;commCellName&#34;: &#34;WIN-K2DCEJR56MG&#34;,
+                            &#34;commCellId&#34;: 2
+                        },
+                        &#34;client&#34;: {
+                            &#34;clientId&#34;: 2,
+                            &#34;clientName&#34;: &#34;WIN-K2DCEJR56MG&#34;
+                        },
+                        &#34;user&#34;: {
+                            &#34;userName&#34;: &#34;11111_Automation_01-14-2019_23_01_45_651&#34;,
+                            &#34;userId&#34;: 1418
+                        }
+                    }
+
+                input_xml (str)       --  Input XML string for completing the interaction.
+                                            e.g : This is very specific to the user input interaction.
+                                                    Construct the input XML based on workflow being executed and send
+                                                    to this module.
+
+                action   (str)        --  Interaction action
+                                            This is very specific to workflow being executed and the expected options
+                                                for the given interaction
+
+            Raises:
+                Exception:
+                    Failed to submit workflow interaction request
+        &#34;&#34;&#34;
+        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+        from xml.sax.saxutils import escape
+        escaped_xml = escape(input_xml)
+        commserve_name = self._commcell_object.commserv_name
+
+        request_xml = &#34;&#34;&#34;
+            &lt;Workflow_SetWebFormInteractionRequest action=&#34;{0}&#34; flags=&#34;1&#34; inputXml=&#34;{1}&#34; interactionId=&#34;{2}&#34;
+                jobId=&#34;{3}&#34; okClicked=&#34;0&#34; processStepId=&#34;{4}&#34; sessionId=&#34;&#34;&gt;
+                &lt;commCell commCellName=&#34;{5}&#34;/&gt;
+                &lt;client clientName=&#34;{6}&#34;/&gt;
+            &lt;/Workflow_SetWebFormInteractionRequest&gt;&#34;&#34;&#34;.format(
+                action, escaped_xml, str(interaction[&#39;interactionId&#39;]), str(interaction[&#39;jobId&#39;]),
+                str(interaction[&#39;processStepId&#39;]), commserve_name, commserve_name
+            )
+        response = self._commcell_object._qoperation_execute(request_xml)
+
+        if response.get(&#39;errorCode&#39;, 1) != 0:
+            o_str = &#39;Error: &#39; + response.get(&#39;errorMessage&#39;, &#39;&#39;)
+            raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to submit workflow interaction request. Error: &#39;+o_str)
+
+    def all_interactions(self):
+        &#34;&#34;&#34; Returns all interactive interactions for workflows on commcell
+            Args:
+                None
+
+            Raises:
+                SDKException:
+
+                    if response is empty
+
+                    if there are no interactions
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTIONS)
+
+        if flag:
+            if response.json() and &#39;request&#39; in response.json():
+                return response.json()[&#39;request&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def all_workflows(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the workflows and their info.&#34;&#34;&#34;
+        return self._workflows
+
+    @property
+    def all_activities(self):
+        &#34;&#34;&#34;Treats the activities as a read-only attribute.&#34;&#34;&#34;
+        return self._activities</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.workflow.WorkFlows.all_activities"><code class="name">var <span class="ident">all_activities</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the activities as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L816-L819" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_activities(self):
+    &#34;&#34;&#34;Treats the activities as a read-only attribute.&#34;&#34;&#34;
+    return self._activities</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.all_workflows"><code class="name">var <span class="ident">all_workflows</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of all the workflows and their info.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L811-L814" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_workflows(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of all the workflows and their info.&#34;&#34;&#34;
+    return self._workflows</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.workflow.WorkFlows.all_interactions"><code class="name flex">
+<span>def <span class="ident">all_interactions</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns all interactive interactions for workflows on commcell</p>
+<h2 id="args">Args</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if response is empty
+
+if there are no interactions
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L788-L809" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def all_interactions(self):
+    &#34;&#34;&#34; Returns all interactive interactions for workflows on commcell
+        Args:
+            None
+
+        Raises:
+            SDKException:
+
+                if response is empty
+
+                if there are no interactions
+
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTIONS)
+
+    if flag:
+        if response.json() and &#39;request&#39; in response.json():
+            return response.json()[&#39;request&#39;]
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.delete_workflow"><code class="name flex">
+<span>def <span class="ident">delete_workflow</span></span>(<span>self, workflow_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes a workflow from the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>workflow_name
+(str)
+&ndash;
+name of the workflow to remove</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p>
+<pre><code>if HTTP Status Code is not SUCCESS / importing workflow failed
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L652-L684" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_workflow(self, workflow_name):
+    &#34;&#34;&#34;Deletes a workflow from the Commcell.
+
+        Args:
+            workflow_name   (str)   --  name of the workflow to remove
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+                if HTTP Status Code is not SUCCESS / importing workflow failed
+
+    &#34;&#34;&#34;
+    if not isinstance(workflow_name, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    workflow_xml = &#34;&#34;&#34;
+        &lt;Workflow_DeleteWorkflow&gt;
+            &lt;workflow workflowName=&#34;{0}&#34;/&gt;
+        &lt;/Workflow_DeleteWorkflow&gt;
+    &#34;&#34;&#34;.format(workflow_name)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+    )
+
+    self.refresh()
+
+    if flag is False:
+        response_string = self._update_response_(response.text)
+        raise SDKException(
+            &#39;Workflow&#39;, &#39;102&#39;, &#39;Deleting Workflow failed. {0}&#39;.format(response_string)
+        )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.download_workflow_from_store"><code class="name flex">
+<span>def <span class="ident">download_workflow_from_store</span></span>(<span>self, workflow_name, download_location, cloud_username, cloud_password)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Downloads workflow from Software Store.</p>
+<h2 id="args">Args</h2>
+<p>workflow_name
+(str)
+&ndash;
+name of the workflow to download</p>
+<p>download_location
+(str)
+&ndash;
+location to download the workflow at</p>
+<p>cloud_username
+(str)
+&ndash;
+username for the cloud account</p>
+<p>cloud_password
+(str)
+&ndash;
+password for the above username</p>
+<h2 id="returns">Returns</h2>
+<p>str
+-
+full path of the workflow XML</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p>
+<pre><code>if HTTP Status Code is not SUCCESS / download workflow failed
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L527-L618" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def download_workflow_from_store(
+        self,
+        workflow_name,
+        download_location,
+        cloud_username,
+        cloud_password):
+    &#34;&#34;&#34;Downloads workflow from Software Store.
+
+        Args:
+            workflow_name       (str)   --  name of the workflow to download
+
+            download_location   (str)   --  location to download the workflow at
+
+            cloud_username      (str)   --  username for the cloud account
+
+            cloud_password      (str)   --  password for the above username
+
+        Returns:
+            str     -   full path of the workflow XML
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+                if HTTP Status Code is not SUCCESS / download workflow failed
+
+    &#34;&#34;&#34;
+    if not isinstance(workflow_name, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    from .commcell import Commcell
+
+    cloud_commcell = Commcell(&#39;cloud.commvault.com&#39;, cloud_username, cloud_password)
+    cvpysdk_object = cloud_commcell._cvpysdk_object
+    services = cloud_commcell._services
+
+    flag, response = cvpysdk_object.make_request(
+        &#39;GET&#39;, services[&#39;SOFTWARESTORE_PKGINFO&#39;] % (workflow_name)
+    )
+
+    if flag is False:
+        raise SDKException(
+            &#39;Workflow&#39;,
+            &#39;102&#39;,
+            &#39;Getting Pacakge id for workflow failed. {0}&#39;.format(response.text)
+        )
+
+    if response.json():
+        if &#34;packageId&#34; in response.json():
+            package_id = response.json()[&#34;packageId&#34;]
+        else:
+            raise SDKException(
+                &#39;Workflow&#39;, &#39;102&#39;, response.json()[&#39;errorDetail&#39;][&#39;errorMessage&#39;]
+            )
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    download_xml = &#34;&#34;&#34;
+    &lt;DM2ContentIndexing_OpenFileReq&gt;
+        &lt;fileParams id=&#34;3&#34; name=&#34;Package&#34;/&gt;
+        &lt;fileParams id=&#34;2&#34; name=&#34;{0}&#34;/&gt;
+        &lt;fileParams id=&#34;9&#34; name=&#34;1&#34;/&gt;
+    &lt;/DM2ContentIndexing_OpenFileReq&gt;
+    &#34;&#34;&#34;.format(package_id)
+
+    flag, response = cvpysdk_object.make_request(
+        &#39;POST&#39;, services[&#39;SOFTWARESTORE_DOWNLOADITEM&#39;], download_xml
+    )
+
+    if flag:
+        if response.json():
+            file_content = response.json()[&#34;fileContent&#34;][&#34;data&#34;]
+            file_content = b64decode(file_content).decode(&#39;utf-8&#39;)
+
+            if not os.path.exists(download_location):
+                try:
+                    os.makedirs(download_location)
+                except FileExistsError:
+                    pass
+
+            download_path = os.path.join(download_location, workflow_name + &#34;.xml&#34;)
+
+            with open(download_path, &#34;w&#34;) as file_pointer:
+                file_pointer.write(file_content)
+
+            return download_path
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, workflow_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a workflow object if workflow name matches specified name
+We check if specified name matches any of the existing workflow names.</p>
+<h2 id="args">Args</h2>
+<p>workflow_name (str)
+&ndash;
+name of the workflow</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Workflow class for the given workflow name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p>
+<pre><code>if no workflow exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L620-L650" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, workflow_name):
+    &#34;&#34;&#34;Returns a workflow object if workflow name matches specified name
+        We check if specified name matches any of the existing workflow names.
+
+        Args:
+            workflow_name (str)  --  name of the workflow
+
+        Returns:
+            object - instance of the Workflow class for the given workflow name
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+                if no workflow exists with the given name
+    &#34;&#34;&#34;
+    if not isinstance(workflow_name, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+    else:
+        workflow_name = workflow_name.lower()
+
+    workflow_id = self._workflows[workflow_name].get(&#39;id&#39;)
+
+    if self.has_workflow(workflow_name):
+        return WorkFlow(self._commcell_object, workflow_name, workflow_id)
+    else:
+        raise SDKException(
+            &#39;Workflow&#39;,
+            &#39;102&#39;,
+            &#39;No workflow exists with name: {0}&#39;.format(workflow_name)
+        )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.get_interaction_properties"><code class="name flex">
+<span>def <span class="ident">get_interaction_properties</span></span>(<span>self, interaction_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a workflow interaction properties to the user</p>
+<h2 id="args">Args</h2>
+<p>interaction_id (int)
+&ndash;
+Workflow interaction id</p>
+<h2 id="returns">Returns</h2>
+<p>dictionary - Workflow interaction id properties</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+- if response is empty</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L694-L716" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_interaction_properties(self, interaction_id):
+    &#34;&#34;&#34;Returns a workflow interaction properties to the user
+
+        Args:
+            interaction_id (int)  --  Workflow interaction id
+
+        Returns:
+            dictionary - Workflow interaction id properties
+
+        Raises:
+            SDKException:
+                - if response is empty
+
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._INTERACTION % interaction_id)
+
+    if flag:
+        if response.json() and &#39;request&#39; in response.json():
+            return response.json()[&#39;request&#39;]
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.has_activity"><code class="name flex">
+<span>def <span class="ident">has_activity</span></span>(<span>self, activity_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a workflow activity exists in the commcell with the input
+activity name.</p>
+<h2 id="args">Args</h2>
+<p>activity_name
+(str)
+&ndash;
+name of the activity</p>
+<h2 id="returns">Returns</h2>
+<p>bool
+-
+boolean output whether the workflow activity exists
+in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow activity name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L407-L426" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_activity(self, activity_name):
+    &#34;&#34;&#34;Checks if a workflow activity exists in the commcell with the input
+        activity name.
+
+        Args:
+            activity_name   (str)   --  name of the activity
+
+        Returns:
+            bool    -   boolean output whether the workflow activity exists
+                        in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the workflow activity name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(activity_name, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    return self._activities and activity_name.lower() in self._activities</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.has_workflow"><code class="name flex">
+<span>def <span class="ident">has_workflow</span></span>(<span>self, workflow_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a workflow exists in the commcell with the input workflow name.</p>
+<h2 id="args">Args</h2>
+<p>workflow_name
+(str)
+&ndash;
+name of the workflow</p>
+<h2 id="returns">Returns</h2>
+<p>bool
+-
+boolean output whether the workflow exists in the
+commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L387-L405" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_workflow(self, workflow_name):
+    &#34;&#34;&#34;Checks if a workflow exists in the commcell with the input workflow name.
+
+        Args:
+            workflow_name   (str)   --  name of the workflow
+
+        Returns:
+            bool    -   boolean output whether the workflow exists in the
+                        commcell or not
+
+        Raises:
+            SDKException:
+                if type of the workflow name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(workflow_name, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    return self._workflows and workflow_name.lower() in self._workflows</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.import_activity"><code class="name flex">
+<span>def <span class="ident">import_activity</span></span>(<span>self, activity_xml)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Imports a workflow activity to the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>activity_xml
+(str)
+&ndash;
+path of the workflow activity xml
+file / XMl contents.</p>
+<pre><code>Checks whether the given value is a local file, and reads its
+
+contents otherwise, uses the value given as the body for the
+
+POST request
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow activity xml argument is not string</p>
+<pre><code>if workflow activity xml is not a valid xml / a valid file path
+
+if HTTP Status Code is not SUCCESS / importing workflow failed
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L476-L525" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def import_activity(self, activity_xml):
+    &#34;&#34;&#34;Imports a workflow activity to the Commcell.
+
+        Args:
+            activity_xml    (str)   --  path of the workflow activity xml
+                                        file / XMl contents.
+
+                Checks whether the given value is a local file, and reads its
+
+                contents otherwise, uses the value given as the body for the
+
+                POST request
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if type of the workflow activity xml argument is not string
+
+                if workflow activity xml is not a valid xml / a valid file path
+
+                if HTTP Status Code is not SUCCESS / importing workflow failed
+
+    &#34;&#34;&#34;
+    if not isinstance(activity_xml, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    if os.path.isfile(activity_xml):
+        with open(activity_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+            activity_xml = file_object.read()
+    else:
+        try:
+            __ = xmltodict.parse(activity_xml)
+        except ExpatError:
+            raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._WORKFLOWS, activity_xml
+    )
+
+    self.refresh_activities()
+
+    if flag is False:
+        response_string = self._update_response_(response.text)
+        raise SDKException(
+            &#39;Workflow&#39;,
+            &#39;102&#39;,
+            &#39;Importing Workflow activity failed. {0}&#39;.format(response_string)
+        )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.import_workflow"><code class="name flex">
+<span>def <span class="ident">import_workflow</span></span>(<span>self, workflow_xml)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Imports a workflow to the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>workflow_xml
+(str)
+&ndash;
+path of the workflow xml file / XML contents</p>
+<pre><code>checks whether the given value is a local file, and reads its contents
+
+otherwise, uses the value given as the body for the POST request
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the workflow xml argument is not string</p>
+<pre><code>if workflow xml is not a valid xml / a valid file path
+
+if HTTP Status Code is not SUCCESS / importing workflow failed
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L428-L474" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def import_workflow(self, workflow_xml):
+    &#34;&#34;&#34;Imports a workflow to the Commcell.
+
+        Args:
+            workflow_xml    (str)   --  path of the workflow xml file / XML contents
+
+                checks whether the given value is a local file, and reads its contents
+
+                otherwise, uses the value given as the body for the POST request
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if type of the workflow xml argument is not string
+
+                if workflow xml is not a valid xml / a valid file path
+
+                if HTTP Status Code is not SUCCESS / importing workflow failed
+
+    &#34;&#34;&#34;
+    if not isinstance(workflow_xml, basestring):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    if os.path.isfile(workflow_xml):
+        with open(workflow_xml, &#39;r&#39;, encoding=&#39;utf-8&#39;) as file_object:
+            workflow_xml = file_object.read()
+    else:
+        try:
+            __ = xmltodict.parse(workflow_xml)
+        except ExpatError:
+            raise SDKException(&#39;Workflow&#39;, &#39;103&#39;)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._WORKFLOWS, workflow_xml
+    )
+
+    self.refresh()
+
+    if flag is False:
+        response_string = self._update_response_(response.text)
+        raise SDKException(
+            &#39;Workflow&#39;,
+            &#39;102&#39;,
+            &#39;Importing Workflow failed. {0}&#39;.format(response_string)
+        )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of workflows deployed on the Commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L686-L688" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the list of workflows deployed on the Commcell.&#34;&#34;&#34;
+    self._workflows = self._get_workflows()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.refresh_activities"><code class="name flex">
+<span>def <span class="ident">refresh_activities</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of workflow activities deployed on the Commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L690-L692" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh_activities(self):
+    &#34;&#34;&#34;Refresh the list of workflow activities deployed on the Commcell.&#34;&#34;&#34;
+    self._activities = self._get_activities()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.workflow.WorkFlows.submit_interaction"><code class="name flex">
+<span>def <span class="ident">submit_interaction</span></span>(<span>self, interaction, input_xml, action)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Submits a given interaction with specified action</p>
+<h2 id="args">Args</h2>
+<p>interaction (dict)
+&ndash;
+Interaction dictionary
+e.g:
+{
+"interactionId": 3871,
+"created": 1547524940,
+"subject": "Delete Backupset [
+-&gt;
+-&gt;
+] requested by [ 11111_Automation_45_651 ]",
+"activityName": "Get Authorization",
+"flags": 1,
+"description": "",
+"sessionId": "a38b32dc-f505-45c5-9d61-3eaee226b50c",
+"processStepId": 648993,
+"jobId": 2804488,
+"status": 0,
+"workflow": {
+"workflowName": "GetAndProcessAuthorization",
+"workflowId": 2095
+},
+"commCell": {
+"commCellName": "WIN-K2DCEJR56MG",
+"commCellId": 2
+},
+"client": {
+"clientId": 2,
+"clientName": "WIN-K2DCEJR56MG"
+},
+"user": {
+"userName": "11111_Automation_01-14-2019_23_01_45_651",
+"userId": 1418
+}
+}</p>
+<p>input_xml (str)
+&ndash;
+Input XML string for completing the interaction.
+e.g : This is very specific to the user input interaction.
+Construct the input XML based on workflow being executed and send
+to this module.</p>
+<p>action
+(str)
+&ndash;
+Interaction action
+This is very specific to workflow being executed and the expected options
+for the given interaction</p>
+<h2 id="raises">Raises</h2>
+<p>Exception:
+Failed to submit workflow interaction request</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/workflow.py#L718-L786" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def submit_interaction(self, interaction, input_xml, action):
+    &#34;&#34;&#34; Submits a given interaction with specified action
+
+        Args:
+            interaction (dict)    --  Interaction dictionary
+            e.g:
+                {
+                    &#34;interactionId&#34;: 3871,
+                    &#34;created&#34;: 1547524940,
+                    &#34;subject&#34;: &#34;Delete Backupset [  -&gt;  -&gt;  ] requested by [ 11111_Automation_45_651 ]&#34;,
+                    &#34;activityName&#34;: &#34;Get Authorization&#34;,
+                    &#34;flags&#34;: 1,
+                    &#34;description&#34;: &#34;&#34;,
+                    &#34;sessionId&#34;: &#34;a38b32dc-f505-45c5-9d61-3eaee226b50c&#34;,
+                    &#34;processStepId&#34;: 648993,
+                    &#34;jobId&#34;: 2804488,
+                    &#34;status&#34;: 0,
+                    &#34;workflow&#34;: {
+                        &#34;workflowName&#34;: &#34;GetAndProcessAuthorization&#34;,
+                        &#34;workflowId&#34;: 2095
+                    },
+                    &#34;commCell&#34;: {
+                        &#34;commCellName&#34;: &#34;WIN-K2DCEJR56MG&#34;,
+                        &#34;commCellId&#34;: 2
+                    },
+                    &#34;client&#34;: {
+                        &#34;clientId&#34;: 2,
+                        &#34;clientName&#34;: &#34;WIN-K2DCEJR56MG&#34;
+                    },
+                    &#34;user&#34;: {
+                        &#34;userName&#34;: &#34;11111_Automation_01-14-2019_23_01_45_651&#34;,
+                        &#34;userId&#34;: 1418
+                    }
+                }
+
+            input_xml (str)       --  Input XML string for completing the interaction.
+                                        e.g : This is very specific to the user input interaction.
+                                                Construct the input XML based on workflow being executed and send
+                                                to this module.
+
+            action   (str)        --  Interaction action
+                                        This is very specific to workflow being executed and the expected options
+                                            for the given interaction
+
+        Raises:
+            Exception:
+                Failed to submit workflow interaction request
+    &#34;&#34;&#34;
+    if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+        raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
+
+    from xml.sax.saxutils import escape
+    escaped_xml = escape(input_xml)
+    commserve_name = self._commcell_object.commserv_name
+
+    request_xml = &#34;&#34;&#34;
+        &lt;Workflow_SetWebFormInteractionRequest action=&#34;{0}&#34; flags=&#34;1&#34; inputXml=&#34;{1}&#34; interactionId=&#34;{2}&#34;
+            jobId=&#34;{3}&#34; okClicked=&#34;0&#34; processStepId=&#34;{4}&#34; sessionId=&#34;&#34;&gt;
+            &lt;commCell commCellName=&#34;{5}&#34;/&gt;
+            &lt;client clientName=&#34;{6}&#34;/&gt;
+        &lt;/Workflow_SetWebFormInteractionRequest&gt;&#34;&#34;&#34;.format(
+            action, escaped_xml, str(interaction[&#39;interactionId&#39;]), str(interaction[&#39;jobId&#39;]),
+            str(interaction[&#39;processStepId&#39;]), commserve_name, commserve_name
+        )
+    response = self._commcell_object._qoperation_execute(request_xml)
+
+    if response.get(&#39;errorCode&#39;, 1) != 0:
+        o_str = &#39;Error: &#39; + response.get(&#39;errorMessage&#39;, &#39;&#39;)
+        raise SDKException(&#39;Workflow&#39;, &#39;102&#39;, &#39;Failed to submit workflow interaction request. Error: &#39;+o_str)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.workflow.WorkFlow" href="#cvpysdk.workflow.WorkFlow">WorkFlow</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.workflow.WorkFlow.clone_workflow" href="#cvpysdk.workflow.WorkFlow.clone_workflow">clone_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.deploy_workflow" href="#cvpysdk.workflow.WorkFlow.deploy_workflow">deploy_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.description" href="#cvpysdk.workflow.WorkFlow.description">description</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.disable" href="#cvpysdk.workflow.WorkFlow.disable">disable</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.enable" href="#cvpysdk.workflow.WorkFlow.enable">enable</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.execute_workflow" href="#cvpysdk.workflow.WorkFlow.execute_workflow">execute_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.export_workflow" href="#cvpysdk.workflow.WorkFlow.export_workflow">export_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.flags" href="#cvpysdk.workflow.WorkFlow.flags">flags</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.refresh" href="#cvpysdk.workflow.WorkFlow.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.revision" href="#cvpysdk.workflow.WorkFlow.revision">revision</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.schedule_workflow" href="#cvpysdk.workflow.WorkFlow.schedule_workflow">schedule_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.set_workflow_configuration" href="#cvpysdk.workflow.WorkFlow.set_workflow_configuration">set_workflow_configuration</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.version" href="#cvpysdk.workflow.WorkFlow.version">version</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.workflow_id" href="#cvpysdk.workflow.WorkFlow.workflow_id">workflow_id</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlow.workflow_name" href="#cvpysdk.workflow.WorkFlow.workflow_name">workflow_name</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.workflow.WorkFlows" href="#cvpysdk.workflow.WorkFlows">WorkFlows</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.workflow.WorkFlows.all_activities" href="#cvpysdk.workflow.WorkFlows.all_activities">all_activities</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.all_interactions" href="#cvpysdk.workflow.WorkFlows.all_interactions">all_interactions</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.all_workflows" href="#cvpysdk.workflow.WorkFlows.all_workflows">all_workflows</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.delete_workflow" href="#cvpysdk.workflow.WorkFlows.delete_workflow">delete_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.download_workflow_from_store" href="#cvpysdk.workflow.WorkFlows.download_workflow_from_store">download_workflow_from_store</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.get" href="#cvpysdk.workflow.WorkFlows.get">get</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.get_interaction_properties" href="#cvpysdk.workflow.WorkFlows.get_interaction_properties">get_interaction_properties</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.has_activity" href="#cvpysdk.workflow.WorkFlows.has_activity">has_activity</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.has_workflow" href="#cvpysdk.workflow.WorkFlows.has_workflow">has_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.import_activity" href="#cvpysdk.workflow.WorkFlows.import_activity">import_activity</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.import_workflow" href="#cvpysdk.workflow.WorkFlows.import_workflow">import_workflow</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.refresh" href="#cvpysdk.workflow.WorkFlows.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.refresh_activities" href="#cvpysdk.workflow.WorkFlows.refresh_activities">refresh_activities</a></code></li>
+<li><code><a title="cvpysdk.workflow.WorkFlows.submit_interaction" href="#cvpysdk.workflow.WorkFlows.submit_interaction">submit_interaction</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

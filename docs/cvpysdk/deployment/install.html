@@ -1,0 +1,2071 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.deployment.install API documentation</title>
+<meta name="description" content="&#34; Main file for performing the download operation …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.deployment.install</code></h1>
+</header>
+<section id="section-intro">
+<p>" Main file for performing the download operation</p>
+<h1 id="download">Download</h1>
+<pre><code>__init__(commcell_object)        --  initialize commcell_object of Install class
+associated with the commcell
+
+repair_software                -- triggers Repair of the software on a specified
+                                    client/client group
+
+push_servicepack_and_hotfix()    --  installs the latest service pack in the client machine
+
+install_software                 --  Installs the features selected on the machines selected
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/install.py#L1-L599" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;&#34; Main file for performing the download operation
+
+Download
+========
+
+    __init__(commcell_object)        --  initialize commcell_object of Install class
+    associated with the commcell
+
+    repair_software                -- triggers Repair of the software on a specified
+                                        client/client group
+
+    push_servicepack_and_hotfix()    --  installs the latest service pack in the client machine
+
+    install_software                 --  Installs the features selected on the machines selected
+
+&#34;&#34;&#34;
+
+from ..job import Job
+from ..exception import SDKException
+
+
+class Install(object):
+    &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Install class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Install class
+
+        &#34;&#34;&#34;
+
+        self.commcell_object = commcell_object
+        self._services = commcell_object._services
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+
+    def repair_software(self,
+                        client=None,
+                        client_group=None,
+                        username=None,
+                        password=None,
+                        reboot_client=False):
+        &#34;&#34;&#34;triggers Repair of the software for a specified client machine
+
+                Args:
+                    client (str)               -- Client machine to re-install service pack on
+
+                    client_group (str)         -- Client group to re-install service pack on
+                                                            (eg : &#39;Media Agent&#39;)
+
+                    username    (str)               -- username of the machine to re-install features on
+
+                        default : None
+
+                    password    (str)               -- base64 encoded password
+
+                        default : None
+
+                    reboot_client (bool)            -- boolean to specify whether to reboot the client
+                    or not
+
+                        default: False
+
+                Returns:
+                    object - instance of the Job class for this download job
+
+                Raises:
+                        SDKException:
+                        if re-install job failed
+
+                        if response is empty
+
+                        if response is not success
+
+        **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
+                  client computer will be repaired
+
+        **NOTE:** If machine requires reboot and reboot is not selected, machine won&#39;t be updated
+
+        **NOTE:** If machine requires login credentials and if not provided - client reinstallation might fail.
+
+        &#34;&#34;&#34;
+        if (client is None) and (client_group is None):
+            raise SDKException(&#39;Install&#39;, &#39;100&#39;)
+
+        if client:
+            client_group = &#34;&#34;
+            if not client in self.commcell_object.clients.all_clients:
+                raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+        elif client_group:
+            client = &#34;&#34;
+            if not client_group in self.commcell_object.client_groups.all_clientgroups:
+                raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4020
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;clientInstallOption&#34;: {
+                                    &#34;installerOption&#34;: {
+                                        &#34;clientComposition&#34;: [
+                                            {
+                                                &#34;packageDeliveryOption&#34;: 0
+                                            }
+                                        ]
+                                    }
+                                },
+                                &#34;updateOption&#34;: {
+                                    &#34;installUpdateOptions&#34;: 0,
+                                    &#34;restartExplorerPlugin&#34;: True,
+                                    &#34;rebootClient&#34;: reboot_client,
+                                    &#34;clientAndClientGroups&#34;: [
+                                        {
+                                            &#34;clientGroupName&#34;: client_group,
+                                            &#34;clientName&#34;: client
+                                        }
+                                    ],
+                                    &#34;installUpdatesJobType&#34;: {
+                                        &#34;installType&#34;: 4,
+                                        &#34;upgradeClients&#34;: False,
+                                        &#34;undoUpdates&#34;: False,
+                                        &#34;installUpdates&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if username:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
+                = {
+                    &#34;password&#34;: password,
+                    &#34;userName&#34;: username
+                }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def push_servicepack_and_hotfix(
+            self,
+            client_computers=None,
+            client_computer_groups=None,
+            all_client_computers=False,
+            all_client_computer_groups=False,
+            reboot_client=False,
+            run_db_maintenance=True,
+            maintenance_release_only=False):
+        &#34;&#34;&#34;Installs the software packages on the clients
+
+        Args:
+            client_computers (list)               -- Client machines to install service pack on
+
+            client_computer_groups (list)         -- Client groups to install service pack on
+
+            all_client_computers (bool)           -- boolean to specify whether to install on
+            all client computers or not
+
+                default: False
+
+            all_client _computer_groups (bool)    -- boolean to specify whether to install on all
+            client computer groups or not
+
+                default: False
+
+            reboot_client (bool)                  -- boolean to specify whether to reboot the
+            client or not
+
+                default: False
+
+            run_db_maintenance (bool)             -- boolean to specify whether to run db
+            maintenance not
+
+                default: True
+
+            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
+            maintenance release of that client FR, if present in cache
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                    if Download job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another download job is already running
+
+        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
+
+        &#34;&#34;&#34;
+        selected_clients = []
+        selected_client_groups = []
+
+        if not any([all_client_computers,
+                    all_client_computer_groups,
+                    client_computers,
+                    client_computer_groups]):
+            raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+        commcell_client_computers = self.commcell_object.clients.all_clients
+        commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
+
+        if client_computers is not None:
+            client_computers = [x.lower() for x in client_computers]
+            if not set(client_computers).issubset(commcell_client_computers):
+                raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+            selected_clients = [{&#39;clientName&#39;: client} for client in client_computers]
+
+        if client_computer_groups is not None:
+            client_computer_groups = [x.lower() for x in client_computer_groups]
+            if not set(client_computer_groups).issubset(commcell_client_computer_groups):
+                raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+
+            selected_client_groups = [{&#39;clientGroupName&#39;: client}
+                                      for client in client_computer_groups]
+
+        if all_client_computers:
+            selected_clients = [{&#34;_type_&#34;: 2}]
+
+        if all_client_computer_groups:
+            selected_client_groups = [{&#34;_type_&#34;: 27}]
+
+        all_clients = selected_clients + selected_client_groups
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
+                    },
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4020
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;removeIntersectingDiag&#34;: True,
+                                    &#34;restartExplorerPlugin&#34;: True,
+                                    &#34;rebootClient&#34;: reboot_client,
+                                    &#34;runDBMaintenance&#34;: run_db_maintenance,
+                                    &#34;maintenanceReleaseOnly&#34;: maintenance_release_only,
+                                    &#34;clientAndClientGroups&#34;: all_clients,
+                                    &#34;installUpdatesJobType&#34;: {
+                                        &#34;upgradeClients&#34;: False,
+                                        &#34;undoUpdates&#34;: False,
+                                        &#34;installUpdates&#34;: True
+                                    }
+                                }
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def install_software(
+            self,
+            client_computers=None,
+            windows_features=None,
+            unix_features=None,
+            username=None,
+            password=None,
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None,
+            sw_cache_client=None,
+            **kwargs):
+        &#34;&#34;&#34;
+        Installs the features selected on the given machines
+        Args:
+
+            client_computers    (list)      -- list of hostnames/IP address to install the
+            features on
+
+                default : None
+
+            windows_features (list of enum) -- list of windows features to be installed
+
+                default : None
+
+            unix_features (list of enum)    -- list of unix features to be installed
+
+                default : None
+
+            username    (str)               -- username of the machine to install features on
+
+                default : None
+
+            password    (str)               -- base64 encoded password
+
+                default : None
+
+            install_path (str)              -- Install to a specified path on the client
+
+                 default : None
+
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
+
+                 default : None
+
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
+
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict) - dictionary of install flag values
+            Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+
+        Returns:
+                object - instance of the Job class for this install_software job
+
+        Raises:
+            SDKException:
+                if install job failed
+
+                if response is empty
+
+                if response is not success
+
+        Usage:
+
+            -   UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+                input to the install_software method, it can be imported by
+
+                &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
+
+            -   sample method call
+
+                &gt;&gt;&gt; commcell_obj.install_software(
+                                client_computers=[win_machine1, win_machine2],
+                                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
+                                unix_features=None,
+                                username=&#39;username&#39;,
+                                password=&#39;password&#39;,
+                                install_path=&#39;C:\\Temp,
+                                log_file_loc=&#39;/var/log&#39;,
+                                client_group_name=[My_Servers],
+                                storage_policy_name=&#39;My_Storage_Policy&#39;,
+                                install_flags={&#34;preferredIPFamily&#34;:2})
+
+                    **NOTE:** Either Unix or Windows clients_computers should be chosen and
+                    not both
+
+        &#34;&#34;&#34;
+        if windows_features:
+            os_type = 0
+            install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
+                               for feature_id in windows_features]
+
+        elif unix_features:
+            os_type = 1
+            install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
+                               for feature_id in unix_features]
+
+        else:
+            raise SDKException(&#39;Install&#39;, &#39;105&#39;)
+
+        if client_computers:
+            commcell_name = self.commcell_object.commserv_name
+
+            client_details = []
+            for client_name in client_computers:
+                client_details.append(
+                    {
+                        &#34;clientEntity&#34;: {
+                            &#34;clientName&#34;: client_name,
+                            &#34;commCellName&#34;: commcell_name
+                        }
+                    })
+
+        else:
+            raise SDKException(&#39;Install&#39;, &#39;106&#39;)
+
+        if client_group_name:
+            client_group_name = [x.lower() for x in client_group_name]
+            if not set(client_group_name).issubset(self.commcell_object.client_groups.all_clientgroups):
+                raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+            selected_client_groups = [{&#39;clientGroupName&#39;: client_group}
+                                      for client_group in client_group_name]
+
+        install_flags = kwargs.get(&#39;install_flags&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;commCellId&#34;: 2
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 1,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4026
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;clientInstallOption&#34;: {
+                                    &#34;reuseADCredentials&#34;: False,
+                                    &#34;installOSType&#34;: os_type,
+                                    &#34;discoveryType&#34;: 0,
+                                    &#34;installerOption&#34;: {
+                                        &#34;requestType&#34;: 0,
+                                        &#34;Operationtype&#34;: 0,
+                                        &#34;CommServeHostName&#34;:
+                                            self.commcell_object.commserv_hostname,
+                                        &#34;RemoteClient&#34;: False,
+                                        &#34;installFlags&#34;: {
+                                            &#34;allowMultipleInstances&#34;: True,
+                                            &#34;restoreOnlyAgents&#34;: False,
+                                            &#34;killBrowserProcesses&#34;: True,
+                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                            &#34;disableOSFirewall&#34;: False,
+                                            &#34;stopOracleServices&#34;: False,
+                                            &#34;skipClientsOfCS&#34;: False,
+                                            &#34;addToFirewallExclusion&#34;: True,
+                                            &#34;ignoreJobsRunning&#34;: False,
+                                            &#34;forceReboot&#34;: False,
+                                            &#34;overrideClientInfo&#34;: True,
+                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                            &#34;firewallInstall&#34;: {
+                                                &#34;enableFirewallConfig&#34;: False,
+                                                &#34;firewallConnectionType&#34;: 0,
+                                                &#34;portNumber&#34;: 0
+                                            }
+                                        },
+                                        &#34;User&#34;: {
+                                            &#34;userName&#34;: &#34;admin&#34;,
+                                            &#34;userId&#34;: 1
+                                        },
+                                        &#34;clientComposition&#34;: [
+                                            {
+                                                &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                                &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                    &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                                },
+                                                &#34;packageDeliveryOption&#34;: 0,
+                                                &#34;components&#34;: {
+                                                    &#34;commonInfo&#34;: {
+                                                        &#34;globalFilters&#34;: 2,
+                                                        &#34;storagePolicyToUse&#34;: {
+                                                            &#34;storagePolicyName&#34;: storage_policy_name if storage_policy_name else &#34;&#34;
+                                                        }
+                                                    },
+                                                    &#34;fileSystem&#34;: {
+                                                        &#34;configureForLaptopBackups&#34;: False
+                                                    },
+                                                    &#34;componentInfo&#34;: install_options,
+                                                },
+                                                &#34;clientInfo&#34;: {
+                                                    &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
+                                                    &#34;client&#34;: {
+                                                        &#34;evmgrcPort&#34;: 0,
+                                                        &#34;cvdPort&#34;: 0,
+                                                        &#34;installDirectory&#34;: install_path if install_path else &#34;&#34;
+                                                    },
+                                                    &#34;clientProps&#34;: {
+                                                        &#34;logFilesLocation&#34;: log_file_loc if log_file_loc else &#34;&#34;
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    &#34;clientDetails&#34;: client_details,
+                                    &#34;clientAuthForJob&#34;: {
+                                        &#34;password&#34;: password,
+                                        &#34;userName&#34;: username
+                                    }
+                                },
+                                &#34;updateOption&#34;: {
+                                    &#34;rebootClient&#34;: True
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.deployment.install.Install"><code class="flex name class">
+<span>class <span class="ident">Install</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>"class for installing software packages</p>
+<p>Initialize object of the Install class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Install class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/install.py#L40-L599" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Install(object):
+    &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Install class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Install class
+
+        &#34;&#34;&#34;
+
+        self.commcell_object = commcell_object
+        self._services = commcell_object._services
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+
+    def repair_software(self,
+                        client=None,
+                        client_group=None,
+                        username=None,
+                        password=None,
+                        reboot_client=False):
+        &#34;&#34;&#34;triggers Repair of the software for a specified client machine
+
+                Args:
+                    client (str)               -- Client machine to re-install service pack on
+
+                    client_group (str)         -- Client group to re-install service pack on
+                                                            (eg : &#39;Media Agent&#39;)
+
+                    username    (str)               -- username of the machine to re-install features on
+
+                        default : None
+
+                    password    (str)               -- base64 encoded password
+
+                        default : None
+
+                    reboot_client (bool)            -- boolean to specify whether to reboot the client
+                    or not
+
+                        default: False
+
+                Returns:
+                    object - instance of the Job class for this download job
+
+                Raises:
+                        SDKException:
+                        if re-install job failed
+
+                        if response is empty
+
+                        if response is not success
+
+        **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
+                  client computer will be repaired
+
+        **NOTE:** If machine requires reboot and reboot is not selected, machine won&#39;t be updated
+
+        **NOTE:** If machine requires login credentials and if not provided - client reinstallation might fail.
+
+        &#34;&#34;&#34;
+        if (client is None) and (client_group is None):
+            raise SDKException(&#39;Install&#39;, &#39;100&#39;)
+
+        if client:
+            client_group = &#34;&#34;
+            if not client in self.commcell_object.clients.all_clients:
+                raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+        elif client_group:
+            client = &#34;&#34;
+            if not client_group in self.commcell_object.client_groups.all_clientgroups:
+                raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4020
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;clientInstallOption&#34;: {
+                                    &#34;installerOption&#34;: {
+                                        &#34;clientComposition&#34;: [
+                                            {
+                                                &#34;packageDeliveryOption&#34;: 0
+                                            }
+                                        ]
+                                    }
+                                },
+                                &#34;updateOption&#34;: {
+                                    &#34;installUpdateOptions&#34;: 0,
+                                    &#34;restartExplorerPlugin&#34;: True,
+                                    &#34;rebootClient&#34;: reboot_client,
+                                    &#34;clientAndClientGroups&#34;: [
+                                        {
+                                            &#34;clientGroupName&#34;: client_group,
+                                            &#34;clientName&#34;: client
+                                        }
+                                    ],
+                                    &#34;installUpdatesJobType&#34;: {
+                                        &#34;installType&#34;: 4,
+                                        &#34;upgradeClients&#34;: False,
+                                        &#34;undoUpdates&#34;: False,
+                                        &#34;installUpdates&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if username:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
+                = {
+                    &#34;password&#34;: password,
+                    &#34;userName&#34;: username
+                }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def push_servicepack_and_hotfix(
+            self,
+            client_computers=None,
+            client_computer_groups=None,
+            all_client_computers=False,
+            all_client_computer_groups=False,
+            reboot_client=False,
+            run_db_maintenance=True,
+            maintenance_release_only=False):
+        &#34;&#34;&#34;Installs the software packages on the clients
+
+        Args:
+            client_computers (list)               -- Client machines to install service pack on
+
+            client_computer_groups (list)         -- Client groups to install service pack on
+
+            all_client_computers (bool)           -- boolean to specify whether to install on
+            all client computers or not
+
+                default: False
+
+            all_client _computer_groups (bool)    -- boolean to specify whether to install on all
+            client computer groups or not
+
+                default: False
+
+            reboot_client (bool)                  -- boolean to specify whether to reboot the
+            client or not
+
+                default: False
+
+            run_db_maintenance (bool)             -- boolean to specify whether to run db
+            maintenance not
+
+                default: True
+
+            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
+            maintenance release of that client FR, if present in cache
+
+        Returns:
+            object - instance of the Job class for this download job
+
+        Raises:
+                SDKException:
+                    if Download job failed
+
+                    if response is empty
+
+                    if response is not success
+
+                    if another download job is already running
+
+        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
+
+        &#34;&#34;&#34;
+        selected_clients = []
+        selected_client_groups = []
+
+        if not any([all_client_computers,
+                    all_client_computer_groups,
+                    client_computers,
+                    client_computer_groups]):
+            raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+        commcell_client_computers = self.commcell_object.clients.all_clients
+        commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
+
+        if client_computers is not None:
+            client_computers = [x.lower() for x in client_computers]
+            if not set(client_computers).issubset(commcell_client_computers):
+                raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+            selected_clients = [{&#39;clientName&#39;: client} for client in client_computers]
+
+        if client_computer_groups is not None:
+            client_computer_groups = [x.lower() for x in client_computer_groups]
+            if not set(client_computer_groups).issubset(commcell_client_computer_groups):
+                raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+
+            selected_client_groups = [{&#39;clientGroupName&#39;: client}
+                                      for client in client_computer_groups]
+
+        if all_client_computers:
+            selected_clients = [{&#34;_type_&#34;: 2}]
+
+        if all_client_computer_groups:
+            selected_client_groups = [{&#34;_type_&#34;: 27}]
+
+        all_clients = selected_clients + selected_client_groups
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
+                    },
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4020
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;removeIntersectingDiag&#34;: True,
+                                    &#34;restartExplorerPlugin&#34;: True,
+                                    &#34;rebootClient&#34;: reboot_client,
+                                    &#34;runDBMaintenance&#34;: run_db_maintenance,
+                                    &#34;maintenanceReleaseOnly&#34;: maintenance_release_only,
+                                    &#34;clientAndClientGroups&#34;: all_clients,
+                                    &#34;installUpdatesJobType&#34;: {
+                                        &#34;upgradeClients&#34;: False,
+                                        &#34;undoUpdates&#34;: False,
+                                        &#34;installUpdates&#34;: True
+                                    }
+                                }
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def install_software(
+            self,
+            client_computers=None,
+            windows_features=None,
+            unix_features=None,
+            username=None,
+            password=None,
+            install_path=None,
+            log_file_loc=None,
+            client_group_name=None,
+            storage_policy_name=None,
+            sw_cache_client=None,
+            **kwargs):
+        &#34;&#34;&#34;
+        Installs the features selected on the given machines
+        Args:
+
+            client_computers    (list)      -- list of hostnames/IP address to install the
+            features on
+
+                default : None
+
+            windows_features (list of enum) -- list of windows features to be installed
+
+                default : None
+
+            unix_features (list of enum)    -- list of unix features to be installed
+
+                default : None
+
+            username    (str)               -- username of the machine to install features on
+
+                default : None
+
+            password    (str)               -- base64 encoded password
+
+                default : None
+
+            install_path (str)              -- Install to a specified path on the client
+
+                 default : None
+
+            log_file_loc (str)              -- Install to a specified log path on the client
+
+                 default : None
+
+            client_group_name (list)        -- List of client groups for the client
+
+                 default : None
+
+            storage_policy_name (str)       -- Storage policy for the default subclient
+
+                 default : None
+
+            sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+                default : None (Use CS Cache by default)
+
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            install_flags (dict) - dictionary of install flag values
+            Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+
+        Returns:
+                object - instance of the Job class for this install_software job
+
+        Raises:
+            SDKException:
+                if install job failed
+
+                if response is empty
+
+                if response is not success
+
+        Usage:
+
+            -   UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+                input to the install_software method, it can be imported by
+
+                &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
+
+            -   sample method call
+
+                &gt;&gt;&gt; commcell_obj.install_software(
+                                client_computers=[win_machine1, win_machine2],
+                                windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
+                                unix_features=None,
+                                username=&#39;username&#39;,
+                                password=&#39;password&#39;,
+                                install_path=&#39;C:\\Temp,
+                                log_file_loc=&#39;/var/log&#39;,
+                                client_group_name=[My_Servers],
+                                storage_policy_name=&#39;My_Storage_Policy&#39;,
+                                install_flags={&#34;preferredIPFamily&#34;:2})
+
+                    **NOTE:** Either Unix or Windows clients_computers should be chosen and
+                    not both
+
+        &#34;&#34;&#34;
+        if windows_features:
+            os_type = 0
+            install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
+                               for feature_id in windows_features]
+
+        elif unix_features:
+            os_type = 1
+            install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
+                               for feature_id in unix_features]
+
+        else:
+            raise SDKException(&#39;Install&#39;, &#39;105&#39;)
+
+        if client_computers:
+            commcell_name = self.commcell_object.commserv_name
+
+            client_details = []
+            for client_name in client_computers:
+                client_details.append(
+                    {
+                        &#34;clientEntity&#34;: {
+                            &#34;clientName&#34;: client_name,
+                            &#34;commCellName&#34;: commcell_name
+                        }
+                    })
+
+        else:
+            raise SDKException(&#39;Install&#39;, &#39;106&#39;)
+
+        if client_group_name:
+            client_group_name = [x.lower() for x in client_group_name]
+            if not set(client_group_name).issubset(self.commcell_object.client_groups.all_clientgroups):
+                raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+            selected_client_groups = [{&#39;clientGroupName&#39;: client_group}
+                                      for client_group in client_group_name]
+
+        install_flags = kwargs.get(&#39;install_flags&#39;)
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;commCellId&#34;: 2
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 1,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4026
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;clientInstallOption&#34;: {
+                                    &#34;reuseADCredentials&#34;: False,
+                                    &#34;installOSType&#34;: os_type,
+                                    &#34;discoveryType&#34;: 0,
+                                    &#34;installerOption&#34;: {
+                                        &#34;requestType&#34;: 0,
+                                        &#34;Operationtype&#34;: 0,
+                                        &#34;CommServeHostName&#34;:
+                                            self.commcell_object.commserv_hostname,
+                                        &#34;RemoteClient&#34;: False,
+                                        &#34;installFlags&#34;: {
+                                            &#34;allowMultipleInstances&#34;: True,
+                                            &#34;restoreOnlyAgents&#34;: False,
+                                            &#34;killBrowserProcesses&#34;: True,
+                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                            &#34;disableOSFirewall&#34;: False,
+                                            &#34;stopOracleServices&#34;: False,
+                                            &#34;skipClientsOfCS&#34;: False,
+                                            &#34;addToFirewallExclusion&#34;: True,
+                                            &#34;ignoreJobsRunning&#34;: False,
+                                            &#34;forceReboot&#34;: False,
+                                            &#34;overrideClientInfo&#34;: True,
+                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                            &#34;firewallInstall&#34;: {
+                                                &#34;enableFirewallConfig&#34;: False,
+                                                &#34;firewallConnectionType&#34;: 0,
+                                                &#34;portNumber&#34;: 0
+                                            }
+                                        },
+                                        &#34;User&#34;: {
+                                            &#34;userName&#34;: &#34;admin&#34;,
+                                            &#34;userId&#34;: 1
+                                        },
+                                        &#34;clientComposition&#34;: [
+                                            {
+                                                &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                                &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                    &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                                },
+                                                &#34;packageDeliveryOption&#34;: 0,
+                                                &#34;components&#34;: {
+                                                    &#34;commonInfo&#34;: {
+                                                        &#34;globalFilters&#34;: 2,
+                                                        &#34;storagePolicyToUse&#34;: {
+                                                            &#34;storagePolicyName&#34;: storage_policy_name if storage_policy_name else &#34;&#34;
+                                                        }
+                                                    },
+                                                    &#34;fileSystem&#34;: {
+                                                        &#34;configureForLaptopBackups&#34;: False
+                                                    },
+                                                    &#34;componentInfo&#34;: install_options,
+                                                },
+                                                &#34;clientInfo&#34;: {
+                                                    &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
+                                                    &#34;client&#34;: {
+                                                        &#34;evmgrcPort&#34;: 0,
+                                                        &#34;cvdPort&#34;: 0,
+                                                        &#34;installDirectory&#34;: install_path if install_path else &#34;&#34;
+                                                    },
+                                                    &#34;clientProps&#34;: {
+                                                        &#34;logFilesLocation&#34;: log_file_loc if log_file_loc else &#34;&#34;
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    &#34;clientDetails&#34;: client_details,
+                                    &#34;clientAuthForJob&#34;: {
+                                        &#34;password&#34;: password,
+                                        &#34;userName&#34;: username
+                                    }
+                                },
+                                &#34;updateOption&#34;: {
+                                    &#34;rebootClient&#34;: True
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                else:
+                    raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.deployment.install.Install.install_software"><code class="name flex">
+<span>def <span class="ident">install_software</span></span>(<span>self, client_computers=None, windows_features=None, unix_features=None, username=None, password=None, install_path=None, log_file_loc=None, client_group_name=None, storage_policy_name=None, sw_cache_client=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Installs the features selected on the given machines</p>
+<h2 id="args">Args</h2>
+<p>client_computers
+(list)
+&ndash; list of hostnames/IP address to install the
+features on</p>
+<pre><code>default : None
+</code></pre>
+<p>windows_features (list of enum) &ndash; list of windows features to be installed</p>
+<pre><code>default : None
+</code></pre>
+<p>unix_features (list of enum)
+&ndash; list of unix features to be installed</p>
+<pre><code>default : None
+</code></pre>
+<p>username
+(str)
+&ndash; username of the machine to install features on</p>
+<pre><code>default : None
+</code></pre>
+<p>password
+(str)
+&ndash; base64 encoded password</p>
+<pre><code>default : None
+</code></pre>
+<p>install_path (str)
+&ndash; Install to a specified path on the client</p>
+<pre><code> default : None
+</code></pre>
+<p>log_file_loc (str)
+&ndash; Install to a specified log path on the client</p>
+<pre><code> default : None
+</code></pre>
+<p>client_group_name (list)
+&ndash; List of client groups for the client</p>
+<pre><code> default : None
+</code></pre>
+<p>storage_policy_name (str)
+&ndash; Storage policy for the default subclient</p>
+<pre><code> default : None
+</code></pre>
+<p>sw_cache_client (str)
+&ndash; Remote Cache Client Name/ Over-riding Software Cache</p>
+<pre><code>default : None (Use CS Cache by default)
+</code></pre>
+<dl>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>(dict) &ndash; Key value pairs for supporting conditional initializations</dd>
+</dl>
+<p>Supported -
+install_flags (dict) - dictionary of install flag values
+Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this install_software job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if install job failed</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre>
+<h2 id="usage">Usage</h2>
+<ul>
+<li>
+<p>UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+input to the install_software method, it can be imported by</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</li>
+<li>
+<p>sample method call</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>commcell_obj.install_software(
+client_computers=[win_machine1, win_machine2],
+windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
+unix_features=None,
+username='username',
+password='password',
+install_path='C:\Temp,
+log_file_loc='/var/log',
+client_group_name=[My_Servers],
+storage_policy_name='My_Storage_Policy',
+install_flags={"preferredIPFamily":2})</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>**NOTE:** Either Unix or Windows clients_computers should be chosen and
+not both
+</code></pre>
+</li>
+</ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/install.py#L342-L599" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def install_software(
+        self,
+        client_computers=None,
+        windows_features=None,
+        unix_features=None,
+        username=None,
+        password=None,
+        install_path=None,
+        log_file_loc=None,
+        client_group_name=None,
+        storage_policy_name=None,
+        sw_cache_client=None,
+        **kwargs):
+    &#34;&#34;&#34;
+    Installs the features selected on the given machines
+    Args:
+
+        client_computers    (list)      -- list of hostnames/IP address to install the
+        features on
+
+            default : None
+
+        windows_features (list of enum) -- list of windows features to be installed
+
+            default : None
+
+        unix_features (list of enum)    -- list of unix features to be installed
+
+            default : None
+
+        username    (str)               -- username of the machine to install features on
+
+            default : None
+
+        password    (str)               -- base64 encoded password
+
+            default : None
+
+        install_path (str)              -- Install to a specified path on the client
+
+             default : None
+
+        log_file_loc (str)              -- Install to a specified log path on the client
+
+             default : None
+
+        client_group_name (list)        -- List of client groups for the client
+
+             default : None
+
+        storage_policy_name (str)       -- Storage policy for the default subclient
+
+             default : None
+
+        sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
+
+            default : None (Use CS Cache by default)
+
+        **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+        Supported -
+        install_flags (dict) - dictionary of install flag values
+        Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+
+    Returns:
+            object - instance of the Job class for this install_software job
+
+    Raises:
+        SDKException:
+            if install job failed
+
+            if response is empty
+
+            if response is not success
+
+    Usage:
+
+        -   UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
+            input to the install_software method, it can be imported by
+
+            &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+                from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
+
+        -   sample method call
+
+            &gt;&gt;&gt; commcell_obj.install_software(
+                            client_computers=[win_machine1, win_machine2],
+                            windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
+                            unix_features=None,
+                            username=&#39;username&#39;,
+                            password=&#39;password&#39;,
+                            install_path=&#39;C:\\Temp,
+                            log_file_loc=&#39;/var/log&#39;,
+                            client_group_name=[My_Servers],
+                            storage_policy_name=&#39;My_Storage_Policy&#39;,
+                            install_flags={&#34;preferredIPFamily&#34;:2})
+
+                **NOTE:** Either Unix or Windows clients_computers should be chosen and
+                not both
+
+    &#34;&#34;&#34;
+    if windows_features:
+        os_type = 0
+        install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
+                           for feature_id in windows_features]
+
+    elif unix_features:
+        os_type = 1
+        install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
+                           for feature_id in unix_features]
+
+    else:
+        raise SDKException(&#39;Install&#39;, &#39;105&#39;)
+
+    if client_computers:
+        commcell_name = self.commcell_object.commserv_name
+
+        client_details = []
+        for client_name in client_computers:
+            client_details.append(
+                {
+                    &#34;clientEntity&#34;: {
+                        &#34;clientName&#34;: client_name,
+                        &#34;commCellName&#34;: commcell_name
+                    }
+                })
+
+    else:
+        raise SDKException(&#39;Install&#39;, &#39;106&#39;)
+
+    if client_group_name:
+        client_group_name = [x.lower() for x in client_group_name]
+        if not set(client_group_name).issubset(self.commcell_object.client_groups.all_clientgroups):
+            raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+        selected_client_groups = [{&#39;clientGroupName&#39;: client_group}
+                                  for client_group in client_group_name]
+
+    install_flags = kwargs.get(&#39;install_flags&#39;)
+
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;commCellId&#34;: 2
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 1,
+                &#34;taskFlags&#34;: {
+                    &#34;disabled&#34;: False
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 4026
+                    },
+                    &#34;options&#34;: {
+                        &#34;adminOpts&#34;: {
+                            &#34;clientInstallOption&#34;: {
+                                &#34;reuseADCredentials&#34;: False,
+                                &#34;installOSType&#34;: os_type,
+                                &#34;discoveryType&#34;: 0,
+                                &#34;installerOption&#34;: {
+                                    &#34;requestType&#34;: 0,
+                                    &#34;Operationtype&#34;: 0,
+                                    &#34;CommServeHostName&#34;:
+                                        self.commcell_object.commserv_hostname,
+                                    &#34;RemoteClient&#34;: False,
+                                    &#34;installFlags&#34;: {
+                                        &#34;allowMultipleInstances&#34;: True,
+                                        &#34;restoreOnlyAgents&#34;: False,
+                                        &#34;killBrowserProcesses&#34;: True,
+                                        &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                        &#34;disableOSFirewall&#34;: False,
+                                        &#34;stopOracleServices&#34;: False,
+                                        &#34;skipClientsOfCS&#34;: False,
+                                        &#34;addToFirewallExclusion&#34;: True,
+                                        &#34;ignoreJobsRunning&#34;: False,
+                                        &#34;forceReboot&#34;: False,
+                                        &#34;overrideClientInfo&#34;: True,
+                                        &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                        &#34;firewallInstall&#34;: {
+                                            &#34;enableFirewallConfig&#34;: False,
+                                            &#34;firewallConnectionType&#34;: 0,
+                                            &#34;portNumber&#34;: 0
+                                        }
+                                    },
+                                    &#34;User&#34;: {
+                                        &#34;userName&#34;: &#34;admin&#34;,
+                                        &#34;userId&#34;: 1
+                                    },
+                                    &#34;clientComposition&#34;: [
+                                        {
+                                            &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
+                                            &#34;softwareCacheOrSrmProxyClient&#34;: {
+                                                &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
+                                            },
+                                            &#34;packageDeliveryOption&#34;: 0,
+                                            &#34;components&#34;: {
+                                                &#34;commonInfo&#34;: {
+                                                    &#34;globalFilters&#34;: 2,
+                                                    &#34;storagePolicyToUse&#34;: {
+                                                        &#34;storagePolicyName&#34;: storage_policy_name if storage_policy_name else &#34;&#34;
+                                                    }
+                                                },
+                                                &#34;fileSystem&#34;: {
+                                                    &#34;configureForLaptopBackups&#34;: False
+                                                },
+                                                &#34;componentInfo&#34;: install_options,
+                                            },
+                                            &#34;clientInfo&#34;: {
+                                                &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
+                                                &#34;client&#34;: {
+                                                    &#34;evmgrcPort&#34;: 0,
+                                                    &#34;cvdPort&#34;: 0,
+                                                    &#34;installDirectory&#34;: install_path if install_path else &#34;&#34;
+                                                },
+                                                &#34;clientProps&#34;: {
+                                                    &#34;logFilesLocation&#34;: log_file_loc if log_file_loc else &#34;&#34;
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                &#34;clientDetails&#34;: client_details,
+                                &#34;clientAuthForJob&#34;: {
+                                    &#34;password&#34;: password,
+                                    &#34;userName&#34;: username
+                                }
+                            },
+                            &#34;updateOption&#34;: {
+                                &#34;rebootClient&#34;: True
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+    )
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            else:
+                raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deployment.install.Install.push_servicepack_and_hotfix"><code class="name flex">
+<span>def <span class="ident">push_servicepack_and_hotfix</span></span>(<span>self, client_computers=None, client_computer_groups=None, all_client_computers=False, all_client_computer_groups=False, reboot_client=False, run_db_maintenance=True, maintenance_release_only=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Installs the software packages on the clients</p>
+<h2 id="args">Args</h2>
+<p>client_computers (list)
+&ndash; Client machines to install service pack on</p>
+<p>client_computer_groups (list)
+&ndash; Client groups to install service pack on</p>
+<p>all_client_computers (bool)
+&ndash; boolean to specify whether to install on
+all client computers or not</p>
+<pre><code>default: False
+</code></pre>
+<p>all_client _computer_groups (bool)
+&ndash; boolean to specify whether to install on all
+client computer groups or not</p>
+<pre><code>default: False
+</code></pre>
+<p>reboot_client (bool)
+&ndash; boolean to specify whether to reboot the
+client or not</p>
+<pre><code>default: False
+</code></pre>
+<p>run_db_maintenance (bool)
+&ndash; boolean to specify whether to run db
+maintenance not</p>
+<pre><code>default: True
+</code></pre>
+<p>maintenance_release_only (bool)
+&ndash; for clients of feature releases lesser than CS, this option
+maintenance release of that client FR, if present in cache</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this download job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if Download job failed</p>
+<pre><code>if response is empty
+
+if response is not success
+
+if another download job is already running
+</code></pre>
+<p><strong>NOTE:</strong> push_serivcepack_and_hotfixes cannot be used for revision upgrades</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/install.py#L193-L340" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def push_servicepack_and_hotfix(
+        self,
+        client_computers=None,
+        client_computer_groups=None,
+        all_client_computers=False,
+        all_client_computer_groups=False,
+        reboot_client=False,
+        run_db_maintenance=True,
+        maintenance_release_only=False):
+    &#34;&#34;&#34;Installs the software packages on the clients
+
+    Args:
+        client_computers (list)               -- Client machines to install service pack on
+
+        client_computer_groups (list)         -- Client groups to install service pack on
+
+        all_client_computers (bool)           -- boolean to specify whether to install on
+        all client computers or not
+
+            default: False
+
+        all_client _computer_groups (bool)    -- boolean to specify whether to install on all
+        client computer groups or not
+
+            default: False
+
+        reboot_client (bool)                  -- boolean to specify whether to reboot the
+        client or not
+
+            default: False
+
+        run_db_maintenance (bool)             -- boolean to specify whether to run db
+        maintenance not
+
+            default: True
+
+        maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
+        maintenance release of that client FR, if present in cache
+
+    Returns:
+        object - instance of the Job class for this download job
+
+    Raises:
+            SDKException:
+                if Download job failed
+
+                if response is empty
+
+                if response is not success
+
+                if another download job is already running
+
+    **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
+
+    &#34;&#34;&#34;
+    selected_clients = []
+    selected_client_groups = []
+
+    if not any([all_client_computers,
+                all_client_computer_groups,
+                client_computers,
+                client_computer_groups]):
+        raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+    commcell_client_computers = self.commcell_object.clients.all_clients
+    commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
+
+    if client_computers is not None:
+        client_computers = [x.lower() for x in client_computers]
+        if not set(client_computers).issubset(commcell_client_computers):
+            raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+        selected_clients = [{&#39;clientName&#39;: client} for client in client_computers]
+
+    if client_computer_groups is not None:
+        client_computer_groups = [x.lower() for x in client_computer_groups]
+        if not set(client_computer_groups).issubset(commcell_client_computer_groups):
+            raise SDKException(&#39;Install&#39;, &#39;103&#39;)
+
+        selected_client_groups = [{&#39;clientGroupName&#39;: client}
+                                  for client in client_computer_groups]
+
+    if all_client_computers:
+        selected_clients = [{&#34;_type_&#34;: 2}]
+
+    if all_client_computer_groups:
+        selected_client_groups = [{&#34;_type_&#34;: 27}]
+
+    all_clients = selected_clients + selected_client_groups
+
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 2,
+                &#34;policyType&#34;: 0,
+                &#34;alert&#34;: {
+                    &#34;alertName&#34;: &#34;&#34;
+                },
+                &#34;taskFlags&#34;: {
+                    &#34;isEdgeDrive&#34;: False,
+                    &#34;disabled&#34;: False
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTaskOperation&#34;: 1,
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 4020
+                    },
+                    &#34;options&#34;: {
+                        &#34;adminOpts&#34;: {
+                            &#34;updateOption&#34;: {
+                                &#34;removeIntersectingDiag&#34;: True,
+                                &#34;restartExplorerPlugin&#34;: True,
+                                &#34;rebootClient&#34;: reboot_client,
+                                &#34;runDBMaintenance&#34;: run_db_maintenance,
+                                &#34;maintenanceReleaseOnly&#34;: maintenance_release_only,
+                                &#34;clientAndClientGroups&#34;: all_clients,
+                                &#34;installUpdatesJobType&#34;: {
+                                    &#34;upgradeClients&#34;: False,
+                                    &#34;undoUpdates&#34;: False,
+                                    &#34;installUpdates&#34;: True
+                                }
+                            }
+                        },
+                    }
+                }
+            ]
+        }
+    }
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+    )
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            else:
+                raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deployment.install.Install.repair_software"><code class="name flex">
+<span>def <span class="ident">repair_software</span></span>(<span>self, client=None, client_group=None, username=None, password=None, reboot_client=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>triggers Repair of the software for a specified client machine</p>
+<pre><code>    Args:
+        client (str)               -- Client machine to re-install service pack on
+
+        client_group (str)         -- Client group to re-install service pack on
+                                                (eg : 'Media Agent')
+
+        username    (str)               -- username of the machine to re-install features on
+
+            default : None
+
+        password    (str)               -- base64 encoded password
+
+            default : None
+
+        reboot_client (bool)            -- boolean to specify whether to reboot the client
+        or not
+
+            default: False
+
+    Returns:
+        object - instance of the Job class for this download job
+
+    Raises:
+            SDKException:
+            if re-install job failed
+
+            if response is empty
+
+            if response is not success
+</code></pre>
+<p><strong>NOTE:</strong> repair_software can be used for client/ client_group not both; When both inputs are given only the
+client computer will be repaired</p>
+<p><strong>NOTE:</strong> If machine requires reboot and reboot is not selected, machine won't be updated</p>
+<p><strong>NOTE:</strong> If machine requires login credentials and if not provided - client reinstallation might fail.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/install.py#L58-L191" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def repair_software(self,
+                    client=None,
+                    client_group=None,
+                    username=None,
+                    password=None,
+                    reboot_client=False):
+    &#34;&#34;&#34;triggers Repair of the software for a specified client machine
+
+            Args:
+                client (str)               -- Client machine to re-install service pack on
+
+                client_group (str)         -- Client group to re-install service pack on
+                                                        (eg : &#39;Media Agent&#39;)
+
+                username    (str)               -- username of the machine to re-install features on
+
+                    default : None
+
+                password    (str)               -- base64 encoded password
+
+                    default : None
+
+                reboot_client (bool)            -- boolean to specify whether to reboot the client
+                or not
+
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this download job
+
+            Raises:
+                    SDKException:
+                    if re-install job failed
+
+                    if response is empty
+
+                    if response is not success
+
+    **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
+              client computer will be repaired
+
+    **NOTE:** If machine requires reboot and reboot is not selected, machine won&#39;t be updated
+
+    **NOTE:** If machine requires login credentials and if not provided - client reinstallation might fail.
+
+    &#34;&#34;&#34;
+    if (client is None) and (client_group is None):
+        raise SDKException(&#39;Install&#39;, &#39;100&#39;)
+
+    if client:
+        client_group = &#34;&#34;
+        if not client in self.commcell_object.clients.all_clients:
+            raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+
+    elif client_group:
+        client = &#34;&#34;
+        if not client_group in self.commcell_object.client_groups.all_clientgroups:
+            raise SDKException(&#39;Install&#39;, &#39;102&#39;)
+
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 2,
+                &#34;policyType&#34;: 0,
+                &#34;taskFlags&#34;: {
+                    &#34;disabled&#34;: False
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTaskOperation&#34;: 1,
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 4020
+                    },
+                    &#34;options&#34;: {
+                        &#34;adminOpts&#34;: {
+                            &#34;clientInstallOption&#34;: {
+                                &#34;installerOption&#34;: {
+                                    &#34;clientComposition&#34;: [
+                                        {
+                                            &#34;packageDeliveryOption&#34;: 0
+                                        }
+                                    ]
+                                }
+                            },
+                            &#34;updateOption&#34;: {
+                                &#34;installUpdateOptions&#34;: 0,
+                                &#34;restartExplorerPlugin&#34;: True,
+                                &#34;rebootClient&#34;: reboot_client,
+                                &#34;clientAndClientGroups&#34;: [
+                                    {
+                                        &#34;clientGroupName&#34;: client_group,
+                                        &#34;clientName&#34;: client
+                                    }
+                                ],
+                                &#34;installUpdatesJobType&#34;: {
+                                    &#34;installType&#34;: 4,
+                                    &#34;upgradeClients&#34;: False,
+                                    &#34;undoUpdates&#34;: False,
+                                    &#34;installUpdates&#34;: False
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    if username:
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
+            = {
+                &#34;password&#34;: password,
+                &#34;userName&#34;: username
+            }
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+    )
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            else:
+                raise SDKException(&#39;Install&#39;, &#39;107&#39;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#download">Download</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.deployment" href="index.html">cvpysdk.deployment</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.deployment.install.Install" href="#cvpysdk.deployment.install.Install">Install</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.deployment.install.Install.install_software" href="#cvpysdk.deployment.install.Install.install_software">install_software</a></code></li>
+<li><code><a title="cvpysdk.deployment.install.Install.push_servicepack_and_hotfix" href="#cvpysdk.deployment.install.Install.push_servicepack_and_hotfix">push_servicepack_and_hotfix</a></code></li>
+<li><code><a title="cvpysdk.deployment.install.Install.repair_software" href="#cvpysdk.deployment.install.Install.repair_software">repair_software</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

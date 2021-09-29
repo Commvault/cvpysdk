@@ -1,0 +1,2348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.security.role API documentation</title>
+<meta name="description" content="Main file for managing roles on this commcell …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.security.role</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for managing roles on this commcell</p>
+<p>Roles and Role are only the two classes defined in this commcell</p>
+<p>Roles
+<strong>init</strong>()
+&ndash;
+initializes the Roles class object</p>
+<pre><code>__str__()               --  returns all the Roles associated
+                            with the commcell
+
+__repr__()              --  returns the string for the
+                            instance of the Roles class
+
+_get_roles()            --  gets all the roles on this commcell
+
+has_role()              --  checks if role with specified role exists
+                            on this commcell
+
+add()                   --  craetes the role on this commcell
+
+get()                   --  returns the role class object for the
+                            specified role name
+
+delete()                --  deletes the role on this commcell
+
+refresh()               --  refreshes the list of roles on this commcell
+</code></pre>
+<p>Role
+<strong>init</strong>()
+&ndash;
+initiaizes the role class object</p>
+<pre><code>__repr__()              --  returns the string for the instance of the
+                            role class
+
+_get_role_id()          --  returns the role id associated with this role
+
+_get_role_properties()  --  gets all the properties associated with this role
+
+role_name()             --  returns the name of this role
+
+role_id()               --  returns the id of this role
+
+role_description()      --  returns the description of this role
+
+status()                --  returns the status of this role
+
+refresh()               --  refreshes the properties of this role
+
+_update_role_props()    --  Updates properties of existing roles
+
+associate_user()        --  sharing role to user with valid permissions who can
+                            manage this role.
+
+associate_usergroup()   --  sharing role to user group with valid permissions who
+                            can manage this role
+
+modify_capability()     --  modifying permissions of the role
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L1-L751" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for managing roles on this commcell
+
+Roles and Role are only the two classes defined in this commcell
+
+Roles
+    __init__()              --  initializes the Roles class object
+
+    __str__()               --  returns all the Roles associated
+                                with the commcell
+
+    __repr__()              --  returns the string for the
+                                instance of the Roles class
+
+    _get_roles()            --  gets all the roles on this commcell
+
+    has_role()              --  checks if role with specified role exists
+                                on this commcell
+
+    add()                   --  craetes the role on this commcell
+
+    get()                   --  returns the role class object for the
+                                specified role name
+
+    delete()                --  deletes the role on this commcell
+
+    refresh()               --  refreshes the list of roles on this commcell
+
+Role
+    __init__()              --  initiaizes the role class object
+
+    __repr__()              --  returns the string for the instance of the
+                                role class
+
+    _get_role_id()          --  returns the role id associated with this role
+
+    _get_role_properties()  --  gets all the properties associated with this role
+
+    role_name()             --  returns the name of this role
+
+    role_id()               --  returns the id of this role
+
+    role_description()      --  returns the description of this role
+
+    status()                --  returns the status of this role
+
+    refresh()               --  refreshes the properties of this role
+
+    _update_role_props()    --  Updates properties of existing roles
+
+    associate_user()        --  sharing role to user with valid permissions who can
+                                manage this role.
+
+    associate_usergroup()   --  sharing role to user group with valid permissions who
+                                can manage this role
+
+    modify_capability()     --  modifying permissions of the role
+
+&#34;&#34;&#34;
+
+from past.builtins import basestring
+from ..exception import SDKException
+
+class Roles(object):
+    &#34;&#34;&#34;Class for maintaining all the configured role on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes the roles class object for this commcell
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Clients class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._roles = self._get_roles()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all roles of the commcell.
+
+            Returns:
+                str - string of all the roles configured on the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Roles&#39;)
+
+        for index, role in enumerate(self._roles):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, role)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Roles class.&#34;&#34;&#34;
+        return &#34;Roles class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_roles(self):
+        &#34;&#34;&#34;Returns the list of roles configured on this commcell&#34;&#34;&#34;
+        get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_all_roles_service
+        )
+
+        if flag:
+            if response.json() and &#39;roleProperties&#39; in response.json():
+                roles_dict = {}
+
+                for role in response.json()[&#39;roleProperties&#39;]:
+                    temp_id = role[&#39;role&#39;][&#39;roleId&#39;]
+                    temp_name = role[&#39;role&#39;][&#39;roleName&#39;].lower()
+                    roles_dict[temp_name] = temp_id
+
+                return roles_dict
+            else:
+                return {}
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_role(self, role_name):
+        &#34;&#34;&#34;Checks if any role with specified name exists on this commcell
+
+            Args:
+                role_name         (str)     --      name of the role which has to be
+                                                    checked if exists
+
+            Retruns:
+                Bool- True if specified role is presnt on th ecommcell else false
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+        &#34;&#34;&#34;
+        if not isinstance(role_name, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+
+        return self._roles and role_name.lower() in self._roles
+
+    def add(self, rolename, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+        &#34;&#34;&#34;creates new role
+
+             Args:
+                 role Name          --  Name of the role to be created
+                 category Name list --  role will be created with all the permissions
+                                    associated with this category
+                    e.g.: category Name=Client :role will have all permisisons from
+                                        this category.
+                    e.g.: category Name=Client Group :role will have all permissions
+                                        from this category
+                    e.g.: category Name=commcell :role will have all permissions from
+                                        this category
+                 permission_list (array)  --  permission array which is to be updated
+                     e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+             Returns:
+                 Role Properties update dict
+                             Raises:
+            SDKException:
+                    if data type of input is invalid
+
+                    if role already exists on the commcell
+
+         &#34;&#34;&#34;
+        if permission_list == &#34;&#34; and categoryname_list == &#34;&#34;:
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;empty role can not be created!!  &#34;
+                                              &#34;either permission_list or categoryname_list &#34;
+                                              &#34;should have some value! &#34;)
+        if not isinstance(rolename, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if self.has_role(rolename):
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;,
+                               &#34;Role {0} already exists on this commcell.&#34;.format(rolename))
+
+        if permission_list:
+            arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+        else:
+            arr = []
+        if categoryname_list:
+            for catname in categoryname_list:
+                cat_blob = {&#34;categoryName&#34;:catname}
+                arr.append(cat_blob)
+
+        request_json = {
+            &#34;roles&#34;: [{
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: rolename
+                },
+                &#34;categoryPermission&#34;: {
+                    &#34;categoriesPermissionOperationType&#34;: &#34;ADD&#34;,
+                    &#34;categoriesPermissionList&#34;: arr
+                }
+            }]
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;ROLES&#39;], request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+        return self.get(rolename)
+
+    def get(self, role_name):
+        &#34;&#34;&#34;Returns the role object for the specified role name
+
+            Args:
+                role_name  (str)    --  name of the role for which the object has to
+                                        be created
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist with specified name
+        &#34;&#34;&#34;
+        if not self.has_role(role_name):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+            )
+
+        return Role(self._commcell_object, role_name, self._roles[role_name.lower()])
+
+    def delete(self, role_name):
+        &#34;&#34;&#34;Deletes the role object for specified role name
+
+            Args:
+                role_name (str) --  name of the role for which the object has to be
+                                    deleted
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not self.has_role(role_name):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+            )
+
+        delete_role = self._commcell_object._services[&#39;ROLE&#39;] % (self._roles[role_name.lower()])
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, delete_role
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
+        self._roles = self._get_roles()
+
+    @property
+    def all_roles(self):
+        &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+        return self._get_roles()
+
+class Role(object):
+    &#34;&#34;&#34;&#34;Class for representing a particular role configured on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, role_name, role_id=None):
+        &#34;&#34;&#34;Initialize the Role class object for specified role
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+                role_name         (str)     --  name of the role
+
+                role_id           (str)     --  id of the role
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._role_name = role_name.lower()
+
+        if role_id is None:
+            self._role_id = self._get_role_id(self._role_name)
+        else:
+            self._role_id = role_id
+
+        self._request_role = self._commcell_object._services[&#39;ROLE&#39;] % (self._role_id)
+        self._role_description = &#39;&#39;
+        self._role_status = True
+        self._security_associations = {}
+        self._role_permissions = {}
+        self._get_role_properties()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Role class instance for Role: &#34;{0}&#34;&#39;
+        return representation_string.format(self.role_name)
+
+    def _get_role_id(self, role_name):
+        &#34;&#34;&#34;Gets the role id associated with this role.
+
+            Returns:
+                str - id associated with this role
+        &#34;&#34;&#34;
+        roles = Roles(self._commcell_object)
+        return roles.get(role_name).role_id
+
+    def _get_role_properties(self):
+        &#34;&#34;&#34;Gets the properties of this role&#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._request_role
+        )
+
+        if flag:
+            if response.json() and &#39;roleProperties&#39; in response.json():
+                role_properties = response.json()[&#39;roleProperties&#39;][0]
+
+                self._role_description = role_properties.get(&#39;description&#39;)
+                self._role_id = role_properties[&#39;role&#39;].get(&#39;roleId&#39;)
+                self._role_name = role_properties[&#39;role&#39;].get(&#39;roleName&#39;)
+                self._role_status = role_properties[&#39;role&#39;][&#39;flags&#39;].get(&#39;disabled&#39;)
+                category_list = []
+                permission_list = []
+
+                if &#39;categoryPermission&#39; in role_properties:
+                    for associations in role_properties[&#39;categoryPermission&#39;].get(
+                            &#39;categoriesPermissionList&#39;, []):
+                        if &#39;permissionName&#39; in associations:
+                            permission_list.append(associations[&#39;permissionName&#39;])
+                        else:
+                            category_list.append(associations[&#39;categoryName&#39;])
+
+                self._role_permissions = {
+                    &#39;permission_list&#39;: permission_list,
+                    &#39;category_list&#39;: category_list
+                }
+                if &#39;securityAssociations&#39; in role_properties:
+                    for association in role_properties[&#39;securityAssociations&#39;].get(
+                            &#39;associations&#39;, []):
+                        user_or_group = association[&#39;userOrGroup&#39;][0]
+                        if &#39;userName&#39; in user_or_group:
+                            name = user_or_group[&#39;userName&#39;]
+                        elif &#39;userGroupName&#39; in user_or_group:
+                            name = user_or_group[&#39;userGroupName&#39;]
+                        else:
+                            return
+
+                        properties = association[&#39;properties&#39;]
+
+                        if name not in self._security_associations:
+                            self._security_associations[name] = {
+                                &#39;permissions&#39;: set([]),
+                                &#39;roles&#39;: set([])
+                            }
+
+                        permission = None
+                        role = None
+
+                        if &#39;categoryPermission&#39; in properties:
+                            permissions = properties[&#39;categoryPermission&#39;]
+                            permission_list = permissions[&#39;categoriesPermissionList&#39;][0]
+                            permission = permission_list[&#39;permissionName&#39;]
+                        elif &#39;permissions&#39; in properties:
+                            permission = properties[&#39;permissions&#39;][0][&#39;permissionName&#39;]
+                        elif &#39;role&#39; in properties:
+                            role = properties[&#39;role&#39;][&#39;roleName&#39;]
+
+                        if permission is not None:
+                            self._security_associations[name][&#39;permissions&#39;].add(
+                                permission
+                            )
+                        if role is not None:
+                            self._security_associations[name][&#39;roles&#39;].add(role)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_role_props(self, properties_dict, name_val=None):
+        &#34;&#34;&#34;Updates the properties of this role
+
+            Args:
+                properties_dict (dict)  --  role property dict which is to be updated
+                    e.g.: {
+                            &#34;description&#34;: &#34;My description&#34;
+                        }
+
+            Returns:
+                role Properties update dict
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if name_val:
+            request_json = {
+                &#34;roles&#34;: [{
+                    &#34;role&#34;: {
+                        &#34;roleName&#34;: name_val
+                    }
+                }]
+            }
+        else:
+            request_json = {
+                &#34;roles&#34;: [{
+                    &#34;role&#34;: {
+                        &#34;roleName&#34;: self.role_name
+                    }
+                }]
+            }
+
+        if &#34;description&#34; in properties_dict:
+            request_json[&#39;roles&#39;][0].update(properties_dict)
+        else:
+            request_json[&#39;roles&#39;][0][&#39;role&#39;].update(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def associate_user(self, rolename, username):
+        &#34;&#34;&#34;Updates the user who can manage this role with the permission provided
+
+            Args:
+                role Name   --  Role given to user on this role object
+                user Name   --  user name who can manage this role
+
+            Raises:
+                SDKException:
+                    if role Name doesn&#39;t exist
+
+                    if user Name doesn&#39;t exist
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(username, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if not self._commcell_object.roles.has_role(rolename):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+            )
+        if not self._commcell_object.users.has_user(username):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(username)
+            )
+
+        request_json = {
+            &#34;roles&#34;:[{
+                &#34;securityAssociations&#34;:{
+                    &#34;associationsOperationType&#34;:2,
+                    &#34;associations&#34;:[
+                        {
+                            &#34;userOrGroup&#34;:[
+                                {
+                                    &#34;userName&#34;:username
+                                }
+                            ],
+                            &#34;properties&#34;:{
+                                &#34;role&#34;:{
+                                    &#34;roleName&#34;:rolename
+                                }
+                            }
+                        }
+                    ]
+                }
+            }]
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def associate_usergroup(self, rolename, usergroupname):
+        &#34;&#34;&#34;Updates the usergroup who can manage this role with the permission provided
+
+            Args:
+                role Name        --  Role given to user on this role object
+                user Group Name   --  user name who can manage this role
+
+            Raises:
+                SDKException:
+                    if role Name doesn&#39;t exist
+
+                    if user Group Name doesn&#39;t exist
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(usergroupname, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if not self._commcell_object.roles.has_role(rolename):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+            )
+        if not self._commcell_object.user_groups.has_user_group(usergroupname):
+            raise SDKException(
+                &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    usergroupname)
+            )
+
+        request_json = {
+            &#34;roles&#34;:[{
+                &#34;securityAssociations&#34;:{
+                    &#34;associationsOperationType&#34;:2,
+                    &#34;associations&#34;:[
+                        {
+                            &#34;userOrGroup&#34;:[
+                                {
+                                    &#34;userGroupName&#34;:usergroupname
+                                }
+                            ],
+                            &#34;properties&#34;:{
+                                &#34;role&#34;:{
+                                    &#34;roleName&#34;:rolename
+                                }
+                            }
+                        }
+                    ]
+                }
+            }]
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def modify_capability(self, request_type, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+        &#34;&#34;&#34;Updates role capabilities
+
+             Args:
+                 request_type(str)      --  type of request to be done
+                                            ADD, OVERWRITE, DELETE
+                 category Name list     --  role will be created with all the
+                                            permissions associated with this category
+                    e.g.: category Name=Client :role will have all permisisons from
+                                        this category.
+                    e.g.: category Name=Client Group :role will have all permissions
+                                        from this category
+                    e.g.: category Name=commcell :role will have all permissions from
+                                        this category
+                 permission_list(list)  --  permission array which is to be updated
+                     e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+             Returns:
+                 Role Properties update dict
+                             Raises:
+            SDKException:
+                    if data type of input is invalid
+
+                    if role already exists on the commcell
+
+         &#34;&#34;&#34;
+
+        update_role_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;ADD&#34;:2,
+            &#34;DELETE&#34;: 3
+        }
+        if(permission_list == &#34;&#34; and categoryname_list == &#34;&#34;):
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;Capabilties can not be modified!!  &#34;
+                                              &#34;either permission_list or categoryname_list &#34;
+                                              &#34;should have some value! &#34;)
+        capability_arr = []
+        if permission_list:
+            capability_arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+        if categoryname_list:
+            for catname in categoryname_list:
+                cat_blob = {&#34;categoryName&#34;:catname}
+                capability_arr.append(cat_blob)
+
+        request_json = {
+            &#34;roles&#34;: [{
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: self.role_name
+                },
+                &#34;categoryPermission&#34;: {
+                    &#34;categoriesPermissionOperationType&#34; : update_role_request[request_type.upper()],
+                    &#34;categoriesPermissionList&#34;: capability_arr
+                }
+            }]
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        self.refresh()
+
+    @property
+    def role_name(self):
+        &#34;&#34;&#34;Returns the role name of this commcell role&#34;&#34;&#34;
+        return self._role_name
+
+    @role_name.setter
+    def role_name(self, val):
+        &#34;&#34;&#34;Sets the value for role_name with the parameter provided
+
+        &#34;&#34;&#34;
+        self._update_role_props(properties_dict={}, name_val=val)
+
+
+    @property
+    def role_id(self):
+        &#34;&#34;&#34;Returns the role id of this commcell role&#34;&#34;&#34;
+        return self._role_id
+
+    @property
+    def role_description(self):
+        &#34;&#34;&#34;Returns the role_desccription of this commcell role&#34;&#34;&#34;
+        return self._role_description
+
+    @role_description.setter
+    def role_description(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell role&#34;&#34;&#34;
+        props_dict = {
+            &#34;description&#34;: value
+        }
+        self._update_role_props(props_dict)
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;Returns the role_status of this commcell role&#34;&#34;&#34;
+        return self._role_status
+
+    @status.setter
+    def status(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell role&#34;&#34;&#34;
+        props_dict = {
+            &#34;flags&#34;: {
+                &#34;disabled&#34;: not value
+            }
+        }
+        self._update_role_props(props_dict)
+
+    @property
+    def permissions(self):
+        &#34;&#34;&#34;Returns the permissions that are associated with role&#34;&#34;&#34;
+        return self._role_permissions
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Roles.&#34;&#34;&#34;
+        self._get_role_properties()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.security.role.Role"><code class="flex name class">
+<span>class <span class="ident">Role</span></span>
+<span>(</span><span>commcell_object, role_name, role_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>"Class for representing a particular role configured on this commcell</p>
+<p>Initialize the Role class object for specified role</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<p>role_name
+(str)
+&ndash;
+name of the role</p>
+<p>role_id
+(str)
+&ndash;
+id of the role
+default: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L306-L751" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Role(object):
+    &#34;&#34;&#34;&#34;Class for representing a particular role configured on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, role_name, role_id=None):
+        &#34;&#34;&#34;Initialize the Role class object for specified role
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+                role_name         (str)     --  name of the role
+
+                role_id           (str)     --  id of the role
+                    default: None
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._role_name = role_name.lower()
+
+        if role_id is None:
+            self._role_id = self._get_role_id(self._role_name)
+        else:
+            self._role_id = role_id
+
+        self._request_role = self._commcell_object._services[&#39;ROLE&#39;] % (self._role_id)
+        self._role_description = &#39;&#39;
+        self._role_status = True
+        self._security_associations = {}
+        self._role_permissions = {}
+        self._get_role_properties()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Role class instance for Role: &#34;{0}&#34;&#39;
+        return representation_string.format(self.role_name)
+
+    def _get_role_id(self, role_name):
+        &#34;&#34;&#34;Gets the role id associated with this role.
+
+            Returns:
+                str - id associated with this role
+        &#34;&#34;&#34;
+        roles = Roles(self._commcell_object)
+        return roles.get(role_name).role_id
+
+    def _get_role_properties(self):
+        &#34;&#34;&#34;Gets the properties of this role&#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._request_role
+        )
+
+        if flag:
+            if response.json() and &#39;roleProperties&#39; in response.json():
+                role_properties = response.json()[&#39;roleProperties&#39;][0]
+
+                self._role_description = role_properties.get(&#39;description&#39;)
+                self._role_id = role_properties[&#39;role&#39;].get(&#39;roleId&#39;)
+                self._role_name = role_properties[&#39;role&#39;].get(&#39;roleName&#39;)
+                self._role_status = role_properties[&#39;role&#39;][&#39;flags&#39;].get(&#39;disabled&#39;)
+                category_list = []
+                permission_list = []
+
+                if &#39;categoryPermission&#39; in role_properties:
+                    for associations in role_properties[&#39;categoryPermission&#39;].get(
+                            &#39;categoriesPermissionList&#39;, []):
+                        if &#39;permissionName&#39; in associations:
+                            permission_list.append(associations[&#39;permissionName&#39;])
+                        else:
+                            category_list.append(associations[&#39;categoryName&#39;])
+
+                self._role_permissions = {
+                    &#39;permission_list&#39;: permission_list,
+                    &#39;category_list&#39;: category_list
+                }
+                if &#39;securityAssociations&#39; in role_properties:
+                    for association in role_properties[&#39;securityAssociations&#39;].get(
+                            &#39;associations&#39;, []):
+                        user_or_group = association[&#39;userOrGroup&#39;][0]
+                        if &#39;userName&#39; in user_or_group:
+                            name = user_or_group[&#39;userName&#39;]
+                        elif &#39;userGroupName&#39; in user_or_group:
+                            name = user_or_group[&#39;userGroupName&#39;]
+                        else:
+                            return
+
+                        properties = association[&#39;properties&#39;]
+
+                        if name not in self._security_associations:
+                            self._security_associations[name] = {
+                                &#39;permissions&#39;: set([]),
+                                &#39;roles&#39;: set([])
+                            }
+
+                        permission = None
+                        role = None
+
+                        if &#39;categoryPermission&#39; in properties:
+                            permissions = properties[&#39;categoryPermission&#39;]
+                            permission_list = permissions[&#39;categoriesPermissionList&#39;][0]
+                            permission = permission_list[&#39;permissionName&#39;]
+                        elif &#39;permissions&#39; in properties:
+                            permission = properties[&#39;permissions&#39;][0][&#39;permissionName&#39;]
+                        elif &#39;role&#39; in properties:
+                            role = properties[&#39;role&#39;][&#39;roleName&#39;]
+
+                        if permission is not None:
+                            self._security_associations[name][&#39;permissions&#39;].add(
+                                permission
+                            )
+                        if role is not None:
+                            self._security_associations[name][&#39;roles&#39;].add(role)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_role_props(self, properties_dict, name_val=None):
+        &#34;&#34;&#34;Updates the properties of this role
+
+            Args:
+                properties_dict (dict)  --  role property dict which is to be updated
+                    e.g.: {
+                            &#34;description&#34;: &#34;My description&#34;
+                        }
+
+            Returns:
+                role Properties update dict
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if name_val:
+            request_json = {
+                &#34;roles&#34;: [{
+                    &#34;role&#34;: {
+                        &#34;roleName&#34;: name_val
+                    }
+                }]
+            }
+        else:
+            request_json = {
+                &#34;roles&#34;: [{
+                    &#34;role&#34;: {
+                        &#34;roleName&#34;: self.role_name
+                    }
+                }]
+            }
+
+        if &#34;description&#34; in properties_dict:
+            request_json[&#39;roles&#39;][0].update(properties_dict)
+        else:
+            request_json[&#39;roles&#39;][0][&#39;role&#39;].update(properties_dict)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def associate_user(self, rolename, username):
+        &#34;&#34;&#34;Updates the user who can manage this role with the permission provided
+
+            Args:
+                role Name   --  Role given to user on this role object
+                user Name   --  user name who can manage this role
+
+            Raises:
+                SDKException:
+                    if role Name doesn&#39;t exist
+
+                    if user Name doesn&#39;t exist
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(username, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if not self._commcell_object.roles.has_role(rolename):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+            )
+        if not self._commcell_object.users.has_user(username):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(username)
+            )
+
+        request_json = {
+            &#34;roles&#34;:[{
+                &#34;securityAssociations&#34;:{
+                    &#34;associationsOperationType&#34;:2,
+                    &#34;associations&#34;:[
+                        {
+                            &#34;userOrGroup&#34;:[
+                                {
+                                    &#34;userName&#34;:username
+                                }
+                            ],
+                            &#34;properties&#34;:{
+                                &#34;role&#34;:{
+                                    &#34;roleName&#34;:rolename
+                                }
+                            }
+                        }
+                    ]
+                }
+            }]
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def associate_usergroup(self, rolename, usergroupname):
+        &#34;&#34;&#34;Updates the usergroup who can manage this role with the permission provided
+
+            Args:
+                role Name        --  Role given to user on this role object
+                user Group Name   --  user name who can manage this role
+
+            Raises:
+                SDKException:
+                    if role Name doesn&#39;t exist
+
+                    if user Group Name doesn&#39;t exist
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(usergroupname, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if not self._commcell_object.roles.has_role(rolename):
+            raise SDKException(
+                &#39;User&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+            )
+        if not self._commcell_object.user_groups.has_user_group(usergroupname):
+            raise SDKException(
+                &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists on this commcell.&#34;.format(
+                    usergroupname)
+            )
+
+        request_json = {
+            &#34;roles&#34;:[{
+                &#34;securityAssociations&#34;:{
+                    &#34;associationsOperationType&#34;:2,
+                    &#34;associations&#34;:[
+                        {
+                            &#34;userOrGroup&#34;:[
+                                {
+                                    &#34;userGroupName&#34;:usergroupname
+                                }
+                            ],
+                            &#34;properties&#34;:{
+                                &#34;role&#34;:{
+                                    &#34;roleName&#34;:rolename
+                                }
+                            }
+                        }
+                    ]
+                }
+            }]
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def modify_capability(self, request_type, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+        &#34;&#34;&#34;Updates role capabilities
+
+             Args:
+                 request_type(str)      --  type of request to be done
+                                            ADD, OVERWRITE, DELETE
+                 category Name list     --  role will be created with all the
+                                            permissions associated with this category
+                    e.g.: category Name=Client :role will have all permisisons from
+                                        this category.
+                    e.g.: category Name=Client Group :role will have all permissions
+                                        from this category
+                    e.g.: category Name=commcell :role will have all permissions from
+                                        this category
+                 permission_list(list)  --  permission array which is to be updated
+                     e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+             Returns:
+                 Role Properties update dict
+                             Raises:
+            SDKException:
+                    if data type of input is invalid
+
+                    if role already exists on the commcell
+
+         &#34;&#34;&#34;
+
+        update_role_request = {
+            &#34;NONE&#34;: 0,
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;ADD&#34;:2,
+            &#34;DELETE&#34;: 3
+        }
+        if(permission_list == &#34;&#34; and categoryname_list == &#34;&#34;):
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;Capabilties can not be modified!!  &#34;
+                                              &#34;either permission_list or categoryname_list &#34;
+                                              &#34;should have some value! &#34;)
+        capability_arr = []
+        if permission_list:
+            capability_arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+        if categoryname_list:
+            for catname in categoryname_list:
+                cat_blob = {&#34;categoryName&#34;:catname}
+                capability_arr.append(cat_blob)
+
+        request_json = {
+            &#34;roles&#34;: [{
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: self.role_name
+                },
+                &#34;categoryPermission&#34;: {
+                    &#34;categoriesPermissionOperationType&#34; : update_role_request[request_type.upper()],
+                    &#34;categoriesPermissionList&#34;: capability_arr
+                }
+            }]
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._request_role, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        self.refresh()
+
+    @property
+    def role_name(self):
+        &#34;&#34;&#34;Returns the role name of this commcell role&#34;&#34;&#34;
+        return self._role_name
+
+    @role_name.setter
+    def role_name(self, val):
+        &#34;&#34;&#34;Sets the value for role_name with the parameter provided
+
+        &#34;&#34;&#34;
+        self._update_role_props(properties_dict={}, name_val=val)
+
+
+    @property
+    def role_id(self):
+        &#34;&#34;&#34;Returns the role id of this commcell role&#34;&#34;&#34;
+        return self._role_id
+
+    @property
+    def role_description(self):
+        &#34;&#34;&#34;Returns the role_desccription of this commcell role&#34;&#34;&#34;
+        return self._role_description
+
+    @role_description.setter
+    def role_description(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell role&#34;&#34;&#34;
+        props_dict = {
+            &#34;description&#34;: value
+        }
+        self._update_role_props(props_dict)
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;Returns the role_status of this commcell role&#34;&#34;&#34;
+        return self._role_status
+
+    @status.setter
+    def status(self, value):
+        &#34;&#34;&#34;Sets the description for this commcell role&#34;&#34;&#34;
+        props_dict = {
+            &#34;flags&#34;: {
+                &#34;disabled&#34;: not value
+            }
+        }
+        self._update_role_props(props_dict)
+
+    @property
+    def permissions(self):
+        &#34;&#34;&#34;Returns the permissions that are associated with role&#34;&#34;&#34;
+        return self._role_permissions
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the properties of the Roles.&#34;&#34;&#34;
+        self._get_role_properties()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.security.role.Role.permissions"><code class="name">var <span class="ident">permissions</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the permissions that are associated with role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L744-L747" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def permissions(self):
+    &#34;&#34;&#34;Returns the permissions that are associated with role&#34;&#34;&#34;
+    return self._role_permissions</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.role_description"><code class="name">var <span class="ident">role_description</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the role_desccription of this commcell role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L716-L719" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def role_description(self):
+    &#34;&#34;&#34;Returns the role_desccription of this commcell role&#34;&#34;&#34;
+    return self._role_description</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.role_id"><code class="name">var <span class="ident">role_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the role id of this commcell role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L711-L714" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def role_id(self):
+    &#34;&#34;&#34;Returns the role id of this commcell role&#34;&#34;&#34;
+    return self._role_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.role_name"><code class="name">var <span class="ident">role_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the role name of this commcell role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L698-L701" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def role_name(self):
+    &#34;&#34;&#34;Returns the role name of this commcell role&#34;&#34;&#34;
+    return self._role_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.status"><code class="name">var <span class="ident">status</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the role_status of this commcell role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L729-L732" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def status(self):
+    &#34;&#34;&#34;Returns the role_status of this commcell role&#34;&#34;&#34;
+    return self._role_status</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.security.role.Role.associate_user"><code class="name flex">
+<span>def <span class="ident">associate_user</span></span>(<span>self, rolename, username)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Updates the user who can manage this role with the permission provided</p>
+<h2 id="args">Args</h2>
+<p>role Name
+&ndash;
+Role given to user on this role object
+user Name
+&ndash;
+user name who can manage this role</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if role Name doesn't exist</p>
+<pre><code>if user Name doesn't exist
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L486-L550" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def associate_user(self, rolename, username):
+    &#34;&#34;&#34;Updates the user who can manage this role with the permission provided
+
+        Args:
+            role Name   --  Role given to user on this role object
+            user Name   --  user name who can manage this role
+
+        Raises:
+            SDKException:
+                if role Name doesn&#39;t exist
+
+                if user Name doesn&#39;t exist
+
+                if response is not success
+    &#34;&#34;&#34;
+    if not isinstance(username, basestring):
+        raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+    if not self._commcell_object.roles.has_role(rolename):
+        raise SDKException(
+            &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+        )
+    if not self._commcell_object.users.has_user(username):
+        raise SDKException(
+            &#39;User&#39;, &#39;102&#39;, &#34;User {0} doesn&#39;t exists on this commcell.&#34;.format(username)
+        )
+
+    request_json = {
+        &#34;roles&#34;:[{
+            &#34;securityAssociations&#34;:{
+                &#34;associationsOperationType&#34;:2,
+                &#34;associations&#34;:[
+                    {
+                        &#34;userOrGroup&#34;:[
+                            {
+                                &#34;userName&#34;:username
+                            }
+                        ],
+                        &#34;properties&#34;:{
+                            &#34;role&#34;:{
+                                &#34;roleName&#34;:rolename
+                            }
+                        }
+                    }
+                ]
+            }
+        }]
+    }
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._request_role, request_json
+    )
+    if flag:
+        if response.json():
+            error_code = -1
+            error_message = &#39;&#39;
+            if &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                error_message = response_json[&#39;errorString&#39;]
+                if not error_code == 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.associate_usergroup"><code class="name flex">
+<span>def <span class="ident">associate_usergroup</span></span>(<span>self, rolename, usergroupname)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Updates the usergroup who can manage this role with the permission provided</p>
+<h2 id="args">Args</h2>
+<p>role Name
+&ndash;
+Role given to user on this role object
+user Group Name
+&ndash;
+user name who can manage this role</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if role Name doesn't exist</p>
+<pre><code>if user Group Name doesn't exist
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L552-L618" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def associate_usergroup(self, rolename, usergroupname):
+    &#34;&#34;&#34;Updates the usergroup who can manage this role with the permission provided
+
+        Args:
+            role Name        --  Role given to user on this role object
+            user Group Name   --  user name who can manage this role
+
+        Raises:
+            SDKException:
+                if role Name doesn&#39;t exist
+
+                if user Group Name doesn&#39;t exist
+
+                if response is not success
+    &#34;&#34;&#34;
+    if not isinstance(usergroupname, basestring):
+        raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+    if not self._commcell_object.roles.has_role(rolename):
+        raise SDKException(
+            &#39;User&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(rolename)
+        )
+    if not self._commcell_object.user_groups.has_user_group(usergroupname):
+        raise SDKException(
+            &#39;UserGroup&#39;, &#39;102&#39;, &#34;UserGroup {0} doesn&#39;t exists on this commcell.&#34;.format(
+                usergroupname)
+        )
+
+    request_json = {
+        &#34;roles&#34;:[{
+            &#34;securityAssociations&#34;:{
+                &#34;associationsOperationType&#34;:2,
+                &#34;associations&#34;:[
+                    {
+                        &#34;userOrGroup&#34;:[
+                            {
+                                &#34;userGroupName&#34;:usergroupname
+                            }
+                        ],
+                        &#34;properties&#34;:{
+                            &#34;role&#34;:{
+                                &#34;roleName&#34;:rolename
+                            }
+                        }
+                    }
+                ]
+            }
+        }]
+    }
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._request_role, request_json
+    )
+
+    if flag:
+        if response.json():
+            error_code = -1
+            error_message = &#39;&#39;
+            if &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                error_message = response_json[&#39;errorString&#39;]
+                if not error_code == 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.modify_capability"><code class="name flex">
+<span>def <span class="ident">modify_capability</span></span>(<span>self, request_type, permission_list='', categoryname_list='')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Updates role capabilities</p>
+<p>Args:
+request_type(str)
+&ndash;
+type of request to be done
+ADD, OVERWRITE, DELETE
+category Name list
+&ndash;
+role will be created with all the
+permissions associated with this category
+e.g.: category Name=Client :role will have all permisisons from
+this category.
+e.g.: category Name=Client Group :role will have all permissions
+from this category
+e.g.: category Name=commcell :role will have all permissions from
+this category
+permission_list(list)
+&ndash;
+permission array which is to be updated
+e.g.: permisison_list=["View", "Agent Management", "Browse"]
+Returns:
+Role Properties update dict
+Raises:</p>
+<h2 id="sdkexception">Sdkexception</h2>
+<p>if data type of input is invalid</p>
+<p>if role already exists on the commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L620-L696" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_capability(self, request_type, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+    &#34;&#34;&#34;Updates role capabilities
+
+         Args:
+             request_type(str)      --  type of request to be done
+                                        ADD, OVERWRITE, DELETE
+             category Name list     --  role will be created with all the
+                                        permissions associated with this category
+                e.g.: category Name=Client :role will have all permisisons from
+                                    this category.
+                e.g.: category Name=Client Group :role will have all permissions
+                                    from this category
+                e.g.: category Name=commcell :role will have all permissions from
+                                    this category
+             permission_list(list)  --  permission array which is to be updated
+                 e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+         Returns:
+             Role Properties update dict
+                         Raises:
+        SDKException:
+                if data type of input is invalid
+
+                if role already exists on the commcell
+
+     &#34;&#34;&#34;
+
+    update_role_request = {
+        &#34;NONE&#34;: 0,
+        &#34;OVERWRITE&#34;: 1,
+        &#34;UPDATE&#34;: 2,
+        &#34;ADD&#34;:2,
+        &#34;DELETE&#34;: 3
+    }
+    if(permission_list == &#34;&#34; and categoryname_list == &#34;&#34;):
+        raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;Capabilties can not be modified!!  &#34;
+                                          &#34;either permission_list or categoryname_list &#34;
+                                          &#34;should have some value! &#34;)
+    capability_arr = []
+    if permission_list:
+        capability_arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+    if categoryname_list:
+        for catname in categoryname_list:
+            cat_blob = {&#34;categoryName&#34;:catname}
+            capability_arr.append(cat_blob)
+
+    request_json = {
+        &#34;roles&#34;: [{
+            &#34;role&#34;: {
+                &#34;roleName&#34;: self.role_name
+            },
+            &#34;categoryPermission&#34;: {
+                &#34;categoriesPermissionOperationType&#34; : update_role_request[request_type.upper()],
+                &#34;categoriesPermissionList&#34;: capability_arr
+            }
+        }]
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._request_role, request_json
+    )
+    if flag:
+        if response.json():
+            error_code = -1
+            error_message = &#39;&#39;
+            if &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                error_message = response_json[&#39;errorString&#39;]
+                if not error_code == 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Role.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the properties of the Roles.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L749-L751" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the properties of the Roles.&#34;&#34;&#34;
+    self._get_role_properties()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.security.role.Roles"><code class="flex name class">
+<span>class <span class="ident">Roles</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for maintaining all the configured role on this commcell</p>
+<p>Initializes the roles class object for this commcell</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Clients class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L81-L304" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Roles(object):
+    &#34;&#34;&#34;Class for maintaining all the configured role on this commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes the roles class object for this commcell
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Clients class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._roles = self._get_roles()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all roles of the commcell.
+
+            Returns:
+                str - string of all the roles configured on the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Roles&#39;)
+
+        for index, role in enumerate(self._roles):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, role)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the Roles class.&#34;&#34;&#34;
+        return &#34;Roles class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_roles(self):
+        &#34;&#34;&#34;Returns the list of roles configured on this commcell&#34;&#34;&#34;
+        get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, get_all_roles_service
+        )
+
+        if flag:
+            if response.json() and &#39;roleProperties&#39; in response.json():
+                roles_dict = {}
+
+                for role in response.json()[&#39;roleProperties&#39;]:
+                    temp_id = role[&#39;role&#39;][&#39;roleId&#39;]
+                    temp_name = role[&#39;role&#39;][&#39;roleName&#39;].lower()
+                    roles_dict[temp_name] = temp_id
+
+                return roles_dict
+            else:
+                return {}
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_role(self, role_name):
+        &#34;&#34;&#34;Checks if any role with specified name exists on this commcell
+
+            Args:
+                role_name         (str)     --      name of the role which has to be
+                                                    checked if exists
+
+            Retruns:
+                Bool- True if specified role is presnt on th ecommcell else false
+
+            Raises:
+                SDKException:
+                    if data type of input is invalid
+        &#34;&#34;&#34;
+        if not isinstance(role_name, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+
+        return self._roles and role_name.lower() in self._roles
+
+    def add(self, rolename, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+        &#34;&#34;&#34;creates new role
+
+             Args:
+                 role Name          --  Name of the role to be created
+                 category Name list --  role will be created with all the permissions
+                                    associated with this category
+                    e.g.: category Name=Client :role will have all permisisons from
+                                        this category.
+                    e.g.: category Name=Client Group :role will have all permissions
+                                        from this category
+                    e.g.: category Name=commcell :role will have all permissions from
+                                        this category
+                 permission_list (array)  --  permission array which is to be updated
+                     e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+             Returns:
+                 Role Properties update dict
+                             Raises:
+            SDKException:
+                    if data type of input is invalid
+
+                    if role already exists on the commcell
+
+         &#34;&#34;&#34;
+        if permission_list == &#34;&#34; and categoryname_list == &#34;&#34;:
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;empty role can not be created!!  &#34;
+                                              &#34;either permission_list or categoryname_list &#34;
+                                              &#34;should have some value! &#34;)
+        if not isinstance(rolename, basestring):
+            raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+        if self.has_role(rolename):
+            raise SDKException(&#39;Role&#39;, &#39;102&#39;,
+                               &#34;Role {0} already exists on this commcell.&#34;.format(rolename))
+
+        if permission_list:
+            arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+        else:
+            arr = []
+        if categoryname_list:
+            for catname in categoryname_list:
+                cat_blob = {&#34;categoryName&#34;:catname}
+                arr.append(cat_blob)
+
+        request_json = {
+            &#34;roles&#34;: [{
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: rolename
+                },
+                &#34;categoryPermission&#34;: {
+                    &#34;categoriesPermissionOperationType&#34;: &#34;ADD&#34;,
+                    &#34;categoriesPermissionList&#34;: arr
+                }
+            }]
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;ROLES&#39;], request_json
+        )
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+        return self.get(rolename)
+
+    def get(self, role_name):
+        &#34;&#34;&#34;Returns the role object for the specified role name
+
+            Args:
+                role_name  (str)    --  name of the role for which the object has to
+                                        be created
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist with specified name
+        &#34;&#34;&#34;
+        if not self.has_role(role_name):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+            )
+
+        return Role(self._commcell_object, role_name, self._roles[role_name.lower()])
+
+    def delete(self, role_name):
+        &#34;&#34;&#34;Deletes the role object for specified role name
+
+            Args:
+                role_name (str) --  name of the role for which the object has to be
+                                    deleted
+
+            Raises:
+                SDKException:
+                    if role doesn&#39;t exist
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if not self.has_role(role_name):
+            raise SDKException(
+                &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+            )
+
+        delete_role = self._commcell_object._services[&#39;ROLE&#39;] % (self._roles[role_name.lower()])
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, delete_role
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = &#39;&#39;
+                if &#39;response&#39; in response.json():
+                    response_json = response.json()[&#39;response&#39;][0]
+                    error_code = response_json[&#39;errorCode&#39;]
+                    error_message = response_json[&#39;errorString&#39;]
+                    if not error_code == 0:
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
+        self._roles = self._get_roles()
+
+    @property
+    def all_roles(self):
+        &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+        return self._get_roles()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.security.role.Roles.all_roles"><code class="name">var <span class="ident">all_roles</span></code></dt>
+<dd>
+<div class="desc"><p>"Returns all the roles present in the commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L301-L304" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_roles(self):
+    &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+    return self._get_roles()</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.security.role.Roles.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, rolename, permission_list='', categoryname_list='')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>creates new role</p>
+<p>Args:
+role Name
+&ndash;
+Name of the role to be created
+category Name list &ndash;
+role will be created with all the permissions
+associated with this category
+e.g.: category Name=Client :role will have all permisisons from
+this category.
+e.g.: category Name=Client Group :role will have all permissions
+from this category
+e.g.: category Name=commcell :role will have all permissions from
+this category
+permission_list (array)
+&ndash;
+permission array which is to be updated
+e.g.: permisison_list=["View", "Agent Management", "Browse"]
+Returns:
+Role Properties update dict
+Raises:</p>
+<h2 id="sdkexception">Sdkexception</h2>
+<p>if data type of input is invalid</p>
+<p>if role already exists on the commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L159-L233" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self, rolename, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
+    &#34;&#34;&#34;creates new role
+
+         Args:
+             role Name          --  Name of the role to be created
+             category Name list --  role will be created with all the permissions
+                                associated with this category
+                e.g.: category Name=Client :role will have all permisisons from
+                                    this category.
+                e.g.: category Name=Client Group :role will have all permissions
+                                    from this category
+                e.g.: category Name=commcell :role will have all permissions from
+                                    this category
+             permission_list (array)  --  permission array which is to be updated
+                 e.g.: permisison_list=[&#34;View&#34;, &#34;Agent Management&#34;, &#34;Browse&#34;]
+         Returns:
+             Role Properties update dict
+                         Raises:
+        SDKException:
+                if data type of input is invalid
+
+                if role already exists on the commcell
+
+     &#34;&#34;&#34;
+    if permission_list == &#34;&#34; and categoryname_list == &#34;&#34;:
+        raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#34;empty role can not be created!!  &#34;
+                                          &#34;either permission_list or categoryname_list &#34;
+                                          &#34;should have some value! &#34;)
+    if not isinstance(rolename, basestring):
+        raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+    if self.has_role(rolename):
+        raise SDKException(&#39;Role&#39;, &#39;102&#39;,
+                           &#34;Role {0} already exists on this commcell.&#34;.format(rolename))
+
+    if permission_list:
+        arr = [{&#34;permissionName&#34;: permission} for permission in permission_list]
+    else:
+        arr = []
+    if categoryname_list:
+        for catname in categoryname_list:
+            cat_blob = {&#34;categoryName&#34;:catname}
+            arr.append(cat_blob)
+
+    request_json = {
+        &#34;roles&#34;: [{
+            &#34;role&#34;: {
+                &#34;roleName&#34;: rolename
+            },
+            &#34;categoryPermission&#34;: {
+                &#34;categoriesPermissionOperationType&#34;: &#34;ADD&#34;,
+                &#34;categoriesPermissionList&#34;: arr
+            }
+        }]
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._commcell_object._services[&#39;ROLES&#39;], request_json
+    )
+    if flag:
+        if response.json():
+            error_code = -1
+            error_message = &#39;&#39;
+            if &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                error_message = response_json[&#39;errorString&#39;]
+                if not error_code == 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+    self.refresh()
+    return self.get(rolename)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Roles.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, role_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the role object for specified role name</p>
+<h2 id="args">Args</h2>
+<p>role_name (str) &ndash;
+name of the role for which the object has to be
+deleted</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if role doesn't exist</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L253-L295" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, role_name):
+    &#34;&#34;&#34;Deletes the role object for specified role name
+
+        Args:
+            role_name (str) --  name of the role for which the object has to be
+                                deleted
+
+        Raises:
+            SDKException:
+                if role doesn&#39;t exist
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if not self.has_role(role_name):
+        raise SDKException(
+            &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+        )
+
+    delete_role = self._commcell_object._services[&#39;ROLE&#39;] % (self._roles[role_name.lower()])
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;DELETE&#39;, delete_role
+    )
+
+    if flag:
+        if response.json():
+            error_code = -1
+            error_message = &#39;&#39;
+            if &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                error_message = response_json[&#39;errorString&#39;]
+                if not error_code == 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, error_message)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+    self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Roles.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, role_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the role object for the specified role name</p>
+<h2 id="args">Args</h2>
+<p>role_name
+(str)
+&ndash;
+name of the role for which the object has to
+be created</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if role doesn't exist with specified name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L235-L251" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, role_name):
+    &#34;&#34;&#34;Returns the role object for the specified role name
+
+        Args:
+            role_name  (str)    --  name of the role for which the object has to
+                                    be created
+
+        Raises:
+            SDKException:
+                if role doesn&#39;t exist with specified name
+    &#34;&#34;&#34;
+    if not self.has_role(role_name):
+        raise SDKException(
+            &#39;Role&#39;, &#39;102&#39;, &#34;Role {0} doesn&#39;t exists on this commcell.&#34;.format(role_name)
+        )
+
+    return Role(self._commcell_object, role_name, self._roles[role_name.lower()])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Roles.has_role"><code class="name flex">
+<span>def <span class="ident">has_role</span></span>(<span>self, role_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if any role with specified name exists on this commcell</p>
+<h2 id="args">Args</h2>
+<p>role_name
+(str)
+&ndash;
+name of the role which has to be
+checked if exists</p>
+<h2 id="retruns">Retruns</h2>
+<p>Bool- True if specified role is presnt on th ecommcell else false</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if data type of input is invalid</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L140-L157" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_role(self, role_name):
+    &#34;&#34;&#34;Checks if any role with specified name exists on this commcell
+
+        Args:
+            role_name         (str)     --      name of the role which has to be
+                                                checked if exists
+
+        Retruns:
+            Bool- True if specified role is presnt on th ecommcell else false
+
+        Raises:
+            SDKException:
+                if data type of input is invalid
+    &#34;&#34;&#34;
+    if not isinstance(role_name, basestring):
+        raise SDKException(&#39;Role&#39;, &#39;101&#39;)
+
+    return self._roles and role_name.lower() in self._roles</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Roles.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of Roles on this commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/security/role.py#L297-L299" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
+    self._roles = self._get_roles()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.security" href="index.html">cvpysdk.security</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.security.role.Role" href="#cvpysdk.security.role.Role">Role</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.security.role.Role.associate_user" href="#cvpysdk.security.role.Role.associate_user">associate_user</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.associate_usergroup" href="#cvpysdk.security.role.Role.associate_usergroup">associate_usergroup</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.modify_capability" href="#cvpysdk.security.role.Role.modify_capability">modify_capability</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.permissions" href="#cvpysdk.security.role.Role.permissions">permissions</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.refresh" href="#cvpysdk.security.role.Role.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.role_description" href="#cvpysdk.security.role.Role.role_description">role_description</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.role_id" href="#cvpysdk.security.role.Role.role_id">role_id</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.role_name" href="#cvpysdk.security.role.Role.role_name">role_name</a></code></li>
+<li><code><a title="cvpysdk.security.role.Role.status" href="#cvpysdk.security.role.Role.status">status</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.security.role.Roles" href="#cvpysdk.security.role.Roles">Roles</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.security.role.Roles.add" href="#cvpysdk.security.role.Roles.add">add</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.all_roles" href="#cvpysdk.security.role.Roles.all_roles">all_roles</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.delete" href="#cvpysdk.security.role.Roles.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.get" href="#cvpysdk.security.role.Roles.get">get</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.has_role" href="#cvpysdk.security.role.Roles.has_role">has_role</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.refresh" href="#cvpysdk.security.role.Roles.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

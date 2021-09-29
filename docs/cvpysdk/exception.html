@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.exception API documentation</title>
+<meta name="description" content="File for handling all the exceptions for the CVPySDK python package …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.exception</code></h1>
+</header>
+<section id="section-intro">
+<p>File for handling all the exceptions for the CVPySDK python package.</p>
+<h2 id="exception_dict">Exception_Dict</h2>
+<p>A python dictionary for holding all the exception messages for a specific event or class.</p>
+<p>Any exceptions to be raised from the SDK in a module should be added to this dictionary.</p>
+<p>where,</p>
+<pre><code>-   the key is the module name or the class name where the exception is raised
+
+-   the value is a dictionary:
+
+    -   key is a unique ID to identify the exception message
+
+    -   value is the exception message
+</code></pre>
+<p>|</p>
+<h2 id="sdkexception">Sdkexception</h2>
+<p>Class inheriting the "Exception" Base class for raising
+a specific exception for the CVPySDK python package.</p>
+<p>The user should create an instance of the SDKException class:</p>
+<pre><code>**SDKException(exception_module, exception_id, exception_message)**
+
+where,
+
+    -   exception_module:   the module in which the exception is being raised
+
+        -   key in the EXCEPTION_DICT
+
+    -   exception_id:       unique ID which identifies the message for the Exception
+
+    -   exception_message:  additional message to the exception
+
+        -   only applicable if the user wishes to provide an additional message to the
+            exception along with the message already present as the value for the
+            exception_module - exception_id pair
+</code></pre>
+<p>Example:</p>
+<pre><code>**raise SDKException('CVPySDK', '101')**
+
+will raise the exception as:
+
+    SDKException: Failed to Login with the credentials provided
+
+and, **raise SDKException('CVPySDK', '101', 'Please check the credentials')**
+
+will raise:
+
+    SDKException: Failed to Login with the credentials provided
+
+    Please check the credentials
+
+where the user given message is appended to the original message joined by new line
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/exception.py#L1-L497" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;File for handling all the exceptions for the CVPySDK python package.
+
+EXCEPTION_DICT:
+    A python dictionary for holding all the exception messages for a specific event or class.
+
+    Any exceptions to be raised from the SDK in a module should be added to this dictionary.
+
+    where,
+
+        -   the key is the module name or the class name where the exception is raised
+
+        -   the value is a dictionary:
+
+            -   key is a unique ID to identify the exception message
+
+            -   value is the exception message
+
+|
+
+SDKException:
+    Class inheriting the &#34;Exception&#34; Base class for raising
+    a specific exception for the CVPySDK python package.
+
+    The user should create an instance of the SDKException class:
+
+        **SDKException(exception_module, exception_id, exception_message)**
+
+        where,
+
+            -   exception_module:   the module in which the exception is being raised
+
+                -   key in the EXCEPTION_DICT
+
+            -   exception_id:       unique ID which identifies the message for the Exception
+
+            -   exception_message:  additional message to the exception
+
+                -   only applicable if the user wishes to provide an additional message to the
+                    exception along with the message already present as the value for the
+                    exception_module - exception_id pair
+
+    Example:
+
+        **raise SDKException(&#39;CVPySDK&#39;, &#39;101&#39;)**
+
+        will raise the exception as:
+
+            SDKException: Failed to Login with the credentials provided
+
+        and, **raise SDKException(&#39;CVPySDK&#39;, &#39;101&#39;, &#39;Please check the credentials&#39;)**
+
+        will raise:
+
+            SDKException: Failed to Login with the credentials provided
+
+            Please check the credentials
+
+        where the user given message is appended to the original message joined by new line
+
+&#34;&#34;&#34;
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+# Common dictionary for all exceptions among the python package
+EXCEPTION_DICT = {
+    &#39;Response&#39;: {
+        &#39;101&#39;: &#39;Response was not success&#39;,
+        &#39;102&#39;: &#39;Response received is empty&#39;,
+        &#39;500&#39;: &#39;Unable to perform the requested method&#39;
+    },
+    &#39;Commcell&#39;: {
+        &#39;101&#39;: &#39;Commcell is not reachable. Please check the commcell name and services again&#39;,
+        &#39;102&#39;: &#39;Credentials not received. Please try again.&#39;,
+        &#39;103&#39;: &#39;Failed to get the CommServ details&#39;,
+        &#39;104&#39;: &#39;Failed to send an email to specified user&#39;,
+        &#39;105&#39;: &#39;Failed to run the Data Aging job&#39;,
+        &#39;106&#39;: &#39;Failed to get the SAML token&#39;
+    },
+    &#39;CVPySDK&#39;: {
+        &#39;101&#39;: &#39;Failed to Login with the credentials provided&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Reached the maximum attempts limit&#39;,
+        &#39;104&#39;: &#39;This session has expired. Please login again&#39;,
+        &#39;105&#39;: &#39;Script Type is not valid&#39;,
+        &#39;106&#39;: &#39;The token has expired. Please login again&#39;,
+        &#39;107&#39;: &#39;No mapping exists for the given token for any user&#39;
+    },
+    &#39;DisasterRecovery&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Client&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Time Value should be greater than current time&#39;,
+        &#39;104&#39;: &#39;Time Value entered is not of correct format&#39;,
+        &#39;105&#39;: &#39;Script Type is not supported&#39;,
+        &#39;106&#39;: &#39;Failed to get the instance&#39;,
+        &#39;107&#39;: &#39;Service Restart timed out&#39;,
+        &#39;108&#39;: &#39;Failed to get the log directory&#39;,
+        &#39;109&#39;: &#39;Operation is not supported for this Client&#39;
+    },
+    &#39;Agent&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Time Value should be greater than current time&#39;,
+        &#39;104&#39;: &#39;Time Value entered is not of correct format&#39;
+    },
+    &#39;Backupset&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Class object should be an instance of Agent / Instance class&#39;,
+        &#39;104&#39;: &#39;Invalid pruning type. Valid inputs &#34;days_based&#34; or &#34;cycles_based&#34;.&#39;,
+        &#39;105&#39;: &#39;Invalid days/cycles value. Please provide an integer value &gt;= 2.&#39;,
+        &#39;106&#39;: &#39;IndexServer value should be a client object&#39;
+    },
+    &#39;Instance&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Input date is incorrect&#39;,
+        &#39;104&#39;: &#39;File/Folder(s) to restore list is empty&#39;,
+        &#39;105&#39;: &#39;Could not fetch instance property&#39;,
+        &#39;106&#39;: &#39;Invalid policy name under given instance. Validate the policy name&#39;,
+        &#39;107&#39;: &#39;Unsupported auto discovery mode provided.&#39;
+               &#39;Valid values are REGEX and GROUP&#39;
+    },
+    &#39;Subclient&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Backup Level not identified. Please check the backup level again&#39;,
+        &#39;104&#39;: &#39;File/Folder(s) to restore list is empty&#39;,
+        &#39;105&#39;: &#39;Type of client should either be the Client class instance or string&#39;,
+        &#39;106&#39;: &#39;Input date is incorrect&#39;,
+        &#39;107&#39;: &#39;End Date should be greater than the Start Date&#39;,
+        &#39;108&#39;: &#39;Time Value should be greater than current time&#39;,
+        &#39;109&#39;: &#39;Time Value entered is not of correct format&#39;,
+        &#39;110&#39;: &#39;No data found at the path specified&#39;,
+        &#39;111&#39;: &#39;No File/Folder matched the input value&#39;,
+        &#39;112&#39;: &#39;Method Not Implemented&#39;,
+        &#39;113&#39;: &#39;Type of instance should either be the Instance class instance or string&#39;,
+        &#39;114&#39;: &#39;Type of backupset should either be the Backupset class instance or string&#39;,
+        &#39;115&#39;: &#39;Class object should be an instance of Agent / Instance / Backupset class&#39;,
+        &#39;116&#39;: &#39;Auto discovery values should be a list&#39;,
+        &#39;117&#39;: &#39;Auto discovery is disabled at instance level&#39;,
+        &#39;118&#39;: &#39;Failed to run the backup copy job&#39;,
+        &#39;119&#39;: &#39;Invalid pruning type. Valid inputs &#34;days_based&#34; or &#34;cycles_based&#34;.&#39;,
+        &#39;120&#39;: &#39;Invalid days/cycles value. Please provide an integer value &gt;= 2.&#39;,
+        &#39;121&#39;: &#39;IndexServer value should be a client object&#39;
+    },
+    &#39;Job&#39;: {
+        &#39;101&#39;: &#39;Incorrect JobId&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;No job exists with the specified Job ID&#39;,
+        &#39;104&#39;: &#39;No records found for this Job&#39;,
+        &#39;105&#39;: &#39;Failed to get the Job Details&#39;,
+        &#39;106&#39;: &#39;Unexpected response received from server&#39;,
+        &#39;107&#39;: &#39;Job Info Type not passed from AdvancedJobDetailType enum&#39;,
+        &#39;108&#39;: &#39;Data type of input(s) is not valid&#39;
+    },
+    &#39;Storage&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Type of media agent should either be the MediaAgent class instance or string&#39;,
+        &#39;104&#39;: &#39;Type of library should either be the DiskLibrary class instance or string&#39;,
+        &#39;105&#39;: &#39;No storage policies exist for this user&#39;,
+        &#39;106&#39;: &#39;Failed to run the backup copy job&#39;,
+        &#39;107&#39;: &#39;Failed to run the deferred catalog job&#39;,
+        &#39;108&#39;: &#39;Failed to run the DDB move job&#39;,
+        &#39;109&#39;: &#39;Failed to run the DDB verification job&#39;,
+        &#39;110&#39;: &#39;Input data is not correct&#39;,
+        &#34;111&#34;: &#39;Failed to update copy property&#39;,
+        &#34;112&#34;: &#39;Failed to run DDB Reconstruction job&#39;,
+        &#34;113&#34;: &#39;Failed to run DDB space reclaimation job&#39;
+    },
+    &#39;Schedules&#39;: {
+        &#39;101&#39;: &#39;Invalid Class object passed as argument to the Schedules class&#39;,
+        &#39;102&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;103&#39;: &#39;Invalid operation type passed to Schedules class&#39;,
+        &#39;104&#39;: &#39;Provided Option cannot be updated&#39;,
+        &#39;105&#39;: &#39;Could not find the provided schedule name/id&#39;,
+        &#39;106&#39;: &#39;&#39;
+    },
+    &#39;ClientGroup&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Time Value should be greater than current time&#39;,
+        &#39;104&#39;: &#39;Time Value entered is not of correct format&#39;
+    },
+    &#39;UserGroup&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Domain&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Alert&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Workflow&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Input is not valid XML / file path&#39;,
+        &#39;104&#39;: &#39;No Workflow exists with the given name&#39;,
+        &#39;105&#39;: &#39;Failed to set workflow properties&#39;
+    },
+    &#39;Datacube&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get the list of analytics engines&#39;,
+        &#39;104&#39;: &#39;Failed to get the datasources&#39;
+    },
+    &#39;ContentAnalyzer&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get ContentAnalyzer cloud details&#39;
+    },
+    &#39;ActivateEntity&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get entity regex details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create regex entity in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to delete regex entity in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to modify regex entity in the commcell&#39;
+    },
+    &#39;Classifier&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get classifier details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create classifier in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to delete classifier in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to modify classifier in the commcell&#39;,
+        &#39;107&#39;: &#39;Training model data zip file not exists in given path&#39;,
+        &#39;108&#39;: &#39;Model Data Training failed on this classifier&#39;,
+        &#39;109&#39;: &#39;Cancel Training failed on this classifier&#39;
+    },
+    &#39;Tags&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get TagSet details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create TagSet in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to modify TagSet in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to find given tag name in this tagset&#39;,
+        &#39;107&#39;: &#39;Unable to do TagSet security association in the commcell&#39;
+    },
+    &#39;EntityManager&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;GlobalFilter&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Plan&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Salesforce&#39;: {
+        &#39;101&#39;: &#39;Neither Sync Database enabled nor user provided database details for restore&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Metrics&#39;: {
+        &#39;101&#39;: &#39;Invalid input(s) specified&#39;
+    },
+    &#39;InternetOptions&#39;: {
+        &#39;101&#39;: &#39;Invalid input(s) specified&#39;
+    },
+    &#39;Virtual Machine&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;User&#39;: {
+        &#39;101&#39;: &#39;Data type of input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;User with same name already exists&#39;
+    },
+    &#39;Role&#39;: {
+        &#39;101&#39;: &#39;Data type of input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Security&#39;: {
+        &#39;101&#39;: &#39;Data type of input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Credential&#39;: {
+        &#39;101&#39;: &#39;Data type of input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;DownloadCenter&#39;: {
+        &#39;101&#39;: &#39;Response received is not a proper XML. Please check the XML&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Category does not exist at Download Center&#39;,
+        &#39;104&#39;: &#39;Category already exists at Download Center&#39;,
+        &#39;105&#39;: &#39;Sub Category already exists for the given Category at Download Center&#39;,
+        &#39;106&#39;: &#39;Package does not exist at Download Center. Please check the name again&#39;,
+        &#39;107&#39;: &#39;Failed to download the package&#39;,
+        &#39;108&#39;: &#39;Category does not exists at Download Center&#39;,
+        &#39;109&#39;: &#39;Sub Category does not exists at Download Center&#39;,
+        &#39;110&#39;: &#39;Multiple platforms available. Please specify the platform&#39;,
+        &#39;111&#39;: (&#39;Multiple download types available for this platform. &#39;
+                &#39;Please specify the download type&#39;),
+        &#39;112&#39;: &#39;Package is not available for the given platform&#39;,
+        &#39;113&#39;: &#39;Package is not available for the given download type&#39;,
+        &#39;114&#39;: &#39;Package already exists with the given name&#39;,
+        &#39;115&#39;: &#39;Version is not available on Download Center&#39;,
+        &#39;116&#39;: &#39;Platform is not supported on Download Center&#39;,
+        &#39;117&#39;: &#39;Download Type is not supported on Download Center&#39;,
+        &#39;118&#39;: &#39;File is not a valid README file&#39;,
+        &#39;119&#39;: &#39;Failed to upload the package&#39;
+    },
+    &#39;Organization&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;No organization exists with the given name&#39;,
+        &#39;104&#39;: &#39;Failed to delete the organization&#39;,
+        &#39;105&#39;: &#39;Email address is not valid&#39;,
+        &#39;106&#39;: &#39;Organization already exists&#39;,
+        &#39;107&#39;: &#39;Failed to add organization&#39;,
+        &#39;108&#39;: &#39;Failed to enable Auth Code Generation for the Organization&#39;,
+        &#39;109&#39;: &#39;Failed to disable Auth Code Generation for the Organization&#39;,
+        &#39;110&#39;: &#39;Failed to update the properties of the Organization&#39;,
+        &#39;111&#39;: (&#39;Plan is not associated with the organization. &#39;
+                &#39;Add plan to the Organization, and then set it as the default&#39;),
+        &#39;112&#39;: &#39;Failed to activate organization&#39;,
+        &#39;113&#39;: &#39;Failed to deactivate organization&#39;
+    },
+    &#39;StoragePool&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;No storage pool exists with the given name&#39;,
+    },
+    &#39;Monitoring&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+
+    &#39;FailoverGroup&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;ConfigurationPolicies&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Snap&#39;: {
+        &#39;102&#39;: &#39;Failed to run the job for Snap Operation&#39;,
+        &#39;103&#39;: &#39;Failed to update Snap Configs&#39;
+    },
+    &#39;OperationWindow&#39;: {
+        &#39;101&#39;: &#39;Failed to create a operation window&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to delete the operation window&#39;,
+        &#39;104&#39;: &#39;Failed to list operation windows&#39;,
+        &#39;105&#39;: &#39;Failed to modify a operation window&#39;,
+        &#39;106&#39;: &#39;Data type of the input(s) is not valid&#39;
+    },
+    &#39;IdentityManagement&#39;: {
+        &#39;101&#39;: &#39;Failed to retreive apps&#39;,
+        &#39;102&#39;: &#39;App not found&#39;,
+        &#39;103&#39;: &#39;Failed to configure identity app&#39;,
+    },
+    &#39;CommCellMigration&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Please specify all the required inputs&#39;,
+        &#39;104&#39;: &#39;Please give appropriate input(s)&#39;
+    },
+    &#39;NetworkTopology&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Certificates&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;Download&#39;: {
+        &#39;101&#39;: &#39;Failed to execute the download Job&#39;,
+        &#39;102&#39;: &#39;service_pack version argument is missing in the method call&#39;
+    },
+    &#39;Install&#39;: {
+        &#39;101&#39;: &#39;Insufficient parameters are given&#39;,
+        &#39;102&#39;: &#39;Invalid client name is given&#39;,
+        &#39;103&#39;: &#39;Invalid client group name is given&#39;,
+        &#39;104&#39;: &#39;Installation failed please check the logs&#39;,
+        &#39;105&#39;: &#39;please provide the features to be installed&#39;,
+        &#39;106&#39;: &#39;please provide the client details&#39;,
+        &#39;107&#39;: &#39;Failed to execute Install job&#39;
+    },
+    &#39;StorageArray&#39;: {
+        &#39;101&#39;: &#39;Array already exist&#39;,
+        &#39;102&#39;: &#39;Failed to add array&#39;,
+        &#39;103&#39;: &#39;Failed to delete array&#39;
+    },
+    &#39;NameChange&#39;: {
+        &#39;101&#39;: &#39;Client hostname not provided&#39;,
+        &#39;102&#39;: &#39;Commcell hostname not provided&#39;,
+        &#39;103&#39;: &#39;Old domain name not provided&#39;,
+        &#39;104&#39;: &#39;New domain name not provided&#39;,
+        &#39;105&#39;: &#39;Client ID list not provided&#39;
+    },
+    &#39;CommcellRegistration&#39;: {
+        &#39;101&#39;: &#39;Failed to register commcell&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to unregister commcell&#39;,
+        &#39;104&#39;: &#39;Datatype of the input is not valid&#39;,
+        &#39;105&#39;: &#39;Failed to reach remote commcell.&#39;,
+        &#39;106&#39;: &#39;Failed to authenticate remote commcell. Invalid user name and password.&#39;,
+        &#39;107&#39;: &#39;Insufficient permissions&#39;
+    },
+    &#39;LiveSync&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;BackupNetworkPairs&#39;: {
+        &#39;101&#39;: &#39;&#39;,
+    },
+    &#39;Uninstall&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;IndexServers&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;Index Server not found&#39;,
+        &#39;103&#39;: &#39;Invalid role name&#39;,
+        &#39;104&#39;: &#39;&#39;,
+        &#39;105&#39;: &#39;Unsupported backup level specified. Please check&#39;,
+        &#39;106&#39;: &#39;Storage policy is not associated with subclient. Please associate&#39;,
+        &#39;107&#39;: &#39;Backup is not enabled for client/subclient&#39;,
+        &#39;108&#39;: &#39;Client name not specified for solr cloud restore&#39;,
+        &#39;109&#39;: &#39;Provide the Index Server Node name for browse to work&#39;,
+        &#39;110&#39;: &#39;Multiple roles found, Unix Index Server Browse works for only 1 role at a time.&#39;
+    },
+    &#39;HACClusters&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;HAC not found&#39;,
+        &#39;103&#39;: &#39;HAC zKeeper node not found&#39;,
+    },
+    &#39;IndexPools&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;Index pool not found&#39;,
+        &#39;103&#39;: &#39;Index pool node not found&#39;,
+    },
+    &#39;Metallic&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    }
+}
+
+
+class SDKException(Exception):
+    &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;
+
+    def __init__(self, exception_module, exception_id, exception_message=&#34;&#34;):
+        &#34;&#34;&#34;Initialize the SDKException class instance for the exception.
+
+            Args:
+                exception_module  (str)  --  name of the module where the exception was raised
+
+                exception_id      (str)  --  id of the exception specific to the exception_module
+
+                exception_message (str)  --  additional message about the exception
+
+            Returns:
+                object  -   instance of the SDKException class of type Exception
+
+        &#34;&#34;&#34;
+        self.exception_module = exception_module
+        self.exception_id = exception_id
+        self.exception_message = EXCEPTION_DICT[exception_module][exception_id]
+
+        if exception_message:
+            if self.exception_message:
+                self.exception_message = &#39;\n&#39;.join([self.exception_message, exception_message])
+            else:
+                self.exception_message = exception_message
+
+        Exception.__init__(self, self.exception_message)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.exception.SDKException"><code class="flex name class">
+<span>class <span class="ident">SDKException</span></span>
+<span>(</span><span>exception_module, exception_id, exception_message='')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Exception class for raising exception specific to a module.</p>
+<p>Initialize the SDKException class instance for the exception.</p>
+<h2 id="args">Args</h2>
+<p>exception_module
+(str)
+&ndash;
+name of the module where the exception was raised</p>
+<p>exception_id
+(str)
+&ndash;
+id of the exception specific to the exception_module</p>
+<p>exception_message (str)
+&ndash;
+additional message about the exception</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the SDKException class of type Exception</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/exception.py#L470-L497" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class SDKException(Exception):
+    &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;
+
+    def __init__(self, exception_module, exception_id, exception_message=&#34;&#34;):
+        &#34;&#34;&#34;Initialize the SDKException class instance for the exception.
+
+            Args:
+                exception_module  (str)  --  name of the module where the exception was raised
+
+                exception_id      (str)  --  id of the exception specific to the exception_module
+
+                exception_message (str)  --  additional message about the exception
+
+            Returns:
+                object  -   instance of the SDKException class of type Exception
+
+        &#34;&#34;&#34;
+        self.exception_module = exception_module
+        self.exception_id = exception_id
+        self.exception_message = EXCEPTION_DICT[exception_module][exception_id]
+
+        if exception_message:
+            if self.exception_message:
+                self.exception_message = &#39;\n&#39;.join([self.exception_message, exception_message])
+            else:
+                self.exception_message = exception_message
+
+        Exception.__init__(self, self.exception_message)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.exception.SDKException" href="#cvpysdk.exception.SDKException">SDKException</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,2259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.monitoring API documentation</title>
+<meta name="description" content="Main file for performing Monitoring related operations on the commcell …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.monitoring</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing Monitoring related operations on the commcell.</p>
+<p>This file has all the classes related to Monitoring operations.</p>
+<p>MonitoringPolicies:
+Class for representing all the monitoring policies
+configured in the commcell.</p>
+<p>MonitoringPolicy:
+Class for representing a single monitoring policy
+configured in the commcell.</p>
+<h2 id="monitoringpolicies">Monitoringpolicies</h2>
+<p><strong>init</strong>(commcell_object)
+&ndash;
+initialize the MonitoringPolicies class
+instance for the commcell</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the monitoring policies
+associated with the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string for the instance
+of the MonitoringPolicy class</p>
+<p>_get_monitoring_policies()
+&ndash;
+gets all the monitoring policies
+of the commcell</p>
+<p>has_monitoring_policy()
+&ndash;
+checks if a monitoring policy exists
+with the given name or not</p>
+<p>_get_analytics_servers()
+&ndash;
+returns all the analytics servers
+associated with the commcell</p>
+<p>has_analytics_server()
+&ndash;
+checks if a analytics server exists
+with the given name or not</p>
+<p>_get_templates()
+&ndash;
+returns all the templates
+associated with the commcell</p>
+<p>has_template()
+&ndash;
+checks if a template exists
+with the given name or not</p>
+<p>get()
+&ndash;
+Returns
+a MonitoringPolicy object
+of the specified monitoring policy name</p>
+<p>add()
+&ndash;
+adds a new monitoring policy to the commcell</p>
+<p>delete()
+&ndash;
+deletes a monitoring policy</p>
+<p>refresh()
+&ndash; refreshes the MonitoringPolicies/Templates
+and Analytics Servers
+associated to the commcell</p>
+<h1 id="attributes">Attributes</h1>
+<pre><code>**all_analytics_servers**       -- returns the dictionary consisting of
+all the analytics servers that are associated with the commcell and their
+information such as cloudid and analyticsserver name
+
+**all_templates**               -- returns the dictionary consisting of
+all the templates that are associated with the commcell and their
+information such as templateid and templatename
+
+**all_monitoring_policies       -- returns the dictionary consisting of
+all the monitoring policies that are associated with the commcell and
+their information such as monitoringpolicyid and name
+</code></pre>
+<h2 id="monitoringpolicy">Monitoringpolicy</h2>
+<p><strong>init</strong>(commcell_object,
+monitoring_policy_name,
+monitoring_policy_id)
+&ndash;
+initializes the instance of
+MonitoringPolicy class
+for a specific MonitoringPolicy
+of the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns a string representation
+of the MonitoringPolicy instance</p>
+<p>_get_monitoring_policy_id()
+&ndash;
+gets the id of the MonitoringPolicy
+instance from the commcell</p>
+<p>run()
+&ndash;
+starts a Monitoring Policy job
+and returns a job object</p>
+<h1 id="attributes_1">Attributes</h1>
+<pre><code>**monitoring_policy_name**          -- returns the monitoringpolicy name
+
+**monitoring_policy_id**            -- returnd the id of monitoringpolicy
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L1-L724" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing Monitoring related operations on the commcell.
+
+This file has all the classes related to Monitoring operations.
+
+MonitoringPolicies:      Class for representing all the monitoring policies
+                            configured in the commcell.
+
+MonitoringPolicy:        Class for representing a single monitoring policy
+                            configured in the commcell.
+
+MonitoringPolicies:
+
+    __init__(commcell_object)       --  initialize the MonitoringPolicies class
+                                            instance for the commcell
+
+    __str__()                       --  returns all the monitoring policies
+                                            associated with the commcell
+
+    __repr__()                      --  returns the string for the instance
+                                            of the MonitoringPolicy class
+
+    _get_monitoring_policies()      --  gets all the monitoring policies
+                                            of the commcell
+
+    has_monitoring_policy()         --  checks if a monitoring policy exists
+                                            with the given name or not
+
+    _get_analytics_servers()        --  returns all the analytics servers
+                                            associated with the commcell
+
+    has_analytics_server()          --  checks if a analytics server exists
+                                            with the given name or not
+
+    _get_templates()                --  returns all the templates
+                                            associated with the commcell
+
+    has_template()                  --  checks if a template exists
+                                            with the given name or not
+
+    get()                           --  Returns  a MonitoringPolicy object
+                                        of the specified monitoring policy name
+
+    add()                           --  adds a new monitoring policy to the commcell
+
+    delete()                        --  deletes a monitoring policy
+
+    refresh()                       -- refreshes the MonitoringPolicies/Templates
+                                            and Analytics Servers
+                                            associated to the commcell
+
+Attributes
+==========
+
+    **all_analytics_servers**       -- returns the dictionary consisting of
+    all the analytics servers that are associated with the commcell and their
+    information such as cloudid and analyticsserver name
+
+    **all_templates**               -- returns the dictionary consisting of
+    all the templates that are associated with the commcell and their
+    information such as templateid and templatename
+
+    **all_monitoring_policies       -- returns the dictionary consisting of
+    all the monitoring policies that are associated with the commcell and
+    their information such as monitoringpolicyid and name
+
+
+MonitoringPolicy:
+
+    __init__(commcell_object,
+             monitoring_policy_name,
+             monitoring_policy_id)            --  initializes the instance of
+                                                    MonitoringPolicy class
+                                                    for a specific MonitoringPolicy
+                                                    of the commcell
+
+    __repr__()                                --  returns a string representation
+                                                    of the MonitoringPolicy instance
+
+    _get_monitoring_policy_id()            --  gets the id of the MonitoringPolicy
+                                                    instance from the commcell
+
+    run()                                     --  starts a Monitoring Policy job
+                                                    and returns a job object
+
+Attributes
+==========
+
+    **monitoring_policy_name**          -- returns the monitoringpolicy name
+
+    **monitoring_policy_id**            -- returnd the id of monitoringpolicy
+&#34;&#34;&#34;
+
+from past.builtins import basestring
+
+from .exception import SDKException
+from .job import Job
+
+
+class MonitoringPolicies(object):
+    &#34;&#34;&#34;Class for representing all the Monitoring Policies
+        configured in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Intializes object of the MonitoringPolicies class.
+
+            Args:
+                commcell_object (object) -instance of the commcell class
+
+            Returns:
+                object - instance of the MonitoringPolicies class
+        &#34;&#34;&#34;
+
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._MONITORING_POLICIES = self._services[&#39;GET_ALL_MONITORING_POLICIES&#39;]
+        self._ANALYTICS_SERVERS = self._services[&#39;GET_ALL_ANALYTICS_SERVERS&#39;]
+        self._TEMPLATES = self._services[&#39;GET_ALL_TEMPLATES&#39;]
+        self._MONITORING_POLICIES_OPERATIONS = self._services[
+            &#39;CREATE_DELETE_EDIT_OPERATIONS&#39;
+        ]
+        self._monitoring_policies = None
+        self._analytics_servers = None
+        self._templates = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all MonitoringPolicies of the commcell.
+
+            Returns:
+                str - string of all the monitoring policies
+                    associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S.No.&#39;,
+                                                           &#39;Monitoring Policy&#39;)
+
+        for index, monitoring_policy in enumerate(self.all_monitoring_policies):
+            sub_str = &#39;{:^5}\t{:^20}\n\n&#39;.format(index + 1, monitoring_policy)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the MonitoringPolicies class.&#34;&#34;&#34;
+        return &#34;MonitoringPolicies class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_monitoring_policies(self):
+        &#34;&#34;&#34;Gets all the Monitoring Policies associated to the commcell
+            specified by commcell object.
+
+                Returns:
+                    dict - consists of all monitoring policies of the commcell
+                        {
+                             &#34;monitoring_policy_name1&#34;:monitoring_policy_id1,
+                             &#34;monitoring_policy_name2&#34;:monitoring_policy_id2
+                        }
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+        request = {
+                &#34;flag&#34;: 2, &#34;appType&#34;: 1
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._MONITORING_POLICIES, request)
+
+        if flag:
+            if response.json() and &#39;monitoringPolicies&#39; in response.json():
+                monitoring_policies_dict = {}
+
+                for dictionary in response.json()[&#39;monitoringPolicies&#39;]:
+                    temp_name = dictionary[&#39;monitoringPolicyName&#39;].lower()
+                    temp_id = int(dictionary[&#39;monitoringPolicyid&#39;])
+                    monitoring_policies_dict[temp_name] = temp_id
+
+                return monitoring_policies_dict
+
+            return {}
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def all_analytics_servers(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the analytics servers
+            and their info.
+
+            dict - consists of all analytics servers in the commcell
+                {
+                    &#34;analytics_server_1&#34;:cloud_id1,
+                    &#34;analytics_server_2&#34;:cloud_id2
+                }
+        &#34;&#34;&#34;
+        return self._analytics_servers
+
+    @property
+    def all_templates(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the templates
+            and their info.
+
+            dict - consists of all templates in the commcell
+                {
+                     &#34;template_name1&#34;:{
+                         &#34;id&#34;:template_id1,
+                         &#34;type&#34;:template_type
+                    },
+                    &#34;template_name2&#34;:{
+                        &#34;id&#34;:template_id2,
+                        &#34;type&#34;:template_type
+                    }
+                }
+        &#34;&#34;&#34;
+        return self._templates
+
+    @property
+    def all_monitoring_policies(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the
+            monitoringpolicies and their info.
+
+            dict - consists of all the monitoringpolicies
+                    in the commcell
+                {
+                    &#34;monitoring_policy_name1&#34;:monitoring_policy_id1,
+                    &#34;monitoring_policy_name2&#34;:monitoring_policy_id2
+                }
+        &#34;&#34;&#34;
+        return self._monitoring_policies
+
+    def has_monitoring_policy(self, monitoring_policy_name):
+        &#34;&#34;&#34;checks if a moniotoring policy exists in the commcell
+                with the provided name
+
+            Args:
+                monitoring_policy_name (str) -- name of the monitoring policy
+
+            Returns:
+                bool - boolean output whether the monitoring policy
+                    exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the monitoring_policy_name is not string
+        &#34;&#34;&#34;
+
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_monitoring_policies and monitoring_policy_name.lower() in \
+            self.all_monitoring_policies
+
+    def _get_analytics_servers(self):
+        &#34;&#34;&#34;Gets all the analytics servers associated to the commcell
+                specified by commcell object.
+
+            Returns:
+                dict - consists of all analytics servers of the commcell
+                    {
+                         &#34;analytics_server_1&#34;:cloud_id1
+                         &#34;analytics_server_2&#34;:cloud_id2
+                    }
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._ANALYTICS_SERVERS
+        )
+
+        if flag:
+            if response.json() and &#39;listOfCIServer&#39; in response.json():
+                analytics_servers_dict = {}
+
+                for dictionary in response.json()[&#39;listOfCIServer&#39;]:
+                    temp_name = dictionary[&#39;internalCloudName&#39;].lower()
+                    temp_id = int(dictionary[&#39;cloudID&#39;])
+                    analytics_servers_dict[temp_name] = temp_id
+
+                return analytics_servers_dict
+
+            return {}
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_analytics_server(self, analytics_server_name):
+        &#34;&#34;&#34;Checks if a analytics server exists in the commcell
+            with the input analytics server name
+
+            Args:
+                analytics_server_name (str) -- name of the analytics server
+
+            Returns:
+                bool - boolean output whether the analytics server
+                    exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the analytics server name is not string
+
+        &#34;&#34;&#34;
+
+        if not isinstance(analytics_server_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_analytics_servers and analytics_server_name.lower() in \
+            self.all_analytics_servers
+
+    def _get_templates(self):
+        &#34;&#34;&#34;Gets all the templates associated to the commcell
+            specified by commcell object.
+
+                Returns:
+                    dict- consists of all templates of the commcell
+                        {
+                             &#34;template_name1&#34;: {
+                                 &#34;id&#34;:template_id1,
+                                 &#34;type&#34;:template_type
+                            },
+                            &#34;template_name2&#34;: {
+                                &#34;id&#34;:template_id2,
+                                &#34;type&#34;:template_type
+                            }
+                        }
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+
+        xml_request = &#34;&#34;&#34;&lt;GetListofTemplatesByTemplateId templateId=&#34;&#34;
+        includeTemplateXML=&#34;&#34; appType=&#34;&#34; flag=&#34;&#34;&gt;&lt;/GetListofTemplatesByTemplateId&gt;&#34;&#34;&#34;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._TEMPLATES, xml_request
+        )
+
+        if flag:
+            if response.json() and &#39;LMTemplates&#39; in response.json():
+                templates_dict = {}
+
+                for dictionary in response.json()[&#39;LMTemplates&#39;]:
+                    temp_name = dictionary[&#39;LMTemplateEntity&#39;][&#39;templateName&#39;].lower()
+                    temp_id = int(dictionary[&#39;LMTemplateEntity&#39;][&#39;templateId&#39;])
+                    temp_type = int(dictionary[&#39;templateForMonitoringType&#39;])
+                    templates_dict[temp_name] = {
+                        &#39;id&#39; : temp_id,
+                        &#39;type&#39; : temp_type
+                    }
+
+                return templates_dict
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_template(self, template_name):
+        &#34;&#34;&#34;Checks if a template exists in the commcell with the input template name.
+
+            Args:
+                template_name(str) -- name of the template
+
+            Returns:
+                bool- boolean output whether the template exists
+                    in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the library name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(template_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_templates and template_name.lower() in self.all_templates
+
+    def get(self, monitoring_policy_name):
+        &#34;&#34;&#34;Returns  a MonitoringPolicy object of the specified monitoring policy name.
+
+            Args:
+                monitoring_policy_name (str) - name of the monitoring policy
+
+            Returns:
+                object - instance of the MonitoringPolicy class
+                    for the given policy name
+
+            Raises:
+                SDKException:
+                    if type of the monitoring policy name argument is not string
+
+                    if no monitoring policy exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        monitoring_policy_name = monitoring_policy_name.lower()
+
+        if not self.has_monitoring_policy(monitoring_policy_name):
+            raise SDKException(
+                &#39;Monitoring&#39;,
+                &#39;102&#39;,
+                &#39;No policy exists with name :{0}&#39;.format(monitoring_policy_name))
+
+        return MonitoringPolicy(
+            self._commcell_object,
+            monitoring_policy_name,
+            self.all_monitoring_policies[monitoring_policy_name]
+        )
+
+    def add(self,
+            monitoring_policy_name,
+            template_name,
+            analytics_server_name,
+            client_name,
+            content=None,
+            win_flag=False,
+            policy_type=0,
+            **kwargs):
+        &#34;&#34;&#34;Adds a new Monitoring Policy to the Commcell.
+
+            Args:
+                monitoring_policy_name (str) -- name of the new monitoring
+                                                    policy to add
+
+                template_name (str)          -- name of the template
+                                                    that has to be used
+
+                analytics_server_name (str)  -- name of the Analytics Server
+                                                    with LM role
+
+                client_name (str)            -- client from which data
+                                                    has to be picked
+
+                content (str)                     -- content to be used for
+                                                    running the policy
+
+                win_flag (bool)                    -- For executing Text based
+                                                    WindowsEvents Policy
+
+                policy_type (int)                -- type of policy to be created 0 - index server 1 - event raiser
+
+                kwargs                          -- continuousMode - true/false, conditionsXML - criteria for policy
+
+            Raises:
+                SDKException:
+                    if template doesn&#39;t exists
+
+                    if Analytics Server doesn&#39;t exists
+
+                    if Client doesn&#39;t exists
+
+                    if creation of Monitoring Policy fails
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        template_name = template_name.lower()
+        client_name = client_name.lower()
+        template_dict = {}
+        cloud_id = 0
+        if analytics_server_name is None:
+            analytics_server_name = &#39;&#39;
+
+        if template_name == &#34;ondemand&#34;:
+            template_id = 1
+            template_type = 4
+        elif win_flag:
+            template_id = 2
+            template_type = 0
+        else:
+            if self.has_template(template_name):
+                # template_dict = self.all_templates
+                template_id = int(self.all_templates[template_name][&#39;id&#39;])
+                template_type = int(self.all_templates[template_name][&#39;type&#39;])
+            else:
+                err_msg = &#39;Template &#34;{0}&#34; doesn\&#39;t exist&#39;.format(template_name)
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        if content is None:
+            content = &#34;&#34;
+
+        if policy_type==0:
+            analytics_server_name = analytics_server_name.lower()
+            if self.has_analytics_server(analytics_server_name):
+                cloud_id = self.all_analytics_servers[analytics_server_name]
+            else:
+                err_msg = &#39;Analytics Server &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                    analytics_server_name
+                )
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        client_dict = {}
+        if self._commcell_object.clients.has_client(client_name):
+            client_dict = self._commcell_object.clients.all_clients
+            client_id = int(client_dict[client_name][&#39;id&#39;])
+        else:
+            err_msg = &#39;Client &#34;{0}&#34; doesn\&#39;t exist&#39;.format(client_name)
+            raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        request = {
+            &#34;op&#34;: 1,
+            &#34;policy&#34;: {
+                &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+                &#34;monitoringPolicyid&#34;: 0,
+                &#34;content&#34;: content,
+                &#34;continuousMode&#34;: kwargs.get(&#39;continuousMode&#39;,False),
+                &#34;indexAllLines&#34;: False if kwargs.get(&#39;conditionsXML&#39;) else True,
+                &#34;associations&#34;: [{
+                    &#34;clientName&#34;: client_name,
+                    &#34;clientId&#34;: client_id,
+                    &#34;_type_&#34;: 3
+                }],
+                &#34;monitoringTypes&#34;: [
+                    template_type
+                ],
+                &#34;LMTemplates&#34;: [{
+                    &#34;templateName&#34;: template_name,
+                    &#34;templateId&#34;: template_id
+                }],
+                &#34;criteria&#34;: [
+                    {
+                        &#34;conditionsXML&#34;: kwargs.get(&#39;conditionsXML&#39;,&#39;&#39;),
+                        &#34;templateId&#34;: template_id
+                    }
+                ],
+                &#34;dataCapturingOptions&#34;: {
+                    &#34;cloudId&#34;: cloud_id,
+                    &#34;ageCIDataAfterDays&#34;: 15,
+                    &#34;cloudName&#34;: analytics_server_name,
+                    &#34;doNotMonitorOldData&#34;: False,
+                    &#34;enableContentIndexing&#34;: True,
+                    &#34;asFtp&#34;: False,
+                    &#34;dataCapturingType&#34;: policy_type,
+                    &#34;captureEntireFile&#34;: False
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+        if flag:
+            if response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+
+                if error_code != 0:
+                    error_string = response.json()[&#39;errorMessage&#39;]
+                    raise SDKException(
+                        &#39;Monitoring&#39;,
+                        &#39;102&#39;,
+                        &#39;Failed to create MonitoringPolicy\nError: &#34;{0}&#34;&#39;.format(
+                            error_string
+                        )
+                    )
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        return self.get(monitoring_policy_name)
+
+    def delete(self, monitoring_policy_name):
+        &#34;&#34;&#34;Deletes the monitoring policy from the commcell.
+
+            Args:
+                monitoring_policy_name(str) -- name of the monitoring policy to delete
+
+            Raises:
+                SDKException:
+                    if type of the monitoring policy name argument is not string
+
+                    if failed to delete monitoring policy
+
+                    if response is empty
+
+                    if response is not succcess
+        &#34;&#34;&#34;
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+        else:
+            monitoring_policy_name = monitoring_policy_name.lower()
+
+            if self.has_monitoring_policy(monitoring_policy_name):
+                request = {
+                    &#34;op&#34;: 3,
+                    &#34;policy&#34;: {
+                        &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+                        &#34;monitoringTypes&#34;: [0]
+                    }
+                }
+                flag, response = self._cvpysdk_object.make_request(
+                    &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+                self.refresh()
+
+                if flag:
+                    if response.json():
+                        error_code = response.json()[&#39;errorCode&#39;]
+
+                        if error_code != 0:
+                            error_string = response.json()[&#39;errorMessage&#39;]
+                            raise SDKException(
+                                &#39;Monitoring&#39;, &#39;102&#39;
+                                &#39;Failed to delete MonitoringPolicy\nError: &#34;{0}&#34;&#39;
+                                .format(
+                                    error_string
+                                )
+                            )
+
+                    else:
+                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                else:
+                    response_string = self._update_response_(
+                        response.text
+                    )
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+            else:
+                err_msg = &#39;MonitoringPolicy &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                    monitoring_policy_name
+                )
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refreshes the monitoring policies/analytics servers
+            and templates associated with the commcell&#34;&#34;&#34;
+
+        self._monitoring_policies = self._get_monitoring_policies()
+        self._analytics_servers = self._get_analytics_servers()
+        self._templates = self._get_templates()
+
+
+class MonitoringPolicy(object):
+    &#34;&#34;&#34;&#34;Class for performing monitoring policy operations
+            for a specific monitoring policy&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, monitoring_policy_name,
+                 monitoring_policy_id=None):
+        &#34;&#34;&#34;Initialise the Monitoring Policy class instance.&#34;&#34;&#34;
+
+        self._monitoring_policy_name = monitoring_policy_name.lower()
+        self._commcell_object = commcell_object
+        self._update_response_ = self._commcell_object._update_response_
+
+        if monitoring_policy_id:
+            self._monitoring_policy_id = str(monitoring_policy_id)
+        else:
+            self._monitoring_policy_id = self._get_monitoring_policy_id()
+
+        self._RUN_MONITORING_POLICY = self._commcell_object._services[
+            &#39;RUN_MONITORING_POLICY&#39;] % (self._monitoring_policy_id)
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class&#34;&#34;&#34;
+        representation_string = &#39;Monitoring Policy class instance &#39; \
+                                &#39;for Monitoring Policy: &#34;{0}&#34;&#39;
+        return representation_string.format(self.monitoring_policy_name)
+
+    def _get_monitoring_policy_id(self):
+        &#34;&#34;&#34;Gets the monitoring policy id associated with the monitoring policy.&#34;&#34;&#34;
+        monitoring_policies = MonitoringPolicies(self._commcell_object)
+        return monitoring_policies.get(self.monitoring_policy_name).\
+            monitoring_policy_id
+
+    @property
+    def monitoring_policy_name(self):
+        &#34;&#34;&#34;Treats the monitoring policy name as read only attribute.&#34;&#34;&#34;
+        return self._monitoring_policy_name
+
+    @property
+    def monitoring_policy_id(self):
+        &#34;&#34;&#34;Treats the monitoring policy id as read only attribute.&#34;&#34;&#34;
+        return self._monitoring_policy_id
+
+    def run(self):
+        &#34;&#34;&#34;Runs the Monitoring Policy job&#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._RUN_MONITORING_POLICY)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    o_str = &#39;Intializing Monitoring Policy Job failed\nError: &#34;{0}&#34;&#39;\
+                        .format(response.json()[&#39;errorMessage&#39;])
+                    raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.monitoring.MonitoringPolicies"><code class="flex name class">
+<span>class <span class="ident">MonitoringPolicies</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the Monitoring Policies
+configured in the commcell.</p>
+<p>Intializes object of the MonitoringPolicies class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object) -instance of the commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the MonitoringPolicies class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L117-L661" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class MonitoringPolicies(object):
+    &#34;&#34;&#34;Class for representing all the Monitoring Policies
+        configured in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Intializes object of the MonitoringPolicies class.
+
+            Args:
+                commcell_object (object) -instance of the commcell class
+
+            Returns:
+                object - instance of the MonitoringPolicies class
+        &#34;&#34;&#34;
+
+        self._commcell_object = commcell_object
+
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._update_response_ = self._commcell_object._update_response_
+
+        self._MONITORING_POLICIES = self._services[&#39;GET_ALL_MONITORING_POLICIES&#39;]
+        self._ANALYTICS_SERVERS = self._services[&#39;GET_ALL_ANALYTICS_SERVERS&#39;]
+        self._TEMPLATES = self._services[&#39;GET_ALL_TEMPLATES&#39;]
+        self._MONITORING_POLICIES_OPERATIONS = self._services[
+            &#39;CREATE_DELETE_EDIT_OPERATIONS&#39;
+        ]
+        self._monitoring_policies = None
+        self._analytics_servers = None
+        self._templates = None
+        self.refresh()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all MonitoringPolicies of the commcell.
+
+            Returns:
+                str - string of all the monitoring policies
+                    associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S.No.&#39;,
+                                                           &#39;Monitoring Policy&#39;)
+
+        for index, monitoring_policy in enumerate(self.all_monitoring_policies):
+            sub_str = &#39;{:^5}\t{:^20}\n\n&#39;.format(index + 1, monitoring_policy)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;Representation string for the instance of the MonitoringPolicies class.&#34;&#34;&#34;
+        return &#34;MonitoringPolicies class instance for Commcell: &#39;{0}&#39;&#34;.format(
+            self._commcell_object.commserv_name
+        )
+
+    def _get_monitoring_policies(self):
+        &#34;&#34;&#34;Gets all the Monitoring Policies associated to the commcell
+            specified by commcell object.
+
+                Returns:
+                    dict - consists of all monitoring policies of the commcell
+                        {
+                             &#34;monitoring_policy_name1&#34;:monitoring_policy_id1,
+                             &#34;monitoring_policy_name2&#34;:monitoring_policy_id2
+                        }
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+        request = {
+                &#34;flag&#34;: 2, &#34;appType&#34;: 1
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._MONITORING_POLICIES, request)
+
+        if flag:
+            if response.json() and &#39;monitoringPolicies&#39; in response.json():
+                monitoring_policies_dict = {}
+
+                for dictionary in response.json()[&#39;monitoringPolicies&#39;]:
+                    temp_name = dictionary[&#39;monitoringPolicyName&#39;].lower()
+                    temp_id = int(dictionary[&#39;monitoringPolicyid&#39;])
+                    monitoring_policies_dict[temp_name] = temp_id
+
+                return monitoring_policies_dict
+
+            return {}
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def all_analytics_servers(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the analytics servers
+            and their info.
+
+            dict - consists of all analytics servers in the commcell
+                {
+                    &#34;analytics_server_1&#34;:cloud_id1,
+                    &#34;analytics_server_2&#34;:cloud_id2
+                }
+        &#34;&#34;&#34;
+        return self._analytics_servers
+
+    @property
+    def all_templates(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the templates
+            and their info.
+
+            dict - consists of all templates in the commcell
+                {
+                     &#34;template_name1&#34;:{
+                         &#34;id&#34;:template_id1,
+                         &#34;type&#34;:template_type
+                    },
+                    &#34;template_name2&#34;:{
+                        &#34;id&#34;:template_id2,
+                        &#34;type&#34;:template_type
+                    }
+                }
+        &#34;&#34;&#34;
+        return self._templates
+
+    @property
+    def all_monitoring_policies(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the
+            monitoringpolicies and their info.
+
+            dict - consists of all the monitoringpolicies
+                    in the commcell
+                {
+                    &#34;monitoring_policy_name1&#34;:monitoring_policy_id1,
+                    &#34;monitoring_policy_name2&#34;:monitoring_policy_id2
+                }
+        &#34;&#34;&#34;
+        return self._monitoring_policies
+
+    def has_monitoring_policy(self, monitoring_policy_name):
+        &#34;&#34;&#34;checks if a moniotoring policy exists in the commcell
+                with the provided name
+
+            Args:
+                monitoring_policy_name (str) -- name of the monitoring policy
+
+            Returns:
+                bool - boolean output whether the monitoring policy
+                    exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the monitoring_policy_name is not string
+        &#34;&#34;&#34;
+
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_monitoring_policies and monitoring_policy_name.lower() in \
+            self.all_monitoring_policies
+
+    def _get_analytics_servers(self):
+        &#34;&#34;&#34;Gets all the analytics servers associated to the commcell
+                specified by commcell object.
+
+            Returns:
+                dict - consists of all analytics servers of the commcell
+                    {
+                         &#34;analytics_server_1&#34;:cloud_id1
+                         &#34;analytics_server_2&#34;:cloud_id2
+                    }
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._ANALYTICS_SERVERS
+        )
+
+        if flag:
+            if response.json() and &#39;listOfCIServer&#39; in response.json():
+                analytics_servers_dict = {}
+
+                for dictionary in response.json()[&#39;listOfCIServer&#39;]:
+                    temp_name = dictionary[&#39;internalCloudName&#39;].lower()
+                    temp_id = int(dictionary[&#39;cloudID&#39;])
+                    analytics_servers_dict[temp_name] = temp_id
+
+                return analytics_servers_dict
+
+            return {}
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_analytics_server(self, analytics_server_name):
+        &#34;&#34;&#34;Checks if a analytics server exists in the commcell
+            with the input analytics server name
+
+            Args:
+                analytics_server_name (str) -- name of the analytics server
+
+            Returns:
+                bool - boolean output whether the analytics server
+                    exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the analytics server name is not string
+
+        &#34;&#34;&#34;
+
+        if not isinstance(analytics_server_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_analytics_servers and analytics_server_name.lower() in \
+            self.all_analytics_servers
+
+    def _get_templates(self):
+        &#34;&#34;&#34;Gets all the templates associated to the commcell
+            specified by commcell object.
+
+                Returns:
+                    dict- consists of all templates of the commcell
+                        {
+                             &#34;template_name1&#34;: {
+                                 &#34;id&#34;:template_id1,
+                                 &#34;type&#34;:template_type
+                            },
+                            &#34;template_name2&#34;: {
+                                &#34;id&#34;:template_id2,
+                                &#34;type&#34;:template_type
+                            }
+                        }
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+        &#34;&#34;&#34;
+
+        xml_request = &#34;&#34;&#34;&lt;GetListofTemplatesByTemplateId templateId=&#34;&#34;
+        includeTemplateXML=&#34;&#34; appType=&#34;&#34; flag=&#34;&#34;&gt;&lt;/GetListofTemplatesByTemplateId&gt;&#34;&#34;&#34;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._TEMPLATES, xml_request
+        )
+
+        if flag:
+            if response.json() and &#39;LMTemplates&#39; in response.json():
+                templates_dict = {}
+
+                for dictionary in response.json()[&#39;LMTemplates&#39;]:
+                    temp_name = dictionary[&#39;LMTemplateEntity&#39;][&#39;templateName&#39;].lower()
+                    temp_id = int(dictionary[&#39;LMTemplateEntity&#39;][&#39;templateId&#39;])
+                    temp_type = int(dictionary[&#39;templateForMonitoringType&#39;])
+                    templates_dict[temp_name] = {
+                        &#39;id&#39; : temp_id,
+                        &#39;type&#39; : temp_type
+                    }
+
+                return templates_dict
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def has_template(self, template_name):
+        &#34;&#34;&#34;Checks if a template exists in the commcell with the input template name.
+
+            Args:
+                template_name(str) -- name of the template
+
+            Returns:
+                bool- boolean output whether the template exists
+                    in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the library name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(template_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        return self.all_templates and template_name.lower() in self.all_templates
+
+    def get(self, monitoring_policy_name):
+        &#34;&#34;&#34;Returns  a MonitoringPolicy object of the specified monitoring policy name.
+
+            Args:
+                monitoring_policy_name (str) - name of the monitoring policy
+
+            Returns:
+                object - instance of the MonitoringPolicy class
+                    for the given policy name
+
+            Raises:
+                SDKException:
+                    if type of the monitoring policy name argument is not string
+
+                    if no monitoring policy exists with the given name
+        &#34;&#34;&#34;
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+        monitoring_policy_name = monitoring_policy_name.lower()
+
+        if not self.has_monitoring_policy(monitoring_policy_name):
+            raise SDKException(
+                &#39;Monitoring&#39;,
+                &#39;102&#39;,
+                &#39;No policy exists with name :{0}&#39;.format(monitoring_policy_name))
+
+        return MonitoringPolicy(
+            self._commcell_object,
+            monitoring_policy_name,
+            self.all_monitoring_policies[monitoring_policy_name]
+        )
+
+    def add(self,
+            monitoring_policy_name,
+            template_name,
+            analytics_server_name,
+            client_name,
+            content=None,
+            win_flag=False,
+            policy_type=0,
+            **kwargs):
+        &#34;&#34;&#34;Adds a new Monitoring Policy to the Commcell.
+
+            Args:
+                monitoring_policy_name (str) -- name of the new monitoring
+                                                    policy to add
+
+                template_name (str)          -- name of the template
+                                                    that has to be used
+
+                analytics_server_name (str)  -- name of the Analytics Server
+                                                    with LM role
+
+                client_name (str)            -- client from which data
+                                                    has to be picked
+
+                content (str)                     -- content to be used for
+                                                    running the policy
+
+                win_flag (bool)                    -- For executing Text based
+                                                    WindowsEvents Policy
+
+                policy_type (int)                -- type of policy to be created 0 - index server 1 - event raiser
+
+                kwargs                          -- continuousMode - true/false, conditionsXML - criteria for policy
+
+            Raises:
+                SDKException:
+                    if template doesn&#39;t exists
+
+                    if Analytics Server doesn&#39;t exists
+
+                    if Client doesn&#39;t exists
+
+                    if creation of Monitoring Policy fails
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        template_name = template_name.lower()
+        client_name = client_name.lower()
+        template_dict = {}
+        cloud_id = 0
+        if analytics_server_name is None:
+            analytics_server_name = &#39;&#39;
+
+        if template_name == &#34;ondemand&#34;:
+            template_id = 1
+            template_type = 4
+        elif win_flag:
+            template_id = 2
+            template_type = 0
+        else:
+            if self.has_template(template_name):
+                # template_dict = self.all_templates
+                template_id = int(self.all_templates[template_name][&#39;id&#39;])
+                template_type = int(self.all_templates[template_name][&#39;type&#39;])
+            else:
+                err_msg = &#39;Template &#34;{0}&#34; doesn\&#39;t exist&#39;.format(template_name)
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        if content is None:
+            content = &#34;&#34;
+
+        if policy_type==0:
+            analytics_server_name = analytics_server_name.lower()
+            if self.has_analytics_server(analytics_server_name):
+                cloud_id = self.all_analytics_servers[analytics_server_name]
+            else:
+                err_msg = &#39;Analytics Server &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                    analytics_server_name
+                )
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        client_dict = {}
+        if self._commcell_object.clients.has_client(client_name):
+            client_dict = self._commcell_object.clients.all_clients
+            client_id = int(client_dict[client_name][&#39;id&#39;])
+        else:
+            err_msg = &#39;Client &#34;{0}&#34; doesn\&#39;t exist&#39;.format(client_name)
+            raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+        request = {
+            &#34;op&#34;: 1,
+            &#34;policy&#34;: {
+                &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+                &#34;monitoringPolicyid&#34;: 0,
+                &#34;content&#34;: content,
+                &#34;continuousMode&#34;: kwargs.get(&#39;continuousMode&#39;,False),
+                &#34;indexAllLines&#34;: False if kwargs.get(&#39;conditionsXML&#39;) else True,
+                &#34;associations&#34;: [{
+                    &#34;clientName&#34;: client_name,
+                    &#34;clientId&#34;: client_id,
+                    &#34;_type_&#34;: 3
+                }],
+                &#34;monitoringTypes&#34;: [
+                    template_type
+                ],
+                &#34;LMTemplates&#34;: [{
+                    &#34;templateName&#34;: template_name,
+                    &#34;templateId&#34;: template_id
+                }],
+                &#34;criteria&#34;: [
+                    {
+                        &#34;conditionsXML&#34;: kwargs.get(&#39;conditionsXML&#39;,&#39;&#39;),
+                        &#34;templateId&#34;: template_id
+                    }
+                ],
+                &#34;dataCapturingOptions&#34;: {
+                    &#34;cloudId&#34;: cloud_id,
+                    &#34;ageCIDataAfterDays&#34;: 15,
+                    &#34;cloudName&#34;: analytics_server_name,
+                    &#34;doNotMonitorOldData&#34;: False,
+                    &#34;enableContentIndexing&#34;: True,
+                    &#34;asFtp&#34;: False,
+                    &#34;dataCapturingType&#34;: policy_type,
+                    &#34;captureEntireFile&#34;: False
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+        if flag:
+            if response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
+
+                if error_code != 0:
+                    error_string = response.json()[&#39;errorMessage&#39;]
+                    raise SDKException(
+                        &#39;Monitoring&#39;,
+                        &#39;102&#39;,
+                        &#39;Failed to create MonitoringPolicy\nError: &#34;{0}&#34;&#39;.format(
+                            error_string
+                        )
+                    )
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        return self.get(monitoring_policy_name)
+
+    def delete(self, monitoring_policy_name):
+        &#34;&#34;&#34;Deletes the monitoring policy from the commcell.
+
+            Args:
+                monitoring_policy_name(str) -- name of the monitoring policy to delete
+
+            Raises:
+                SDKException:
+                    if type of the monitoring policy name argument is not string
+
+                    if failed to delete monitoring policy
+
+                    if response is empty
+
+                    if response is not succcess
+        &#34;&#34;&#34;
+        if not isinstance(monitoring_policy_name, basestring):
+            raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+        else:
+            monitoring_policy_name = monitoring_policy_name.lower()
+
+            if self.has_monitoring_policy(monitoring_policy_name):
+                request = {
+                    &#34;op&#34;: 3,
+                    &#34;policy&#34;: {
+                        &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+                        &#34;monitoringTypes&#34;: [0]
+                    }
+                }
+                flag, response = self._cvpysdk_object.make_request(
+                    &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+                self.refresh()
+
+                if flag:
+                    if response.json():
+                        error_code = response.json()[&#39;errorCode&#39;]
+
+                        if error_code != 0:
+                            error_string = response.json()[&#39;errorMessage&#39;]
+                            raise SDKException(
+                                &#39;Monitoring&#39;, &#39;102&#39;
+                                &#39;Failed to delete MonitoringPolicy\nError: &#34;{0}&#34;&#39;
+                                .format(
+                                    error_string
+                                )
+                            )
+
+                    else:
+                        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                else:
+                    response_string = self._update_response_(
+                        response.text
+                    )
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+            else:
+                err_msg = &#39;MonitoringPolicy &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                    monitoring_policy_name
+                )
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refreshes the monitoring policies/analytics servers
+            and templates associated with the commcell&#34;&#34;&#34;
+
+        self._monitoring_policies = self._get_monitoring_policies()
+        self._analytics_servers = self._get_analytics_servers()
+        self._templates = self._get_templates()</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.all_analytics_servers"><code class="name">var <span class="ident">all_analytics_servers</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of all the analytics servers
+and their info.</p>
+<p>dict - consists of all analytics servers in the commcell
+{
+"analytics_server_1":cloud_id1,
+"analytics_server_2":cloud_id2
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L209-L220" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_analytics_servers(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of all the analytics servers
+        and their info.
+
+        dict - consists of all analytics servers in the commcell
+            {
+                &#34;analytics_server_1&#34;:cloud_id1,
+                &#34;analytics_server_2&#34;:cloud_id2
+            }
+    &#34;&#34;&#34;
+    return self._analytics_servers</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.all_monitoring_policies"><code class="name">var <span class="ident">all_monitoring_policies</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of all the
+monitoringpolicies and their info.</p>
+<p>dict - consists of all the monitoringpolicies
+in the commcell
+{
+"monitoring_policy_name1":monitoring_policy_id1,
+"monitoring_policy_name2":monitoring_policy_id2
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L241-L253" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_monitoring_policies(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of all the
+        monitoringpolicies and their info.
+
+        dict - consists of all the monitoringpolicies
+                in the commcell
+            {
+                &#34;monitoring_policy_name1&#34;:monitoring_policy_id1,
+                &#34;monitoring_policy_name2&#34;:monitoring_policy_id2
+            }
+    &#34;&#34;&#34;
+    return self._monitoring_policies</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.all_templates"><code class="name">var <span class="ident">all_templates</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of all the templates
+and their info.</p>
+<p>dict - consists of all templates in the commcell
+{
+"template_name1":{
+"id":template_id1,
+"type":template_type
+},
+"template_name2":{
+"id":template_id2,
+"type":template_type
+}
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L222-L239" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_templates(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of all the templates
+        and their info.
+
+        dict - consists of all templates in the commcell
+            {
+                 &#34;template_name1&#34;:{
+                     &#34;id&#34;:template_id1,
+                     &#34;type&#34;:template_type
+                },
+                &#34;template_name2&#34;:{
+                    &#34;id&#34;:template_id2,
+                    &#34;type&#34;:template_type
+                }
+            }
+    &#34;&#34;&#34;
+    return self._templates</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, monitoring_policy_name, template_name, analytics_server_name, client_name, content=None, win_flag=False, policy_type=0, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a new Monitoring Policy to the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>monitoring_policy_name (str) &ndash; name of the new monitoring
+policy to add</p>
+<p>template_name (str)
+&ndash; name of the template
+that has to be used</p>
+<p>analytics_server_name (str)
+&ndash; name of the Analytics Server
+with LM role</p>
+<p>client_name (str)
+&ndash; client from which data
+has to be picked</p>
+<p>content (str)
+&ndash; content to be used for
+running the policy</p>
+<p>win_flag (bool)
+&ndash; For executing Text based
+WindowsEvents Policy</p>
+<p>policy_type (int)
+&ndash; type of policy to be created 0 - index server 1 - event raiser</p>
+<p>kwargs
+&ndash; continuousMode - true/false, conditionsXML - criteria for policy</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if template doesn't exists</p>
+<pre><code>if Analytics Server doesn't exists
+
+if Client doesn't exists
+
+if creation of Monitoring Policy fails
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L439-L592" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self,
+        monitoring_policy_name,
+        template_name,
+        analytics_server_name,
+        client_name,
+        content=None,
+        win_flag=False,
+        policy_type=0,
+        **kwargs):
+    &#34;&#34;&#34;Adds a new Monitoring Policy to the Commcell.
+
+        Args:
+            monitoring_policy_name (str) -- name of the new monitoring
+                                                policy to add
+
+            template_name (str)          -- name of the template
+                                                that has to be used
+
+            analytics_server_name (str)  -- name of the Analytics Server
+                                                with LM role
+
+            client_name (str)            -- client from which data
+                                                has to be picked
+
+            content (str)                     -- content to be used for
+                                                running the policy
+
+            win_flag (bool)                    -- For executing Text based
+                                                WindowsEvents Policy
+
+            policy_type (int)                -- type of policy to be created 0 - index server 1 - event raiser
+
+            kwargs                          -- continuousMode - true/false, conditionsXML - criteria for policy
+
+        Raises:
+            SDKException:
+                if template doesn&#39;t exists
+
+                if Analytics Server doesn&#39;t exists
+
+                if Client doesn&#39;t exists
+
+                if creation of Monitoring Policy fails
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    template_name = template_name.lower()
+    client_name = client_name.lower()
+    template_dict = {}
+    cloud_id = 0
+    if analytics_server_name is None:
+        analytics_server_name = &#39;&#39;
+
+    if template_name == &#34;ondemand&#34;:
+        template_id = 1
+        template_type = 4
+    elif win_flag:
+        template_id = 2
+        template_type = 0
+    else:
+        if self.has_template(template_name):
+            # template_dict = self.all_templates
+            template_id = int(self.all_templates[template_name][&#39;id&#39;])
+            template_type = int(self.all_templates[template_name][&#39;type&#39;])
+        else:
+            err_msg = &#39;Template &#34;{0}&#34; doesn\&#39;t exist&#39;.format(template_name)
+            raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+    if content is None:
+        content = &#34;&#34;
+
+    if policy_type==0:
+        analytics_server_name = analytics_server_name.lower()
+        if self.has_analytics_server(analytics_server_name):
+            cloud_id = self.all_analytics_servers[analytics_server_name]
+        else:
+            err_msg = &#39;Analytics Server &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                analytics_server_name
+            )
+            raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+    client_dict = {}
+    if self._commcell_object.clients.has_client(client_name):
+        client_dict = self._commcell_object.clients.all_clients
+        client_id = int(client_dict[client_name][&#39;id&#39;])
+    else:
+        err_msg = &#39;Client &#34;{0}&#34; doesn\&#39;t exist&#39;.format(client_name)
+        raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)
+
+    request = {
+        &#34;op&#34;: 1,
+        &#34;policy&#34;: {
+            &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+            &#34;monitoringPolicyid&#34;: 0,
+            &#34;content&#34;: content,
+            &#34;continuousMode&#34;: kwargs.get(&#39;continuousMode&#39;,False),
+            &#34;indexAllLines&#34;: False if kwargs.get(&#39;conditionsXML&#39;) else True,
+            &#34;associations&#34;: [{
+                &#34;clientName&#34;: client_name,
+                &#34;clientId&#34;: client_id,
+                &#34;_type_&#34;: 3
+            }],
+            &#34;monitoringTypes&#34;: [
+                template_type
+            ],
+            &#34;LMTemplates&#34;: [{
+                &#34;templateName&#34;: template_name,
+                &#34;templateId&#34;: template_id
+            }],
+            &#34;criteria&#34;: [
+                {
+                    &#34;conditionsXML&#34;: kwargs.get(&#39;conditionsXML&#39;,&#39;&#39;),
+                    &#34;templateId&#34;: template_id
+                }
+            ],
+            &#34;dataCapturingOptions&#34;: {
+                &#34;cloudId&#34;: cloud_id,
+                &#34;ageCIDataAfterDays&#34;: 15,
+                &#34;cloudName&#34;: analytics_server_name,
+                &#34;doNotMonitorOldData&#34;: False,
+                &#34;enableContentIndexing&#34;: True,
+                &#34;asFtp&#34;: False,
+                &#34;dataCapturingType&#34;: policy_type,
+                &#34;captureEntireFile&#34;: False
+            }
+        }
+    }
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+    if flag:
+        if response.json():
+            error_code = response.json()[&#39;errorCode&#39;]
+
+            if error_code != 0:
+                error_string = response.json()[&#39;errorMessage&#39;]
+                raise SDKException(
+                    &#39;Monitoring&#39;,
+                    &#39;102&#39;,
+                    &#39;Failed to create MonitoringPolicy\nError: &#34;{0}&#34;&#39;.format(
+                        error_string
+                    )
+                )
+            self.refresh()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    return self.get(monitoring_policy_name)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, monitoring_policy_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the monitoring policy from the commcell.</p>
+<h2 id="args">Args</h2>
+<p>monitoring_policy_name(str) &ndash; name of the monitoring policy to delete</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the monitoring policy name argument is not string</p>
+<pre><code>if failed to delete monitoring policy
+
+if response is empty
+
+if response is not succcess
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L594-L653" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, monitoring_policy_name):
+    &#34;&#34;&#34;Deletes the monitoring policy from the commcell.
+
+        Args:
+            monitoring_policy_name(str) -- name of the monitoring policy to delete
+
+        Raises:
+            SDKException:
+                if type of the monitoring policy name argument is not string
+
+                if failed to delete monitoring policy
+
+                if response is empty
+
+                if response is not succcess
+    &#34;&#34;&#34;
+    if not isinstance(monitoring_policy_name, basestring):
+        raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+    else:
+        monitoring_policy_name = monitoring_policy_name.lower()
+
+        if self.has_monitoring_policy(monitoring_policy_name):
+            request = {
+                &#34;op&#34;: 3,
+                &#34;policy&#34;: {
+                    &#34;monitoringPolicyName&#34;: monitoring_policy_name,
+                    &#34;monitoringTypes&#34;: [0]
+                }
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                &#39;POST&#39;, self._MONITORING_POLICIES_OPERATIONS, request)
+
+            self.refresh()
+
+            if flag:
+                if response.json():
+                    error_code = response.json()[&#39;errorCode&#39;]
+
+                    if error_code != 0:
+                        error_string = response.json()[&#39;errorMessage&#39;]
+                        raise SDKException(
+                            &#39;Monitoring&#39;, &#39;102&#39;
+                            &#39;Failed to delete MonitoringPolicy\nError: &#34;{0}&#34;&#39;
+                            .format(
+                                error_string
+                            )
+                        )
+
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                response_string = self._update_response_(
+                    response.text
+                )
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        else:
+            err_msg = &#39;MonitoringPolicy &#34;{0}&#34; doesn\&#39;t exist&#39;.format(
+                monitoring_policy_name
+            )
+            raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, err_msg)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, monitoring_policy_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns
+a MonitoringPolicy object of the specified monitoring policy name.</p>
+<h2 id="args">Args</h2>
+<p>monitoring_policy_name (str) - name of the monitoring policy</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the MonitoringPolicy class
+for the given policy name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the monitoring policy name argument is not string</p>
+<pre><code>if no monitoring policy exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L406-L437" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, monitoring_policy_name):
+    &#34;&#34;&#34;Returns  a MonitoringPolicy object of the specified monitoring policy name.
+
+        Args:
+            monitoring_policy_name (str) - name of the monitoring policy
+
+        Returns:
+            object - instance of the MonitoringPolicy class
+                for the given policy name
+
+        Raises:
+            SDKException:
+                if type of the monitoring policy name argument is not string
+
+                if no monitoring policy exists with the given name
+    &#34;&#34;&#34;
+    if not isinstance(monitoring_policy_name, basestring):
+        raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+    monitoring_policy_name = monitoring_policy_name.lower()
+
+    if not self.has_monitoring_policy(monitoring_policy_name):
+        raise SDKException(
+            &#39;Monitoring&#39;,
+            &#39;102&#39;,
+            &#39;No policy exists with name :{0}&#39;.format(monitoring_policy_name))
+
+    return MonitoringPolicy(
+        self._commcell_object,
+        monitoring_policy_name,
+        self.all_monitoring_policies[monitoring_policy_name]
+    )</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.has_analytics_server"><code class="name flex">
+<span>def <span class="ident">has_analytics_server</span></span>(<span>self, analytics_server_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a analytics server exists in the commcell
+with the input analytics server name</p>
+<h2 id="args">Args</h2>
+<p>analytics_server_name (str) &ndash; name of the analytics server</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the analytics server
+exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the analytics server name is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L313-L334" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_analytics_server(self, analytics_server_name):
+    &#34;&#34;&#34;Checks if a analytics server exists in the commcell
+        with the input analytics server name
+
+        Args:
+            analytics_server_name (str) -- name of the analytics server
+
+        Returns:
+            bool - boolean output whether the analytics server
+                exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the analytics server name is not string
+
+    &#34;&#34;&#34;
+
+    if not isinstance(analytics_server_name, basestring):
+        raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+    return self.all_analytics_servers and analytics_server_name.lower() in \
+        self.all_analytics_servers</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.has_monitoring_policy"><code class="name flex">
+<span>def <span class="ident">has_monitoring_policy</span></span>(<span>self, monitoring_policy_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>checks if a moniotoring policy exists in the commcell
+with the provided name</p>
+<h2 id="args">Args</h2>
+<p>monitoring_policy_name (str) &ndash; name of the monitoring policy</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output whether the monitoring policy
+exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the monitoring_policy_name is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L255-L275" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_monitoring_policy(self, monitoring_policy_name):
+    &#34;&#34;&#34;checks if a moniotoring policy exists in the commcell
+            with the provided name
+
+        Args:
+            monitoring_policy_name (str) -- name of the monitoring policy
+
+        Returns:
+            bool - boolean output whether the monitoring policy
+                exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the monitoring_policy_name is not string
+    &#34;&#34;&#34;
+
+    if not isinstance(monitoring_policy_name, basestring):
+        raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+    return self.all_monitoring_policies and monitoring_policy_name.lower() in \
+        self.all_monitoring_policies</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.has_template"><code class="name flex">
+<span>def <span class="ident">has_template</span></span>(<span>self, template_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a template exists in the commcell with the input template name.</p>
+<h2 id="args">Args</h2>
+<p>template_name(str) &ndash; name of the template</p>
+<h2 id="returns">Returns</h2>
+<p>bool- boolean output whether the template exists
+in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the library name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L387-L404" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_template(self, template_name):
+    &#34;&#34;&#34;Checks if a template exists in the commcell with the input template name.
+
+        Args:
+            template_name(str) -- name of the template
+
+        Returns:
+            bool- boolean output whether the template exists
+                in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the library name argument is not string
+    &#34;&#34;&#34;
+    if not isinstance(template_name, basestring):
+        raise SDKException(&#39;Monitoring&#39;, &#39;101&#39;)
+
+    return self.all_templates and template_name.lower() in self.all_templates</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicies.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refreshes the monitoring policies/analytics servers
+and templates associated with the commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L655-L661" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refreshes the monitoring policies/analytics servers
+        and templates associated with the commcell&#34;&#34;&#34;
+
+    self._monitoring_policies = self._get_monitoring_policies()
+    self._analytics_servers = self._get_analytics_servers()
+    self._templates = self._get_templates()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicy"><code class="flex name class">
+<span>class <span class="ident">MonitoringPolicy</span></span>
+<span>(</span><span>commcell_object, monitoring_policy_name, monitoring_policy_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>"Class for performing monitoring policy operations
+for a specific monitoring policy</p>
+<p>Initialise the Monitoring Policy class instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L664-L724" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class MonitoringPolicy(object):
+    &#34;&#34;&#34;&#34;Class for performing monitoring policy operations
+            for a specific monitoring policy&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, monitoring_policy_name,
+                 monitoring_policy_id=None):
+        &#34;&#34;&#34;Initialise the Monitoring Policy class instance.&#34;&#34;&#34;
+
+        self._monitoring_policy_name = monitoring_policy_name.lower()
+        self._commcell_object = commcell_object
+        self._update_response_ = self._commcell_object._update_response_
+
+        if monitoring_policy_id:
+            self._monitoring_policy_id = str(monitoring_policy_id)
+        else:
+            self._monitoring_policy_id = self._get_monitoring_policy_id()
+
+        self._RUN_MONITORING_POLICY = self._commcell_object._services[
+            &#39;RUN_MONITORING_POLICY&#39;] % (self._monitoring_policy_id)
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class&#34;&#34;&#34;
+        representation_string = &#39;Monitoring Policy class instance &#39; \
+                                &#39;for Monitoring Policy: &#34;{0}&#34;&#39;
+        return representation_string.format(self.monitoring_policy_name)
+
+    def _get_monitoring_policy_id(self):
+        &#34;&#34;&#34;Gets the monitoring policy id associated with the monitoring policy.&#34;&#34;&#34;
+        monitoring_policies = MonitoringPolicies(self._commcell_object)
+        return monitoring_policies.get(self.monitoring_policy_name).\
+            monitoring_policy_id
+
+    @property
+    def monitoring_policy_name(self):
+        &#34;&#34;&#34;Treats the monitoring policy name as read only attribute.&#34;&#34;&#34;
+        return self._monitoring_policy_name
+
+    @property
+    def monitoring_policy_id(self):
+        &#34;&#34;&#34;Treats the monitoring policy id as read only attribute.&#34;&#34;&#34;
+        return self._monitoring_policy_id
+
+    def run(self):
+        &#34;&#34;&#34;Runs the Monitoring Policy job&#34;&#34;&#34;
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._RUN_MONITORING_POLICY)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    o_str = &#39;Intializing Monitoring Policy Job failed\nError: &#34;{0}&#34;&#39;\
+                        .format(response.json()[&#39;errorMessage&#39;])
+                    raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_id"><code class="name">var <span class="ident">monitoring_policy_id</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the monitoring policy id as read only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L701-L704" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def monitoring_policy_id(self):
+    &#34;&#34;&#34;Treats the monitoring policy id as read only attribute.&#34;&#34;&#34;
+    return self._monitoring_policy_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_name"><code class="name">var <span class="ident">monitoring_policy_name</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the monitoring policy name as read only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L696-L699" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def monitoring_policy_name(self):
+    &#34;&#34;&#34;Treats the monitoring policy name as read only attribute.&#34;&#34;&#34;
+    return self._monitoring_policy_name</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.monitoring.MonitoringPolicy.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs the Monitoring Policy job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/monitoring.py#L706-L724" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def run(self):
+    &#34;&#34;&#34;Runs the Monitoring Policy job&#34;&#34;&#34;
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._RUN_MONITORING_POLICY)
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+            elif &#34;errorCode&#34; in response.json():
+                o_str = &#39;Intializing Monitoring Policy Job failed\nError: &#34;{0}&#34;&#39;\
+                    .format(response.json()[&#39;errorMessage&#39;])
+                raise SDKException(&#39;Monitoring&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#attributes">Attributes</a></li>
+<li><a href="#attributes_1">Attributes</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.monitoring.MonitoringPolicies" href="#cvpysdk.monitoring.MonitoringPolicies">MonitoringPolicies</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.add" href="#cvpysdk.monitoring.MonitoringPolicies.add">add</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.all_analytics_servers" href="#cvpysdk.monitoring.MonitoringPolicies.all_analytics_servers">all_analytics_servers</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.all_monitoring_policies" href="#cvpysdk.monitoring.MonitoringPolicies.all_monitoring_policies">all_monitoring_policies</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.all_templates" href="#cvpysdk.monitoring.MonitoringPolicies.all_templates">all_templates</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.delete" href="#cvpysdk.monitoring.MonitoringPolicies.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.get" href="#cvpysdk.monitoring.MonitoringPolicies.get">get</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.has_analytics_server" href="#cvpysdk.monitoring.MonitoringPolicies.has_analytics_server">has_analytics_server</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.has_monitoring_policy" href="#cvpysdk.monitoring.MonitoringPolicies.has_monitoring_policy">has_monitoring_policy</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.has_template" href="#cvpysdk.monitoring.MonitoringPolicies.has_template">has_template</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicies.refresh" href="#cvpysdk.monitoring.MonitoringPolicies.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.monitoring.MonitoringPolicy" href="#cvpysdk.monitoring.MonitoringPolicy">MonitoringPolicy</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_id" href="#cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_id">monitoring_policy_id</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_name" href="#cvpysdk.monitoring.MonitoringPolicy.monitoring_policy_name">monitoring_policy_name</a></code></li>
+<li><code><a title="cvpysdk.monitoring.MonitoringPolicy.run" href="#cvpysdk.monitoring.MonitoringPolicy.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

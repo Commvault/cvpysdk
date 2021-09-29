@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.eventviewer API documentation</title>
+<meta name="description" content="Main file for performing Event Viewer Operations …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.eventviewer</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing Event Viewer Operations</p>
+<p>Events and Event are 2 classes defined in this file</p>
+<p>Events: Class for representing all the Events associated with the commcell</p>
+<p>Event: Class for a single Event of the commcell</p>
+<h2 id="events">Events</h2>
+<p><strong>init</strong>(commcell_object) &ndash;
+initialise object of Clients
+class associated with the commcell</p>
+<p><strong>str</strong>()
+&ndash;
+returns all the Events
+associated with the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+returns the string to represent
+the instance of the Events class.</p>
+<p>events()
+&ndash;
+gets all the Events associated with the commcell</p>
+<p>get(event_id)
+&ndash;
+returns the Event class object of the input event id</p>
+<h2 id="event">Event</h2>
+<p><strong>init</strong>(commcell_object)
+&ndash;
+initialise object of
+Class associated to the commcell</p>
+<p><strong>repr</strong>()
+&ndash;
+return the Event id,
+the instance is associated with</p>
+<p>_get_event_properties()
+&ndash;
+method to get the Event id,
+if not specified in <strong>init</strong></p>
+<p><strong>event_code</strong>
+&ndash;
+returns the event code associated to the event id
+<strong>job_id</strong>
+&ndash;
+returns the job id associated to the event id
+is_backup_disabled
+&ndash; boolean specifying if backup is disabled or not
+is_restore_disabled
+&ndash; boolean specifying if restore is disabled or not</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L1-L247" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing Event Viewer Operations
+
+Events and Event are 2 classes defined in this file
+
+Events: Class for representing all the Events associated with the commcell
+
+Event: Class for a single Event of the commcell
+
+
+Events:
+    __init__(commcell_object) --  initialise object of Clients
+                                  class associated with the commcell
+
+    __str__()                 --  returns all the Events
+                                  associated with the commcell
+
+    __repr__()                --  returns the string to represent
+                                  the instance of the Events class.
+
+    events()    --  gets all the Events associated with the commcell
+
+    get(event_id)         --  returns the Event class object of the input event id
+
+
+Event:
+    __init__(commcell_object)     --  initialise object of
+                                      Class associated to the commcell
+
+    __repr__()                   --  return the Event id,
+                                     the instance is associated with
+
+    _get_event_properties()      --  method to get the Event id,
+                                     if not specified in __init__
+
+    **event_code**        --  returns the event code associated to the event id
+    **job_id**           --  returns the job id associated to the event id
+    is_backup_disabled    -- boolean specifying if backup is disabled or not
+    is_restore_disabled    -- boolean specifying if restore is disabled or not
+
+&#34;&#34;&#34;
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+from .exception import SDKException
+
+
+class Events(object):
+    &#34;&#34;&#34;Class for representing Events associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Events class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Events class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._events = self.events()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all events of the commcell.
+
+            Returns:
+                str - string of all the events associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;EventId&#39;)
+
+        for index, event in enumerate(self._events):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, event)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Events class instance&#39;
+        return representation_string
+
+    def events(self, query_params_dict={}):
+        &#34;&#34;&#34;Gets all the events associated with the commcell
+
+            Args:
+                query_params_dict (dict)  --  Query Params Dict
+                    Example:
+                        {
+                            &#34;jobId&#34;: 123,
+                        }
+            Returns:
+                dict - consists of all events in the commcell
+                    {
+                         &#34;event1_id&#34;: event1_code,
+                         &#34;event2_id&#34;: event2_code
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        events_request = self._commcell_object._services[&#39;GET_EVENTS&#39;]
+        if query_params_dict:
+            events_request = events_request + &#39;?&#39;
+            for query_param in query_params_dict.keys():
+                if events_request[-1] != &#39;?&#39;:
+                    events_request = events_request + &#39;&amp;&#39;
+                events_request = events_request + query_param + \
+                    &#39;=&#39; + query_params_dict[query_param]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, events_request)
+
+        if flag:
+            if response.json() and &#39;commservEvents&#39; in response.json():
+                events_dict = {}
+
+                for dictionary in response.json()[&#39;commservEvents&#39;]:
+                    event_id = dictionary[&#39;id&#39;]
+                    event_code = dictionary[&#39;eventCode&#39;]
+                    events_dict[event_id] = event_code
+
+                return events_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get(self, event_id):
+        &#34;&#34;&#34;Returns an event object
+
+            Args:
+                event_id (str)  --  Id of the Event
+
+            Returns:
+                object - instance of the Event class for the given Event Id
+        &#34;&#34;&#34;
+        return Event(self._commcell_object, event_id)
+
+
+class Event(object):
+    &#34;&#34;&#34;Class for Event Viewer operations.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, event_id):
+        &#34;&#34;&#34;Initialize the Event Viewer class instance.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Event class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._event_id = event_id
+        self._event = self._commcell_object._services[&#39;GET_EVENT&#39;] % (
+            self._event_id)
+        self._get_event_properties()
+        self._event_code_type_dict = {
+            &#34;BACKUP DISABLED&#34;: &#34;318767861&#34;,
+            &#34;RESTORE DISABLED&#34;: &#34;318767864&#34;,
+        }
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Event class instance for Event: &#34;{0}&#34;&#39;
+        return representation_string.format(self._event_id)
+
+    def _get_event_properties(self):
+        &#34;&#34;&#34;Gets the event properties of this event.
+
+            Returns:
+                dict - dictionary consisting of the properties of this event
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._event)
+
+        if flag:
+            if response.json() and &#39;commservEvents&#39; in response.json():
+                self._properties = response.json()[&#39;commservEvents&#39;][0]
+
+                self._eventcode = self._properties[&#39;eventCode&#39;]
+                self._timeSource = self._properties[&#39;timeSource&#39;]
+                self._severity = self._properties[&#39;severity&#39;]
+                self._job_id = self._properties[&#39;jobId&#39;]
+                self._description = self._properties[&#39;description&#39;]
+                self._subsystem = self._properties[&#39;subsystem&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def event_code(self):
+        &#34;&#34;&#34;Treats the event code as a read-only attribute.&#34;&#34;&#34;
+        return self._eventcode
+
+    @property
+    def job_id(self):
+        &#34;&#34;&#34;Treats the job id as a read-only attribute.&#34;&#34;&#34;
+        return self._job_id
+
+    @property
+    def is_backup_disabled(self):
+        &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+        if self._event_code_type_dict[&#34;BACKUP DISABLED&#34;] == self._eventcode:
+            return True
+        else:
+            return False
+
+    @property
+    def is_restore_disabled(self):
+        &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+        if self._event_code_type_dict[&#34;RESTORE DISABLED&#34;] == self._eventcode:
+            return True
+        else:
+            return False</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.eventviewer.Event"><code class="flex name class">
+<span>class <span class="ident">Event</span></span>
+<span>(</span><span>commcell_object, event_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for Event Viewer operations.</p>
+<p>Initialize the Event Viewer class instance.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Event class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L164-L247" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Event(object):
+    &#34;&#34;&#34;Class for Event Viewer operations.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, event_id):
+        &#34;&#34;&#34;Initialize the Event Viewer class instance.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Event class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._event_id = event_id
+        self._event = self._commcell_object._services[&#39;GET_EVENT&#39;] % (
+            self._event_id)
+        self._get_event_properties()
+        self._event_code_type_dict = {
+            &#34;BACKUP DISABLED&#34;: &#34;318767861&#34;,
+            &#34;RESTORE DISABLED&#34;: &#34;318767864&#34;,
+        }
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Event class instance for Event: &#34;{0}&#34;&#39;
+        return representation_string.format(self._event_id)
+
+    def _get_event_properties(self):
+        &#34;&#34;&#34;Gets the event properties of this event.
+
+            Returns:
+                dict - dictionary consisting of the properties of this event
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._event)
+
+        if flag:
+            if response.json() and &#39;commservEvents&#39; in response.json():
+                self._properties = response.json()[&#39;commservEvents&#39;][0]
+
+                self._eventcode = self._properties[&#39;eventCode&#39;]
+                self._timeSource = self._properties[&#39;timeSource&#39;]
+                self._severity = self._properties[&#39;severity&#39;]
+                self._job_id = self._properties[&#39;jobId&#39;]
+                self._description = self._properties[&#39;description&#39;]
+                self._subsystem = self._properties[&#39;subsystem&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def event_code(self):
+        &#34;&#34;&#34;Treats the event code as a read-only attribute.&#34;&#34;&#34;
+        return self._eventcode
+
+    @property
+    def job_id(self):
+        &#34;&#34;&#34;Treats the job id as a read-only attribute.&#34;&#34;&#34;
+        return self._job_id
+
+    @property
+    def is_backup_disabled(self):
+        &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+        if self._event_code_type_dict[&#34;BACKUP DISABLED&#34;] == self._eventcode:
+            return True
+        else:
+            return False
+
+    @property
+    def is_restore_disabled(self):
+        &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+        if self._event_code_type_dict[&#34;RESTORE DISABLED&#34;] == self._eventcode:
+            return True
+        else:
+            return False</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.eventviewer.Event.event_code"><code class="name">var <span class="ident">event_code</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the event code as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L223-L226" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def event_code(self):
+    &#34;&#34;&#34;Treats the event code as a read-only attribute.&#34;&#34;&#34;
+    return self._eventcode</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.eventviewer.Event.is_backup_disabled"><code class="name">var <span class="ident">is_backup_disabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns True/False based on the event type</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L233-L239" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_backup_disabled(self):
+    &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+    if self._event_code_type_dict[&#34;BACKUP DISABLED&#34;] == self._eventcode:
+        return True
+    else:
+        return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.eventviewer.Event.is_restore_disabled"><code class="name">var <span class="ident">is_restore_disabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns True/False based on the event type</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L241-L247" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_restore_disabled(self):
+    &#34;&#34;&#34;Returns True/False based on the event type&#34;&#34;&#34;
+    if self._event_code_type_dict[&#34;RESTORE DISABLED&#34;] == self._eventcode:
+        return True
+    else:
+        return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.eventviewer.Event.job_id"><code class="name">var <span class="ident">job_id</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the job id as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L228-L231" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def job_id(self):
+    &#34;&#34;&#34;Treats the job id as a read-only attribute.&#34;&#34;&#34;
+    return self._job_id</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.eventviewer.Events"><code class="flex name class">
+<span>class <span class="ident">Events</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing Events associated with the commcell.</p>
+<p>Initialize object of the Events class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Events class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L67-L161" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Events(object):
+    &#34;&#34;&#34;Class for representing Events associated with the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the Events class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the Events class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._events = self.events()
+
+    def __str__(self):
+        &#34;&#34;&#34;Representation string consisting of all events of the commcell.
+
+            Returns:
+                str - string of all the events associated with the commcell
+        &#34;&#34;&#34;
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;EventId&#39;)
+
+        for index, event in enumerate(self._events):
+            sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, event)
+            representation_string += sub_str
+
+        return representation_string.strip()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;Events class instance&#39;
+        return representation_string
+
+    def events(self, query_params_dict={}):
+        &#34;&#34;&#34;Gets all the events associated with the commcell
+
+            Args:
+                query_params_dict (dict)  --  Query Params Dict
+                    Example:
+                        {
+                            &#34;jobId&#34;: 123,
+                        }
+            Returns:
+                dict - consists of all events in the commcell
+                    {
+                         &#34;event1_id&#34;: event1_code,
+                         &#34;event2_id&#34;: event2_code
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        events_request = self._commcell_object._services[&#39;GET_EVENTS&#39;]
+        if query_params_dict:
+            events_request = events_request + &#39;?&#39;
+            for query_param in query_params_dict.keys():
+                if events_request[-1] != &#39;?&#39;:
+                    events_request = events_request + &#39;&amp;&#39;
+                events_request = events_request + query_param + \
+                    &#39;=&#39; + query_params_dict[query_param]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, events_request)
+
+        if flag:
+            if response.json() and &#39;commservEvents&#39; in response.json():
+                events_dict = {}
+
+                for dictionary in response.json()[&#39;commservEvents&#39;]:
+                    event_id = dictionary[&#39;id&#39;]
+                    event_code = dictionary[&#39;eventCode&#39;]
+                    events_dict[event_id] = event_code
+
+                return events_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get(self, event_id):
+        &#34;&#34;&#34;Returns an event object
+
+            Args:
+                event_id (str)  --  Id of the Event
+
+            Returns:
+                object - instance of the Event class for the given Event Id
+        &#34;&#34;&#34;
+        return Event(self._commcell_object, event_id)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.eventviewer.Events.events"><code class="name flex">
+<span>def <span class="ident">events</span></span>(<span>self, query_params_dict={})</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets all the events associated with the commcell</p>
+<h2 id="args">Args</h2>
+<p>query_params_dict (dict)
+&ndash;
+Query Params Dict
+Example:
+{
+"jobId": 123,
+}</p>
+<h2 id="returns">Returns</h2>
+<p>dict - consists of all events in the commcell
+{
+"event1_id": event1_code,
+"event2_id": event2_code
+}</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L101-L150" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def events(self, query_params_dict={}):
+    &#34;&#34;&#34;Gets all the events associated with the commcell
+
+        Args:
+            query_params_dict (dict)  --  Query Params Dict
+                Example:
+                    {
+                        &#34;jobId&#34;: 123,
+                    }
+        Returns:
+            dict - consists of all events in the commcell
+                {
+                     &#34;event1_id&#34;: event1_code,
+                     &#34;event2_id&#34;: event2_code
+                }
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    events_request = self._commcell_object._services[&#39;GET_EVENTS&#39;]
+    if query_params_dict:
+        events_request = events_request + &#39;?&#39;
+        for query_param in query_params_dict.keys():
+            if events_request[-1] != &#39;?&#39;:
+                events_request = events_request + &#39;&amp;&#39;
+            events_request = events_request + query_param + \
+                &#39;=&#39; + query_params_dict[query_param]
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, events_request)
+
+    if flag:
+        if response.json() and &#39;commservEvents&#39; in response.json():
+            events_dict = {}
+
+            for dictionary in response.json()[&#39;commservEvents&#39;]:
+                event_id = dictionary[&#39;id&#39;]
+                event_code = dictionary[&#39;eventCode&#39;]
+                events_dict[event_id] = event_code
+
+            return events_dict
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(
+            response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.eventviewer.Events.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, event_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an event object</p>
+<h2 id="args">Args</h2>
+<p>event_id (str)
+&ndash;
+Id of the Event</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Event class for the given Event Id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/eventviewer.py#L152-L161" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, event_id):
+    &#34;&#34;&#34;Returns an event object
+
+        Args:
+            event_id (str)  --  Id of the Event
+
+        Returns:
+            object - instance of the Event class for the given Event Id
+    &#34;&#34;&#34;
+    return Event(self._commcell_object, event_id)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.eventviewer.Event" href="#cvpysdk.eventviewer.Event">Event</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.eventviewer.Event.event_code" href="#cvpysdk.eventviewer.Event.event_code">event_code</a></code></li>
+<li><code><a title="cvpysdk.eventviewer.Event.is_backup_disabled" href="#cvpysdk.eventviewer.Event.is_backup_disabled">is_backup_disabled</a></code></li>
+<li><code><a title="cvpysdk.eventviewer.Event.is_restore_disabled" href="#cvpysdk.eventviewer.Event.is_restore_disabled">is_restore_disabled</a></code></li>
+<li><code><a title="cvpysdk.eventviewer.Event.job_id" href="#cvpysdk.eventviewer.Event.job_id">job_id</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.eventviewer.Events" href="#cvpysdk.eventviewer.Events">Events</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.eventviewer.Events.events" href="#cvpysdk.eventviewer.Events.events">events</a></code></li>
+<li><code><a title="cvpysdk.eventviewer.Events.get" href="#cvpysdk.eventviewer.Events.get">get</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
