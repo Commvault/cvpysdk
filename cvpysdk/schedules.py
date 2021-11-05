@@ -996,9 +996,12 @@ class Schedules:
         from .backupset import Backupset
         from .subclient import Subclient
         from .instance import Instance
+        from .activateapps.inventory_manager import Inventory
+        from .activateapps.file_storage_optimization import FsoServer
 
         self.class_object = class_object
-
+        self._single_scheduled_entity = False
+        self._task_flags = {}
         self._repr_str = ""
 
         if isinstance(class_object, Commcell):
@@ -1018,6 +1021,21 @@ class Schedules:
                     class_object.commserv_name)
             else:
                 raise SDKException('Schedules', '103')
+        elif isinstance(class_object, FsoServer):
+            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
+                class_object.server_id)
+            self._repr_str = "Fso Server: {0}".format(class_object.server_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags['isEdiscovery'] = True
+
+        elif isinstance(class_object, Inventory):
+            self._SCHEDULES = class_object._commcell_object._services['INVENTORY_SCHEDULES'] % (
+                class_object.inventory_id)
+            self._repr_str = "Inventory: {0}".format(class_object.inventory_name)
+            self._commcell_object = class_object._commcell_object
+            # set below flag to denote inventory type entity will always have only one schedule associated to it
+            self._single_scheduled_entity = True
 
         elif isinstance(class_object, Client):
             self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
@@ -1122,6 +1140,7 @@ class Schedules:
                 for schedule in response.json()['taskDetail']:
                     task_id = schedule['task']['taskId']
                     description = ''
+                    task_flags = schedule['task']['taskFlags']
                     if 'subTasks' in schedule:
                         for subtask in schedule['subTasks']:
                             schedule_id = subtask['subTask']['subTaskId']
@@ -1139,7 +1158,8 @@ class Schedules:
                             subtask_dict[schedule_id] = {
                                 'task_id': task_id,
                                 'schedule_name': subtask_name,
-                                'description': description
+                                'description': description,
+                                'task_flags': task_flags
                             }
 
                 return subtask_dict
@@ -1177,6 +1197,26 @@ class Schedules:
             Returns:
             (int) schedule id of the schedule
         """
+
+        if self._single_scheduled_entity:
+            # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            # if flag set along with task flags, then find schedule with that flags set and return that from dict
+            for subtask_id, subtask_dict in self.schedules.items():
+                if len(self._task_flags) == 0:
+                    return subtask_id
+                else:
+                    task_flags = subtask_dict['task_flags']
+                    match = True
+                    for flag, value in self._task_flags.items():
+                        if flag in task_flags:
+                            if task_flags[flag] != value:
+                                match = False
+                        else:
+                            match = False
+                    if match:
+                        return subtask_id
+            return None
+
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
                 'Schedules',

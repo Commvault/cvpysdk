@@ -16,20 +16,29 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""File for operating on a Google Instance.
+"""
+    File for performing operations on a MS Dynamics 365 Instance.
 
 MSDynamics365Instance is the only class defined in this file.
 
-MSDynamics365Instance: Derived class from CloudAppsInstance Base class, representing a
-Dynamics 365 CRM instance,
+MSDynamics365Instance:
+    Class derived from CloudAppsInstance Base class and representing a
+        Dynamics 365 CRM instance,
 
 MSDynamics365Instance:
 
-    _get_instance_properties()  --  Instance class method overwritten to add cloud apps
-    instance properties as well
+    *****************                       Methods                      *****************
 
-    _get_instance_properties_json()      --  Returns the instance properties json
+    _get_instance_properties()          --      Instance class method overwritten to fetch cloud apps
+                                                    instance properties
 
+    _get_instance_properties_json()     --      Returns the instance properties json
+
+    discover_content()                  --      Discover content for the Dynamics 365 Instance
+
+    *****************                       Properties                      *****************
+
+    access_node                         --      Name of the access node that the instance is associated with
 """
 
 from __future__ import unicode_literals
@@ -52,19 +61,17 @@ class MSDynamics365Instance(CloudAppsInstance):
 
         """
         super(MSDynamics365Instance, self)._get_instance_properties()
-        # Common properties for Google and OneDrive
+        # Common properties for Cloud Apps
         self._ca_instance_type = None
         self._manage_content_automatically = None
         self._auto_discovery_enabled = None
         self._auto_discovery_mode = None
-        self._proxy_client = None
 
         # Dynamics 365 CRM instance related properties
         self._client_id = None
         self._tenant = None
-        self.__proxy_client = None
+        self._access_node = None
         self._index_server = None
-
 
         if 'cloudAppsInstance' in self._properties:
             cloud_apps_instance = self._properties['cloudAppsInstance']
@@ -90,8 +97,9 @@ class MSDynamics365Instance(CloudAppsInstance):
 
             if 'generalCloudProperties' in cloud_apps_instance:
                 general_cloud_properties = cloud_apps_instance['generalCloudProperties']
-                self._proxy_client = general_cloud_properties.get("memberServers",{})[0].get("client",{}).get("clientName",{})
-                self._index_server = general_cloud_properties.get("indexServer",{}).get("clientName","")
+                self._access_node = general_cloud_properties.get("memberServers", {})[0].get("client", {}).get(
+                    "clientName", None)
+                self._index_server = general_cloud_properties.get("indexServer", {}).get("clientName", None)
 
     def _get_instance_properties_json(self):
         """Returns the instance properties json."""
@@ -99,6 +107,47 @@ class MSDynamics365Instance(CloudAppsInstance):
         return {'instanceProperties': self._properties}
 
     @property
-    def proxy_client(self):
-        """Returns the proxy client name to this instance"""
-        return self._proxy_client
+    def access_node(self):
+        """Returns the name of the access node for this MS Dynamics 365 instance"""
+        return self._access_node
+
+    def discover_content(self, environment_discovery: bool = False):
+        """
+            Run Discovery for a MS Dynamics 365 Instance
+            Arguments:
+                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
+                    If True
+                        Discovery will run for Dynamics 365 environments
+                    If False
+                        Table level discovered content would be run
+            Returns:
+                discovered_content              (dict)--        Dictionary of the discovered content
+
+        """
+        discovery_type: int
+        if environment_discovery is False:
+            discovery_type = 8
+        else:
+            discovery_type = 5
+
+        url = self._services['GET_CLOUDAPPS_USERS'] % (
+            self.instance_id, self._agent_object._client_object.client_id, discovery_type)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
+
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+
+                if discover_content.get('error', {}).get('errorCode', 0) == -304283248:
+                    raise SDKException('Response', '101', discover_content)
+
+                if 'userAccounts' in response.json():
+                    _discover_content = discover_content['userAccounts']
+                    return _discover_content
+
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)

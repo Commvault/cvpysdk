@@ -329,7 +329,7 @@ class RecoveryTarget:
                     self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
                     # TODO: Encryption key support for SDK
                     self._encryption_key = None
-                    self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('networkName', None)
+                    self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('name', None)
                     self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
                     self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
                     

@@ -91,7 +91,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             disk_option='Original',
             transport_mode='Auto',
             proxy_client=None,
-            to_time=0):
+            to_time=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -126,6 +127,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 to_time                 (int)       -- End time to select the job for restore
                                                         default: None
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    media_agent         (basestring)   -- media agent
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -143,6 +149,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         """
 
         restore_option = {}
+        restore_option["media_agent"] = kwargs.get("media_agent", None)
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -155,9 +162,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option['copy_precedence_applicable'] = True
 
         if proxy_client is not None:
-            restore_option['client'] = proxy_client
+            restore_option['client_name'] = proxy_client
 
-        if vm_to_restore:
+        if vm_to_restore and not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
         restore_option_copy = restore_option.copy()
 
@@ -193,7 +200,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             transport_mode='Auto',
             proxy_client=None,
             to_time=0,
-            **kwargs,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -257,6 +264,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                                 destination_gateway  (basestring)    --  gateway of the restored vm
 
+                                media_agent         (basestring)   --  media agent for restore
+
                                 restore_option      (dict)     --  complete dictionary with all advanced options
                                     default: {}
 
@@ -278,7 +287,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
-                         'destination_gateway', 'folder_path']
+                         'destination_gateway', 'folder_path', 'media_agent']
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -302,7 +311,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
-        if vm_to_restore:
+        if vm_to_restore and not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
 
         restore_option_copy = restore_option.copy()

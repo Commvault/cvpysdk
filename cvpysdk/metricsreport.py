@@ -80,7 +80,8 @@ Metrics:
     get_possible_uploaded_filenames-- gives the possible names for the uploaded files
 
     refresh()                      -- refresh the properties and config of the Metrics Server
-
+    get_uploaded_filename()        -- Gets last uploaded file name
+    get_uploaded_zip_filename()    -- Gets last uploaded zip file name
 PrivateMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
@@ -446,18 +447,22 @@ class _Metrics(object):
             commcellid = hex(ccid).split('x')[1].upper()
         return commcellid
 
-    def get_uploaded_filename(self, query_id=None):
+    def get_uploaded_filename(self, query_id=None, last_collection_time=None):
         """
         Gets last uploaded file name
 
         Args:
             query_id (int): optional argument to get file name specific to a query
+            last_collection_time (int): optional argument to get file name for specified last collection time
 
-        Returns : Last uploaded file name
+        Returns: Last uploaded file name
         """
 
         commcellid = self._get_commcell_id()
-        cs_lastcollectiontime = int(self.lastcollectiontime)
+        if last_collection_time is None:
+            cs_lastcollectiontime = int(self.lastcollectiontime)
+        else:
+            cs_lastcollectiontime = last_collection_time
         if cs_lastcollectiontime == 0:
             raise Exception("last collection time is 0, Upload didn't complete or failed")
         if query_id is None:
@@ -467,6 +472,20 @@ class _Metrics(object):
                 commcellid) + "_" + str(query_id) + ".xml"
         return file_name
 
+    def get_uploaded_zip_filename(self, commserv_guid, backupjob_id):
+        """
+        Gets last uploaded zip file name
+        Args:
+            query_id (int): optional argument to get file name specific to a query
+        Returns : Last uploaded file name
+        """
+        commcellid = self._get_commcell_id()
+        cs_lastcollectiontime = int(self.lastcollectiontime)
+        if cs_lastcollectiontime == 0:
+            raise Exception("last collection time is 0, Upload didn't complete or failed")
+        file_name = "CSS" + "" + str(cs_lastcollectiontime) + "_" + str(commcellid)\
+                    + "_" + str(commserv_guid) + "_" + str(backupjob_id) + ".zip"
+        return file_name
 
 class PrivateMetrics(_Metrics):
     """Class for operations in private Metrics reporting"""

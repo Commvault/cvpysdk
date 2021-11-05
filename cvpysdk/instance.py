@@ -103,6 +103,8 @@ Instance:
 
     _restore_fileoption_json()      --  setter for file option property in restore
 
+    _restore_virtual_rst_option_json --  setter for the virtualServer restore option in restore JSON
+
     _restore_destination_json()     --  setter for destination property in restore
 
     _restore_volume_rst_option_json()  --  setter for the volumeRst restore option in restore JSON
@@ -184,47 +186,6 @@ class Instances(object):
         self._instances = None
         self._vs_instance_type_dict = {}
         self.refresh()
-
-        from .instances.vsinstance import VirtualServerInstance
-        from .instances.cainstance import CloudAppsInstance
-        from .instances.bigdataappsinstance import BigDataAppsInstance
-        from .instances.sqlinstance import SQLServerInstance
-        from .instances.hanainstance import SAPHANAInstance
-        from .instances.oracleinstance import OracleInstance
-        from .instances.sybaseinstance import SybaseInstance
-        from .instances.saporacleinstance import SAPOracleInstance
-        from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lotusnotes.lndbinstance import LNDBInstance
-        from .instances.lotusnotes.lndocinstance import LNDOCInstance
-        from .instances.lotusnotes.lndminstance import LNDMInstance
-        from .instances.postgresinstance import PostgreSQLInstance
-        from .instances.informixinstance import InformixInstance
-        from .instances.vminstance import VMInstance
-        from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance
-        from .instances.sharepointinstance import SharepointInstance
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._instances_dict = {
-            'virtual server': [VirtualServerInstance, VMInstance],
-            'big data apps': BigDataAppsInstance,
-            'cloud apps': CloudAppsInstance,
-            'sql server': SQLServerInstance,
-            'sap hana': SAPHANAInstance,
-            'oracle': OracleInstance,
-            'sybase': SybaseInstance,
-            'sap for oracle': SAPOracleInstance,
-            'mysql': MYSQLInstance,
-            'notes database': LNDBInstance,
-            'notes document': LNDOCInstance,
-            'domino mailbox archiver': LNDMInstance,
-            'postgresql': PostgreSQLInstance,
-            'informix': InformixInstance,
-            'db2': DB2Instance,
-            'azure ad': AzureAdInstance,
-            'sharepoint server': SharepointInstance
-        }
 
     def __str__(self):
         """Representation string consisting of all instances of the agent of a client.
@@ -337,7 +298,7 @@ class Instances(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -390,24 +351,8 @@ class Instances(object):
         if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_instance(instance_name):
-                if agent_name in self._instances_dict:
-                    if isinstance(self._instances_dict[agent_name], list):
-                        if instance_name == "vminstance":
-                            instance = self._instances_dict[agent_name][-1]
-                        else:
-                            instance = self._instances_dict[agent_name][0]
-                    else:
-                        instance = self._instances_dict[agent_name]
-                    return instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
-                else:
-                    return Instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
@@ -477,14 +422,14 @@ class Instances(object):
                 Dictionary of informix instance creation options:
                     Example:
                        informix_options = {
-                            'instance_name': '',
-                            'onconfig_file': '',
-                            'sql_host_file': '',
-                            'informix_dir': '',
-                            'user_name':'',
-                            'domain_name':'',
-                            'password':'',
-                            'storage_policy':'',
+                            'instance_name': "",
+                            'onconfig_file': "",
+                            'sql_host_file': "",
+                            'informix_dir': "",
+                            'user_name': "",
+                            'domain_name': "",
+                            'password': "",
+                            'storage_policy': "",
                             'description':'created from automation'
                         }
 
@@ -667,15 +612,15 @@ class Instances(object):
                             'sybase_ocs': '',
                             'sybase_ase': '',
                             'backup_server': '',
-                            'sybase_home':'',
-                            'config_file':'',
-                            'enable_auto_discovery':True,
-                            'shared_memory_directory':'',
-                            'storage_policy':'',
-                            'sa_username':'',
-                            'sa_password':'',
-                            'localadmin_username':'',
-                            'localadmin_password':''
+                            'sybase_home': '',
+                            'config_file': '',
+                            'enable_auto_discovery': True,
+                            'shared_memory_directory': '',
+                            'storage_policy': '',
+                            'sa_username': '',
+                            'sa_password': '',
+                            'localadmin_username': '',
+                            'localadmin_password': ''
                         }
             Raises:
                 SDKException:
@@ -1719,6 +1664,62 @@ class Instances(object):
 class Instance(object):
     """Class for performing instance operations for a specific instance."""
 
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
+        from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
+        from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
+        from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _instances_dict = {
+            'virtual server': [VirtualServerInstance, VMInstance],
+            'big data apps': BigDataAppsInstance,
+            'cloud apps': CloudAppsInstance,
+            'sql server': SQLServerInstance,
+            'sap hana': SAPHANAInstance,
+            'oracle': OracleInstance,
+            'oracle rac': OracleInstance,
+            'sybase': SybaseInstance,
+            'sap for oracle': SAPOracleInstance,
+            'mysql': MYSQLInstance,
+            'notes database': LNDBInstance,
+            'notes document': LNDOCInstance,
+            'domino mailbox archiver': LNDMInstance,
+            'postgresql': PostgreSQLInstance,
+            'informix': InformixInstance,
+            'db2': DB2Instance,
+            'azure ad': AzureAdInstance,
+            'sharepoint server': SharepointInstance
+        }
+        agent_name = agent_object.agent_name
+
+        if agent_name in _instances_dict:
+            if isinstance(_instances_dict[agent_name], list):
+                if instance_name == "vminstance":
+                    _class = _instances_dict[agent_name][-1]
+                else:
+                    _class = _instances_dict[agent_name][0]
+            else:
+                _class = _instances_dict[agent_name]
+            return _class.__new__(_class, agent_object, instance_name, instance_id)
+        else:
+            return object.__new__(cls)
+
     def __init__(self, agent_object, instance_name, instance_id=None):
         """Initialise the instance object.
 
@@ -1814,25 +1815,17 @@ class Instance(object):
         )
         flag, response = self._cvpysdk_object.make_request('GET', instance_service)
 
+        if not flag:
+            instance_service = (
+                "{0}&applicationId={1}".format(self._ALLINSTANCES, self._agent_object.agent_id))
+            flag, response = self._cvpysdk_object.make_request('GET', instance_service)
+
         if flag:
             if response.json() and "instanceProperties" in response.json():
                 self._properties = response.json()["instanceProperties"][0]
-                try:
-                    self._instance = self._properties["instance"]
-                    self._instance_name = self._properties["instance"]["instanceName"].lower()
-                    self._instanceActivityControl = self._properties["instanceActivityControl"]
-                except KeyError:
-                    instance_service = (
-                        "{0}&applicationId={1}".format(self._ALLINSTANCES, self._agent_object.agent_id))
-                    flag, response = self._cvpysdk_object.make_request('GET', instance_service)
-                    if flag:
-                        if response.json() and "instanceProperties" in response.json():
-                            self._properties = response.json()["instanceProperties"][0]
-                            self._instance = self._properties["instance"]
-                            self._instance_name = self._properties["instance"]["instanceName"].lower()
-                            self._instanceActivityControl = self._properties["instanceActivityControl"]
-                    else:
-                        raise SDKException('Response', '102')
+                self._instance = self._properties["instance"]
+                self._instance_name = self._properties["instance"]["instanceName"].lower()
+                self._instanceActivityControl = self._properties["instanceActivityControl"]
             else:
                 raise SDKException('Response', '102')
         else:
@@ -2061,6 +2054,11 @@ class Instance(object):
             restore_option['liveBrowse'] = True
         else:
             restore_option['liveBrowse'] = False
+        
+        if restore_option.get('file_browse'):
+            restore_option['fileBrowse'] = True
+        else:
+            restore_option['fileBrowse'] = False
 
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
@@ -2101,6 +2099,7 @@ class Instance(object):
         self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._restore_virtual_rst_option_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
         self._restore_common_opts_json(restore_option)
@@ -2122,6 +2121,7 @@ class Instance(object):
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
                             "fileOption": self._fileoption_restore_json,
+                            "virtualServerRstOption": self._virtualserver_restore_json,
                             "sharePointRstOption": self._restore_sharepoint_json,
                             "volumeRstOption": self._volume_restore_json
                         },
@@ -2894,6 +2894,11 @@ class Instance(object):
                     "cleanupScriptPath": value.get("instant_clone_options").get("clone_cleanup_script")
                 }
 
+    def _restore_virtual_rst_option_json(self, value):
+        """setter for the virtualServer restore option in restore JSON"""
+        self._virtualserver_restore_json = {
+            "isFileBrowse": value.get("fileBrowse")
+        }
 
     def _restore_volume_rst_option_json(self, value):
         """setter for the volumeRst restore option in restore JSON"""

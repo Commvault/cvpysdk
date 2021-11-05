@@ -104,6 +104,8 @@ User
 
     age_password_days()                 --  returns age password days for user
 
+    user_company_name()                 -- returns company name if user is a company user else returns empty str
+
 """
 
 from base64 import b64encode
@@ -829,8 +831,7 @@ class User(object):
         """
         returns user associated company name
         """
-
-        return self._properties.get('userEntity', {}).get('entityInfo', {}).get('companyName')
+        return self._properties.get('userEntity', {}).get('entityInfo', {}).get('companyName', "").lower()
 
     @age_password_days.setter
     def age_password_days(self, days):

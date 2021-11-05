@@ -128,14 +128,6 @@ class Agents(object):
         self._agents = None
         self.refresh()
 
-        from .agents.exchange_database_agent import ExchangeDatabaseAgent
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._agents_dict = {
-            'exchange database': ExchangeDatabaseAgent
-        }
-
     def __str__(self):
         """Representation string consisting of all agents of the client.
 
@@ -278,12 +270,7 @@ class Agents(object):
             agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
-                updated_agent_name = agent_name
-                if "file system" in agent_name:
-                    updated_agent_name = "file system"
-                return self._agents_dict.get(agent_name, Agent)(
-                    self._client_object, updated_agent_name, self._agents[agent_name]
-                )
+                return Agent(self._client_object, agent_name, self._agents[agent_name])
 
             raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))
 
@@ -415,6 +402,20 @@ class Agents(object):
 
 class Agent(object):
     """Class for performing agent operations of an agent for a specific client."""
+    def __new__(cls, client_object, agent_name, agent_id=None):
+        from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _agents_dict = {
+            'exchange database': ExchangeDatabaseAgent
+        }
+        if 'file system' in agent_name:
+            agent_name = 'file system'
+        if agent_name in _agents_dict:
+            _class = _agents_dict.get(agent_name, cls)
+            return _class.__new__(_class, client_object, agent_name, agent_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, client_object, agent_name, agent_id=None):
         """Initialize the instance of the Agent class.

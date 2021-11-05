@@ -393,7 +393,7 @@ class FSBackupset(Backupset):
                                             {
                                                 "isClientInDomain": True, "DomainCreds":
                                                 {
-                                                    "password": "", "domainName": "",
+                                                    "password": "", "domainName": "#####",
                                                     "confirmPassword": "",
                                                     "userName": ""
                                                 }

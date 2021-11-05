@@ -41,7 +41,7 @@ RemoteCache
     __init__(commcell, client_object)     --  initialize commcell and client_object of RemoteCache class
     associated with the client
 
-    get_remote_cache_path()               --  returns remote cache path
+    get_remote_cache_path()               --  returns remote cache path, if exists, else None
 
     configure_remote_cache()              --  Configures client as remote cache
 
@@ -194,10 +194,11 @@ class RemoteCache(object):
 
     def get_remote_cache_path(self):
         """
-        Returns remote cache path
+        Returns remote cache path, if exists, else None
 
         Returns:
-            remote_cache_path (str) - remote cache path of the client
+            remote_cache_path (str) - remote cache path of the client if exists
+            None                    - otherwise
 
         Raises:
             SDKException:
@@ -212,9 +213,8 @@ class RemoteCache(object):
             try:
                 for clients in response["uaInfo"]:
                     if clients['client']['clientName'] == self.client_object.client_name:
-                        remote_cache_path = clients["uaCachePath"]
-                        break
-                return remote_cache_path
+                        return clients["uaCachePath"]
+                return None
             except Exception:
                 raise SDKException('Response', '101')
         else:

@@ -93,7 +93,8 @@ EXCEPTION_DICT = {
         '103': 'Failed to get the CommServ details',
         '104': 'Failed to send an email to specified user',
         '105': 'Failed to run the Data Aging job',
-        '106': 'Failed to get the SAML token'
+        '106': 'Failed to get the SAML token',
+        '107': 'Data type of the input(s) is not valid'
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -241,7 +242,8 @@ EXCEPTION_DICT = {
         '103': 'Failed to get entity regex details from commcell',
         '104': 'Unable to create regex entity in the commcell',
         '105': 'Unable to delete regex entity in the commcell',
-        '106': 'Unable to modify regex entity in the commcell'
+        '106': 'Unable to modify regex entity in the commcell',
+        '107': 'Failed to get entity container details from commcell'
     },
     'Classifier': {
         '101': 'Data type of the input(s) is not valid',
@@ -273,7 +275,53 @@ EXCEPTION_DICT = {
     },
     'Plan': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Content Analyzer input is missing',
+        '104': 'Please provide either entity list or classifier list in input',
+        '105': 'Failed to share plan with user or group'
+    },
+    'Inventory': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to fetch inventories details from commcell',
+        '104': 'Failed to fetch inventory properties from commcell',
+        '105': 'Failed to create an Inventory',
+        '106': 'Unable to find inventory in commcell',
+        '107': 'Failed to Delete an Inventory',
+        '108': 'Failed to add asset to Inventory',
+        '109': 'Unable to find asset in the Inventory',
+        '110': 'Failed to delete asset from Inventory',
+        '111': 'Failed to share Inventory'
+
+
+    },
+    'EdiscoveryClients': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to start crawl job',
+        '104': 'Failed to get job history',
+        '105': 'Failed to get job status',
+        '106': 'Failed to get Ediscovery clients',
+        '107': 'Unable to get display names for associated data sources in this client',
+        '108': 'Data source doesnt exists on this client',
+        '109': 'Failed to share ediscovery client with user/group',
+        '110': 'Failed to fetch data source properties',
+        '111': 'Failed to delete data source',
+        '112': 'Failed to perform search',
+        '113': 'Failed to perform export',
+        '114': 'Failed to perform export status check',
+        '115': 'Failed to create data source',
+        '116': 'Failed to perform review actions on documents'
+    },
+    'FileStorageOptimization': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to find given Server name in FSO',
+        '104': 'Failed to find data source in FSO Server',
+        '105': 'Failed to start collection job at server level',
+        '106': "Failed to find server group name in FSO",
+        '107': 'Failed to start collection job at server group level',
+
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
@@ -342,7 +390,8 @@ EXCEPTION_DICT = {
         '111': ('Plan is not associated with the organization. '
                 'Add plan to the Organization, and then set it as the default'),
         '112': 'Failed to activate organization',
-        '113': 'Failed to deactivate organization'
+        '113': 'Failed to deactivate organization',
+        '114': 'Input is not provided in expected manner'
     },
     'StoragePool': {
         '101': 'Data type of the input(s) is not valid',
@@ -353,7 +402,15 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
     },
-
+    'BLRPairs': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'BLR Pair not found',
+        '103': 'RPStore not found'
+    },
+    'ReplicationGroup': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
     'FailoverGroup': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
@@ -463,6 +520,12 @@ EXCEPTION_DICT = {
     'Metallic': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'KeyManagementServer': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': 'Key Management Server not found',
+        '103': 'Key Management Server type is not valid',
+        '104': 'Key Management Server type not found',
     }
 }
 
@@ -484,6 +547,8 @@ class SDKException(Exception):
                 object  -   instance of the SDKException class of type Exception
 
         """
+        exception_id = str(exception_id)
+
         self.exception_module = exception_module
         self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]

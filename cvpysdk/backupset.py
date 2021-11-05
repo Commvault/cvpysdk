@@ -113,6 +113,8 @@ Backupset:
 
     find()                          -- find content in the backupset
 
+    list_media()                    -- List media required to browse and restore backed up data from the backupset
+
     refresh()                       -- refresh the properties of the backupset
 
     delete_data()                   -- deletes items from the backupset and makes then unavailable
@@ -348,7 +350,7 @@ class Backupsets(object):
 
                 return return_dict
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -1405,6 +1407,7 @@ class Backupset(object):
             'browse': 0,
             'find': 1,
             'all_versions': 2,
+            'list_media': 3,
             'delete_data': 7
         }
 
@@ -1418,7 +1421,7 @@ class Backupset(object):
         browse_mode = {
             'virtual server': 4,
             'cloud apps': 3,
-            'azure ad' : 3						  
+            'azure ad': 3
         }
 
         mode = 2
@@ -1528,6 +1531,9 @@ class Backupset(object):
             request_json['options']['vsVolumeBrowse'] = True
             request_json['advOptions']['browseViewName'] = options['browse_view_name']
 
+        if options['operation'] == 'list_media':
+            request_json['options']['doPrediction'] = True
+
         if options['_custom_queries']:
             request_json['queries'] = options['_custom_queries']
 
@@ -1630,6 +1636,9 @@ class Backupset(object):
             ),
             "delete_data": (
                 '113', 'Failed to perform delete data operation for given content\nError: "{0}"'
+            ),
+            "list_media": (
+                '113', 'Failed to perform list media operation for given content\nError: "{0}"'
             )
         }
 
@@ -1721,7 +1730,6 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-
     def _do_browse(self, options=None, retry=10):
         """Performs a browse operation with the given options.
 
@@ -1752,9 +1760,6 @@ class Backupset(object):
                 break
             attempt += 1
         return self._process_browse_response(flag, response, options)
-    
-    
-
 
     def update_properties(self, properties_dict):
         """Updates the backupset properties
@@ -1994,7 +1999,6 @@ class Backupset(object):
                 'Plan not eligible to be associated with the backupset'
             )
 
-
     def set_default_backupset(self):
         """Sets the backupset represented by this Backupset class instance as the default backupset
             if it is not the default backupset.
@@ -2053,8 +2057,6 @@ class Backupset(object):
 
         return return_list
 
-
-
     def browse(self, *args, **kwargs):
         """Browses the content of the Backupset.
 
@@ -2063,7 +2065,7 @@ class Backupset(object):
                     Example:
 
                         browse({
-                            'path': 'c:\\\\hello',
+                            'path': 'c:\\hello',
 
                             'show_deleted': True,
 
@@ -2238,6 +2240,69 @@ class Backupset(object):
         # Delete operation does not return any result, hence consider the operation successful
         if files:
             raise SDKException('Backupset', '102', 'Delete data operation gave unexpected results')
+
+    def list_media(self, *args, **kwargs):
+        """List media required to browse and restore backed up data from the backupset
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2020-04-20 12:00:00',
+                            'to_time': '2021-04-19 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2020-04-20 12:00:00',
+                            to_time='2021-04-19 12:00:00'
+                        )
+
+            Note:
+                Refer `_default_browse_options` for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        """
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['operation'] = 'list_media'
+        options['_raw_response'] = True
+
+        _, response = self._do_browse(options)
+
+        if response and 'browseResponses' in response:
+            responses = response['browseResponses']
+            list_media_response = responses[0]
+
+            prediction_data = list_media_response.get('predictionData', [])
+            browse_result = list_media_response.get('browseResult', {})
+
+            return prediction_data, browse_result
+        else:
+            raise SDKException('Backupset', '102', 'List media operation gave unexpected results')
 
     def refresh(self):
         """Refresh the properties of the Backupset."""

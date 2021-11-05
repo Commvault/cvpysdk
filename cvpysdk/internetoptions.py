@@ -40,6 +40,7 @@ set_http_authentication(username, pwd)
 disable_http_authentication()   --Removes HTTP authentication
 
 refresh()                       --  refresh the internet options
+set_gateway_for_sendlogs    --- sets internet gateway for sendlog files
 
 """
 from __future__ import absolute_import
@@ -121,6 +122,24 @@ class InternetOptions(object):
             self._config['useInternetGatewayPrivate'] = True
         else:
             self._config['useInternetGatewayPrivate'] = False
+        self._save_config()
+
+    def set_gateway_for_sendlogs(self,
+                                 client_name
+                                 ):
+        """
+        set internet gateway with the client name provided for sendlogs.
+        Args:
+            client_name     (str): client to be used as internet gateway
+        Raises:
+            SDKException:
+                if client doesnt exist in CommServe
+        """
+        clientid = int(self._commcell_object.clients.get(client_name).client_id)
+        self._config['proxyType'] = 2
+        self._config['proxyClient']['clientId'] = clientid
+        self._config['proxyClient']['clientName'] = client_name
+        self._config['useInternetGatewaySendLogFile'] = True
         self._save_config()
 
     def set_metrics_internet_gateway(self):

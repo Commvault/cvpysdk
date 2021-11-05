@@ -143,6 +143,8 @@ StoragePolicyCopy:
     __repr__()                              --  returns a string representation of the
                                                 StoragePolicy instance
 
+    copy_name()                         --  Gets the name of the storage policy copy
+
     get_copy_id()		                    --	Gets the storage policy id asscoiated with the storage policy
 
     get_copy_Precedence()                   --  Gets the copy precendence associated with the storage policy copy
@@ -167,7 +169,25 @@ StoragePolicyCopy:
 
     delete_job()                            --  delete a job from storage policy copy node
 
-    recopy_jobs()                           --  recopies a job on a secondary copy
+    _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
+
+    pick_for_copy()                         --  marks job(s) to be Picked for Copy to a secondary copy
+
+    recopy_jobs()                           --  marks job(s) to be picked for ReCopying to a secondary copy
+
+    do_not_copy_jobs()                      --  marks job(s) as Do Not Copy to a secondary copy
+
+    pick_jobs_for_data_verification()       --  marks job(s) on a copy to be Picked for Data Verification
+
+    do_not_verify_data()                    --  marks job(s) on a copy to not be Picked for Data Verification
+
+    mark_jobs_bad()                         --  marks job(s) on a copy as Bad
+
+    is_dedupe_enabled()                     --  checks whether deduplication is enabled for the copy
+
+    set_encryption_properties()                   --  configures copy encryption settings as per user input
+
+    set_key_management_server()             --  sets the Key Management Server to this copy
 
 Attributes
 ----------
@@ -175,6 +195,14 @@ Attributes
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
+
+	**source_copy**                             --  Returns the source copy associated with the copy
+
+    **source_copy.setter**                      --  Sets the source copy for the copy
+
+    **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
+
+    ***is_active***                             --  Returns/Sets the 'Active' Property of the Copy
 """
 
 from __future__ import absolute_import
@@ -3168,6 +3196,29 @@ class StoragePolicyCopy(object):
         """Gets the copyprecendence asscoiated with the storage policy copy"""
         return self.all_copies["copyPrecedence"]
 
+    @property
+    def is_active(self):
+        """Gets whether the Storage Policy Copy is active or not"""
+        return bool(self._copy_properties.get('active'))
+
+    @is_active.setter
+    def is_active(self, active):
+        """Marks the Storage Policy Copy as active/inactive (True/False)
+            Args:
+                active    (bool):    mark the Storage Policy Copy as active/inactive (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update the property
+
+                    if the type of 'active' input is not correct
+        """
+        if not isinstance(active, bool):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties['active'] = int(active)
+        self._set_copy_properties()
+
     def refresh(self):
         """Refresh the properties of the StoragePolicy."""
         self._get_copy_properties()
@@ -3385,6 +3436,31 @@ class StoragePolicyCopy(object):
         self._set_copy_properties()
 
     @property
+    def store_priming(self):
+        """Treats the copy store priming setting as a read-only attribute."""
+        return self._dedupe_flags.get('useDDBPrimingOption', 0) > 0
+
+    @store_priming.setter
+    def store_priming(self, value):
+        """Sets the copy store priming setting as the value provided as input.
+            Args:
+                value    (bool) --  store priming flag to be set on a copy (True/False)
+
+            Raises:
+                SDKException:
+                    if failed to update deduplication values on copy
+
+                    if the type of value input is not correct
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Storage', '101')
+
+        self._dedupe_flags['useDDBPrimingOption'] = int(value)
+
+        self._set_copy_properties()
+
+    @property
     def copy_client_side_dedup(self):
         """Treats the copy deduplication setting as a read-only attribute."""
         return 'enableClientSideDedup' in self._dedupe_flags
@@ -3406,6 +3482,146 @@ class StoragePolicyCopy(object):
             raise SDKException('Storage', '101')
 
         self._dedupe_flags['enableClientSideDedup'] = int(value)
+
+        self._set_copy_properties()
+
+    def is_dedupe_enabled(self):
+        """
+        checks whether deduplication is enabled on the give storage policy copy
+        returns Boolean
+        """
+        return bool(self._dedupe_flags.get('enableDeduplication', 0))
+
+    @property
+    def source_copy(self):
+        """Treats the copy deduplication setting as a read-only attribute."""
+        return self._copy_properties.get('sourceCopy', {}).get('copyName')
+
+    @source_copy.setter
+    def source_copy(self, copy_name):
+        """Sets the source copy as provided in the input.
+
+                    Args:
+                    copy_name            (str)       name of the source copy
+
+                    Raises:
+                        SDKException:
+                            if failed to update source on copy
+
+                            if the type of input is not correct
+
+        **************************************************************************************
+        eg :-
+                tertiary_copy.source_copy = "secondary_copy"
+
+        """
+        policy = self._commcell_object.storage_policies.get(self._storage_policy_name)
+        copy = policy.get_copy(copy_name)
+
+        if not isinstance(copy_name, str):
+            raise SDKException('Storage', '101')
+
+        if not self._copy_properties.get('sourceCopy', False):
+            self._copy_properties['sourceCopy'] = {}
+
+        self._copy_properties['sourceCopy']['copyId'] = copy.get_copy_id()
+        self._copy_properties['sourceCopy']['copyName'] = copy.copy_name
+
+        self._set_copy_properties()
+
+    def set_encryption_properties(self, **props):
+        """sets copy encryption properties based on given inputs
+
+            Args:
+
+                **props         dict of keyword arguments as follows:
+
+                    preserve            (Bool)      whether to set preserve source encryption or not    default:False
+
+                    plain_text          (Bool)      whether to store as plaintext or not                default:False
+
+                    network_encryption       (Bool)      whether to set network encryption or not       default:False
+
+                    re_encryption          (Bool)      whether to set re-encryption or not              default:False
+
+                    encryption_type            (str)       encryption type specification             default:"BlowFish"
+
+                    encryption_length          (int)       encryption key length specification          default:128
+
+            Returns:
+                  SDKException:
+                            if failed to set copy encryption
+                            if the type of inputs are not correct
+
+            ***********************************************************************************************************
+
+            to preserve encryption --> set_encryption_properties(preserve=True)
+
+            to store as plaintext --> set_encryption_properties(plaintext=True)
+
+            to set network encryption --> set_encryption_properties(plaintext=True, network_encryption=True,
+                                                                    encryption_type="BlowFish", encryption_length=128)
+
+            to set re-encryption --> set_encryption_properties(re_encryption=True,
+                                                               encryption_type="BlowFish", encryption_length=128)
+
+            ***********************************************************************************************************
+
+            <Encryption_type>   <Encryption_length>
+
+            "Blowfish"                  128
+            "Blowfish"                  256
+            "TwoFish"                   128
+            "TwoFish"                   256
+            "Serpent"                   128
+            "Serpent"                   256
+            "GOST"                      256
+            "AES"                       128
+            "AES"                       256
+            "DES3"                      192
+        """
+        preserve = props.get('preserve', False)
+        plain_text = props.get('plain_text', False)
+        network_encryption = props.get('network_encryption', False)
+        re_encryption = props.get('re_encryption', False)
+        encryption_type = props.get('encryption_type', 'BlowFish')
+        encryption_length = props.get('encryption_length', 128)
+
+        if not isinstance(preserve, bool) or \
+                not isinstance(plain_text, bool) or \
+                not isinstance(network_encryption, bool) or \
+                not isinstance(re_encryption, bool) or \
+                not isinstance(encryption_type, str) or \
+                not isinstance(encryption_length, int):
+            raise SDKException('Storage', '101')
+
+        self._copy_flags['preserveEncryptionModeAsInSource'] = int(preserve)
+        self._copy_flags['auxCopyReencryptData'] = int(re_encryption)
+        self._copy_flags['storePlainText'] = int(plain_text)
+        self._copy_flags['encryptOnNetworkUsingSelectedCipher'] = int(network_encryption)
+
+        self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 0
+
+        if plain_text and not network_encryption:
+
+            self._copy_properties['dataEncryption'] = {}
+
+        else:
+
+            if "dataEncryption" not in self._copy_properties:
+                self._copy_properties["dataEncryption"] = {
+                    "encryptData": 0
+                }
+                self._data_encryption = self._copy_properties["dataEncryption"]
+
+        if re_encryption or network_encryption:
+
+            self._data_encryption['encryptData'] = 1
+            self._data_encryption['encryptionType'] = encryption_type
+            self._data_encryption['encryptionKeyLength'] = encryption_length
+
+            if re_encryption:
+                self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
 
         self._set_copy_properties()
 
@@ -3440,10 +3656,10 @@ class StoragePolicyCopy(object):
 
                     e.g. :
                         to enable encryption:
-                            storage_policy_copy.copy_encryption = (True, "TWOFISH", "128", False)
+                            storage_policy_copy.copy_reencryption = (True, "TWOFISH", "128", False)
 
                         to disable encryption:
-                            storage_policy_copy.copy_encryption = (False, "",0, False)
+                            storage_policy_copy.copy_reencryption = (False, "",0, False)
 
             Raises:
                 SDKException:
@@ -3473,6 +3689,7 @@ class StoragePolicyCopy(object):
         if int(encryption_values[0]) == 1:
             if (isinstance(encryption_values[1], basestring)
                     and isinstance(encryption_values[2], int)):
+                self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
                 self._copy_flags['auxCopyReencryptData'] = 1
                 self._copy_flags['preserveEncryptionModeAsInSource'] = 0
                 self._data_encryption['encryptData'] = 1
@@ -3514,30 +3731,98 @@ class StoragePolicyCopy(object):
 
         self._commcell_object._qoperation_execute(request_xml)
 
-    def recopy_jobs(self, job_id):
-        """ recopies a job on a secondary copy
+    def _mark_jobs_on_copy(self, job_id, operation):
+        """Marks job(s) for given operation on a secondary copy
 
-            Args:
-                job_id      (str)   -- Job Id that needs to be deleted
-
-            Raises:
-                SDKException:
-                    if type of input parameters is not string
-
+        Args:
+            job_id      (int or str or list): Job Id(s) that needs to be marked
+            operation   (str):  Operation that the job(s) needs to be marked for.
+                                Operations Supported: (allowcopy/recopy/donotcopy/
+                                markJobsBad/pickForVerification/donotPickForVerification)
+        Raises:
+            SDKException:
+                if type of input parameters is not string or List of strings
         """
-        if not isinstance(job_id, basestring):
-            raise SDKException('Storage', '101')
+        if not isinstance(job_id, basestring) and not isinstance(job_id, int):
+            if not isinstance(job_id, list) or\
+                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, basestring) for id in job_id)):
+                raise SDKException('Storage', '101')
 
-        qcommand = """ -sn MarkJobsOnCopy -si {0} -si {1} -si recopy -si {2}""".format(
-            self._storage_policy_name, self._copy_name, job_id)
-        url = self._services['EXECUTE_QSCRIPT'] % (qcommand)
-        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", url)
-        if flag:
-            if response.ok is not True:
-                raise SDKException('Response', '101',
-                                   self._commcell_object._update_response_(response.text))
+        # send multiple requests to counter limit of URL length in IIS
+        job_strings = []
+        if isinstance(job_id, list):
+            string = ''
+            for id in job_id:
+                string += f',{id}'
+                if len(string) > 200:
+                    job_strings.append(string.strip(','))
+                    string = ''
+            if string:
+                job_strings.append(string.strip(','))
+        else:
+            job_strings.append(job_id)
+
+        for string in job_strings:
+            qcommand = f' -sn MarkJobsOnCopy -si {self._storage_policy_name} -si {self._copy_name} -si {operation} -si {string}'
+            url = self._services['EXECUTE_QSCRIPT'] % (qcommand)
+            flag, response = self._commcell_object._cvpysdk_object.make_request("POST", url)
+            if flag:
+                if response.text:
+                    if 'jobs do not belong' in response.text.lower():
+                        raise SDKException('Storage', '102', response.text.strip())
+                else:
+                    raise SDKException('Response', '102')
             else:
-                return True
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+    def pick_for_copy(self, job_id):
+        """Marks job(s) to be Picked for Copy to a secondary copy
+
+        Args:
+            job_id      (int or str or list): Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'allowcopy')
+
+    def recopy_jobs(self, job_id):
+        """Marks job(s) to be picked for ReCopying to a secondary copy
+
+        Args:
+            job_id      (int or str or list): Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'recopy')
+
+    def do_not_copy_jobs(self, job_id):
+        """Marks job(s) as Do Not Copy to a secondary copy
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'donotcopy')
+
+    def pick_jobs_for_data_verification(self, job_id):
+        """Marks job(s) on a copy to be Picked for Data Verification
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'pickForVerification')
+
+    def do_not_verify_data(self, job_id):
+        """Marks job(s) on a copy to not be Picked for Data Verification
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'donotPickForVerification')
+
+    def mark_jobs_bad(self, job_id):
+        """Marks job(s) on a copy as Bad
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'markJobsBad')
 
     @property
     def extended_retention_rules(self):
@@ -3835,3 +4120,24 @@ class StoragePolicyCopy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def set_key_management_server(self, kms_name):
+        """Sets the Key Management Server to this copy
+
+            Args:
+                kms_name  (str) -- The Key Management Server's name
+
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+
+        """
+        if not isinstance(kms_name, str):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties["dataEncryption"] = {
+            "keyProviderName": kms_name,
+            "rotateMasterKey": True
+        }
+        self._set_copy_properties()

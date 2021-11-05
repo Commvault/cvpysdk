@@ -1113,7 +1113,7 @@ class OracleInstance(DatabaseInstance):
         """
         if not isinstance(value,dict):
             raise SDKException('Instance','101')
-            
+
         self._oracle_restore_json = {
             "validate": False,
             "noCatalog": False,
@@ -1140,7 +1140,59 @@ class OracleInstance(DatabaseInstance):
             ],
             "restoreTime": {}
         }
-        
+
+        if value.get("restore_oracle_options_type") == "restore_archivelogs_norecover":
+            self._oracle_restore_json = {
+                "resetLogs": 0,
+                "backupValidationOnly": False,
+                "threadId": 1,
+                "deviceType": 0,
+                "restoreFailover": True,
+                "resetDatabase": False,
+                "noCatalog": True,
+                "ctrlRestoreFrom": False,
+                "controlFilePath": "",
+                "specifyControlFileTime": False,
+                "restoreDataTag": False,
+                "useEndLSN": False,
+                "useStartLSN": False,
+                "restoreTablespace": False,
+                "archiveLogBy": 1,
+                "ctrlFileBackupType": 0,
+                "restoreControlFile": False,
+                "restoreInstanceLog": False,
+                "duplicate": False,
+                "startLSNNum": "",
+                "checkReadOnly": False,
+                "osID": 2,
+                "specifyControlFile": False,
+                "setDBId": False,
+                "partialRestore": False,
+                "restoreStream": 2,
+                "specifySPFile": False,
+                "restoreSPFile": False,
+                "recover": False,
+                "recoverFrom": 4,
+                "archiveLog": True,
+                "endLSNNum": "",
+                "autoDetectDevice": True,
+                "useEndLog": False,
+                "isDeviceTypeSelected": False,
+                "useStartLog": True,
+                "logTarget": "",
+                "restoreData": False,
+                "restoreFrom": 0,
+                "duplicateToSkipReadOnly": False
+            }
+            if value.get("start_lsn", None):
+                self._oracle_restore_json["useStartLSN"] = True
+                self._oracle_restore_json["startLSNNum"] = value.get("start_lsn")
+            if value.get("end_lsn", None):
+                self._oracle_restore_json["useEndLSN"] = True
+                self._oracle_restore_json["endLSNNum"] = value.get("end_lsn")
+            if value.get("log_dest", None):
+                self._oracle_restore_json["logTarget"] = value.get("log_dest")
+
     def _restore_json(self, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
@@ -1176,7 +1228,10 @@ class OracleInstance(DatabaseInstance):
             path,
             dest_client_name,
             dest_instance_name,
-            dest_path=None):
+            dest_path=None,
+            restore_oracle_options_type=None,
+            start_lsn=None, end_lsn=None,
+            log_dest=None):
         """Restores the oracle logical dump data/log files specified in the input paths
         list to the same location.
 
@@ -1222,6 +1277,9 @@ class OracleInstance(DatabaseInstance):
             paths=path,
             destination_client=dest_client_name,
             destination_instance=dest_instance_name,
-            destination_path=dest_path)
+            destination_path=dest_path,
+            restore_oracle_options_type=restore_oracle_options_type,
+            start_lsn=start_lsn, end_lsn=end_lsn,
+            log_dest=log_dest)
 
         return self._process_restore_response(request_json)

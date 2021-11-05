@@ -54,6 +54,8 @@ PostgreSQLInstance instance Attributes
     **postgres_archive_log_directory**   --  returns the postgres archive log directory
     of postgres server
 
+    **log_storage_policy**               --  returns the log storage policy for the instance
+
     **postgres_server_user_name**        --  returns the postgres server user name
     of postgres server
 
@@ -153,6 +155,15 @@ class PostgreSQLInstance(Instance):
             'Instance',
             '105',
             "Could not fetch the Archive log directory.")
+
+    @property
+    def log_storage_policy(self):
+        """Returns the log storage policy for the instance
+
+            Return Type: str
+			Default: None
+        """
+        return self._properties.get('postGreSQLInstance', {}).get('logStoragePolicy', {}).get('storagePolicyName', None)
 
     @property
     def postgres_server_user_name(self):

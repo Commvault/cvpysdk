@@ -46,6 +46,13 @@ Metallic:
     _get_eligible_metallic_commcells()     --  gets the eligible metallic commcells for the logged in user
 
 
+Metallic instance Attributes:
+
+    **cloudservices_details**       --  returns cloudServices details if metallic service is registered in
+                                        onprem/ MSP commcell
+
+    **cloud_hostname**              --  returns cloud commcell hostname
+
 """
 
 from past.builtins import basestring
@@ -73,6 +80,7 @@ class Metallic(object):
         self._metallic_details = None
         self._metallic_web_url = None
         self._metallic_obj = None
+        self._cloudservices_details = None
 
     def _metallic_commcell_object(self, cloud_webconsole_hostname, cloud_username, cloud_password):
         """Gets the metallic commcell object.
@@ -288,13 +296,14 @@ class Metallic(object):
         )
 
         if flag:
-            if response.json() and 'cloudServices' in response.json():
-                if response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {}):
-                    self._metallic_web_url = \
-                        response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {})
-                    return True
-                else:
-                    return False
+            if response.json():
+                if 'cloudServices' in response.json():
+                    if response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {}):
+                        self._metallic_web_url = \
+                            response.json().get('cloudServices', [])[0].get('cloudService', {}).get('redirectUrl', {})
+                        self._cloudservices_details = response.json()
+                        return True
+                return False
             else:
                 raise SDKException('Response', '102')
         else:
@@ -488,3 +497,34 @@ class Metallic(object):
     def cloud_hostname(self, value):
         """ Sets cloud hostname """
         self._cloud_hostname = value
+
+    @property
+    def cloudservices_details(self):
+        """
+        Get cloudServices details if metallic service is registered in onprem/ MSP commcell
+
+        Returns:
+             cloudservices_details (dict) --
+                {
+                'cloudServices':
+                    [
+                        {
+                        'associatedCompany':
+                            {
+                                'companyAlias': ' ',
+                                'GUID': ' '
+                            },
+                        'cloudService':
+                            {
+                                'redirectUrl': ' ',
+                                'commcellName': ' '
+                            }
+                        }
+                    ]
+                }
+
+        """
+        if self._cloudservices_details is None:
+            self._commserv_metadata = self.is_metallic_registered()
+
+        return self._cloudservices_details

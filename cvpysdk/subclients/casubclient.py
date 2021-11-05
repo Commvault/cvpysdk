@@ -47,6 +47,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.cloud_database_subclient import CloudDatabaseSubclient
         from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
         from .cloudapps.teams_subclient import TeamsSubclient
+        from .cloudapps.spanner_subclient import GoogleSpannerSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -67,6 +68,7 @@ class CloudAppsSubclient(Subclient):
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
             35: MSDynamics365Subclient,  # MS Dynamics 365 Subclient
             36: TeamsSubclient, # Office 365 Teams
+            37: GoogleSpannerSubclient  # Google Cloud Spanner Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

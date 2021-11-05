@@ -504,7 +504,7 @@ class IndexServers(object):
             for node_info in node_meta_infos:
                 node_data['nodeMetaInfos'].append({
                     'name': node_info,
-                    'value': node_meta_infos[node_info]
+                    'value': str(node_meta_infos[node_info])
                 })
             req_json['cloudNodes'].append(node_data)
         for role in index_server_roles:

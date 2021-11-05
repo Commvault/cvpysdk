@@ -20,7 +20,7 @@
 
 VirualServerSubclient is the only class defined in this file.
 
-VirtualServerSubclient: Derived class from Subclient Base class, representing a
+VirtualServerSubclient: Derived class from the Subclient Base class, representing a
                             virtual server subclient, and to perform operations
                             on that subclient
 
@@ -195,7 +195,7 @@ class VirtualServerSubclient(Subclient):
             '2': 'Resource Pool',
             '4': 'Datacenter',
             '9': 'Virtual Machine',
-            '16': 'All unprotected VMs',
+            '16': 'UnprotectedVMs',
             '17': 'Root',
             '34': 'Tag',
             '35': 'TagCategory'
@@ -205,10 +205,11 @@ class VirtualServerSubclient(Subclient):
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
             '3': 'Virtual Device Node',
-            '4': 'Repository',
+            '4': 'Container',
             '5': 'Disk Label',
             '6': 'Disk Type',
-            '9': 'Disk Tag Name/Value'
+            '9': 'Disk Tag Name/Value',
+            '10':'Repository'
         }
 
         self._disk_option = {
@@ -806,11 +807,11 @@ class VirtualServerSubclient(Subclient):
             nics = {
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
-                "sourceNetworkId": network_card_dict.get('sourceNetwork',""),
-                "networkName":_destnetwork ,
-                "name": network_card_dict['label'],
-                "networkName": _destnetwork,
-                "destinationNetwork": _destnetwork
+                "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
+                "name": network_card_dict[
+                    'label'] if self._instance_object.instance_name == 'google cloud platform' else '',
+                "networkName": _destnetwork if _destnetwork else '',
+                "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
 
             # setting nics for azureRM instance
@@ -1188,9 +1189,11 @@ class VirtualServerSubclient(Subclient):
 
         if operation == 'find':
             # Return all VMs browse content for find operation
-            vm_paths = ['\\' + vm_id for vm_id in vm_names.values()]
             vm_path_list = []
             browse_content_dict = {}
+            if not vm_names:
+                _vm_ids, vm_names = self._get_vm_ids_and_names_dict_from_browse()
+            vm_paths = ['\\' + vm_id for vm_id in vm_names.values()]
             for vm_path in vm_paths:
                 vm_path = self._parse_vm_path(vm_names, vm_path)
                 browse_content = super(VirtualServerSubclient, self).browse(
@@ -2741,3 +2744,58 @@ class VirtualServerSubclient(Subclient):
         }
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)
+
+    def _prepare_preview_json(self):
+        """Prepares the JSON for previewing subclient contents
+
+        Returns:
+            JSON - for previewing subclient contents
+
+        """
+        return(
+            {
+                "appId": {
+                    "subclientId": int(self.subclient_id),
+                    "clientId": int(self._client_object.client_id),
+                    "instanceId": int(self._instance_object.instance_id),
+                    "backupsetId": int(self._backupset_object.backupset_id),
+                    "apptypeId": int(self._agent_object.agent_id)
+                },
+                "filterEntity": self._vmFilter,
+                "contentEntity": self._vmContent
+            }
+        )
+
+    def _parse_preview_vms(self, subclient_vm_list):
+        """Parses the vm list from the preview vm response
+
+        Returns:
+            _vm_list        (list)  - List of the vms as the subclient content
+        """
+        _vm_list = []
+        for vm in subclient_vm_list:
+            _vm_list.append(vm['name'])
+        return _vm_list
+
+    def preview_content(self):
+        """
+        Preview the subclient and get the content
+
+        Returns:
+            list       - List of the vms as the subclient content
+
+        """
+        preview = self._commcell_object._services['PREVIEW']
+        preview_json = self._prepare_preview_json()
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', preview, preview_json
+        )
+        if flag and 'scList' in response.json():
+            return self._parse_preview_vms(response.json()['scList'])
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                self._update_response_(
+                    response.text))
