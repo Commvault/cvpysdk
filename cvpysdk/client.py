@@ -2351,9 +2351,9 @@ class Clients(object):
                     "password": b64encode(db_options.get("db_password").encode()).decode()
                 }
             }
-            if instance := db_options.get('db_instance', None):
+            if db_options.get('db_instance', None):
                 request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
-                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = instance
+                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options["db_instance"]
         self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
     def add_azure_client(self, client_name, access_node, azure_options):

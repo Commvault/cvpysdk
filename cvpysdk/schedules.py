@@ -634,6 +634,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
         """
         automatic_pattern = {
@@ -730,7 +732,23 @@ class SchedulePattern:
                                                ),
             "useStorageSpaceFromMA": pattern_dict.get("use_storage_space_ma",
                                                self._pattern.get("useStorageSpaceFromMA", False)
-                                               )
+                                               ),
+            "diskUsedPercent": {
+                "enabled": True if 'disk_use_threshold' in pattern_dict
+                else (self._pattern.get("diskUsedPercent",
+                                        {'enabled': False})['enabled']),
+                "threshold": pattern_dict.get("disk_use_threshold",
+                                              self._pattern.get("diskUsedPercent",
+                                                                {'threshold': 80})['threshold'])
+            },
+            "logFileNum": {
+                "enabled": True if 'number_of_log_files' in pattern_dict
+                else (self._pattern.get("logFileNum",
+                                        {'enabled': False})['enabled']),
+                "threshold": pattern_dict.get("number_of_log_files",
+                                              self._pattern.get("logFileNum",
+                                                                {'threshold': 50})['threshold'])
+            }
         }
 
         self._pattern = automatic_pattern
@@ -885,6 +903,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
 
         for after_job_completes :   {
