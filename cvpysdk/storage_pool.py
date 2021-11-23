@@ -95,6 +95,7 @@ from past.builtins import basestring
 
 from .storage import DiskLibrary
 from .storage import MediaAgent
+from .security.security_association import SecurityAssociation
 
 
 class StoragePools:
@@ -810,3 +811,35 @@ class StoragePool(object):
     def refresh(self):
         """Refreshes propery of the class object"""
         self._get_storage_pool_properties()
+
+    def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
+        """
+        Adds the security association on the storage pool object
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            'user_name': user1,
+                            'role_name': role1
+                        },
+                        {
+                            'user_name': user2,
+                            'role_name': role2
+                        }
+                    ]
+ 
+            isUser (bool)           --    True or False. set isUser = False, If associations_list made up of user groups
+            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is being done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of List type
+        """
+        if not isinstance(associations_list, list):
+            raise SDKException('StoragePool', '101')
+
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                        user= isUser, request_type = request_type, externalGroup = externalGroup)

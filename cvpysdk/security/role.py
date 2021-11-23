@@ -57,6 +57,8 @@ Role
 
     role_id()               --  returns the id of this role
 
+    company_name()          --  returns the company name of this role
+
     role_description()      --  returns the description of this role
 
     status()                --  returns the status of this role
@@ -331,6 +333,7 @@ class Role(object):
         self._role_status = True
         self._security_associations = {}
         self._role_permissions = {}
+        self._company_name = ''
         self._get_role_properties()
 
     def __repr__(self):
@@ -361,6 +364,7 @@ class Role(object):
                 self._role_id = role_properties['role'].get('roleId')
                 self._role_name = role_properties['role'].get('roleName')
                 self._role_status = role_properties['role']['flags'].get('disabled')
+                if 'entityInfo' in role_properties['role']: self._company_name = role_properties['role']['entityInfo'].get('companyName')
                 category_list = []
                 permission_list = []
 
@@ -717,6 +721,15 @@ class Role(object):
     def role_description(self):
         """Returns the role_desccription of this commcell role"""
         return self._role_description
+
+    @property
+    def company_name(self):
+        """
+        Returns:
+            str  -  company name to which user group belongs to.
+            str  -  empty string, if usergroup belongs to Commcell
+        """
+        return self._company_name
 
     @role_description.setter
     def role_description(self, value):

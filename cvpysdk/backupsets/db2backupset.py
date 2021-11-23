@@ -28,6 +28,8 @@ DB2Backupset:
 
     restore_entire_database()       --      runs the restore job for specified backupset
 
+    restore_out_of_place()          --      runs the out of place restore for given backupset
+
 
 DB2Backupset instance Attributes:
 =================================
@@ -112,3 +114,80 @@ class DB2Backupset(Backupset):
         return self._instance_object.restore_entire_database(
             dest_client_name, dest_instance_name, dest_database_name,
             recover_db=recover_db, restore_incremental=restore_incremental)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs
+
+    ):
+        """Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Target DB Restore Destination
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {'Storage Group Name': 'Redirect Path'}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {'Tablespace name': 'Redirect Path'}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        self._instance_object._restore_association = self._backupset_association
+
+        return self._instance_object.restore_out_of_place(dest_client_name=dest_client_name,
+                                                          dest_instance_name=dest_instance_name,
+                                                          dest_backupset_name=dest_backupset_name,
+                                                          target_path=target_path,
+                                                          **kwargs)

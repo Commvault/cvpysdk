@@ -173,6 +173,12 @@ TapeLibraries:
 
     delete()                     --  Deletes the specified library
 
+    lock_mm_configuration()      --  Locks the MM config for tape library detection
+
+    unlock_mm_configuration()    --  Unlocks the MM config for tape library detection
+
+    __lock_unlock_mm_configuration()    --  Locks or unlocks the MM config for tape library detection
+
     detect_tape_library()        --  Detect the tape library of the specified MediaAgent(s)
 
     configure_tape_library()     --  Configure the specified tape library
@@ -187,6 +193,10 @@ TapeLibrary:
      _get_library_id()  --  Returns the library ID
 
      _get_library_properties()   --  gets the disk library properties
+
+     get_drive_list()   --  Returns the tape drive list of this tape library
+     
+     refresh()          --  Refresh the properties of this tape library.
      
      
 """
@@ -2220,6 +2230,7 @@ class TapeLibraries(Libraries):
         self._commcell_object = commcell_object
         self._DETECT_TAPE_LIBRARY = self._commcell_object._services['DETECT_TAPE_LIBRARY']
         self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services['CONFIGURE_TAPE_LIBRARY']
+        self._LOCK_MM_CONFIGURATION = self._commcell_object._services['LOCK_MM_CONFIGURATION']
 
 
     def __str__(self):
@@ -2303,6 +2314,71 @@ class TapeLibraries(Libraries):
 
         self.refresh()
 
+
+    def __lock_unlock_mm_configuration(self, operation):
+        """
+                Locks or unlocks the MM config for tape library detection
+
+                            Args:
+                                operation (int)  --  operation type
+                                                            1 : Lock
+                                                            0 : Unlock
+                                                            2: Force lock
+
+                            Raises:
+                                SDKException:
+                                    If API call is not successful
+                                    If API response is invalid
+                                    If errorCode is not part of response JSON
+                                    If lock/unlock operation fails
+        """
+
+        if not isinstance(operation, int):
+            raise SDKException('Storage', '101', "Invalid Operation data type. Expected is integer")
+
+        if not operation in [0,1,2]:
+            raise SDKException('Storage', '101', "Invalid Operation type. Expected among [0,1,2] but received "+str(operation))
+
+        pay_load ={
+        "configLockUnlock": {
+        "lockType": operation
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._LOCK_MM_CONFIGURATION, pay_load)
+
+        if flag :
+            if response and response.json():
+                if 'errorCode' in response.json():
+                    if response.json()['errorCode'] != 0:
+                        raise SDKException('Storage', '102', "Failed to lock the MM Config. errorMessage : "+response.json().get('errorMessage'))
+                else:
+                    raise SDKException('Storage', '102',
+                                       "lock_unlock_mm_configuration :: Error code is not part of response JSON")
+            else:
+                raise SDKException('Response', '102', "Invalid response")
+        else:
+            raise SDKException('Response', '101', "API call is not successful")
+
+    def lock_mm_configuration(self, forceLock = False):
+        """
+            Locks the MM config for tape library detection
+
+                Args:
+                    forceLock (bool)  --  True for force lock
+        """
+        if forceLock:
+            self.__lock_unlock_mm_configuration(2)
+            return
+        self.__lock_unlock_mm_configuration(1)
+
+    def unlock_mm_configuration(self):
+        """
+            Unlocks the MM config for tape library detection
+        """
+        self.__lock_unlock_mm_configuration(0)
+
+
     def detect_tape_library(self, mediaagents):
         """
         Detect the tape libraries(s) of the provided MediaAgent(s)
@@ -2323,7 +2399,11 @@ class TapeLibraries(Libraries):
         "mediaAgentIdList": mediaagents
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+        try:
+            self.lock_mm_configuration()
+            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+        finally:
+            self.unlock_mm_configuration()
 
         if flag and response.json():
             return response.json()
@@ -2365,7 +2445,9 @@ class TapeLibraries(Libraries):
 
         if not flag:
             raise SDKException('Storage', '102', "Failed to configure the library")
+            
         self.refresh()
+        
         tape_library_name = tape_library_name.lower()
         for lib_name, lib_id in self._libraries.items():
             if lib_name.startswith(tape_library_name + " "):
@@ -2420,6 +2502,34 @@ class TapeLibrary(object):
         )
 
 
+    def _get_library_id(self):
+        """Gets the library id associated with this tape library.
+
+            Returns:
+                str - id associated with this tape library
+        """
+        libraries = TapeLibraries(self._commcell_object)
+        return libraries.get(self.library_name).library_id
+
+
+    def get_drive_list(self):
+        """
+            Returns the tape drive list of this tape library
+
+            Returns:
+                list - List of the drives of this tape library
+        """
+        
+        self.refresh()
+        
+        drive_list=[]
+
+        if self.library_properties["DriveList"]:
+            for drive in self.library_properties["DriveList"]:
+                drive_list.append(drive["driveName"])
+
+        return drive_list
+
 
     def _get_library_properties(self):
         """Gets the tape library properties.
@@ -2449,6 +2559,11 @@ class TapeLibrary(object):
         raise SDKException('Response', '101', response_string)
 
 
+    def refresh(self):
+        """Refresh the properties of this tape library."""
+        self.library_properties = self._get_library_properties()
+        
+
     @property
     def library_name(self):
         """Treats the library name as a read-only attribute."""
@@ -2456,7 +2571,7 @@ class TapeLibrary(object):
 
     @property
     def library_id(self):
-        """Treats the library name as a read-only attribute."""
+        """Treats the library ID as a read-only attribute."""
         return self._library_id
 
 

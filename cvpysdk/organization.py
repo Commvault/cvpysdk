@@ -708,6 +708,7 @@ class Organization:
         self._is_passkey_enabled = None
         self._is_authorise_for_restore_enabled = None
         self._is_allow_users_to_enable_passkey_enabled = None
+        self._retire_laptops = None
 
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
@@ -871,7 +872,8 @@ class Organization:
                 self._is_passkey_enabled = True if organization_properties['advancedPrivacySettings']['authType'] == 2 else False
                 self._is_authorise_for_restore_enabled = organization_properties['advancedPrivacySettings']['passkeySettings']['enableAuthorizeForRestore']
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties['allowUsersToEnablePasskey']
-
+                self._retire_laptops = organization_properties.get('autoRetireDevices', {})
+                
                 job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
                 if job_time_enabled:
                     job_time_epoch = organization_properties.get('jobStartTime', None)
@@ -965,7 +967,7 @@ class Organization:
         if flag:
             if response.json():
                 response = response.json()
-                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
+                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations', [])
                 for list_item in security_list:
                     name = list_item.get('userOrGroup')[0].get('userGroupName') or \
                            list_item.get('userOrGroup')[0].get('userName') or \
@@ -1102,10 +1104,10 @@ class Organization:
         if response.json():
             if 'error' in response.json():
                 error_code = response.json()['error']['errorCode']
-                error_message = response.json()['error']['errorMessage']
+                error_message = response.json()['error'].get('errorMessage', '')
             else:
                 error_code = response.json()['errorCode']
-                error_message = response.json()['errorMessage']
+                error_message = response.json().get('errorMessage', '')
 
             if error_code != 0:
                 raise SDKException(
@@ -2150,6 +2152,18 @@ class Organization:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def get_retire_laptop_properties(self):
+        """
+        Returns:
+            dict -- Retire Laptop Properties of Organization
+
+            example: {
+                    "retireDevicesAfterDays": 183,
+                    "forceDeleteDevicesAfterDays": -1
+            }
+        """
+        return self._retire_laptops
 
     def retire_offline_laptops(self, retire_days, delete_days = None):
         """
@@ -2198,7 +2212,7 @@ class Organization:
         Updates Sites information for an Organisation
 
         Args:
-            sites (dict)   --  Consisting Of Primary and Additional sites information
+            sites (dict)   --  Consisting Of Primary and Additional sites information, Pass Empty dictionary to remove site information
 
             example:
             sites = {
@@ -2216,9 +2230,7 @@ class Organization:
         """
 
         if isinstance(sites, dict):
-            primary_site = sites.get('primary_site', None)
-            if primary_site is None:
-                raise SDKException('Organization', 101, 'Primary Site name is missing.')
+            primary_site = sites.get('primary_site', "")
 
             additional_sites = sites.get('additional_sites', [])
 
@@ -2351,7 +2363,7 @@ class Organization:
 
         if action.lower() == 'enable':
             req_json = {
-            "currentPasskey": current_password,
+            "newPasskey": current_password,
             "confirmPasskey": current_password,
             "passkeyOpType": "CREATE"
             }

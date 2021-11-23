@@ -120,6 +120,10 @@ Commcell:
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
+    switch_to_company()         --  Login to company as an operator, just like using switcher on Command Center
+
+    reset_company()             --  Switch back to Commcell
+
 Commcell instance Attributes
 ============================
 
@@ -2215,6 +2219,16 @@ class Commcell(object):
 
             Ex : install_flags = {"preferredIPfamily":2, "install32Base":True}
 
+            db2_logs_location (dict) - dictionary of db2 logs location
+
+                default : None
+                
+            Ex: db2_logs_location = {
+                                    "db2ArchivePath": "/opt/Archive/",
+                                    "db2RetrievePath": "/opt/Retrieve/",
+                                    "db2AuditErrorPath": "/opt/Audit/"
+                            }
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -3278,3 +3292,15 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def switch_to_company(self, company_name):
+        """Switching to Company as Operator"""
+        if self.organizations.has_organization(company_name):
+            self._headers['operatorCompanyId'] = str(self.organizations.get(company_name).organization_id)
+        else:
+            raise SDKException('Organization', 103)
+
+    def reset_company(self):
+        """Resets company to Commcell"""
+        if 'operatorCompanyId' in self._headers:
+            self._headers.pop('operatorCompanyId')

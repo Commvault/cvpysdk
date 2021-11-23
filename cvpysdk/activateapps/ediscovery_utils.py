@@ -38,6 +38,12 @@ EdiscoveryClients:
 
     get_ediscovery_client_group_details() -  returns the ediscovery client group details
 
+    get_ediscovery_projects()            --  returns the ediscovery projects details
+
+    add()                               --  Adds ediscovery client
+
+    delete()                            --  deletes ediscovery client
+
 EdiscoveryClientOperations:
 
     __init__()                          --  initialise object of the EdiscoveryClientOperations class
@@ -67,6 +73,8 @@ EdiscoveryClientOperations:
     wait_for_export()                   --  waits for export to csv operation to finish
 
     get_ediscovery_client_details()     --  returns the ediscovery client details
+
+    get_ediscovery_project_details()    --  returns the ediscovery project properties
 
     search()                            --  returns the search response containing document details
 
@@ -215,10 +223,15 @@ class EdiscoveryClients():
         self._sort_dir = None
         self._client_group_filter = None
         self._include_doc = None
+        self._ediscovery_sub_type = None
         self._API_GET_EDISCOVERY_CLIENTS = copy.deepcopy(self._services['EDISCOVERY_V2_GET_CLIENTS'])
         self._API_GET_EDISCOVERY_CLIENT_GROUPS = self._services['EDISCOVERY_V2_GET_CLIENT_GROUP_DETAILS']
+        self._API_GET_EDISCOVERY_CLIENTS_V1 = copy.deepcopy(self._services['EDISCOVERY_CLIENTS'])
+        self._API_CREATE_CLIENT = copy.deepcopy(self._services['EDISCOVERY_CREATE_CLIENT'])
+        self._API_DELETE_CLIENT = copy.deepcopy((self._services['EDISCOVERY_DELETE_CLIENT']))
 
         from .file_storage_optimization import FsoServers, FsoServerGroups, FsoServerGroup
+        from .sensitive_data_governance import Projects
 
         if isinstance(class_object, FsoServers):
             self._ds_type = 5
@@ -243,8 +256,101 @@ class EdiscoveryClients():
             self._sort_by = 1
             self._sort_dir = 0
             self._include_doc = 1
+        elif isinstance(class_object, Projects):
+            self._ediscovery_sub_type = 2
         else:
             raise SDKException('EdiscoveryClients', '102', 'Not a supported caller for this class')
+
+    def delete(self, client_id):
+        """Deletes the ediscovery client
+
+                Args:
+
+                    client_id (int)       --  Client id
+
+                Returns:
+
+                      None
+
+                Raises:
+
+                      SDKException:
+
+                            if input is not valid
+
+                            if failed to delete client
+
+                            if response is empty or not success
+
+        """
+        if not isinstance(client_id, int):
+            raise SDKException('EdiscoveryClients', '101')
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._API_DELETE_CLIENT % client_id)
+        if flag:
+            if response.json() and 'response' in response.json():
+                response = response.json()['response'][0]
+                if 'errorCode' in response and response['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Delete operation failed on client - {response['errorCode']}")
+                return
+            raise SDKException('EdiscoveryClients', '120')
+        self._response_not_success(response)
+
+    def add(self, client_name, inventory_name, plan_name):
+        """Adds ediscovery client
+
+                Args:
+
+                    client_name        (str)        --  Name of the client
+
+                    inventory_name      (str)       --  Name of inventory
+
+                    plan_name           (str)       --  Plan name to associate with this client
+
+                Returns:
+
+                    int --  client id
+
+                Raises:
+
+                    SDKException:
+
+                            if input is not valid
+
+                            if failed to create client
+
+                            if response is empty or not success
+        """
+        if not isinstance(client_name, str) or not isinstance(inventory_name, str) or not isinstance(plan_name, str):
+            raise SDKException('EdiscoveryClients', '101')
+        if not self._commcell_object.activate.inventory_manager().has_inventory(inventory_name):
+            raise SDKException('EdiscoveryClients', '102', 'Invalid inventory name')
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('EdiscoveryClients', '102', 'Invalid plan name')
+        plan_obj = self._commcell_object.plans.get(plan_name)
+        inv_obj = self._commcell_object.activate.inventory_manager().get(inventory_name)
+        req_json = copy.deepcopy(EdiscoveryConstants.CREATE_CLIENT_REQ_JSON)
+        req_json['entity']['clientName'] = client_name
+        req_json['clientInfo']['plan']['planId'] = int(plan_obj.plan_id)
+        req_json['clientInfo']['edgeDrivePseudoClientProperties']['eDiscoveryInfo']['inventoryDataSource']['seaDataSourceId'] = int(
+            inv_obj.inventory_id)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._API_CREATE_CLIENT, req_json)
+        if flag:
+            if response.json() and 'response' in response.json():
+                response = response.json()['response']
+                if 'errorCode' in response and response['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Add operation failed on client - {response['errorCode']}")
+                if 'entity' in response:
+                    return response['entity'].get('clientId', 0)
+            raise SDKException('EdiscoveryClients', '119')
+        self._response_not_success(response)
 
     def _response_not_success(self, response):
         """Helper function to raise an exception when reponse status is not 200 (OK).
@@ -325,6 +431,43 @@ class EdiscoveryClients():
             raise SDKException('EdiscoveryClients', '106')
         self._response_not_success(response)
 
+    def get_ediscovery_projects(self):
+        """returns the ediscovery projects details for the app
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict        -- Containing project details
+
+                Raises;
+
+                    SDKException:
+
+                            if failed to get project details
+
+                            if response is empty
+
+                            if response is not success
+
+        """
+        if not self._ediscovery_sub_type:
+            raise SDKException('EdiscoveryClients', '102', 'Ediscovery subtype not initialized')
+        api = self._API_GET_EDISCOVERY_CLIENTS_V1 % self._ediscovery_sub_type
+        flag, response = self._cvpysdk_object.make_request('GET', api)
+        output = {}
+        if flag:
+            if response.json() and 'eDiscoveryClientProp' in response.json():
+                projects = response.json()['eDiscoveryClientProp']
+                for project in projects:
+                    project['clientId'] = project['eDiscoveryClient']['clientId']
+                    output[project['eDiscoveryClient']['clientName'].lower()] = project
+                return output
+            raise SDKException('EdiscoveryClients', '117')
+        self._response_not_success(response)
+
 
 class EdiscoveryClientOperations():
     """Class for performing operations on ediscovery client."""
@@ -372,8 +515,10 @@ class EdiscoveryClientOperations():
         self._API_EXPORT = self._services['EDISCOVERY_EXPORT']
         self._API_EXPORT_STATUS = self._services['EDISCOVERY_EXPORT_STATUS']
         self._CREATE_POLICY = self._services['CREATE_UPDATE_SCHEDULE_POLICY']
+        self._API_GET_EDISCOVERY_CLIENT_DETAILS_V1 = copy.deepcopy(self._services['EDISCOVERY_CLIENT_DETAILS'])
         from .inventory_manager import Inventory, Asset
         from .file_storage_optimization import FsoServer, FsoServerGroup
+        from .sensitive_data_governance import Project
 
         if isinstance(class_object, Inventory):
             self._type = 0  # Inventory
@@ -414,6 +559,11 @@ class EdiscoveryClientOperations():
         elif isinstance(class_object, FsoServerGroup):
             self._search_entity_type = 28
             self._search_entity_id = class_object.server_group_id
+        elif isinstance(class_object, Project):
+            self._client_id = class_object.project_id
+            self._app_type = 2  # for sharing, app type param
+            self._search_entity_type = 188
+            self._search_entity_id = class_object.project_id
         else:
             raise SDKException('EdiscoveryClients', '101')
         self.refresh()
@@ -429,7 +579,8 @@ class EdiscoveryClientOperations():
 
                     schedule_name       (str)       --  Schedule name
 
-                    pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
+                    pattern_json        (dict)      --  Schedule pattern dict
+                                                        (Refer to Create_schedule_pattern in schedule.py)
 
                     ops_type            (int)       --  Operation type
 
@@ -489,7 +640,14 @@ class EdiscoveryClientOperations():
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def form_search_params(self, criteria=None, attr_list=None, params=None, query="*:*", key="key"):
+    def form_search_params(
+            self,
+            criteria=None,
+            attr_list=None,
+            params=None,
+            query="*:*",
+            key="key",
+            is_separate_attr=False):
         """returns the search params dict based on input
 
             Args:
@@ -511,6 +669,8 @@ class EdiscoveryClientOperations():
                                                     default:None (Means *:*)
 
                 key             (str)      --   key name to be used in request (default:key)
+
+                is_separate_attr (bool)    --   specifies whether attribute list needs to formed as separate key-value
 
             Returns:
 
@@ -554,12 +714,20 @@ class EdiscoveryClientOperations():
             }
             search_params['searchParams'].append(fq_dict)
         if attr_list:
-            fl_list = ','.join(attr_list)
-            fl_dict = {
-                key: "fl",
-                "value": fl_list
-            }
-            search_params['searchParams'].append(fl_dict)
+            if is_separate_attr:
+                for attr in attr_list:
+                    fl_dict = {
+                        key: "fl",
+                        "value": attr
+                    }
+                    search_params['searchParams'].append(fl_dict)
+            else:
+                fl_list = ','.join(attr_list)
+                fl_dict = {
+                    key: "fl",
+                    "value": fl_list
+                }
+                search_params['searchParams'].append(fl_dict)
         if params:
             for dkey, value in params.items():
                 custom_dict = {
@@ -927,6 +1095,37 @@ class EdiscoveryClientOperations():
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def get_ediscovery_project_details(self):
+        """returns the ediscovery project details
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict        -- Containing project details
+
+                Raises;
+
+                    SDKException:
+
+                            if failed to get project details
+
+                            if response is empty
+
+                            if response is not success
+
+        """
+        api = self._API_GET_EDISCOVERY_CLIENT_DETAILS_V1 % self._client_id
+        flag, response = self._cvpysdk_object.make_request('GET', api)
+        if flag:
+            if response.json() and 'eDiscoveryClientProp' in response.json():
+                project = response.json()['eDiscoveryClientProp'][0]
+                return project['eDiscoveryClientInfo']
+            raise SDKException('EdiscoveryClients', '118')
+        self._response_not_success(response)
+
     def get_ediscovery_client_details(self):
         """returns the ediscovery client details for this client
 
@@ -1008,6 +1207,8 @@ class EdiscoveryClientOperations():
                                                             Default : 60Mins
 
                     token               (str)       --  Export to CSV token GUID
+
+                    download            (bool)      --  specify whether to download exported file or not
 
                     download_location   (str)       --  Path where to download exported csv file
                                                                 Default: Current working dir
@@ -1216,10 +1417,13 @@ class EdiscoveryDataSources():
         self._data_sources = None
         self._app_source = None
         self._app_source_sub_type = None
+        self._type = None  # client entity
         self._API_DELETE = self._services['EDISCOVERY_DATA_SOURCE_DELETE']
         self._API_CREATE_DATA_SOURCE = self._services['EDISCOVERY_CREATE_DATA_SOURCE']
+        self._API_GET_DATA_SOURCE_STATS = self._services['EDISCOVERY_DATA_SOURCE_STATS']
 
         from .file_storage_optimization import FsoServer, FsoServers, FsoServerGroups
+        from .sensitive_data_governance import Project
 
         if isinstance(class_object, FsoServer):
             self._client_id = class_object.server_id
@@ -1231,6 +1435,11 @@ class EdiscoveryDataSources():
         elif isinstance(class_object, FsoServerGroups):
             self._app_source = TargetApps.FSO
             self._app_source_sub_type = EdiscoveryConstants.FSO_SERVER_GROUPS
+        elif isinstance(class_object, Project):
+            self._app_source = TargetApps.SDG
+            self._client_id = class_object.project_id
+            self._ediscovery_client_ops = EdiscoveryClientOperations(commcell_object, class_object)
+            self._type = 1
         else:
             raise SDKException('EdiscoveryClients', '101')
 
@@ -1296,14 +1505,71 @@ class EdiscoveryDataSources():
             index = index + 1
         return output
 
+    def _get_data_sources_stats(self):
+        """returns the dict containing data source properties
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  containing data source properties
+
+            Raises:
+
+                SDKException:
+
+                        if failed to get data source stats
+
+                        if response is empty or not success
+        """
+        api = self._API_GET_DATA_SOURCE_STATS % (self._client_id, self._type)
+        flag, response = self._cvpysdk_object.make_request('GET', api)
+        output = {}
+        if flag:
+            if response.json() and 'statusResp' in response.json():
+                status = response.json()['statusResp']
+                if 'collections' in status:
+                    collection = status['collections'][0]
+                    if 'datasources' in collection:
+                        data_sources = collection['datasources']
+                        for data_source in data_sources:
+                            ds_props = {
+                                EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME: data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME],
+                                EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
+                                EdiscoveryConstants.FIELD_DATA_SOURCE_ID: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA],
+                                EdiscoveryConstants.FIELD_DOCUMENT_COUNT: data_source.get('status', {}).get('totalcount', 0)
+                            }
+                            output[data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME].lower()] = ds_props
+                        return output
+                return {}  # no data sources exists
+            if response.json() and 'response' in response.json():
+                response = response.json()['response']
+                if 'errorCode' in response and response['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Ediscovery Add client failed with error code - {response['errorCode']}")
+            raise SDKException('EdiscoveryClients', '110')
+        self._response_not_success(response)
+
     def refresh(self):
         """Refresh the data sources associated with edisocvery client"""
         if not self._client_id:
             return
-        self._ediscovery_client_props = self._get_data_sources_details()
-        self._data_source_display_names, self._data_source_names = self._get_data_source_names(
-            self._ediscovery_client_props)
-        self._data_sources = self._get_data_source_properties(self._ediscovery_client_props)
+        if self._app_source and self._app_source == TargetApps.SDG:
+            self._ediscovery_client_props = self._ediscovery_client_ops.get_ediscovery_project_details()
+            self._data_source_display_names, self._data_source_names = self._get_data_source_names(
+                self._ediscovery_client_props)
+            self._data_sources = self._get_data_sources_stats()
+        elif self._app_source and self._app_source == TargetApps.FSO:
+            self._ediscovery_client_props = self._get_data_sources_details()
+            self._data_source_display_names, self._data_source_names = self._get_data_source_names(
+                self._ediscovery_client_props)
+            self._data_sources = self._get_data_source_properties(self._ediscovery_client_props)
+        else:
+            raise SDKException('EdiscoveryClients', '102', "Unknown App source type passed")
 
     def add_fs_data_source(self, server_name, data_source_name, inventory_name, plan_name,
                            source_type=EdiscoveryConstants.SourceType.BACKUP, **kwargs):
@@ -1372,6 +1638,12 @@ class EdiscoveryDataSources():
         request_json['datasourceId'] = inv_obj.inventory_id
         request_json['indexServerClientId'] = plan_obj.content_indexing_props['analyticsIndexServer'].get('clientId', 0)
         request_json['datasources'][0]['datasourceName'] = data_source_name
+        if self._app_source == TargetApps.SDG:
+            request_json['clientId'] = self._client_id  # project source client id
+            request_json['datasources'][0]['properties'].append({
+                "propertyName": "caconfig",
+                "propertyValue": "[{\"task\":\"EntityExtractionFields\",\"arguments\":[\"content\"]}]"
+            })
         # find out whether given server is commvault client or not to decide further
         inventory_resp = None
         scan_type = kwargs.get('scan_type', 'quick')
@@ -1382,10 +1654,14 @@ class EdiscoveryDataSources():
                     raise SDKException('EdiscoveryClients', '102', "Access node information is missing")
                 if not self._commcell_object.clients.has_client(kwargs.get("access_node")):
                     raise SDKException('EdiscoveryClients', '102', "Access node client is not present")
-            inventory_resp = inv_obj.handler.get_handler_data(
-                handler_filter=f"q=(name_idx:{server_name} AND objectClass:computer)&rows=1")
+            inventory_resp = inv_obj.data_source.ds_handlers.get(
+                EdiscoveryConstants.FS_SERVER_HANDLER_NAME).get_handler_data(
+                handler_filter=f"q=(name_idx:{server_name}&rows=1")
             if inventory_resp['numFound'] != 1:
-                raise SDKException('EdiscoveryClients', '102', 'Multiple server with same name exists in inventory')
+                raise SDKException(
+                    'EdiscoveryClients',
+                    '102',
+                    'Multiple server with same name exists or no server exists in inventory')
             inventory_resp = inventory_resp['docs'][0]
         # set common properties
         request_json['datasources'][0]['properties'].append({
@@ -1452,7 +1728,7 @@ class EdiscoveryDataSources():
 
         # set crawl type and source type related params
         if source_type.value == EdiscoveryConstants.SourceType.BACKUP.value:
-            if scan_type == 'quick':
+            if scan_type == 'quick' and self._app_source == TargetApps.FSO:
                 request_json['datasources'][0]['properties'].append({
                     "propertyName": "crawltype",
                     "propertyValue": str(EdiscoveryConstants.CrawlType.FILE_LEVEL_ANALYTICS.value)
@@ -1506,7 +1782,7 @@ class EdiscoveryDataSources():
                         else:
                             self._commcell_object.clients.refresh()
                             all_clients = self._commcell_object.clients.all_clients
-                            for client_name, client_details in all_clients.items():
+                            for client_name, _ in all_clients.items():
                                 if client_name.startswith(f"{data_source_name}_"):
                                     self._client_id = self._commcell_object.clients.get(client_name).client_id
                                     break
@@ -1515,7 +1791,7 @@ class EdiscoveryDataSources():
                     return EdiscoveryDatasource(
                         self._commcell_object,
                         data_source['datasourceId'],
-                        EdiscoveryConstants.DATA_SOURCE_TYPES[5])
+                        EdiscoveryConstants.DATA_SOURCE_TYPES[5], client_id=self._client_id, app_type=self._app_source)
             if response.json() and 'error' in response.json():
                 error = response.json()['error']
                 if 'errorCode' in error and error['errorCode'] != 0:
@@ -1614,7 +1890,7 @@ class EdiscoveryDataSources():
         return EdiscoveryDatasource(commcell_object=self._commcell_object,
                                     data_source_id=int(ds_props[EdiscoveryConstants.FIELD_DATA_SOURCE_ID]),
                                     data_source_type=ds_props[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
-                                    app_type=self._app_source)
+                                    app_type=self._app_source, client_id=self._client_id)
 
     def _parse_client_response_for_data_source(self, client_details, field_name, field_type="str"):
         """Parses client response and returns given property from data sources as list
@@ -1681,12 +1957,25 @@ class EdiscoveryDataSources():
                             if input is not valid
 
         """
+        data_sources_name = []
+        data_sources_display_name = []
         if not isinstance(client_details, dict):
             raise SDKException('EdiscoveryClients', '107')
-        data_sources_name = self._parse_client_response_for_data_source(
-            client_details, EdiscoveryConstants.FIELD_DATA_SOURCE_NAME)
-        data_sources_display_name = self._parse_client_response_for_data_source(
-            client_details, EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME)
+        if self._app_source and self._app_source == TargetApps.SDG:
+            if 'dataSources' in client_details:
+                data_sources = client_details['dataSources']
+                for data_source in data_sources:
+                    data_sources_name.append(
+                        data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_NAME_SEA].lower())
+                    data_sources_display_name.append(
+                        data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_NAME_SEA].lower())
+        elif self._app_source and self._app_source == TargetApps.FSO:
+            data_sources_name = self._parse_client_response_for_data_source(
+                client_details, EdiscoveryConstants.FIELD_DATA_SOURCE_NAME)
+            data_sources_display_name = self._parse_client_response_for_data_source(
+                client_details, EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME)
+        else:
+            raise SDKException('EdiscoveryClients', '102', "Unknown App source type passed")
         return data_sources_display_name, data_sources_name
 
     def _get_data_sources_details(self):
@@ -1712,7 +2001,7 @@ class EdiscoveryDataSources():
 
     @property
     def data_sources(self):
-        """returns the list of data sources display nameassociated with this client
+        """returns the list of data sources display name associated with this client
 
             Returns:
 
@@ -1763,17 +2052,25 @@ class EdiscoveryDataSources():
                 int --  Total crawled documents from all of these data sources
 
         """
-        return sum(
-            self._parse_client_response_for_data_source(
-                client_details=self.ediscovery_client_props,
-                field_name=EdiscoveryConstants.FIELD_DOCUMENT_COUNT,
-                field_type="int"))
+        total_doc = 0
+        if self._app_source and self._app_source == TargetApps.SDG:
+            for data_source in self._data_sources:
+                for key, value in self._data_sources[data_source].items():
+                    if key == EdiscoveryConstants.FIELD_DOCUMENT_COUNT:
+                        total_doc = total_doc + int(value)
+        else:
+            total_doc = sum(
+                self._parse_client_response_for_data_source(
+                    client_details=self.ediscovery_client_props,
+                    field_name=EdiscoveryConstants.FIELD_DOCUMENT_COUNT,
+                    field_type="int"))
+        return total_doc
 
 
 class EdiscoveryDatasource():
     """Class to represent single datasource associated with ediscovery client"""
 
-    def __init__(self, commcell_object, data_source_id, data_source_type, app_type=TargetApps.FSO):
+    def __init__(self, commcell_object, data_source_id, data_source_type, client_id, app_type=TargetApps.FSO):
         """Initializes an instance of the EdiscoveryDataSource class.
 
             Args:
@@ -1782,7 +2079,9 @@ class EdiscoveryDatasource():
                 data_source_id      (int)       --  Data source id
 
                 data_source_type    (int/str)   --  Data Source type (Example : 5 for file)
-                                                        Refer to EdiscoveryConstants class in activateapps\constants.py
+                                                        Refer to EdiscoveryConstants class in activateapps\\constants.py
+
+                client_id           (int)       --  client id where this data source belongs to
 
                 app_type            (enum)      --  Specifies which app type these data sources belongs too
                                                         Default:FSO
@@ -1799,7 +2098,7 @@ class EdiscoveryDatasource():
         self._data_source_type = None
         self._data_source = None
         self._data_source_props = None
-        self._client_id = None
+        self._client_id = client_id
         self._collection_client_id = None
         self._core_name = None
         self._computed_core_name = None
@@ -1862,8 +2161,6 @@ class EdiscoveryDatasource():
                     # fetch crawl type from above properties fetched.
                     self._crawl_type = self._get_property_value(property_name=EdiscoveryConstants.FIELD_CRAWL_TYPE)
                     self._dc_plan_id = self._get_property_value(property_name=EdiscoveryConstants.FIELD_DC_PLAN_ID)
-                    self._client_id = self._get_property_value(
-                        property_name=EdiscoveryConstants.FIELD_PSEDUCO_CLIENT_ID)
                     self._data_source_name = ds_list[0].get('displayName', 'NA')
                 return collection
             raise SDKException('EdiscoveryClients', '110')
@@ -2057,7 +2354,7 @@ class EdiscoveryDatasource():
                                       limit=limit,
                                       entity={"dataSourceId": self.data_source_id})
 
-    def wait_for_export(self, token, wait_time=60):
+    def wait_for_export(self, token, wait_time=60, download=True, download_location=os.getcwd()):
         """Waits for Export to CSV to finish
 
                 Args:
@@ -2067,9 +2364,15 @@ class EdiscoveryDatasource():
 
                     token               (str)       --  Export to CSV token GUID
 
+                    download            (bool)      --  specify whether to download exported file or not
+
+                    download_location   (str)       --  Path where to download exported csv file
+                                                                Default: Current working dir
+
                 Return:
 
-                    str     -- Download GUID for exported CSV file
+                    str     -- Download GUID for exported CSV file if download=false
+                               File path containing exported csv file if download=true
 
                 Raises:
 
@@ -2081,7 +2384,9 @@ class EdiscoveryDatasource():
 
         """
         return self._ediscovery_client_ops.wait_for_export(token=token,
-                                                           wait_time=wait_time)
+                                                           wait_time=wait_time,
+                                                           download=download,
+                                                           download_location=download_location)
 
     def export(self, criteria=None, attr_list=None, params=None):
         """do export to CSV on data
@@ -2193,7 +2498,7 @@ class EdiscoveryDatasource():
                 query = query + f"(contentid:{doc}) OR "
             last_char_index = query.rfind(" OR ")
             query = query[:last_char_index]
-            docs, facets = self.search(
+            docs, _ = self.search(
                 criteria=query, attr_list=EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET[self.data_source_type_id])
             if len(docs) != len(document_ids):
                 raise SDKException(
@@ -2257,7 +2562,7 @@ class EdiscoveryDatasource():
             query = query + f"(contentid:{doc}) OR "
         last_char_index = query.rfind(" OR ")
         query = query[:last_char_index]
-        docs, facets = self.search(criteria=query, attr_list=attr_list)
+        docs, _ = self.search(criteria=query, attr_list=attr_list)
         if len(docs) != len(document_ids):
             raise SDKException(
                 'EdiscoveryClients',
@@ -2275,7 +2580,7 @@ class EdiscoveryDatasource():
             files_list.append(doc_dict)
         return files_list
 
-    def review_action(self, action_type, reviewers, approvers, document_ids=None, req_name=None, **kwargs):
+    def review_action(self, action_type, reviewers=None, approvers=None, document_ids=None, req_name=None, **kwargs):
         """do review action on documents
 
                 Args:
@@ -2294,7 +2599,7 @@ class EdiscoveryDatasource():
 
                 kwargs arguments:
 
-                    backup_delete       (bool)      --  Spcifies whether to delete document from backup or not
+                    backup_delete       (bool)      --  Specifies whether to delete document from backup or not
 
                     destination         (str)       --  Destination UNC path for move operation
 
@@ -2302,11 +2607,21 @@ class EdiscoveryDatasource():
 
                     password            (str)       --  Password for user in base64 encoded
 
+                    create_review       (bool)      --  speicifies whether to create review or not for this action
+                                                            (For Delete & Move, it is TRUE always)
+
+                    retain_month        (int)       --  no of months to set as retention
+
+                    ignore_all_risks    (bool)      --  specifies whether it has to be ignore risk fully or not
+
+                    ignore_risk_type    (list)      --  list of risks which needs to be ignored
+                                                            Refer to EDiscoveryConstants.RisksTypes
+
                 Returns:
 
-                    None for review actions on few files
+                    None -- if create_review is true
 
-                    job id for review actions on bulk files
+                    job id -- if create_review is false
 
                 Raises:
 
@@ -2323,11 +2638,24 @@ class EdiscoveryDatasource():
         if self._app_type.value == TargetApps.FSO.value and \
                 action_type.value not in EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED:
             raise SDKException('EdiscoveryClients', '102', f"{action_type.value} is not supported for FSO app")
+        if self._app_type.value == TargetApps.SDG.value and \
+                action_type.value not in EdiscoveryConstants.REVIEW_ACTION_SDG_SUPPORTED:
+            raise SDKException('EdiscoveryClients', '102', f"{action_type.value} is not supported for SDG app")
         attr_list = None
+        api = self._API_ACTIONS
+        create_review = kwargs.get('create_review', False)
+        if action_type == EdiscoveryConstants.ReviewActions.DELETE or \
+                action_type == EdiscoveryConstants.ReviewActions.MOVE:
+            # For Delete & Move, review request is compulsory
+            create_review = True
+        if create_review:
+            if not reviewers or not approvers:
+                raise SDKException('EdiscoveryClients', '102', 'Reviewers/Approvers missing in input')
         if self.data_source_type_id not in EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET:
             raise SDKException('EdiscoveryClients', '102', "Not supported data source for review action")
         attr_list = EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET[self.data_source_type_id]
         request_json = None
+        # For Delete & Move, review request is compulsory so non-review case is not handled for this block
         if action_type.value == EdiscoveryConstants.ReviewActions.DELETE.value:
             request_json = copy.deepcopy(EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON)
             request_json['deleteFromBackup'] = kwargs.get("backup_delete", False)
@@ -2338,24 +2666,103 @@ class EdiscoveryDatasource():
             request_json['newDestination'] = kwargs.get("destination", '')
             request_json['username'] = kwargs.get("user_name", '')
             request_json['password'] = kwargs.get("password", '')
-        if document_ids:
-            request_json['files'] = json.dumps(self._form_files_list(document_ids=document_ids, attr_list=attr_list))
-        else:
-            # bulk operation request
-            del request_json['files']
-            request_json['isBulkOperation'] = True
-            request_json['searchRequest'] = EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ
-            request_json['handlerId'] = self._ediscovery_client_ops.get_handler_id()
+        elif action_type.value == EdiscoveryConstants.ReviewActions.RETENTION.value:
+            request_json = copy.deepcopy(EdiscoveryConstants.REVIEW_ACTION_SET_RETENTION_REQ_JSON)
+            if 'retain_month' not in kwargs:
+                raise SDKException('EdiscoveryClients', '102', 'Retention month input missing for this operation')
+            if not create_review:
+                request_json['setRetentionReq']['numOfMonthsRemain'] = kwargs.get('retain_month')
+                request_json['remActionRequest']['dataSourceId'] = self._data_source_id
+            else:
+                request_json['numOfMonthsRemain'] = kwargs.get('retain_month')
+                request_json['dataSourceId'] = self._data_source_id
+                # delete unwanted keys as it is review request
+                if 'remActionRequest' in request_json:
+                    del request_json['remActionRequest']
+                if 'setRetentionReq' in request_json:
+                    del request_json['setRetentionReq']
+        elif action_type.value == EdiscoveryConstants.ReviewActions.IGNORE.value:
+            request_json = copy.deepcopy(EdiscoveryConstants.REVIEW_ACTION_IGNORE_FILES_REQ_JSON)
+            ignore_all = kwargs.get('ignore_all_risks', False)
+            if not ignore_all and 'ignore_risk_type' not in kwargs:
+                raise SDKException('EdiscoveryClients', '102', 'Ignore risk type details missing for this operation')
+            if not create_review:
+                if ignore_all:
+                    request_json['ignoreRisksReq']['ignoreAllRisks'] = True
+                else:
+                    request_json['ignoreRisksReq']['ignoreAllRisks'] = False
+                    request_json['ignoreRisksReq']['ignoreRiskTypeList'] = kwargs.get('ignore_risk_type')
+                request_json['remActionRequest']['dataSourceId'] = self._data_source_id
+            else:
+                if ignore_all:
+                    request_json['ignoreAllRisks'] = True
+                else:
+                    request_json['ignoreAllRisks'] = False
+                    request_json['ignoreRiskTypeList'] = kwargs.get('ignore_risk_type')
 
-        request_json['options'] = json.dumps(
-            self._form_request_options(
-                reviewers=reviewers,
-                approvers=approvers,
-                document_ids=document_ids,
-                req_name=req_name if req_name else f"{self.data_source_name}_{action_type.name}_{int(time.time())}"))
+                request_json['dataSourceId'] = self._data_source_id
+                # delete unwanted keys as it is review request
+                if 'remActionRequest' in request_json:
+                    del request_json['remActionRequest']
+                if 'ignoreRisksReq' in request_json:
+                    del request_json['ignoreRisksReq']
+
+        if document_ids:
+            query = ""
+            for doc in document_ids:
+                query = query + f"(contentid:{doc}) OR "
+            last_char_index = query.rfind(" OR ")
+            query = query[:last_char_index]
+            # for non-review request, doc id need to set at search request inside remaction
+            if not create_review:
+                # make sure whether passed document ids are correct
+                docs, _ = self.search(
+                    criteria=f"{EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS} AND {query}",
+                    attr_list=EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET)
+                if len(docs) != len(document_ids):
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        "Unable to find document details from given list of document id")
+
+                request_json['remActionRequest']['searchRequest'] = json.dumps(
+                    self._ediscovery_client_ops.form_search_params(
+                        criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS,
+                        attr_list=EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET,
+                        params={
+                            "start": "0"},
+                        query=query, is_separate_attr=True))
+
+            else:
+                request_json['files'] = json.dumps(
+                    self._form_files_list(
+                        document_ids=document_ids,
+                        attr_list=attr_list))
+        else:
+            # bulk operation request. Delete unnecessary fields
+            if 'files' in request_json:
+                del request_json['files']
+            if not create_review:
+                request_json['remActionRequest']['searchRequest'] = EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ
+                request_json['remActionRequest']['isBulkOperation'] = True
+                request_json['remActionRequest']['handlerId'] = self._ediscovery_client_ops.get_handler_id()
+            else:
+                request_json['searchRequest'] = EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ
+                request_json['handlerId'] = self._ediscovery_client_ops.get_handler_id()
+                request_json['isBulkOperation'] = True
+
+        if create_review:
+            api = self._API_ACTIONS_WITH_REQUEST
+            request_json['options'] = json.dumps(
+                self._form_request_options(
+                    reviewers=reviewers,
+                    approvers=approvers,
+                    document_ids=document_ids,
+                    req_name=req_name if req_name else f"{self.data_source_name}_{action_type.name}"
+                                                       f"_{int(time.time())}"))
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._API_ACTIONS_WITH_REQUEST, request_json
+            'POST', api, request_json
         )
         if flag:
             if response.json():
@@ -2365,7 +2772,7 @@ class EdiscoveryDatasource():
                         'EdiscoveryClients',
                         '102',
                         f"Review action failed with error - {response.get('errorMsg')}")
-                if not document_ids and 'jobId' in response:
+                if 'jobId' in response and not create_review:
                     return response['jobId']
                 return
             raise SDKException('EdiscoveryClients', '116')

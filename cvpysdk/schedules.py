@@ -1018,6 +1018,7 @@ class Schedules:
         from .instance import Instance
         from .activateapps.inventory_manager import Inventory
         from .activateapps.file_storage_optimization import FsoServer
+        from .activateapps.sensitive_data_governance import Project
 
         self.class_object = class_object
         self._single_scheduled_entity = False
@@ -1045,6 +1046,14 @@ class Schedules:
             self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
                 class_object.server_id)
             self._repr_str = "Fso Server: {0}".format(class_object.server_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags['isEdiscovery'] = True
+
+        elif isinstance(class_object,Project):
+            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
+                class_object.project_id)
+            self._repr_str = "SDG Project: {0}".format(class_object.project_id)
             self._commcell_object = class_object._commcell_object
             self._single_scheduled_entity = True
             self._task_flags['isEdiscovery'] = True
@@ -1160,7 +1169,7 @@ class Schedules:
                 for schedule in response.json()['taskDetail']:
                     task_id = schedule['task']['taskId']
                     description = ''
-                    task_flags = schedule['task']['taskFlags']
+                    task_flags = schedule['task'].get('taskFlags',0)
                     if 'subTasks' in schedule:
                         for subtask in schedule['subTasks']:
                             schedule_id = subtask['subTask']['subTaskId']

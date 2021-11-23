@@ -70,6 +70,24 @@ class SecurityAssociation(object):
                 }]
             }
 
+        from ..storage_pool import StoragePool
+        if isinstance(class_object, StoragePool):
+            self._entity_list = {
+                "entity": [{
+                    "storagePolicyId": int(class_object.storage_pool_id),
+                    "_type_": 17
+                }]
+            }
+            
+        from ..plan import Plan
+        if isinstance(class_object, Plan):
+            self._entity_list = {
+                "entity": [{
+                    "planId": int(class_object.plan_id),
+                    "_type_": 158
+                }]
+            }
+
         self._roles = self._get_security_roles()
 
     def __str__(self):
@@ -240,8 +258,46 @@ class SecurityAssociation(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _add_security_association(self, association_list, user=False):
-        """Adds the security association on the specified class object"""
+    def _add_security_association(self, association_list, user= True, request_type = None, externalGroup = False):
+        """
+        Adds the security association on the specified class object
+
+        Supported Types : Client, Storage Pool class objects.
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            'user_name': user1,
+                            'role_name': role1
+                        },
+                        {
+                            'user_name': user2,
+                            'role_name': role2
+                        }
+                    ]
+ 
+            user (bool)             --    True or False. set user = False, If associations_list made up of user groups
+            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is to be done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of dict type
+                if role doesnot exists on Commcell
+                if request fails
+        """
+
+        update_operator_request_type = {
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+
+        if request_type:
+            request_type = request_type.upper()
+
         security_association_list = []
         for association in association_list:
             if not isinstance(association, dict):
@@ -254,10 +310,11 @@ class SecurityAssociation(object):
 
             user_or_group = {}
             if user:
-                user_or_group = {
-                    "_type_": 13,
-                    'userName': association['user_name']
-                }
+                user_or_group = {'userName': association['user_name']}
+            elif externalGroup:
+                user_or_group = {'externalGroupName': association['user_name']}
+            else:
+                user_or_group = {'userGroupName': association['user_name']}  
 
             temp = {
                 "userOrGroup": [
@@ -276,7 +333,7 @@ class SecurityAssociation(object):
         request_json = {
             "entityAssociated": self._entity_list,
             "securityAssociations": {
-                "associationsOperationType": 1,
+                "associationsOperationType": update_operator_request_type.get(request_type, 1),
                 "associations": security_association_list,
                 "ownerAssociations": {
                     "ownersOperationType": 1

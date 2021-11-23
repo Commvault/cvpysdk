@@ -76,6 +76,7 @@ class UnixDownloadFeatures(Enum):
     TEST_AUTOMATION = 1153
     PYTHON_SDK = 1154
     CONTENT_ANALYZER = 1108
+    DB2_AGENT = 1207
 
 
 class WindowsDownloadFeatures(Enum):
@@ -103,6 +104,7 @@ class WindowsDownloadFeatures(Enum):
     INDEX_STORE = 55
     INDEX_GATEWAY = 263
     CONTENT_EXTRACTOR = 259
+    DB2_AGENT = 351
 
 
 class OSNameIDMapping(Enum):

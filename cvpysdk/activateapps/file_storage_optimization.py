@@ -336,6 +336,10 @@ class FsoServer():
             Args:
                 commcell_object     (object)    --  instance of the commcell class
 
+                server_name         (str)       --  Name of the server
+
+                server_id           (int)       --  server client id
+
             Returns:
                 object  -   instance of the FsoServer class
 

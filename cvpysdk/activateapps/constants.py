@@ -61,6 +61,14 @@ class EdiscoveryConstants:
         ARCHIVE = 90
         TAG = 98
 
+    class RisksTypes(Enum):
+        OPENACCESS = 1
+        OLDFILES = 2
+        FILEMOVED = 3
+        MULTIUSERACCESS = 4
+        NORETENTION = 5
+        ISPROTECTED = 6
+
     FSO_SERVERS = "FsoServers"
     FSO_SERVER_GROUPS = "FsoServerGroups"
 
@@ -113,6 +121,36 @@ class EdiscoveryConstants:
 
     REVIEW_ACTION_FSO_SUPPORTED = [ReviewActions.DELETE.value, ReviewActions.MOVE.value, ReviewActions.ARCHIVE.value]
 
+    REVIEW_ACTION_SDG_SUPPORTED = [
+        ReviewActions.DELETE.value,
+        ReviewActions.MOVE.value,
+        ReviewActions.ARCHIVE.value,
+        ReviewActions.RETENTION.value,
+        ReviewActions.IGNORE.value]
+
+    CREATE_CLIENT_REQ_JSON = {
+        "clientInfo": {
+            "clientType": 19,
+            "edgeDrivePseudoClientProperties": {
+                "systemDriveType": 6,
+                "edgeDriveAssociations": {},
+                "eDiscoveryInfo": {
+                    "eDiscoverySubType": 2,
+                    "inventoryDataSource": {
+                        "seaDataSourceId": 0
+                    }
+                }
+            },
+            "plan": {
+                "planId": 0
+            }
+        },
+        "entity": {
+            "clientName": "",
+            "_type_": 3
+        }
+    }
+
     REVIEW_ACTION_DELETE_REQ_JSON = {
         "operation": ReviewActions.DELETE.value,
         "files": "",
@@ -120,6 +158,26 @@ class EdiscoveryConstants:
         "options": ""}
 
     REVIEW_ACTION_MOVE_REQ_JSON = {"operation": ReviewActions.MOVE.value, "files": "", "options": ""}
+
+    REVIEW_ACTION_SET_RETENTION_REQ_JSON = {
+        "operation": ReviewActions.RETENTION.value,
+        "remActionRequest": {
+            "dataSourceId": 0,
+            "handlerName": "default",
+            "isBulkOperation": False,
+            "searchRequest": ""},
+        "setRetentionReq": {"numOfMonthsRemain": 0},
+    }
+
+    REVIEW_ACTION_IGNORE_FILES_REQ_JSON = {
+        "operation": ReviewActions.IGNORE.value,
+        "remActionRequest": {
+            "dataSourceId": 0,
+            "handlerName": "default",
+            "isBulkOperation": False,
+            "searchRequest": ""},
+        "ignoreRisksReq": {"ignoreAllRisks": False},
+    }
 
     REVIEW_ACTION_TAG_REQ_JSON = {
         "operation": ReviewActions.TAG.value,
@@ -175,9 +233,52 @@ class EdiscoveryConstants:
                                     "{\"key\":\"fl\",\"value\":\"entity_doc_tags\"}," \
                                     "{\"key\":\"start\",\"value\":\"0\"}]}"
 
+    REVIEW_ACTION_SEARCH_FL_SET = {
+        "FileName",
+        "OwnerName",
+        "OwnerLocation",
+        "CountryCode",
+        "FileExtension",
+        "operatingSystem",
+        "IsProtected",
+        "FileName_path",
+        "Url",
+        "ClientId",
+        "DocumentType",
+        "contentid",
+        "AllowListUsername",
+        "AllowModifyUsername",
+        "AllowWriteUsername",
+        "AllowExecuteUsername",
+        "AllowFullControlUsername",
+        "ExpiryDate",
+        "CreatedTime",
+        "data_source",
+        "data_source_name",
+        "data_source_type",
+        "entities_extracted",
+        "ConsentFor_*",
+        "RedactFor_*",
+        "RedactMode_*",
+        "CommentFor_*",
+        "AppType",
+        "ApplicationId",
+        "CVTurboGUID",
+        "CommcellNumber",
+        "AchiveFileId",
+        "ArchiveFileOffset",
+        "Size",
+        "Risk_*",
+        "LastAccessedBy",
+        "LastModifiedBy",
+        "ModifiedTimeAsStr",
+        "entity_doc_tags",
+        "TagIds"}
+
     REVIEW_ACTION_IDA_SELECT_SET = {
         5: {'contentid', 'Url', 'ClientId', 'CreatedTime', 'FileName'}}
 
+    FS_SERVER_HANDLER_NAME = 'GetFileServers'
     ADD_FS_REQ_JSON = {
         "datasourceId": 0,
         "indexServerClientId": 0,
@@ -288,7 +389,9 @@ class EdiscoveryConstants:
     DS_FILE = 'file'
     DS_CLOUD_STORAGE = 'cloudstorage'
     FIELD_DATA_SOURCE_DISPLAY_NAME = 'datasourceDisplayName'
+    FIELD_DISPLAY_NAME = 'displayName'
     FIELD_DATA_SOURCE_NAME = 'datasourceName'
+    FIELD_DATA_SOURCE_ID_NON_SEA = 'datasourceId'
     FIELD_DOCUMENT_COUNT = 'documentCount'
     FIELD_DATA_SOURCE_TYPE = 'datasourceType'
     FIELD_DATA_SOURCE_ID = 'seaDataSourceId'
@@ -296,9 +399,11 @@ class EdiscoveryConstants:
     FIELD_DC_PLAN_ID = 'dcplanid'
     FIELD_PSEDUCO_CLIENT_ID = 'pseudoclientid'
     FIELD_SUBCLIENT_ID = 'subclientid'
-    FILED_DATA_SOURCE_ID = 'seaDataSourceId'
     FIELD_CRAWL_TYPE = 'crawltype'
+    FIELD_DATA_SOURCE_NAME_SEA = 'seaDataSourceName'
     DYNAMIC_FEDERATED_SEARCH_PARAMS = {"searchParams": []}
+
+    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
 
     TAGGING_ITEMS_REQUEST = {
         "entityType": "SEA_DATASOURCE_ENTITY",

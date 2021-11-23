@@ -76,6 +76,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
     'INSTANCE': '{0}Instance/%s',
+    'APPLICATION_INSTANCE': '{0}Application/%s',
+    'APPLICATION': '{0}Application',
 
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
@@ -103,6 +105,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
+    
+    'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -116,6 +120,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
     'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
+    'RECOVERY_ENABLERS': '{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX ',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -129,6 +134,9 @@ SERVICES_DICT_TEMPLATE = {
     'BROWSE_MOUNT_POINTS': '{0}/Client/%s/Action/BrowseMountPoints',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
+    'GET_VOLUME_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
+    'GET_APP_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
+    'GET_LABEL_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
 
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
@@ -251,6 +259,11 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_CREATE_DATA_SOURCE': '{0}EDiscoveryClients/Datasources',
     'EDISCOVERY_REVIEW_ACTIONS_WITH_REQUEST': '{0}EDiscoveryClients/Datasources/Actions/Requests',
     'EDISCOVERY_REVIEW_ACTIONS': '{0}V2/EDiscoveryClients/Datasources/Actions',
+    'EDISCOVERY_CLIENTS': '{0}EDiscoveryClients?eDiscoverySubtype=%s',
+    'EDISCOVERY_CLIENT_DETAILS': '{0}EDiscoveryClients/%s',
+    'EDISCOVERY_DATA_SOURCE_STATS': '{0}EDiscoveryClients/Datasources?id=%s&type=%s&start=0&count=1000',
+    'EDISCOVERY_CREATE_CLIENT': '{0}EDiscoveryClients/Clients',
+    'EDISCOVERY_DELETE_CLIENT': '{0}EDiscoveryClients/Clients/%s',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -265,6 +278,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
     'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
     'ASSOCIATED_ENTITIES': '{0}V2/Plan/%s/AssociatedEntities',
+    'GET_PLANS': '{0}V2/Plan?type=%s&subType=%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -329,6 +343,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
     'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
     'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
+    'CHECK_ELIGIBILITY_MIGRATION' : '{0}Company/%s/migration-entities',
+    'MIGRATE_CLIENTS' : '{0}Company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',

@@ -759,7 +759,7 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'Instance "{0}" already exists.')
 
-        storage_policy = db2_options.get('storage_policy')
+        storage_policy = db2_options.get('storage_policy',db2_options.get('data_storage_policy'))
 
         if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
@@ -1716,6 +1716,8 @@ class Instance(object):
                     _class = _instances_dict[agent_name][0]
             else:
                 _class = _instances_dict[agent_name]
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
             return _class.__new__(_class, agent_object, instance_name, instance_id)
         else:
             return object.__new__(cls)
@@ -1815,17 +1817,25 @@ class Instance(object):
         )
         flag, response = self._cvpysdk_object.make_request('GET', instance_service)
 
-        if not flag:
-            instance_service = (
-                "{0}&applicationId={1}".format(self._ALLINSTANCES, self._agent_object.agent_id))
-            flag, response = self._cvpysdk_object.make_request('GET', instance_service)
-
         if flag:
             if response.json() and "instanceProperties" in response.json():
                 self._properties = response.json()["instanceProperties"][0]
-                self._instance = self._properties["instance"]
-                self._instance_name = self._properties["instance"]["instanceName"].lower()
-                self._instanceActivityControl = self._properties["instanceActivityControl"]
+                try:
+                    self._instance = self._properties["instance"]
+                    self._instance_name = self._properties["instance"]["instanceName"].lower()
+                    self._instanceActivityControl = self._properties["instanceActivityControl"]
+                except KeyError:
+                    instance_service = (
+                        "{0}&applicationId={1}".format(self._ALLINSTANCES, self._agent_object.agent_id))
+                    flag, response = self._cvpysdk_object.make_request('GET', instance_service)
+                    if flag:
+                        if response.json() and "instanceProperties" in response.json():
+                            self._properties = response.json()["instanceProperties"][0]
+                            self._instance = self._properties["instance"]
+                            self._instance_name = self._properties["instance"]["instanceName"].lower()
+                            self._instanceActivityControl = self._properties["instanceActivityControl"]
+                    else:
+                        raise SDKException('Response', '102')
             else:
                 raise SDKException('Response', '102')
         else:

@@ -142,7 +142,8 @@ EXCEPTION_DICT = {
         '105': 'Could not fetch instance property',
         '106': 'Invalid policy name under given instance. Validate the policy name',
         '107': 'Unsupported auto discovery mode provided.'
-               'Valid values are REGEX and GROUP'
+               'Valid values are REGEX and GROUP',
+        '108': 'Invalid FREL client'
     },
     'Subclient': {
         '101': 'Data type of the input(s) is not valid',
@@ -311,7 +312,11 @@ EXCEPTION_DICT = {
         '113': 'Failed to perform export',
         '114': 'Failed to perform export status check',
         '115': 'Failed to create data source',
-        '116': 'Failed to perform review actions on documents'
+        '116': 'Failed to perform review actions on documents',
+        '117': 'Failed to get Ediscovery projects',
+        '118': 'Failed to get Ediscovery project properties',
+        '119': 'Failed to add Ediscovery client',
+        '120': 'Failed to delete Ediscovery client',
     },
     'FileStorageOptimization': {
         '101': 'Data type of the input(s) is not valid',
@@ -322,6 +327,11 @@ EXCEPTION_DICT = {
         '106': "Failed to find server group name in FSO",
         '107': 'Failed to start collection job at server group level',
 
+    },
+    'SensitiveDataGovernance': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to find given project name in SDG',
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',

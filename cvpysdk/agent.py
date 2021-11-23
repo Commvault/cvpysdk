@@ -413,6 +413,8 @@ class Agent(object):
             agent_name = 'file system'
         if agent_name in _agents_dict:
             _class = _agents_dict.get(agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
             return _class.__new__(_class, client_object, agent_name, agent_id)
         else:
             return object.__new__(cls)

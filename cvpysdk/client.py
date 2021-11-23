@@ -242,6 +242,9 @@ Client
 
     disable_content_indexing()   --  Disables the v1 content indexing on the client
 
+    check_eligibility_for_migration()  --   Checks whether client is Eligible for Migration or not
+
+    change_company_for_client()        --   Migrates client to specified company
 
 Client Attributes
 -----------------
@@ -325,6 +328,7 @@ Client Attributes
 
     **vm_guid**                     -- returns guid of the vm client
 
+    **company_name**                 -- returns company name for the client
 """
 
 from __future__ import absolute_import
@@ -353,7 +357,7 @@ from .network_throttle import NetworkThrottle
 from .security.user import Users
 
 from .name_change import NameChange
-
+from .organization import Organizations
 
 class Clients(object):
     """Class for representing all the clients associated with the commcell."""
@@ -853,6 +857,7 @@ class Clients(object):
 
                     Available Values for client_type : "windows"
                                                        "unix"
+                                                       "unix cluster"
 
             Returns:
                 client object for the created client.
@@ -874,6 +879,9 @@ class Clients(object):
 
         if "unix" in client_type.lower():
             os_id = 1
+
+        if "unix cluster" in client_type.lower():
+            os_id = 11
 
         request_json = {
             'App_CreatePseudoClientRequest':
@@ -3153,6 +3161,7 @@ class Client(object):
         self._readiness = None
 
         self._vm_guid = None
+        self._company_name = None
 
         self.refresh()
 
@@ -3209,6 +3218,8 @@ class Client(object):
                     'activityControl']['EnableDataManagement']
 
                 self._is_ci_enabled = client_props['activityControl']['EnableOnlineContentIndex']
+
+                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')               
 
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
@@ -5967,6 +5978,90 @@ class Client(object):
         update_properties['client']['EnableContentIndexing'] = 'false'
         self.update_properties(update_properties)
 
+    @property
+    def company_name(self):
+        """Returns Company Name to which client belongs to, Returns Empty String, If client belongs to Commcell"""
+        return self._company_name
+
+    def check_eligibility_for_migration(self, destination_company_name):
+        """Checks whether Client is Eligible for migration
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Returns:
+            eligibility_status (bool)   --  True, If Clients are eligible for migration else False
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        company_id = (int(Organizations(self._commcell_object).get(destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['CHECK_ELIGIBILITY_MIGRATION'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+        
+        if flag:
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['error']['errorMessage']))
+                return True if 'applicableClients' in response.json() else False
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def change_company_for_client(self, destination_company_name):
+        """
+        Changes Company for Client
+
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Raises:
+            SDKException:
+                If Client is not eligible for migration
+
+                if response is empty
+
+                if response is not success
+        """
+        if not self.check_eligibility_for_migration(destination_company_name):
+            raise SDKException('Client', 102, f'Client [{self.client_name}] is Not Eligible For Migration')
+        
+        company_id = (int(Organizations(self._commcell_object).get(destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['MIGRATE_CLIENTS'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+        
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
 
 class _Readiness:
     """ Class for checking the connection details of a client """
