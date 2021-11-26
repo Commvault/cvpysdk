@@ -359,7 +359,7 @@ class UserGroups(object):
                 if 'response' in response.json():
                     response_json = response.json()['response'][0]
                     error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                    error_message = response_json.get('errorString', '')
                     if not error_code == 0:
                         raise SDKException('Response', '101', error_message)
             else:

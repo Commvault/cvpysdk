@@ -450,7 +450,9 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Please specify all the required inputs',
-        '104': 'Please give appropriate input(s)'
+        '104': 'Please give appropriate input(s)',
+        '105': 'Both Clients list and Other Entities list cannot be none',
+        '106': 'Incorrect SQL credentials provied'
     },
     'NetworkTopology': {
         '101': 'Data type of the input(s) is not valid',
