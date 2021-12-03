@@ -443,7 +443,7 @@ class CVPySDK(object):
                     # Raise max attempts exception, if attempts exceeds 3
                     raise SDKException('CVPySDK', '103')
 
-            if response.status_code == httplib.OK and response.ok:
+            if (response.status_code == httplib.OK or response.status_code == httplib.CREATED) and response.ok:
                 return (True, response)
             else:
                 return (False, response)

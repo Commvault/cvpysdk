@@ -333,6 +333,18 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to find given project name in SDG',
     },
+    'RequestManager': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get requests details from commcell',
+        '104': 'Failed to get request properties',
+        '105': 'Unable to find given request',
+        '106': 'Failed to delete request',
+        '107': 'Failed to add request',
+        '108': 'Failed to configure request',
+        '109': 'Failed to mark review as complete as it has non-reviewed documents',
+        '110': 'Failed to request approval as review is not in completed state'
+    },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
         '102': ''

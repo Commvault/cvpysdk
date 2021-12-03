@@ -34,9 +34,83 @@ InventoryConstants              -       Maintains constants for Inventory Manage
 
 EdiscoveryConstants             -       Maintains constants for Ediscovery clients in activate
 
+RequestConstants                -       Maintains constants for request manager in Activate
+
 """
 import copy
 from enum import Enum
+
+
+class RequestConstants:
+    """class to maintain constants for request manager"""
+    PROPERTY_REVIEW_CRIERIA = 'ReviewCriteria'
+    PROPERTY_ENTITIES = 'Entities'
+    PROPERTY_REQUEST_HANDLER_ID = 'RequestHandlerId'
+    PROPERTY_REQUEST_HANDLER_NAME = 'RequestHandlerName'
+    PROPERTY_REVIEW_SET_ID = 'ReviewSetId'
+    SEARCH_QUERY_SELECTION_SET = {
+        "entity_*",
+        "count_entity_*",
+        "Url",
+        "contentid",
+        "FileName",
+        "Size",
+        "data_source",
+        "data_source_name",
+        "entities_extracted",
+        "RedactMode*",
+        "CommentFor*",
+        "ConsentFor*"}
+
+    FACET_REVIEWED = '_ConsentFor_%s_b_Reviewed'
+    FACET_NOT_REVIEWED = '_ConsentFor_%s_b_Not reviewed'
+    FACET_ACCEPTED = '_ConsentFor_%s_b_Accepted'
+    FACET_DECLINED = '_ConsentFor_%s_b_Declined'
+    FACET_REDACTED = '_RedactMode_%s_b_Redacted'
+    FACET_NOT_REDACTED = '_RedactMode_%s_b_Not redacted'
+    FACET_COUNT = "count"
+    REQUEST_FEDERATED_FACET_SEARCH_QUERY = {"searchParams": [{"key": "q",
+                                                              "value": "*:*"},
+                                                             {"key": "wt",
+                                                              "value": "json"},
+                                                             {"key": "rows",
+                                                              "value": "0"},
+                                                             {"key": "defType",
+                                                              "value": "edismax"},
+                                                             {"key": "facet",
+                                                              "value": "true"},
+                                                             {"key": "json.facet",
+                                                              "value": "{\"_ConsentFor_<rsidparam>_b_Reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:*\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Not reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"contentid:* AND -(ConsentFor_<rsidparam>_b:*)\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Accepted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:true\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Declined\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:false\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:true\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Not redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:false\",\"facet\":{}},\"FileExtension\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_FileExtension\",\"tag_exclude_FileExtension\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"FileExtension\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"ReadAccessUserName\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_ReadAccessUserName\",\"tag_exclude_ReadAccessUserName\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"ReadAccessUserName\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"data_source_name\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_data_source_name\",\"tag_exclude_data_source_name\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"data_source_name\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}}}"},
+                                                             {"key": "useDCubeReq",
+                                                              "value": "true"}]}
+
+    FIELD_DOC_COUNT = "TotalDocuments"
+    FIELD_REVIEWED = "ReviewedDocuments"
+    FIELD_NOT_REVIEWED = "Non-ReviewedDocuments"
+    FIELD_ACCEPTED = 'AcceptedDocuments'
+    FIELD_DECLINED = 'DeclinedDocuments'
+    FIELD_REDACTED = 'RedactedDocuments'
+    FIELD_NOT_REDACTED = 'Non-RedactedDocuments'
+
+    class RequestStatus(Enum):
+        """enum to specify different request status"""
+        TaskCreated = 1,
+        TaskConfigured = 2,
+        ReviewInProgress = 3,
+        ReviewCompleted = 4,
+        ApproveCompleted = 5,
+        ExportCompleted = 6,
+        DeleteCompleted = 7,
+        TaskCompleted = 8,
+        ApprovalRequested = 9,
+        ActionInProgress = 10,
+        CompletedWithErrors = 11,
+        Failed = 12
+
+    class RequestType(Enum):
+        """enum to maintain different request type"""
+        EXPORT = 'EXPORT'
+        DELETE = 'DELETE'
 
 
 class EdiscoveryConstants:

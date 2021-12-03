@@ -82,6 +82,12 @@ EdiscoveryClientOperations:
 
     schedule()                          --  Creates or modifies the schedule associated with ediscovery client
 
+    do_document_task()                  --  does document related tasks like consent/comment
+
+    configure_task()                    --  does task configuration for this edisocvery client
+
+    task_workflow_operation()           --  calls workflow operation for task
+
 EdiscoveryClientOperations Attributes:
 --------------------------------------
 
@@ -192,7 +198,7 @@ import os
 
 from ..activateapps.entity_manager import EntityManagerTypes
 
-from ..activateapps.constants import InventoryConstants, EdiscoveryConstants, TargetApps
+from ..activateapps.constants import InventoryConstants, EdiscoveryConstants, TargetApps, RequestConstants
 from ..exception import SDKException
 
 
@@ -504,6 +510,9 @@ class EdiscoveryClientOperations():
         self._search_entity_type = None
         self._search_entity_id = None
         self._client_entity_type = 3
+        self._request_type = None
+        self._request_review_set_id = None
+        self._request_app = None
         self._API_CRAWL = self._services['EDISCOVERY_CRAWL']
         self._API_JOBS_HISTORY = self._services['EDISCOVERY_JOBS_HISTORY']
         self._API_JOB_STATUS = self._services['EDISCOVERY_JOB_STATUS']
@@ -516,9 +525,13 @@ class EdiscoveryClientOperations():
         self._API_EXPORT_STATUS = self._services['EDISCOVERY_EXPORT_STATUS']
         self._CREATE_POLICY = self._services['CREATE_UPDATE_SCHEDULE_POLICY']
         self._API_GET_EDISCOVERY_CLIENT_DETAILS_V1 = copy.deepcopy(self._services['EDISCOVERY_CLIENT_DETAILS'])
+        self._API_DOC_TASK = self._services['EDISCOVERY_REQUEST_DOCUMENT_MARKER']
+        self._API_CONFIGURE_TASK = self._services['EDISCOVERY_CONFIGURE_TASK']
+        self._API_TASK_WORKFLOW = self._services['EDICOVERY_TASK_WORKFLOW']
         from .inventory_manager import Inventory, Asset
         from .file_storage_optimization import FsoServer, FsoServerGroup
         from .sensitive_data_governance import Project
+        from .request_manager import Request
 
         if isinstance(class_object, Inventory):
             self._type = 0  # Inventory
@@ -564,6 +577,11 @@ class EdiscoveryClientOperations():
             self._app_type = 2  # for sharing, app type param
             self._search_entity_type = 188
             self._search_entity_id = class_object.project_id
+        elif isinstance(class_object, Request):
+            self._client_id = class_object.request_id
+            self._request_type = class_object.request_type
+            self._request_review_set_id = class_object.review_set_id
+            self._request_app = class_object.request_app
         else:
             raise SDKException('EdiscoveryClients', '101')
         self.refresh()
@@ -979,7 +997,14 @@ class EdiscoveryClientOperations():
         """
         # if called from EdiscoveryDatasource, then no association check needed as sharing is not possible at this level
         from ..activateapps.file_storage_optimization import FsoServerGroup
-        if isinstance(self._class_obj, EdiscoveryDatasource) or isinstance(self._class_obj, FsoServerGroup):
+        from ..activateapps.request_manager import Request
+        if isinstance(
+                self._class_obj,
+                Request) or isinstance(
+                self._class_obj,
+                EdiscoveryDatasource) or isinstance(
+                self._class_obj,
+                FsoServerGroup):
             return {}
         association_request_json = copy.deepcopy(EdiscoveryConstants.SHARE_REQUEST_JSON)
         del association_request_json['securityAssociations']
@@ -1377,6 +1402,175 @@ class EdiscoveryClientOperations():
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def do_document_task(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
+        """does document update for consent/comment
+
+            Args:
+
+                doc_id          (str)       --  Document id (Mandatory in case of SDG)
+
+                comment         (str)       --  User comment
+
+                ds_id           (int)       --  Data SourceId (Mandatory in case of SDG)
+
+                consent         (bool)      --  Accept or Decline (Default:True)
+
+                redact          (bool)      --  Redact ON or OFF (only in case of export)
+                                                            (Default:False)
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to update document
+
+                    if input is not valid
+        """
+        if not self._request_type or not self._request_app or not self._request_review_set_id:
+            raise SDKException('EdiscoveryClients', '102', "Request type not set correctly")
+        if self._request_app == TargetApps.SDG.name:
+            if not doc_id:
+                raise SDKException(
+                    'EdiscoveryClients',
+                    '102',
+                    "Document id is mandatory for request from SDG app")
+            if not ds_id:
+                raise SDKException(
+                    'EdiscoveryClients',
+                    '102',
+                    "DataSource id is mandatory for request from SDG app")
+        if self._request_app == TargetApps.FSO.name:
+            self._request_review_set_id = f"FSO_{self._request_review_set_id}"
+        req_json = {
+            "nameValues": [
+                {
+                    "name": f"ConsentFor_{self._request_review_set_id}_b",
+                    "value": f"{consent}"
+                },
+
+                {
+                    "name": f"CommentFor_{self._request_review_set_id}",
+                    "value": comment
+                }
+            ]
+        }
+
+        if self._request_app == TargetApps.SDG.name:
+            req_json['nameValues'].append({
+                "name": "q",
+                "value": f"contentid:{doc_id}"
+            })
+            req_json['nameValues'].append({
+                "name": "datasourceId",
+                "value": f"{ds_id}"
+            })
+        elif self._request_app == TargetApps.FSO.name:
+            req_json['nameValues'].append({
+                "name": "fq",
+                "value": f"contentid:* AND -(ConsentFor_{self._request_review_set_id}_b:*)"
+            })
+        if self._request_type == RequestConstants.RequestType.EXPORT.value:
+            req_json['nameValues'].append({
+                "name": f"RedactMode_{self._request_review_set_id}_b",
+                "value": f"{redact}"
+            })
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._API_DOC_TASK % (self._client_id), req_json
+        )
+        if flag:
+            if not response.json():
+                return
+            if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                raise SDKException(
+                    'EdiscoveryClients',
+                    '102',
+                    f"Something went wrong while doing document task operation - {response.json()['errorMessage']}")
+            raise SDKException('EdiscoveryClients', '102', f"Document task failed")
+        self._response_not_success(response)
+
+    def task_workflow_operation(self):
+        """calls workflow operation for task
+
+                Args:
+                    None
+
+                Returns:
+
+                    str --  Workflow job id
+
+                Raises:
+
+                    SDKException:
+
+                        if failed to call task workflow
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._API_TASK_WORKFLOW % self._client_id)
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Something wrong while invoking task workflow operation - {response.json()['errorMessage']}")
+                if 'jobId' in response.json():
+                    return response.json()['jobId']
+            raise SDKException('EdiscoveryClients', '102', f"Workflow task failed")
+        self._response_not_success(response)
+
+    def configure_task(self, task_props):
+        """configures task for this edsicovery client
+
+            Args:
+
+                task_props      list(dict)      --  Task properties
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if input is not valid
+
+                    if failed to configure task
+        """
+        if not isinstance(task_props, list):
+            raise SDKException('EdiscoveryClients', '101')
+        req_json = {
+            "taskReq": {
+                "tasks": [
+                    {
+                        "taskInfo": {
+                            "taskId": self._client_id
+                        },
+                        "taskProps": task_props
+                    }
+                ]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._API_CONFIGURE_TASK, req_json
+        )
+        if flag:
+            if response.json() and 'msg' in response.json():
+                msg = response.json()['msg']
+                if 'errorCode' in msg and msg['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Something went wrong while configuring task operation - {msg['errorMessage']}")
+                return
+            raise SDKException('EdiscoveryClients', '102', f"Configure task failed")
+        self._response_not_success(response)
 
     @property
     def associations(self):

@@ -36,6 +36,8 @@ Activate instance Attributes
 
     **sensitive_data_governance**   --  returns object of sensitive data governance app
 
+    **request_manager**             --  returns object of Requests class
+
 """
 
 from .exception import SDKException
@@ -45,6 +47,8 @@ from .activateapps.file_storage_optimization import FsoTypes, FsoServers, FsoSer
 from .activateapps.sensitive_data_governance import Projects
 
 from .activateapps.inventory_manager import Inventories
+
+from .activateapps.request_manager import Requests
 
 from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
 
@@ -70,6 +74,7 @@ class Activate(object):
         self._fso_servers = None
         self._fso_server_groups = None
         self._sdg_projects = None
+        self._req_mgr = None
 
     def __del__(self):
         """Destructor method to delete all instances of apps referenced by this class"""
@@ -80,12 +85,19 @@ class Activate(object):
         del self._fso_servers
         del self._fso_server_groups
         del self._sdg_projects
+        del self._req_mgr
 
     def inventory_manager(self):
         """Returns the Inventories class object from inventory manager app from activate apps"""
         if self._inventories is None:
             self._inventories = Inventories(self._commcell_object)
         return self._inventories
+
+    def request_manager(self):
+        """Returns the Requests class object from request manager app from activate apps"""
+        if self._req_mgr is None:
+            self._req_mgr = Requests(self._commcell_object)
+        return self._req_mgr
 
     def file_storage_optimization(self, fso_type=FsoTypes.SERVERS):
         """returns object of FsoServers/FsoServerGroups/Projects based on FSO type
