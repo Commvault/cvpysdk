@@ -123,6 +123,8 @@ Commcell:
     switch_to_company()         --  Login to company as an operator, just like using switcher on Command Center
 
     reset_company()             --  Switch back to Commcell
+    
+    allow_users_to_enable_passkey()     --      Enable or Disable passkey authorization for company administrators and client owners
 
 Commcell instance Attributes
 ============================
@@ -3304,3 +3306,35 @@ class Commcell(object):
         """Resets company to Commcell"""
         if 'operatorCompanyId' in self._headers:
             self._headers.pop('operatorCompanyId')
+            
+    def allow_users_to_enable_passkey(self, flag):
+        """Enable or Disable passkey authorization for company administrators and client owners
+        
+        Args:
+            flag (boolean)  --  Enable or Disable Passkey Authorization
+            
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to enable or disable passkey
+        """
+        request_json = {
+            "commCellInfo": {
+                "generalInfo": {
+                    "allowUsersToEnablePasskey": flag
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request('PUT', self._services['SET_COMMCELL_PROPERTIES'], request_json)
+
+        if flag:
+            if response.json() and "response" in response.json():
+                errorCode = response.json()['response'][0].get('errorCode')
+                if errorCode != 0:
+                    raise SDKException('Response', '101', 'Failed to enable passkey')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

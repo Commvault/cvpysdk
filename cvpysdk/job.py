@@ -214,6 +214,8 @@ Job
 
     get_events()                --  returns the commserv events for the job
 
+    get_child_jobs()            --  Returns the child jobs
+
 
 Job instance Attributes
 -----------------------
@@ -2650,6 +2652,20 @@ class Job(object):
             }
         """
         return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
+
+    def get_child_jobs(self):
+        """ Get the child jobs details for the current job
+        Returns:
+                _jobs_list          (list):     List of child jobs
+
+        """
+        _jobs_list = []
+        if self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus'):
+            for _job in self.details['jobDetail']['clientStatusInfo']['vmStatus']:
+                _jobs_list.append(_job)
+            return _jobs_list
+        else:
+            return None
 
 
 class _ErrorRule:

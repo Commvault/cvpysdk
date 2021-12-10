@@ -118,9 +118,14 @@ VirtualServerSubclient:
     full_vm_restore_in_place()              -- restores the VM specified by the
                                                user to the same location
 
+    _full_vm_restore_update_json_for_v2     -- modifies the restore json as per v2
+                                                subclient details and returns it
+
     backup()                               --  run a backup job for the subclient
 
     _advanced_backup_options()              --  sets the advanced backup options
+
+    update_properties()                       --  child method to add vsa specific properties to update properties
 
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
@@ -330,17 +335,6 @@ class VirtualServerSubclient(Subclient):
         return vm_diskfilter
 
     @property
-    def cbtvalue(self):
-        """
-        Get CBT value for given subclient. Returns status as True/False (string)
-
-        """
-        self._get_subclient_properties()
-        cbt_attr = r'useChangedTrackingOnVM'
-        vsasubclient_cbt_status = self._vsaSubclientProp[cbt_attr]
-        return vsasubclient_cbt_status
-
-    @property
     def metadata(self):
         """
             Get if collect files/metadata value for given subclient.
@@ -406,35 +400,36 @@ class VirtualServerSubclient(Subclient):
         """
         content = []
         try:
-            for item in subclient_content:
-                virtual_server_dict = {}
-                virtual_server_dict['allOrAnyChildren'] = True
-                temp = {
-                    'allOrAnyChildren': item.get('allOrAnyChildren', True),
-                    'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                    'name': item['name'],
-                    'displayName': item['display_name'],
-                    'path': '',
-                    'type': item['type'].value
-                }
-                if item['type'] == VSAObjects.VMNotes:
-                    temp['value'] = item['display_name']
-                    temp['displayName'] = item['display_name']
-                    temp['name'] = "Notes"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'true'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 1
-                    temp['displayName'] = "Powered On"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'false'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 0
-                    temp['displayName'] = "Powered Off"
-                virtual_server_dict.update(temp)
-                content.append(virtual_server_dict)
+            for entity in subclient_content:
+                for item in entity:
+                    virtual_server_dict = {}
+                    virtual_server_dict['allOrAnyChildren'] = True
+                    temp = {
+                        'allOrAnyChildren': item.get('allOrAnyChildren', True),
+                        'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
+                        'name': item.get('name',""),
+                        'displayName': item.get('display_name',''),
+                        'path': '',
+                        'type': item['type'].value
+                    }
+                    if item['type'] == VSAObjects.VMNotes:
+                        temp['value'] = item['display_name']
+                        temp['displayName'] = item['display_name']
+                        temp['name'] = "Notes"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'true'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 1
+                        temp['displayName'] = "Powered On"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'false'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 0
+                        temp['displayName'] = "Powered Off"
+                    virtual_server_dict.update(temp)
+                    content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
@@ -528,26 +523,6 @@ class VirtualServerSubclient(Subclient):
         }
         self._set_subclient_properties("_vmDiskFilter", vs_diskfilter_content)
 
-    @cbtvalue.setter
-    def cbtvalue(self, value=1):
-        """
-        Set given value (enabled/disabled) on the subclient
-
-        Args:
-                value   (int)   - enabled(1)/disabled(0)
-
-        Raise Exception:
-                If unable to set the give CBT value
-
-        """
-        try:
-            cbt_status = bool(value)
-            cbt_attr = r'useChangedTrackingOnVM'
-            self._set_subclient_properties("_vsaSubclientProp['useChangedTrackingOnVM']",
-                                           cbt_status)
-        except BaseException:
-            raise SDKException('Subclient', '101')
-
     @property
     def live_sync(self):
         """Returns the instance of the VSALiveSync class"""
@@ -586,6 +561,44 @@ class VirtualServerSubclient(Subclient):
         collectdetails = r'collectFileDetails'
         if collectdetails in self._vsaSubclientProp:
             self._set_subclient_properties("_vsaSubclientProp['collectFileDetails']", value)
+
+    @property
+    def cbtvalue(self):
+        """
+        Get CBT value for given subclient.
+
+        Returns:
+            (Boolean)    True/False
+
+        """
+        return self._subclient_properties.get('vsaSubclientProp', {}).get("useChangedTrackingOnVM", False)
+
+
+    @cbtvalue.setter
+    def cbtvalue(self, value):
+        """
+        Set CBT value for given subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        """
+        update_properties = self.properties
+        update_properties["vsaSubclientProp"]['useChangedTrackingOnVM'] = value
+        self.update_properties(update_properties)
+
+    def update_properties(self, properties_dict):
+        """
+        child method to add any specific attributes for vsa
+        Args:
+            properties_dict         (dict):     dict of all propterties of subclient
+        """
+        properties_dict.update({
+            "vmFilterOperationType": "OVERWRITE",
+            "vmContentOperationType": "OVERWRITE",
+            "vmDiskFilterOperationType": "OVERWRITE"
+        })
+        super().update_properties(properties_dict)
 
     def _get_content_list(self, children):
         """
@@ -637,15 +650,13 @@ class VirtualServerSubclient(Subclient):
         return content_list
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of File System subclient.
+        """Gets the subclient  related properties of Virtual server subclient.
 
         """
 
         self._vmDiskFilter = None
         self._vmFilter = None
-
-        if not bool(self._subclient_properties):
-            super(VirtualServerSubclient, self)._get_subclient_properties()
+        super(VirtualServerSubclient, self)._get_subclient_properties()
 
         if 'vmContent' in self._subclient_properties:
             self._vmContent = self._subclient_properties['vmContent']
@@ -2512,8 +2523,51 @@ class VirtualServerSubclient(Subclient):
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "volumeRstOption"] = self._json_restore_volumeRstOption(
             restore_option)
+        if restore_option.get('v2_details') and len(restore_option.get('vm_to_restore', '')) <= 1:
+            request_json = self._full_vm_restore_update_json_for_v2(request_json, restore_option.get('v2_details'))
 
         return request_json
+
+    @staticmethod
+    def _full_vm_restore_update_json_for_v2(json_to_be_edited, v2_details):
+        """
+        Update the final request JSON to match wth the v2 vm
+        Args:
+            json_to_be_edited               (dict): Final restore JSON for the restore without v2 subclient details
+
+            v2_details                      (dict): v2 vm subclient details
+                                   eg: {
+                                            'clientName': 'vm_client1',
+                                            'instanceName': 'VMInstance',
+                                            'displayName': 'vm_client1',
+                                            'backupsetId': 12,
+                                            'instanceId': 2,
+                                            'subclientId': 123,
+                                            'clientId': 1234,
+                                            'appName': 'Virtual Server',
+                                            'backupsetName': 'defaultBackupSet',
+                                            'applicationId': 106,
+                                            'subclientName': 'default'
+                                        }
+
+        Returns:
+            json_to_be_edited        -complete json for performing Full VM Restore
+                                        options with v2 subclient details
+
+        """
+        json_to_be_edited['taskInfo']['associations'][0]['clientName'] = v2_details.get('clientName')
+        json_to_be_edited['taskInfo']['associations'][0]['clientId'] = v2_details.get('clientId')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceName'] = v2_details.get('instanceName')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceId'] = v2_details.get('instanceId')
+        json_to_be_edited['taskInfo']['associations'][0]['displayName'] = v2_details.get('displayName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetName'] = v2_details.get('backupsetName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetId'] = v2_details.get('backupsetId')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientName'] = v2_details.get('subclientName')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientId'] = v2_details.get('subclientId')
+        json_to_be_edited['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption']['backupset'][
+            'clientName'] = v2_details.get('clientName')
+        del json_to_be_edited['taskInfo']['associations'][0]['subclientGUID']
+        return json_to_be_edited
 
     def backup(self,
                backup_level="Incremental",

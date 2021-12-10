@@ -182,6 +182,12 @@ Organization Attributes
 
          **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+        **is_backup_disabled**       -- returns the backup activity status for the Organization
+
+        **is_restore_disabled**      -- returns the restore activity status for the Organization
+
+        **is_login_disabled**        -- returns the Login activity status for the Organization
+
          **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
          **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
@@ -526,8 +532,8 @@ class Organizations:
                             'email': email
                         }
                     ],
-                    'defaultPlans': plans_list
-                }
+                },
+                'planDetails': plans_list
             }
         }
 
@@ -708,6 +714,9 @@ class Organization:
         self._is_passkey_enabled = None
         self._is_authorise_for_restore_enabled = None
         self._is_allow_users_to_enable_passkey_enabled = None
+        self._backup_disabled = None
+        self._restore_disabled = None
+        self._login_disabled = None
         self._retire_laptops = None
 
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
@@ -857,7 +866,9 @@ class Organization:
                 self._description = organization['description']
                 self._email_domain_names = organization.get('emailDomainNames')
                 self._domain_name = organization['shortName']['domainName']
-
+                self._backup_disabled = organization['deactivateOptions']['disableBackup']
+                self._restore_disabled = organization['deactivateOptions']['disableRestore']
+                self._login_disabled = organization['deactivateOptions']['disableLogin']
                 self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']
                 self._auth_code = organization_properties.get('authCode')
                 self._use_upn = organization_properties.get('useUPNForEmail')
@@ -1174,6 +1185,21 @@ class Organization:
     def is_auto_discover_enabled(self):
         """Returns boolen whether organization autodiscover attribute enabled for this organization."""
         return self._properties['organizationProperties'].get('enableAutoDiscovery', False)
+
+    @property
+    def is_backup_disabled(self):
+        """Returns boolean whether backup is disabled for this organisation"""
+        return self._backup_disabled
+
+    @property
+    def is_restore_disabled(self):
+        """Returns boolean whether restore is disabled for this organisation"""
+        return self._restore_disabled
+
+    @property
+    def is_login_disabled(self):
+        """Returns boolean whether login is disabled for this organisation"""
+        return self._login_disabled
 
     @property
     def shared_laptop(self):
@@ -1820,6 +1846,7 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def enable_auto_discover(self):
         """Enables autodiscover at company level..

@@ -45,7 +45,6 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-# from .vmware import VMWareVirtualServerSubclient
 
 
 class HyperVVirtualServerSubclient(VirtualServerSubclient):
@@ -214,7 +213,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      restored_vm_name=None,
                                      restore_option=None,
                                      snap_proxy=None,
-                                     media_agent=None):
+                                     media_agent=None,
+                                     **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -244,6 +244,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                 snap_proxy          (strig)     -- Snap proxy to be used for restore
 
                 media_agent          (string)    -- Media Agent to be used for Browse
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -299,6 +305,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')
@@ -352,7 +359,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                  power_on=True,
                                  copy_precedence=0,
                                  add_to_failover=False,
-                                 snap_proxy=None):
+                                 snap_proxy=None,
+                                 **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -372,6 +380,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                     restores from snap
                     default :proxy in instance or subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -385,7 +399,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool) and

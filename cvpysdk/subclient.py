@@ -1890,10 +1890,9 @@ c
 
         # check if subclient name is updated in the request
         # if subclient name is updated set the newName field in the request
-        if (properties_dict.get('subClientEntity', {}).get('subclientName', self._subClientEntity.get(
-                'subclientName')) != self._subClientEntity.get('subclientName')):
+        if properties_dict.get('subClientEntity', {}).get('subclientName') and properties_dict.get(
+                'subClientEntity', {}).get('subclientName') != self._subClientEntity.get('subclientName'):
             request_json['newName'] = properties_dict.get('subClientEntity', {}).get('subclientName')
-
         flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
         status, _, error_string = self._process_update_response(flag, response)
         self.refresh()
@@ -1932,6 +1931,14 @@ c
         update_properties = self.properties
         update_properties['subClientEntity']['subclientName'] = display_name
         self.update_properties(update_properties)
+
+    @name.setter
+    def name(self, name):
+        """Sets the name for the subclient
+        Args:
+            name    (str)   -- name for the subclient
+        """
+        self.display_name = name
 
     @property
     def _json_task(self):

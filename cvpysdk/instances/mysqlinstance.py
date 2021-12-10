@@ -286,7 +286,8 @@ class MYSQLInstance(Instance):
             Return Type: dict
 
         """
-        return self._properties.get('mySqlInstance', {}).get('mebSettings', {})
+        meb_settings = self._properties.get('mySqlInstance', {}).get('mebSettings', {})
+        return meb_settings
 
     @mysql_enterprise_backup_binary_path.setter
     def mysql_enterprise_backup_binary_path(self, value):

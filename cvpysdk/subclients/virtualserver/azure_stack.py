@@ -64,7 +64,8 @@ class AzureStackSubclient(VirtualServerSubclient):
                                      public_ip=True,
                                      restore_as_managed=True,
                                      copy_precedence=0,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -99,6 +100,12 @@ class AzureStackSubclient(VirtualServerSubclient):
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -113,6 +120,10 @@ class AzureStackSubclient(VirtualServerSubclient):
 
                     if response is not success
         """
+
+        if not restore_option:
+            restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         AzureRMSubclient.full_vm_restore_out_of_place(
             self, vm_to_restore, resource_group, storage_account,

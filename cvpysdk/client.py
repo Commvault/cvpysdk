@@ -359,6 +359,7 @@ from .security.user import Users
 from .name_change import NameChange
 from .organization import Organizations
 
+
 class Clients(object):
     """Class for representing all the clients associated with the commcell."""
 
@@ -396,7 +397,6 @@ class Clients(object):
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
-
         self.refresh()
 
     def __str__(self):
@@ -2071,14 +2071,16 @@ class Clients(object):
                                 }
                             ]
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureAppList"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureAppList"] = azure_app_dict
         else:
             azure_app_dict = {
                             "azureAppKeySecret": azure_app_key_secret,
                             "azureTenantName": azure_tenant_name,
                             "azureAppKeyID": azure_app_key_id
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureDetails"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureDetails"] = azure_app_dict
 
         if int(self._commcell_object.version.split(".")[1]) >= 25 and environment_type == 4:
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
@@ -2349,7 +2351,8 @@ class Clients(object):
                 raise SDKException('Client', '102', 'Missing inputs. Check db_options dictionary')
             request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
                 ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"] = {
-                "dbPort": str(db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
+                "dbPort": str(
+                    db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
                 "dbEnabled": True,
                 "dbName": db_options.get("db_name"),
                 "dbType": db_options.get("db_type", "POSTGRESQL"),
@@ -2361,7 +2364,8 @@ class Clients(object):
             }
             if db_options.get('db_instance', None):
                 request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
-                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options["db_instance"]
+                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options[
+                    "db_instance"]
         self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
     def add_azure_client(self, client_name, access_node, azure_options):
@@ -3088,6 +3092,30 @@ class Clients(object):
 class Client(object):
     """Class for performing client operations for a specific client."""
 
+    def __new__(cls, commcell_object, client_name, client_id=None):
+        """Decides and creates which client object needs to be created
+            Args:
+                commcell_object (object)     --  instance of the Commcell class
+
+                client_name     (str)        --  name of the client
+
+                client_id       (str)        --  id of the client
+                    default: None
+
+            Returns:
+                object - instance of the Client class
+                """
+        from .clients.vmclient import VMClient
+        _client = commcell_object._services['CLIENT'] % (client_id)
+        flag, response = commcell_object._cvpysdk_object.make_request('GET', _client)
+        if flag:
+            if response.json() and 'clientProperties' in response.json():
+                if response.json().get('clientProperties', {})[0].get('vmStatusInfo', {}).get('vsaSubClientEntity',
+                                                                                              {}).get(
+                        'applicationId') == 106:
+                    return object.__new__(VMClient)
+        return object.__new__(cls)
+
     def __init__(self, commcell_object, client_name, client_id=None):
         """Initialise the Client class instance.
 
@@ -3135,9 +3163,7 @@ class Client(object):
         self._network = None
         self._network_throttle = None
         self._association_object = None
-
         self._properties = None
-
         self._os_info = None
         self._install_directory = None
         self._version = None
@@ -3157,9 +3183,7 @@ class Client(object):
         self._cvd_port = None
         self._job_start_time = None
         self._timezone = None
-
         self._readiness = None
-
         self._vm_guid = None
         self._company_name = None
 
@@ -3219,7 +3243,7 @@ class Client(object):
 
                 self._is_ci_enabled = client_props['activityControl']['EnableOnlineContentIndex']
 
-                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')               
+                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')
 
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
@@ -4388,7 +4412,7 @@ class Client(object):
         import html
 
         if os.path.isfile(script):
-            with open(script, 'r') as temp_file:
+            with open(script, 'r', encoding='utf-8') as temp_file:
                 script = html.escape(temp_file.read())
         else:
             script = html.escape(script)
@@ -4850,8 +4874,8 @@ class Client(object):
 
         """
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_NETWORK_SUMMARY'].replace('%s',
-                                                                                                                self.client_id))
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_NETWORK_SUMMARY'].replace('%s', self.client_id))
         if flag:
             if "No Network Config found" in response.text:
                 return ""
@@ -5820,7 +5844,8 @@ class Client(object):
                                     "componentInfo": componentInfo}
                                 }]
 
-        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall, client_composition=client_composition)
+        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall,
+                                            client_composition=client_composition)
 
     def __get_componentInfo(self, software_list):
         """get the component info for the installed software
@@ -5847,7 +5872,6 @@ class Client(object):
                 }
             )
         return componentInfo
-
 
     @property
     def job_start_time(self):
@@ -5898,7 +5922,8 @@ class Client(object):
 
     def get_needs_attention_details(self):
         """
-        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
+        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers
+        for all the service commcells
 
         example output:
             {
@@ -5918,7 +5943,8 @@ class Client(object):
         if flag:
             if response.json() and 'commcellEntityRespList' in response.json():
                 needs_attention_tile_dict = {}
-                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers', 'CountOfAnomalousJobs']
+                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers',
+                             'CountOfAnomalousJobs']
                 for key in main_keys:
                     tile = {}
                     for tile_info in response.json()['commcellEntityRespList']:
@@ -5930,7 +5956,7 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_mount_volumes(self, volume_names = None):
+    def get_mount_volumes(self, volume_names=None):
         """"Gets mount volumes information for client
             Args:
                 volume_names (list): List of volume names to be fetched (optional)
@@ -5997,7 +6023,8 @@ class Client(object):
 
                 if response is not success
         """
-        company_id = (int(Organizations(self._commcell_object).get(destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
         request_json = {
             "entities": [
                 {
@@ -6009,11 +6036,12 @@ class Client(object):
         }
         req_url = self._services['CHECK_ELIGIBILITY_MIGRATION'] % company_id
         flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
-        
+
         if flag:
             if response.json():
                 if 'error' in response.json() and response.json()['error']['errorCode'] != 0:
-                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['error']['errorMessage']))
+                    raise SDKException('Organization', '110',
+                                       'Error: {0}'.format(response.json()['error']['errorMessage']))
                 return True if 'applicableClients' in response.json() else False
             else:
                 raise SDKException('Response', '102')
@@ -6038,8 +6066,9 @@ class Client(object):
         """
         if not self.check_eligibility_for_migration(destination_company_name):
             raise SDKException('Client', 102, f'Client [{self.client_name}] is Not Eligible For Migration')
-        
-        company_id = (int(Organizations(self._commcell_object).get(destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
         request_json = {
             "entities": [
                 {
@@ -6051,7 +6080,7 @@ class Client(object):
         }
         req_url = self._services['MIGRATE_CLIENTS'] % company_id
         flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
-        
+
         if flag:
             if response.json():
                 if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
@@ -6062,6 +6091,7 @@ class Client(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
 
 class _Readiness:
     """ Class for checking the connection details of a client """

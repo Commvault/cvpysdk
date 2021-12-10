@@ -58,7 +58,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             source_vm_details=None,
             restore_option=None,
-            indexing_v2=True):
+            indexing_v2=True,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -83,6 +84,12 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -106,8 +113,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
         self.source_vm_details = source_vm_details
         if not restore_option:
             restore_option = {}
-
-        # set attr for all the option in restore xml from user inputs
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
+    # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(),
@@ -135,9 +142,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
-                                 indexing_v2= True):
-
-
+                                 indexing_v2= True,
+                                 **kwargs):
 
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -150,8 +156,14 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client            (str)   --  the proxy to be used for restore
 
-                poweron
+                power_on
                         default:true   (bool)      --  power on the  restored VM
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -170,8 +182,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
         self.source_vm_details = source_vm_details
         #self.hvobj = hvobj
         #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
-        restore_option = {}
-        # check mandatory input parameters are correct
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
+    # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException('Subclient', '101')

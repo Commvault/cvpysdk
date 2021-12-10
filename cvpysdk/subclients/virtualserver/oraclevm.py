@@ -70,7 +70,8 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             disk_option='Original',
             transport_mode='Auto',
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -90,7 +91,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 power_on            (bool)     --  power on the  restored VM
                                                    default: True
 
-               disk_option       (basestring) -- disk provisioning for the
+                disk_option       (basestring) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
@@ -100,6 +101,12 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
 
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -116,7 +123,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
@@ -151,7 +158,8 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             server=None,
             copy_precedence=0,
-            disk_provisioning='Original'):
+            disk_provisioning='Original',
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -194,16 +202,19 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                                                     esx if this value is not
                                                     specified
 
-
-
-
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_provisioning       (basestring) -- disk provisioning for the
                                                   restored vm default: 0
                                                   which is equivalent
                                                   to Original
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -221,7 +232,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')

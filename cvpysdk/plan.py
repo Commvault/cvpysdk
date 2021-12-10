@@ -1171,7 +1171,7 @@ class Plan(object):
                         self._dc_plan_props['targetApps'] = plan_options['targetApps']
 
                 if 'securityAssociations' in self._plan_properties:
-                    for association in self._plan_properties['securityAssociations']['associations']:
+                    for association in self._plan_properties['securityAssociations'].get('associations', []):
                         temp_key = None
                         if 'externalGroupName' in association['userOrGroup'][0]:
                             temp_key = '{0}\\{1}'.format(
