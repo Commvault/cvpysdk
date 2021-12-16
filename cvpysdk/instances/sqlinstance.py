@@ -36,25 +36,25 @@ SQLServerInstance:
     _get_sql_restore_options()      --  returns the dict containing destination sql server names
 
     _run_backup()                   --  runs full backup for this subclients and appends the
-                                            job object to the return list
+    job object to the return list
 
     _process_browse_request()       --  processes response received for Browse request
 
     _recoverypoint_request_json()   -- returns a json to be sent to server to create
-                                            a recovery point
+    a recovery point
 
-    get_recovery_points()         --    lists all the recovery points
+    get_recovery_points()           --    lists all the recovery points
 
     _process_recovery_point_request() --  starts the recovery point job and process
-                                                the response
+    the response
 
     backup()                        --  runs full backup for all subclients associated
-                                            with this instance
+    with this instance
 
     browse()                        --  gets the content of the backup for this instance
 
     browse_in_time()                --  gets the content of the backup for this instance
-                                            in the time range specified
+    in the time range specified
 
     restore()                       --  runs the restore job for specified
 
@@ -65,11 +65,23 @@ SQLServerInstance:
     table_level_restore()           --  starts the table level restore job
 
     _table_level_restore_request_json() --  returns a json to be sent to the server for
-                                            table level restore job
+    table level restore job
+
+    mssql_instance_prop()           --  sets instance properties for the mssql instance
+
+SQLServerInstance Attributes:
+
+    ag_group_name           --  returns the Availability Group name for an AG instance
+
+    ag_primary_replica      --  returns the Availability Group primary replica for an AG instance
+
+    ag_replicas_list        --  returns the Availability Group replicas list for an AG instance
+
+    ag_listener_list        --  returns the Availability Group listener list for an AG instance
+
+    mssql_instance_prop     --  returns the mssql instance properties
 
 """
-
-from __future__ import unicode_literals
 
 import re
 import time
@@ -99,7 +111,43 @@ class SQLServerInstance(Instance):
 
         super(SQLServerInstance, self)._get_instance_properties()
 
+        self._ag_group_name = None
+        self._primary_replica = None
+        self._replica_list = []
+        self._ag_group_listener_list = []
+
         self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._commcell_object._services['INSTANCE'] %self._instance_id + "?propertyLevel=20"
+        )
+
+        if flag:
+            if response.json():
+                self._mssql_instance_prop = response.json()['instanceProperties'][0]['mssqlInstance']
+
+        if 'agProperties' in self._mssql_instance_prop:
+            self.ag_group_name = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', [{}]).get('name')
+            self.ag_primary_replica = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', [{}]).get('primaryReplicaServerName')
+
+            listener_list_tmp = []
+            listener_list = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', [{}]).get('SQLAvailabilityGroupListenerList', {})
+            for listener in listener_list:
+                self.ag_listener_list.append(listener['availabilityGroupListenerName'])
+
+            replica_list = self.mssql_instance_prop.get(
+                'agProperties', {}).get('SQLAvailabilityReplicasList', [{}])
+            if replica_list:
+                for replica in replica_list['SQLAvailabilityReplicasList']:
+                    replica_dict = {
+                        "serverName" : replica['name'],
+                        "clientId" : replica['replicaClient']['clientId'],
+                        "clientName": replica['replicaClient']['clientName']
+                    }
+                    self.ag_replicas_list.append(replica_dict)
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this instance.
@@ -118,6 +166,46 @@ class SQLServerInstance(Instance):
                 }
         }
         return instance_json
+
+    @property
+    def ag_group_name(self):
+        """Returns the Availability Group Name"""
+        return self._ag_group_name
+
+    @property
+    def ag_primary_replica(self):
+        """Returns the Availability Group Primary Replica"""
+        return self._primary_replica
+
+    @property
+    def ag_replicas_list(self):
+        """Returns the Availability Group Replicas List"""
+        return self._replica_list
+
+    @property
+    def ag_listener_list(self):
+        """Returns the Availability Group Listener List"""
+        return self._ag_group_listener_list
+
+    @ag_group_name.setter
+    def ag_group_name(self, value):
+        """Sets the Availability Group Name"""
+        self._ag_group_name = value
+
+    @ag_primary_replica.setter
+    def ag_primary_replica(self, value):
+        """Sets the Availability Group Primary Replica"""
+        self._primary_replica = value
+
+    @ag_replicas_list.setter
+    def ag_replicas_list(self, value):
+        """Sets the Availability Group Replicas List"""
+        self._replica_list = value
+
+    @ag_listener_list.setter
+    def ag_listener_list(self, value):
+        """Sets the Availability Group Listener List"""
+        self._ag_group_listener_list = value
 
     def _restore_request_json(
             self,
@@ -165,13 +253,14 @@ class SQLServerInstance(Instance):
 
         if destination_instance is None:
             destination_instance = (self.instance_name).lower()
-        else:
-            if destination_instance not in self.destination_instances_dict:
-                raise SDKException(
-                    'Instance',
-                    '102',
-                    'No Instance exists with name: {0}'.format(destination_instance)
-                )
+
+        if destination_instance not in self.destination_instances_dict:
+            raise SDKException(
+                'Instance',
+                '102',
+                'SQL Instance [{0}] not suitable for restore destination or does not exist.'
+                    .format(destination_instance)
+            )
 
         destination_client_id = int(
             self.destination_instances_dict[destination_instance]['clientId']

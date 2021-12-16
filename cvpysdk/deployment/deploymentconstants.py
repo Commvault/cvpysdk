@@ -100,6 +100,9 @@ class WindowsDownloadFeatures(Enum):
     PYTHON_SDK = 754
     COMMSERVE_LITE = 25
     CONTENT_ANALYZER = 729
+    INDEX_STORE = 55
+    INDEX_GATEWAY = 263
+    CONTENT_EXTRACTOR = 259
 
 
 class OSNameIDMapping(Enum):

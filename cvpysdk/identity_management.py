@@ -458,7 +458,7 @@ class IdentityManagementApps(object):
                             },
                             {
                                 "name": "endPointUrl",
-                                "value": "https://dev123.okta.com/.well-known/openid-configuration"
+                                "value": "https://test.okta.com/.well-known/openid-configuration"
                             },
                             {
                                 "name": "webConsoleUrls",

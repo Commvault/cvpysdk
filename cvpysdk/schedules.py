@@ -996,9 +996,10 @@ class Schedules:
         from .backupset import Backupset
         from .subclient import Subclient
         from .instance import Instance
+        from .activateapps.inventory_manager import Inventory
 
         self.class_object = class_object
-
+        self._single_scheduled_entity = False
         self._repr_str = ""
 
         if isinstance(class_object, Commcell):
@@ -1018,6 +1019,14 @@ class Schedules:
                     class_object.commserv_name)
             else:
                 raise SDKException('Schedules', '103')
+
+        elif isinstance(class_object, Inventory):
+            self._SCHEDULES = class_object._commcell_object._services['INVENTORY_SCHEDULES'] % (
+                class_object.inventory_id)
+            self._repr_str = "Inventory: {0}".format(class_object.inventory_name)
+            self._commcell_object = class_object._commcell_object
+            # set below flag to denote inventory type entity will always have only one schedule associated to it
+            self._single_scheduled_entity = True
 
         elif isinstance(class_object, Client):
             self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
@@ -1177,6 +1186,12 @@ class Schedules:
             Returns:
             (int) schedule id of the schedule
         """
+
+        if self._single_scheduled_entity:
+            # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            for subtask_id, subtask_dict in self.schedules.items():
+                return subtask_id
+
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
                 'Schedules',

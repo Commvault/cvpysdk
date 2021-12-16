@@ -103,6 +103,8 @@ Instance:
 
     _restore_fileoption_json()      --  setter for file option property in restore
 
+    _restore_virtual_rst_option_json --  setter for the virtualServer restore option in restore JSON
+
     _restore_destination_json()     --  setter for destination property in restore
 
     _restore_volume_rst_option_json()  --  setter for the volumeRst restore option in restore JSON
@@ -213,6 +215,7 @@ class Instances(object):
             'sql server': SQLServerInstance,
             'sap hana': SAPHANAInstance,
             'oracle': OracleInstance,
+            'oracle rac': OracleInstance,
             'sybase': SybaseInstance,
             'sap for oracle': SAPOracleInstance,
             'mysql': MYSQLInstance,
@@ -477,14 +480,14 @@ class Instances(object):
                 Dictionary of informix instance creation options:
                     Example:
                        informix_options = {
-                            'instance_name': '',
-                            'onconfig_file': '',
-                            'sql_host_file': '',
-                            'informix_dir': '',
-                            'user_name':'',
-                            'domain_name':'',
-                            'password':'',
-                            'storage_policy':'',
+                            'instance_name': "",
+                            'onconfig_file': "",
+                            'sql_host_file': "",
+                            'informix_dir': "",
+                            'user_name': "",
+                            'domain_name': "",
+                            'password': "",
+                            'storage_policy': "",
                             'description':'created from automation'
                         }
 
@@ -667,15 +670,15 @@ class Instances(object):
                             'sybase_ocs': '',
                             'sybase_ase': '',
                             'backup_server': '',
-                            'sybase_home':'',
-                            'config_file':'',
-                            'enable_auto_discovery':True,
-                            'shared_memory_directory':'',
-                            'storage_policy':'',
-                            'sa_username':'',
-                            'sa_password':'',
-                            'localadmin_username':'',
-                            'localadmin_password':''
+                            'sybase_home': '',
+                            'config_file': '',
+                            'enable_auto_discovery': True,
+                            'shared_memory_directory': '',
+                            'storage_policy': '',
+                            'sa_username': '',
+                            'sa_password': '',
+                            'localadmin_username': '',
+                            'localadmin_password': ''
                         }
             Raises:
                 SDKException:
@@ -2061,6 +2064,11 @@ class Instance(object):
             restore_option['liveBrowse'] = True
         else:
             restore_option['liveBrowse'] = False
+        
+        if restore_option.get('file_browse'):
+            restore_option['fileBrowse'] = True
+        else:
+            restore_option['fileBrowse'] = False
 
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
@@ -2101,6 +2109,7 @@ class Instance(object):
         self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._restore_virtual_rst_option_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
         self._restore_common_opts_json(restore_option)
@@ -2122,6 +2131,7 @@ class Instance(object):
                             "commonOptions": self._commonoption_restore_json,
                             "destination": self._destination_restore_json,
                             "fileOption": self._fileoption_restore_json,
+                            "virtualServerRstOption": self._virtualserver_restore_json,
                             "sharePointRstOption": self._restore_sharepoint_json,
                             "volumeRstOption": self._volume_restore_json
                         },
@@ -2894,6 +2904,11 @@ class Instance(object):
                     "cleanupScriptPath": value.get("instant_clone_options").get("clone_cleanup_script")
                 }
 
+    def _restore_virtual_rst_option_json(self, value):
+        """setter for the virtualServer restore option in restore JSON"""
+        self._virtualserver_restore_json = {
+            "isFileBrowse": value.get("fileBrowse")
+        }
 
     def _restore_volume_rst_option_json(self, value):
         """setter for the volumeRst restore option in restore JSON"""

@@ -318,8 +318,10 @@ class SalesforceInstance(CloudAppsInstance):
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException('Instance', '101')
 
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Files/', '/Objects/']
+
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Files', '/Objects/']),
             client=kwargs.get('client', self.proxy_client),
             restore_to_file_system=True,
             **kwargs
@@ -330,7 +332,7 @@ class SalesforceInstance(CloudAppsInstance):
     def restore_to_database(
             self,
             db_type,
-            db_host,
+            db_host_name,
             db_name,
             db_user_name,
             db_password,
@@ -342,7 +344,7 @@ class SalesforceInstance(CloudAppsInstance):
         Args:
             db_type (str): Type of database out of 'POSTGRESQL' or 'SQLSERVER'
 
-            db_host (str): Hostname of database server
+            db_host_name (str): Hostname of database server
 
             db_name (str): Database name where objects will be restored
 
@@ -389,7 +391,7 @@ class SalesforceInstance(CloudAppsInstance):
 
                 if paths is given but is not a list
         """
-        PARAMS = (db_type, db_host,  db_name, db_user_name, db_password)
+        PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
 
         if not isinstance(kwargs.get('paths', list()), list):
             raise SDKException('Instance', '101')
@@ -398,11 +400,13 @@ class SalesforceInstance(CloudAppsInstance):
                 (isinstance(kwargs.get('db_instance', None), str) != (db_type == 'SQLSERVER')):
             raise SDKException('Instance', '101')
 
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Objects/']
+
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Objects/']),
             db_enabled=True,
             db_type=db_type,
-            db_host=db_host,
+            db_host=db_host_name,
             db_name=db_name,
             db_user_name=db_user_name,
             db_password=db_password,
@@ -494,8 +498,10 @@ class SalesforceInstance(CloudAppsInstance):
                 raise SDKException('Instance', '101')
             kwargs['db_enabled'] = True
 
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Files/', '/Objects/']
+
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Files/', '/Objects/']),
             restore_to_salesforce=True,
             restore_from_database=True,
             **kwargs
@@ -587,8 +593,10 @@ class SalesforceInstance(CloudAppsInstance):
                 raise SDKException('Instance', '101')
             kwargs['db_enabled'] = True
 
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Files/', '/Objects/']
+
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Files/', '/Objects/']),
             restore_to_salesforce=True,
             **kwargs
         )
@@ -650,9 +658,11 @@ class SalesforceInstance(CloudAppsInstance):
         if any(param in kwargs for param in PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException('Instance', '101')
+
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Metadata/unpackaged/']
         
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Metadata/unpackaged/']),
             restore_to_file_system=True,
             is_metadata_restore=True,
             **kwargs
@@ -715,9 +725,11 @@ class SalesforceInstance(CloudAppsInstance):
         if any(param in kwargs for param in DEST_PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
             raise SDKException('Instance', '101')
+
+        if not 'paths' in kwargs:
+            kwargs['paths'] = ['/Metadata/unpackaged/']
         
         request_json = self._restore_json(
-            paths=kwargs.get('paths', ['/Metadata/unpackaged/']),
             restore_to_salesforce=True,
             is_metadata_restore=True,
             **kwargs

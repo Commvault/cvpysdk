@@ -62,7 +62,8 @@ class nutanixsubclient(VirtualServerSubclient):
                                      overwrite=True,
                                      power_on=True,
                                      copy_precedence=0,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     vcenter_client=None):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
@@ -86,6 +87,9 @@ class nutanixsubclient(VirtualServerSubclient):
 
                         restore_option        (dict)       --  complete dictionary with
                                                                all advanced option
+
+                        vcenter_client        (str)        --  name of the vcenter client where the VM
+	                                                                should be restored
                             default: {}
 
                     Returns:
@@ -120,6 +124,8 @@ class nutanixsubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             esx_host=host,
+            esx_server=vcenter_client,
+            vcenter_client=vcenter_client,
             datastore=container,
             client_name=proxy_client,
             in_place=False,

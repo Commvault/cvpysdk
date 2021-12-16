@@ -151,6 +151,8 @@ ActivateEntities:
 
     delete()                            --  deletes the regex entity in the commcell for given entity name
 
+    _process_entity_containers()        -- returns the container details for the entity
+
 ActivateEntity:
 
     __init__(
@@ -186,6 +188,8 @@ ActivateEntity Attributes
     **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)
 
     **entity_xml**        --  returns the entity xml associated with this entity
+
+    **container_details** --  returns the container details for this entity
 
 Classifiers:
 
@@ -318,7 +322,9 @@ class ActivateEntities(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._regex_entities = None
+        self._entities_containers = None
         self._api_get_all_regex_entities = self._services['ACTIVATE_ENTITIES']
+        self._api_get_containers = self._services['ACTIVATE_ENTITY_CONTAINER']
         self._api_create_regex_entity = self._api_get_all_regex_entities
         self._api_delete_regex_entity = self._services['ACTIVATE_ENTITY']
         self.refresh()
@@ -509,6 +515,17 @@ class ActivateEntities(object):
 
         """
         flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_containers
+        )
+        if flag:
+            if response.json() and 'containerTypesList' in response.json():
+                self._entities_containers = response.json()['containerTypesList']
+            else:
+                raise SDKException('ActivateEntity', '107')
+        else:
+            self._response_not_success(response)
+
+        flag, response = self._cvpysdk_object.make_request(
             'GET', self._api_get_all_regex_entities
         )
 
@@ -518,8 +535,33 @@ class ActivateEntities(object):
             raise SDKException('ActivateEntity', '103')
         self._response_not_success(response)
 
-    @staticmethod
-    def _get_regex_entity_from_collections(collections):
+    def _process_entity_containers(self, entity_name, container_name):
+        """Returns container details for given entity name & container name
+
+            Args:
+
+                entity_name         (str)       --  Entity name
+
+                container_name      (str)       --  Container name
+
+            Returns:
+
+                dict    --  Container details of entity
+        """
+        output = {}
+        for dept in self._entities_containers:
+            items_list = dept['tagSetsAndItems']
+            for country in items_list:
+                tags_list = country['tags']
+                for tag in tags_list:
+                    if entity_name.lower() == tag['entityDetail']['entityName'].lower() and \
+                            container_name.lower() == country['container']['containerName'].lower():
+                        output['tags'] = [tag]
+                        output['container'] = country['container']
+                        return output
+        return output
+
+    def _get_regex_entity_from_collections(self, collections):
         """Extracts all the regex entities, and their details from the list of collections given,
             and returns the dictionary of all regex entities
 
@@ -537,6 +579,9 @@ class ActivateEntities(object):
             regex_entity_dict['displayName'] = regex_entity.get('displayName', "")
             regex_entity_dict['entityKey'] = regex_entity.get('entityKey', "")
             regex_entity_dict['categoryName'] = regex_entity.get('categoryName', "")
+            if regex_entity_dict['categoryName'] is not None:
+                regex_entity_dict['containerDetails'] = self._process_entity_containers(
+                    entity_name=regex_entity_dict['displayName'], container_name=regex_entity_dict['categoryName'])
             regex_entity_dict['entityXML'] = regex_entity.get('entityXML', "")
             regex_entity_dict['entityId'] = regex_entity.get('entityId', 0)
             regex_entity_dict['flags'] = regex_entity.get('flags', 0)
@@ -672,6 +717,7 @@ class ActivateEntity(object):
         self._entity_key = None
         self._entity_xml = None
         self._category_name = None
+        self._container_details = None
         if entity_id is None:
             self._entity_id = self._get_entity_id(entity_name)
         else:
@@ -792,7 +838,13 @@ class ActivateEntity(object):
         self._entity_key = regex_entity_dict['entityKey']
         self._entity_type = regex_entity_dict['entityType']
         self._entity_xml = regex_entity_dict['entityXML']
+        self._container_details = regex_entity_dict['containerDetails']
         return regex_entity_dict
+
+    @property
+    def container_details(self):
+        """Returns the container details for this entity"""
+        return self._container_details
 
     @property
     def entity_id(self):

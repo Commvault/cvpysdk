@@ -130,14 +130,14 @@ class ContentAnalyzers(object):
                     {
                         "contentAnalyzerList": [
                                 {
-                                    "caUrl": "http://client.company.com:22005",
-                                     "cloudName": "V11lotusClientCloud",
-                                     "cloudId": 1010
+                                    "caUrl": "",
+                                     "cloudName": "",
+                                     "cloudId": 0
                                 },
                                 {
-                                      "caUrl": "http://client.company.com:22001",
-                                      "cloudName": "Imsolrcloud",
-                                      "cloudId": 1026
+                                      "caUrl": "",
+                                      "cloudName": "",
+                                      "cloudId": 0
                                 }
                         ]
                     }

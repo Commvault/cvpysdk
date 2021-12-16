@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# --------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 """Setup file for the CVPySDK Python package."""
 
@@ -27,7 +27,7 @@ from setuptools import setup, find_packages
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
-ROOT = os.path.dirname(__file__)
+ROOT = os.path.dirname(os.path.abspath(__file__))
 VERSION = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
 
 
@@ -42,6 +42,7 @@ def readme():
     with open(os.path.join(ROOT, 'README.rst')) as file_object:
         return file_object.read()
 
+os.chdir(ROOT)
 
 setup(
     name='cvpysdk',
@@ -51,7 +52,7 @@ setup(
     description='Commvault SDK for Python',
     license='Apache 2.0',
     long_description=readme(),
-    url='https://github.com/CommvaultEngg/cvpysdk',
+    url='https://github.com/Commvault/cvpysdk',
     scripts=[],
     packages=find_packages(),
     keywords='commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole',
@@ -59,8 +60,8 @@ setup(
     install_requires=['requests', 'future', 'xmltodict'],
     zip_safe=False,
     project_urls={
-        'Bug Tracker': 'https://github.com/CommvaultEngg/cvpysdk/issues',
-        'Documentation': 'https://commvaultengg.github.io/cvpysdk/',
-        'Source Code': 'https://github.com/CommvaultEngg/cvpysdk/tree/master'
+        'Bug Tracker': 'https://github.com/Commvault/cvpysdk/issues',
+        'Documentation': 'https://commvault.github.io/cvpysdk/',
+        'Source Code': 'https://github.com/Commvault/cvpysdk/tree/master'
     }
 )

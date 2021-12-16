@@ -58,6 +58,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
+    'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
     'FILTER_CLIENTS':'{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
@@ -75,11 +76,15 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_INSTANCES': '{0}Instance?clientId=%s',
     'INSTANCE': '{0}Instance/%s',
+    'APPLICATION_INSTANCE': '{0}Application/%s',
+    'APPLICATION': '{0}Application',
 
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
+    'VM_BACKUP': '{0}v2/vsa/vm/%s/backup?backupLevel=%s',
+    'PREVIEW': '{0}Subclient/Content/Preview',
 
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
@@ -113,6 +118,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
     'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
+    'RECOVERY_ENABLERS': '{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX ',
 
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
@@ -136,6 +142,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_ALERT': '{0}AlertRule/%s/Action/Disable',
     'EMAIL_SERVER': '{0}EmailServer',
 
+    'INVENTORY_SCHEDULES': '{0}Schedules?seaDataSourceId=%s&appType=132',
     'CLIENT_SCHEDULES': '{0}Schedules?clientId=%s',
     'AGENT_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s',
     'BACKUPSET_SCHEDULES': '{0}Schedules?clientId=%s&apptypeId=%s&backupsetId=%s',
@@ -151,6 +158,7 @@ SERVICES_DICT_TEMPLATE = {
     'DISABLE_SCHEDULE': '{0}Schedules/task/Action/Disable',
 
     'LIVE_SYNC': '{0}Task',
+    'LIVE_SYNC_DETAILS': '{0}/Task/%s/Details',
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
@@ -218,6 +226,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
     'ACTIVATE_ENTITIES': '{0}dcube/entity',
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
+    'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',
     'GET_TAGS': '{0}EDiscovery/Tags',
     'ADD_CONTAINER': '{0}PerformContainerOperation',
     'DELETE_CONTAINER': '{0}Containers/Action/Delete',
@@ -226,6 +235,13 @@ SERVICES_DICT_TEMPLATE = {
     'START_TRAINING': '{0}ContentAnalyzer/%s/%s/ml/action/train',
     'CANCEL_TRAINING': '{0}ContentAnalyzer/%s/%s/training/cancel',
 
+    'EDISCOVERY_INVENTORIES': '{0}EDiscoveryClients/Inventories',
+    'EDISCOVERY_INVENTORY': '{0}EDiscoveryClients/Inventories/%s',
+    'EDISCOVERY_ASSETS': '{0}EDiscoveryClients/Inventories/%s/Assets',
+    'EDISCOVERY_CRAWL': '{0}EDiscoveryClients/Clients/%s/Jobs?datasourceId=%s&type=%s&operation=%s',
+    'EDISCOVERY_JOBS_HISTORY': '{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&datasourceId=%s',
+    'EDISCOVERY_JOB_STATUS': '{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&datasourceId=%s',
+    'EDISCOVERY_GET_DEFAULT_HANDLER': '{0}dcube/getdefaulthandler/%s',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -281,7 +297,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
-
+    'ENTITY_SECURITY_ASSOCIATION': '{0}Security/%s/%s',
     'GET_DATASTORE_BROWSE': '{0}VSBrowse/%s/%s?requestType=%s',
 
     'GET_DC_DATA': '{0}getDownloadCenterLookupData',
@@ -299,6 +315,11 @@ SERVICES_DICT_TEMPLATE = {
     'GENERATE_AUTH_CODE': '{0}Organization/%s/Authtoken',
     'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
     'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
+    'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
+    'ORGANIZATION_TAGS' : '{0}Tags',
+    'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
+    'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
+    'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -306,6 +327,9 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
+
+    'KEY_MANAGEMENT_SERVER_ADD_GET': '{0}CommCell/KeyManagementServers',
+    'KEY_MANAGEMENT_SERVER_DELETE': '{0}CommCell/KeyManagementServers/%s',
 
     'GET_ALL_MONITORING_POLICIES': '{0}logmonitoring/monitoringpolicy',
     'GET_ALL_ANALYTICS_SERVERS': '{0}AnalyticsServers',
@@ -315,6 +339,10 @@ SERVICES_DICT_TEMPLATE = {
     'RUN_MONITORING_POLICY': '{0}logmonitoring/Policy/%s/Action/Run',
 
     'LICENSE': '{0}CommcellRegistrationInformation',
+
+    'REPLICATION_GROUPS': '{0}ReplicationGroups',
+    'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
+    'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
 
     'DR_GROUPS': '{0}DRGroups',
     'GET_DR_GROUP': '{0}DRGroups/%s',
@@ -329,6 +357,7 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
     'CREATE_NAS_CLIENT': '{0}NASClient',
     'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
+    'GET_DYNAMICS_365_CLIENTS': '{0}Office365/entities?agentType=5',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
@@ -363,7 +392,6 @@ SERVICES_DICT_TEMPLATE = {
     'LIST_LICENSES': '{0}Client/%s/License',
     'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
     'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
-
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 

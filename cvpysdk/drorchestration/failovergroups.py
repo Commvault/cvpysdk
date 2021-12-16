@@ -497,17 +497,17 @@ class FailoverGroups(object):
         Returns: dict {
                     {
                     "client": {
-                        "subclientId": 22,
-                        "clientName": "testboot",
-                        "instanceId": 4,
-                        "clientId": 62,
-                        "GUID": "5026707a-0a15-d7c6-69a9-9f781514a932"
+                        "subclientId": 0,
+                        "clientName": "",
+                        "instanceId": 0,
+                        "clientId": 0,
+                        "GUID": ""
                     },
                     "lastbackuptime": {
                         "time": 1510332496
                     },
                     "backupSet": {
-                        "backupsetId": 6,
+                        "backupsetId": 0,
                         "backupsetName": "defaultBackupSet",
                         "applicationId": 0
                     },
@@ -515,10 +515,10 @@ class FailoverGroups(object):
                     "supportedOperation": 1,
                     "vendor": "VMW",
                     "copyPrecedence": 0,
-                    "scheduleName": "autoSCHDL",
+                    "scheduleName": "",
                     "destClient": {
-                        "clientName": "testboot_SDR",
-                        "GUID": "50267a1b-3939-2f52-4cba-3b941ac0840f"
+                        "clientName": "",
+                        "GUID": ""
                     },
                     "lastSyncTime": {
                         "time": 1510332235
@@ -528,7 +528,7 @@ class FailoverGroups(object):
                     "failoverStatus": 0,
                     "destinationClient": {
                         "clientName": "",
-                        "clientId": 3
+                        "clientId": 0
                     },
                     "destVendor": "VMW"
                 },

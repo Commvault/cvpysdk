@@ -20,7 +20,7 @@
 
 VirualServerSubclient is the only class defined in this file.
 
-VirtualServerSubclient: Derived class from Subclient Base class, representing a
+VirtualServerSubclient: Derived class from the Subclient Base class, representing a
                             virtual server subclient, and to perform operations
                             on that subclient
 
@@ -122,6 +122,8 @@ VirtualServerSubclient:
 
     _advanced_backup_options()              --  sets the advanced backup options
 
+    update_properties()                       --  child method to add vsa specific properties to update
+
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
@@ -195,7 +197,7 @@ class VirtualServerSubclient(Subclient):
             '2': 'Resource Pool',
             '4': 'Datacenter',
             '9': 'Virtual Machine',
-            '16': 'All unprotected VMs',
+            '16': 'UnprotectedVMs',
             '17': 'Root',
             '34': 'Tag',
             '35': 'TagCategory'
@@ -205,10 +207,11 @@ class VirtualServerSubclient(Subclient):
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
             '3': 'Virtual Device Node',
-            '4': 'Repository',
+            '4': 'Container',
             '5': 'Disk Label',
             '6': 'Disk Type',
-            '9': 'Disk Tag Name/Value'
+            '9': 'Disk Tag Name/Value',
+            '10':'Repository'
         }
 
         self._disk_option = {
@@ -329,17 +332,6 @@ class VirtualServerSubclient(Subclient):
         return vm_diskfilter
 
     @property
-    def cbtvalue(self):
-        """
-        Get CBT value for given subclient. Returns status as True/False (string)
-
-        """
-        self._get_subclient_properties()
-        cbt_attr = r'useChangedTrackingOnVM'
-        vsasubclient_cbt_status = self._vsaSubclientProp[cbt_attr]
-        return vsasubclient_cbt_status
-
-    @property
     def metadata(self):
         """
             Get if collect files/metadata value for given subclient.
@@ -405,35 +397,36 @@ class VirtualServerSubclient(Subclient):
         """
         content = []
         try:
-            for item in subclient_content:
-                virtual_server_dict = {}
-                virtual_server_dict['allOrAnyChildren'] = True
-                temp = {
-                    'allOrAnyChildren': item.get('allOrAnyChildren', True),
-                    'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                    'name': item['name'],
-                    'displayName': item['display_name'],
-                    'path': '',
-                    'type': item['type'].value
-                }
-                if item['type'] == VSAObjects.VMNotes:
-                    temp['value'] = item['display_name']
-                    temp['displayName'] = item['display_name']
-                    temp['name'] = "Notes"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'true'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 1
-                    temp['displayName'] = "Powered On"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'false'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 0
-                    temp['displayName'] = "Powered Off"
-                virtual_server_dict.update(temp)
-                content.append(virtual_server_dict)
+            for entity in subclient_content:
+                for item in entity:
+                    virtual_server_dict = {}
+                    virtual_server_dict['allOrAnyChildren'] = True
+                    temp = {
+                        'allOrAnyChildren': item.get('allOrAnyChildren', True),
+                        'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
+                        'name': item.get('name',""),
+                        'displayName': item.get('display_name',''),
+                        'path': '',
+                        'type': item['type'].value
+                    }
+                    if item['type'] == VSAObjects.VMNotes:
+                        temp['value'] = item['display_name']
+                        temp['displayName'] = item['display_name']
+                        temp['name'] = "Notes"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'true'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 1
+                        temp['displayName'] = "Powered On"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'false'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = 0
+                        temp['displayName'] = "Powered Off"
+                    virtual_server_dict.update(temp)
+                    content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
@@ -527,26 +520,6 @@ class VirtualServerSubclient(Subclient):
         }
         self._set_subclient_properties("_vmDiskFilter", vs_diskfilter_content)
 
-    @cbtvalue.setter
-    def cbtvalue(self, value=1):
-        """
-        Set given value (enabled/disabled) on the subclient
-
-        Args:
-                value   (int)   - enabled(1)/disabled(0)
-
-        Raise Exception:
-                If unable to set the give CBT value
-
-        """
-        try:
-            cbt_status = bool(value)
-            cbt_attr = r'useChangedTrackingOnVM'
-            self._set_subclient_properties("_vsaSubclientProp['useChangedTrackingOnVM']",
-                                           cbt_status)
-        except BaseException:
-            raise SDKException('Subclient', '101')
-
     @property
     def live_sync(self):
         """Returns the instance of the VSALiveSync class"""
@@ -585,6 +558,44 @@ class VirtualServerSubclient(Subclient):
         collectdetails = r'collectFileDetails'
         if collectdetails in self._vsaSubclientProp:
             self._set_subclient_properties("_vsaSubclientProp['collectFileDetails']", value)
+
+    @property
+    def cbtvalue(self):
+        """
+        Get CBT value for given subclient.
+
+        Returns:
+            (Boolean)    True/False
+
+        """
+        return self._subclient_properties.get('vsaSubclientProp', {}).get("useChangedTrackingOnVM", False)
+
+
+    @cbtvalue.setter
+    def cbtvalue(self, value):
+        """
+        Set CBT value for given subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        """
+        update_properties = self.properties
+        update_properties["vsaSubclientProp"]['useChangedTrackingOnVM'] = value
+        self.update_properties(update_properties)
+
+    def update_properties(self, properties_dict):
+        """
+        child method to add any specific attributes for vsa
+        Args:
+            properties_dict         (dict):     dict of all propterties of subclient
+        """
+        properties_dict.update({
+            "vmFilterOperationType": "OVERWRITE",
+            "vmContentOperationType": "OVERWRITE",
+            "vmDiskFilterOperationType": "OVERWRITE"
+        })
+        super().update_properties(properties_dict)
 
     def _get_content_list(self, children):
         """
@@ -636,15 +647,13 @@ class VirtualServerSubclient(Subclient):
         return content_list
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of File System subclient.
+        """Gets the subclient  related properties of Virtual server subclient.
 
         """
 
         self._vmDiskFilter = None
         self._vmFilter = None
-
-        if not bool(self._subclient_properties):
-            super(VirtualServerSubclient, self)._get_subclient_properties()
+        super(VirtualServerSubclient, self)._get_subclient_properties()
 
         if 'vmContent' in self._subclient_properties:
             self._vmContent = self._subclient_properties['vmContent']
@@ -806,11 +815,11 @@ class VirtualServerSubclient(Subclient):
             nics = {
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
-                "sourceNetworkId": network_card_dict.get('sourceNetwork',""),
-                "networkName":_destnetwork ,
-                "name": network_card_dict['label'],
-                "networkName": _destnetwork,
-                "destinationNetwork": _destnetwork
+                "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
+                "name": network_card_dict[
+                    'label'] if self._instance_object.instance_name == 'google cloud platform' else '',
+                "networkName": _destnetwork if _destnetwork else '',
+                "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
 
             # setting nics for azureRM instance
@@ -1188,9 +1197,11 @@ class VirtualServerSubclient(Subclient):
 
         if operation == 'find':
             # Return all VMs browse content for find operation
-            vm_paths = ['\\' + vm_id for vm_id in vm_names.values()]
             vm_path_list = []
             browse_content_dict = {}
+            if not vm_names:
+                _vm_ids, vm_names = self._get_vm_ids_and_names_dict_from_browse()
+            vm_paths = ['\\' + vm_id for vm_id in vm_names.values()]
             for vm_path in vm_paths:
                 vm_path = self._parse_vm_path(vm_names, vm_path)
                 browse_content = super(VirtualServerSubclient, self).browse(
@@ -2741,3 +2752,58 @@ class VirtualServerSubclient(Subclient):
         }
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)
+
+    def _prepare_preview_json(self):
+        """Prepares the JSON for previewing subclient contents
+
+        Returns:
+            JSON - for previewing subclient contents
+
+        """
+        return(
+            {
+                "appId": {
+                    "subclientId": int(self.subclient_id),
+                    "clientId": int(self._client_object.client_id),
+                    "instanceId": int(self._instance_object.instance_id),
+                    "backupsetId": int(self._backupset_object.backupset_id),
+                    "apptypeId": int(self._agent_object.agent_id)
+                },
+                "filterEntity": self._vmFilter,
+                "contentEntity": self._vmContent
+            }
+        )
+
+    def _parse_preview_vms(self, subclient_vm_list):
+        """Parses the vm list from the preview vm response
+
+        Returns:
+            _vm_list        (list)  - List of the vms as the subclient content
+        """
+        _vm_list = []
+        for vm in subclient_vm_list:
+            _vm_list.append(vm['name'])
+        return _vm_list
+
+    def preview_content(self):
+        """
+        Preview the subclient and get the content
+
+        Returns:
+            list       - List of the vms as the subclient content
+
+        """
+        preview = self._commcell_object._services['PREVIEW']
+        preview_json = self._prepare_preview_json()
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', preview, preview_json
+        )
+        if flag and 'scList' in response.json():
+            return self._parse_preview_vms(response.json()['scList'])
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                self._update_response_(
+                    response.text))

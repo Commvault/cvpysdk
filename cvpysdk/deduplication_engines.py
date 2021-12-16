@@ -816,7 +816,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -826,6 +826,8 @@ class Store(object):
 
             clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
                         Default: False
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -841,6 +843,9 @@ class Store(object):
                 if response in not success
         """
         if not (isinstance(level, int)) and level not in range(1, 4):
+            raise SDKException('Storage', '101')
+
+        if not isinstance(use_scalable_resource, bool):
             raise SDKException('Storage', '101')
 
         level_map = {
@@ -881,7 +886,7 @@ class Store(object):
                                         "mediaAgent": {
                                             "mediaAgentName": ""
                                         },
-                                        "useScallableResourceManagement": "false"
+                                        "useScallableResourceManagement": f"{use_scalable_resource}"
                                     }
                                 }
                             },
@@ -916,7 +921,8 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_ddb_verification(self, incremental_verification=True, quick_verification=True):
+    def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
+                             use_scalable_resource=False):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -926,6 +932,8 @@ class Store(object):
 
             quick_verification (bool)       - DV2 job option, Quick or Complete (True/False)
                                             Default: True (quick verification)
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -946,6 +954,9 @@ class Store(object):
         verification_option = 'QUICK_DDB_VERIFICATION'
         if not quick_verification:
             verification_option = 'DDB_AND_DATA_VERIFICATION'
+
+        if not isinstance(use_scalable_resource, bool):
+            raise SDKException('Storage', '101')
 
         request_json = {
             "TMMsg_CreateTaskReq": {
@@ -978,7 +989,7 @@ class Store(object):
                                         "mediaAgent": {
                                             "mediaAgentName": ""
                                         },
-                                        "useScallableResourceManagement": "false"
+                                        "useScallableResourceManagement": f"{use_scalable_resource}"
                                     }
                                 }
                             },

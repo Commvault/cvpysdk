@@ -111,7 +111,7 @@ Subclient:
 
     enable_backup_at_time()     --  enables backup for the subclient at the input time specified
 
-    disble_backup()             --  disables the backup for the subclient
+    disable_backup()             --  disables the backup for the subclient
 
     set_proxy_for_snap()        --  method to set Use proxy option for intellisnap subclient
 
@@ -126,6 +126,8 @@ Subclient:
     at the input path in the time range specified
 
     find()                      --  searches a given file/folder name in the subclient content
+
+    list_media()                --  List media required to browse and restore backed up data from the backupset
 
     restore_in_place()          --  Restores the files/folders specified in the
     input paths list to the same location
@@ -307,6 +309,7 @@ class Subclients(object):
             'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
+            'oracle rac': OracleSubclient,
             'notes database': LNDbSubclient,
             'notes document': LNDocSubclient,
             'domino mailbox archiver': LNDmSubclient,
@@ -1825,10 +1828,9 @@ c
 
         # check if subclient name is updated in the request
         # if subclient name is updated set the newName field in the request
-        if (properties_dict.get('subClientEntity', {}).get('subclientName', self._subClientEntity.get(
-                'subclientName')) != self._subClientEntity.get('subclientName')):
+        if properties_dict.get('subClientEntity', {}).get('subclientName') and properties_dict.get(
+                'subClientEntity', {}).get('subclientName') != self._subClientEntity.get('subclientName'):
             request_json['newName'] = properties_dict.get('subClientEntity', {}).get('subclientName')
-
         flag, response = self._cvpysdk_object.make_request('POST', self._SUBCLIENT, request_json)
         status, _, error_string = self._process_update_response(flag, response)
         self.refresh()
@@ -1867,6 +1869,16 @@ c
         update_properties = self.properties
         update_properties['subClientEntity']['subclientName'] = display_name
         self.update_properties(update_properties)
+
+    @name.setter
+    def name(self, name):
+        """
+        Sets the name for the subclient
+        Args:
+            name    (str)   -- name for the subclient
+
+        """
+        self.display_name = name
 
     @property
     def _json_task(self):
@@ -2307,7 +2319,7 @@ c
         """ method to unset Use proxy option for intellisnap subclient """
 
         properties_dict = {
-            "clientName": 'NO CLIENT'
+            "clientId": 0
         }
         update_properties = self.properties
         update_properties['commonProperties']['snapCopyInfo']['snapToTapeProxyToUse'] = properties_dict
@@ -2502,6 +2514,57 @@ c
         options['_subclient_id'] = self._subclient_id
 
         return self._backupset_object.find(options)
+
+    def list_media(self, *args, **kwargs):
+        """List media required to browse and restore backed up data from the subclient
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            'path': 'c:\\hello',
+                            'show_deleted': True,
+                            'from_time': '2020-04-20 12:00:00',
+                            'to_time': '2021-04-19 12:00:00'
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path='c:\\hello',
+                            show_deleted=True,
+                            from_time='2020-04-20 12:00:00',
+                            to_time='2021-04-19 12:00:00'
+                        )
+
+            Note:
+                Refer `_default_browse_options` in backupset.py for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        """
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options['_subclient_id'] = self._subclient_id
+
+        return self._backupset_object.list_media(options)
 
     def restore_in_place(
             self,

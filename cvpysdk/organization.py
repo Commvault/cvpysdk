@@ -125,6 +125,21 @@ Organization
     disable_tfa()               --      Disable tfa option for the organization
 
     get_alerts()                --  get all the alerts associated to organization
+
+    add_client_association()        --  Associates a client to an organization
+
+    remove_client_association()     --  Removes the client from an organization
+
+    update_security_associations()     -- Updates Security Associations for user or usergroup on Organisation
+
+    update_email_settings()            -- Updates Email settings for the organisation
+
+    retire_offline_laptops()           -- Updates Company Laptops Retire / Delete settings
+
+    passkey()                          -- Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation
+
+    allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey 
+
 Organization Attributes
 -----------------------
 
@@ -153,14 +168,13 @@ Organization Attributes
 
         **contacts**                --  returns the list of primary contacts for the organization
 
+        **sender_name**             -- returns email sender name
+
+        **sender_email**             -- returns email adress of sender
+
         **default_plan**            --  returns the default plan associated with the organization
 
-        **default_plan = 'plan'**   --  update the default plan of the organization
-
         **plans**                   --  returns the list of plans associated with the organization
-
-        **plans = ['plan1',
-        'plan2']**                  --  update the list of plans associated with the organization
 
         **operator_role**             -- returns the operator role assigned to an user
 
@@ -187,6 +201,19 @@ Organization Attributes
          **job_start_time**         -- returns the job start time associated with the organization
 
         **client_groups**          -- returns clientgroups associated with the organization
+
+        **file_exceptions**         -- returns dictionary consisting Global File exceptions for the Organisation
+
+        **sites**                   -- Returns Sites configured for Organisation
+
+        **tags**                    -- Returns Tags associated with Organisation
+
+        **isPasskeyEnabled**        -- Returns True - If Passkey is enabled at Organisation level
+
+        **isAuthrestoreEnabled**    -- Returns True - If Authrestore is enabled at Organisation level
+
+        **isAllowUserstoEnablePasskeyEnabled** -- Returns True - If users have rights to enable passkey
+
 """
 
 import re
@@ -200,6 +227,7 @@ from .security.user import User
 from .security.usergroup import UserGroup
 from .security.two_factor_authentication import TwoFactorAuthentication
 
+from base64 import b64encode
 
 class Organizations:
     """Class for doing operations on Organizations like add / delete an organization, etc."""
@@ -654,7 +682,7 @@ class Organization:
         self._is_auth_code_enabled = False
         self._machine_count = None
         self._user_count = None
-        self._default_plan = None
+        self._default_plan = []
         self._contacts = {}
         self._plans = {}
         self._organization_info = None
@@ -675,6 +703,11 @@ class Organization:
         self._global_file_exceptions_enabled = False
         self._job_start_time = None
         self._client_groups = None
+        self._primary_domain = None
+        self._additional_domain = None
+        self._is_passkey_enabled = None
+        self._is_authorise_for_restore_enabled = None
+        self._is_allow_users_to_enable_passkey_enabled = None
 
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
@@ -721,7 +754,11 @@ class Organization:
         """ Sets infrastruture type for a comapny
 
         Args:
-            value (int) : id for the infrastructure type
+            value (int) -- id for the infrastructure type
+
+            Rented storage = 0,
+            Own Storage = 1, 
+            Rented and Own Storage  = 2
         """
         self._update_properties_json({'infrastructureType': value})
         self._update_properties()
@@ -758,7 +795,7 @@ class Organization:
         """Sets the supported solution property of a company
 
         Args:
-            value (int): bits converted to int for the supported solutions
+            value (int) -- bits converted to int for the supported solutions
         """
         self._update_properties_json({'supportedSolutions': value})
         self._update_properties()
@@ -773,7 +810,7 @@ class Organization:
         """Sets the job start time property for a company
 
         Args:
-            value (int): time to be set for job start time for a company
+            value (int) -- time to be set for job start time for a company
         """
         self._update_properties_json({'jobStartTime': value})
         self._update_properties()
@@ -829,6 +866,11 @@ class Organization:
                 self._auto_laptop_owners = organization_properties.get('autoClientOwnerAssignmentType')
                 self._supported_solutions = organization_properties.get('supportedSolutions')
                 self._global_file_exceptions_enabled = organization_properties.get('useCompanyGlobalFilter')
+                self._primary_domain = organization_properties.get('primaryDomain', '')
+                self._additional_domain = organization_properties.get('additionalDomains', [])
+                self._is_passkey_enabled = True if organization_properties['advancedPrivacySettings']['authType'] == 2 else False
+                self._is_authorise_for_restore_enabled = organization_properties['advancedPrivacySettings']['passkeySettings']['enableAuthorizeForRestore']
+                self._is_allow_users_to_enable_passkey_enabled = organization_properties['allowUsersToEnablePasskey']
 
                 job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
                 if job_time_enabled:
@@ -855,8 +897,9 @@ class Organization:
                         'name': contact['fullName']
                     }
 
+                self._default_plan.clear()
                 for plan in organization_properties.get('defaultPlans', []):
-                    self._default_plan = plan['plan']['planName']
+                    self._default_plan.append(plan['plan']['planName'])
 
                 for plan in self._organization_info.get('planDetails', []):
                     self._plans[plan['plan']['planName'].lower()] = plan['plan']['planId']
@@ -948,6 +991,78 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def update_security_associations(self, userOrGroupName, roleName, request_type = None,  isUserGroup = False):
+        """
+        Updates Security Associations Of an Organisation
+
+        Args:
+            userOrGroupName (str)  --    User or User Group name
+            roleName (str)         --    eg : 'Alert Owner' or 'Tenant Admin' or 'Tenant Operator' e.t.c
+            request_type (str)     --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            isUserGroup (bool)     --    True or False. set isUserGroup = True, If input is user group.
+
+        Raises:
+            SDKException:
+                if Invalid User or User Group is passed as parameter
+
+                if failed to update the properties of the organization
+
+                if response is empty
+        """
+
+        update_operator_request_type = {
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+
+        if request_type:
+            request_type = request_type.upper()
+
+        req_json = {
+            "entityAssociated": {
+                "entity": [
+                    {
+                        "providerId": int(self.organization_id)
+                    }
+                ]
+            },
+            "securityAssociations": {
+                "associationsOperationType": update_operator_request_type.get(request_type, 1),
+                "associations": [{
+                    "userOrGroup": [
+                    {
+                        "userGroupName" if isUserGroup else "userName" : userOrGroupName
+                    }
+                    ],
+                    "properties": {
+                    "role": {
+                        "roleName": roleName
+                    }
+                    }
+                }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['SECURITY_ASSOCIATION'], req_json)
+
+        if flag:
+            if response.json():
+                if 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+                    error_code = response.json()['errorCode']
+                    if error_code != 0:
+                        raise SDKException('Organization', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
 
     def _update_properties(self, update_plan_details=False):
         """Executes the request on the server to update the properties of the organization.
@@ -1092,6 +1207,45 @@ class Organization:
         """Returns the Primary Contacts for this Organization."""
         return list(self._contacts.keys())
 
+    @contacts.setter
+    def contacts(self, user_names):
+        """
+        Sets Contact details for organization.
+        User should be present in tenant admin group of the organization
+
+        Args:
+            user_names (list) -- List of usernames
+
+        Raises:
+            SDKException:
+                If input parameter is not list
+
+                If Input list is empty
+        """
+        if isinstance(user_names, list):
+            if len(user_names) == 0:
+                raise SDKException('Organization', 114, 'Contact Lists cannot be empty')
+        else:
+            raise SDKException('Organization', 101, 'user_names should be list')
+
+        user_list = list()
+        for user_name in user_names:
+            user_list.append(
+                {
+                    'user' : {
+                        "userName": user_name
+                    }
+                }
+            )
+
+        req_json = {
+        "primaryContactsOperationType": "OVERWRITE",
+        "primaryContacts": user_list
+        }
+
+        self._update_properties_json(req_json)
+        self._update_properties()
+        
     @property
     def contacts_fullname(self):
         """ Returns Primary Contacts full name for the organization"""
@@ -1104,8 +1258,43 @@ class Organization:
 
     @default_plan.setter
     def default_plan(self, value):
-        """Update the default plan associated with the Organization."""
+        """
+        Updates default plan for Organization
 
+        Args:
+            value (dict) -- Dictionary consisting Server or Laptop Plan
+
+            example:
+            value = {
+                'Server Plan' : 'Server Plan Name',
+                'Laptop Plan' : 'Laptop Plan Name'
+            }
+
+        Raises:
+            SDKException:
+                If plan doesnot exist on Commcell
+
+                If plan is not associated with company
+
+        """
+        if isinstance(value, dict):
+            plan_list = []
+            for plan_name in value.values():
+                if plan_name.lower() not in self.plans:
+                    raise SDKException('Organization', '111')
+                plan_list.append({
+                    "plan": {
+                        "planId": int(self._commcell_object.plans.all_plans[plan_name.lower()])
+                    }
+                })
+
+            self._update_properties_json({
+                "defaultPlans": plan_list,
+                "defaultPlansOperationType": "OVERWRITE",
+            })
+            self._update_properties()
+            return
+        
         if not value:
             self._update_properties_json({'defaultPlansOperationType': 'OVERWRITE'})
             self._update_properties()
@@ -1144,10 +1333,51 @@ class Organization:
         """Returns sender name"""
         return self._sender_name
 
+    @sender_name.setter
+    def sender_name(self, sender_name):
+        """Sets the email Sender Name"""
+        self._update_properties_json({'senderName' : sender_name})
+        self._update_properties()
+
     @property
     def sender_email(self):
         """Returns sender email"""
         return self._sender_email
+
+    @sender_email.setter
+    def sender_email(self, sender_email):
+        """Sets Sender Email adress"""
+        self._update_properties_json({'senderSmtp' : sender_email})
+        self._update_properties()
+
+    def update_email_settings(self, email_settings):
+        """
+        Updates Email Settings of an organisation
+
+        Args:
+            email_settings (dict) -- Dictionary consisting of sender name and email
+
+            example: 
+            email_settings = {
+                'sender_name' : 'name',
+                'sender_email' : 'email'
+            }
+
+        Raises:
+            SDKException:
+                if sender_name or sender_email is missing in inputs
+        """
+        name = email_settings.get('sender_name', None)
+        email = email_settings.get('sender_email', None)
+
+        if name is None or email is None:
+            raise SDKException('Organization', 114, 'No configurable settings were set in the input')
+        req_json = {
+                "senderSmtp": email,
+                "senderName": name
+        }
+        self._update_properties_json(req_json)
+        self._update_properties()
 
     @property
     def user_groups(self):
@@ -1163,6 +1393,65 @@ class Organization:
     def file_exceptions(self):
         """ Returns the file exceptions for a company """
         return self._file_exceptions
+
+    @file_exceptions.setter
+    def file_exceptions(self, value):
+        """
+        This sets Global File Exceptions at Company Level, Individually File Exceptions for Windows or Unix can be set 
+
+        file_exceptions = filters, 'OVERWRITE'   It will overwrite with the keys which are present in filters dict.
+        file_exceptions = filters, 'UPDATE'      It will update the keys which are present in filters dict.
+
+        Args:
+            value (tuple)  --  (filters, Operation_Type)
+
+            eg : 
+            filters = {
+                'Windows' : ['*.py'],  (optional)
+                'Unix' : ['*.exe'],    (optional)
+            }
+
+            Operation_Type = 'OVERWRITE' or 'UPDATE'
+
+        Raises:
+            SDKException:
+                if input is not tuple
+
+                If input tuple is not in this format (dict, str)
+
+        """
+        
+        filter_list = list()
+
+        if isinstance(value, tuple):
+            if isinstance(value[0], dict) and isinstance(value[1], str):
+                exceptions = value[0]
+                operation_type = value[1]
+
+                for os , filters in exceptions.items():
+                    temp = {
+                        "globalFilters":{
+                            "opType":"OVERWRITE",
+                            "filters": filters if operation_type == 'OVERWRITE' else self.file_exceptions[os] + filters
+                        },
+                        "operatingSystemType": 'WINDOWS_GLOBAL_FILTER' if os == 'Windows' else 'UNIX_GLOBAL_FILTER'
+                    }
+
+                    filter_list.append(temp)
+
+                req_json = {
+                    "globalFiltersInfo":{
+                    "globalFiltersInfoList": filter_list
+                }
+                }
+                
+            else:
+                raise SDKException('Organization', 114, 'No configurable settings were set in the input')
+        else:
+            raise SDKException('Organization', 101, 'Input should be Tuple')
+
+        self._update_properties_json(req_json)
+        self._update_properties()
 
     @property
     def is_global_file_exceptions_enabled(self):
@@ -1254,7 +1543,7 @@ class Organization:
 
     def refresh(self):
         """Refresh the properties of the Organization."""
-        self._default_plan = None
+        self._default_plan = []
         self._contacts = {}
         self._plans = {}
         self._properties = self._get_properties()
@@ -1662,6 +1951,98 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def add_client_association(self, client_name):
+        """To associate a client to an organization
+
+            Args:
+
+                client_name   (str) -- name of the client which has to be associated to organization
+
+            Raises:
+                SDKException:
+
+                    if client association to organization fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not self._commcell_object.clients.has_client(client_name):
+            raise SDKException('Organization', '101')
+        else:
+            client_obj = self._commcell_object.clients.get(client_name)
+        request_json = {
+            "entities": [
+                {
+                    "clientId": int(client_obj.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATION_ASSOCIATION'] % self.organization_id, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if error_code != 0:
+                    raise SDKException('Organization', '115')
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
+    def remove_client_association(self, client_name):
+        """To de-associate a client to an organization
+
+            Args:
+
+                client_name   (str) -- name of the client which has to be associated to organization
+
+            Raises:
+                SDKException:
+
+                    if client de-association to organization fails
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not self._commcell_object.clients.has_client(client_name):
+            raise SDKException('Organization', '101')
+        else:
+            client_obj = self._commcell_object.clients.get(client_name)
+        request_json = {
+            "entities": [
+                {
+                    "clientId": int(client_obj.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATION_ASSOCIATION'] % 0, request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if error_code != 0:
+                    raise SDKException('Organization', '115')
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
     @property
     def is_tfa_enabled(self):
         """returns the status of two factor authentication (True/False)"""
@@ -1768,3 +2149,270 @@ class Organization:
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+
+    def retire_offline_laptops(self, retire_days, delete_days = None):
+        """
+        The number of days specified to retire laptops must be less than or equal to the number of days specified to delete laptops
+        If delete_days is not specified, It will be set to 'Never'
+
+        Args:
+            retire_days (int) --  Number of days to retire laptops
+            delete_days (int) --  Number of days to delete laptops
+
+        Raises:
+            SDKException
+                If retire days is more than delete days
+        """
+
+        if delete_days is None:
+            delete_days = -1
+
+        if delete_days != -1 and retire_days > delete_days:
+            raise SDKException(Organization, 101, 'The number of days specified to \
+             retire laptops must be less than or equal to the number of days specified to delete laptops.')
+        
+        req_json = {
+            'autoRetireDevices' : {
+                'retireDevicesAfterDays' : retire_days,
+                'forceDeleteDevicesAfterDays' : delete_days
+            }
+        }
+        
+        self._update_properties_json(req_json)
+        self._update_properties()
+
+    @property
+    def sites(self):
+        """ 
+        Gets the site information of organisation
+
+        Returns:
+            sites (dict)  -- sites information of organisation        
+        """
+        return {'primary_site' : self._primary_domain, 'additional_sites' : self._additional_domain}
+
+    @sites.setter
+    def sites(self, sites):
+        """
+        Updates Sites information for an Organisation
+
+        Args:
+            sites (dict)   --  Consisting Of Primary and Additional sites information
+
+            example:
+            sites = {
+                'primary_site' : 'comm.com',
+                'additional_sites' : ["cv.comm.com", "skhk.comm.com"]
+            }
+
+        Raises:
+            SDKException:
+                If input is not dictionary
+
+                If primary_site Key is missing in input
+
+                If it fails to update sites information for an organisation
+        """
+
+        if isinstance(sites, dict):
+            primary_site = sites.get('primary_site', None)
+            if primary_site is None:
+                raise SDKException('Organization', 101, 'Primary Site name is missing.')
+
+            additional_sites = sites.get('additional_sites', [])
+
+            self._update_properties_json({
+                "primaryDomain": primary_site,
+                "additionalDomains": additional_sites,
+                "additionalDomainsOperationType": "OVERWRITE"
+                })
+            self._update_properties()
+        else:
+            raise SDKException('Organization', 101, 'Input Parameter should be dictionary')
+
+    @property
+    def tags(self):
+        """
+        Returns:
+            tags (list)  -- List of dictionaries containing TAG values
+
+        Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        req_url = self._services['GET_ORGANIZATION_TAGS'] % (self.organization_id)
+        flag , response = self._cvpysdk_object.make_request('GET', req_url)
+
+        if flag:
+            if response.json():
+                if 'tags' in response.json():
+                    return response.json()['tags'][0]['tag']
+                else:
+                    return []
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        
+
+    @tags.setter
+    def tags(self, tag_list):
+        """
+        Updates Tags for an Organisation
+
+        Args:
+            tag_list (list) --  List of Tag details
+
+            example:
+                tag_list = [
+                    {
+                    "name": "key1",
+                    "value": "value1"
+                    },
+                    {
+                    "name": "key2",
+                    "value": "value2"
+                    }
+                ]
+
+        Raises:
+            SDKException:
+                If it fails to Update Tags for an Organisation
+        """
+
+        req_json = {
+            "entityTag": [
+                {
+                "entityId": int(self.organization_id),
+                "entityType": 61,
+                "tag": tag_list
+                }
+            ]
+        }
+
+        req_url = self._services['ORGANIZATION_TAGS']
+        flag , response = self._cvpysdk_object.make_request('PUT', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Organization', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Organization', '110')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    @property
+    def isPasskeyEnabled(self):
+        """Returns True if Passkey is enabled on company"""
+        return self._is_passkey_enabled
+
+    @property
+    def isAuthrestoreEnabled(self):
+        """Returns True if Authrestore is enabled on company"""
+        return self._is_authorise_for_restore_enabled
+
+    @property
+    def isAllowUsersToEnablePasskeyEnabled(self):
+        """Returns True if it is enabled"""
+        return self._is_allow_users_to_enable_passkey_enabled
+
+    def passkey(self, current_password, action, new_password = None):
+        """"
+        Updates Passkey properties of an Organisation
+
+        Args:
+            current_password (str) --  User Current Passkey to perform actions
+            action (str)           --  'enable' | 'disable' | 'change passkey' | 'authorise'
+            new_password (str)     --  Resetting existing Passkey
+
+        Raises:
+            SDKException:
+                if invalid action is passed as a parameter
+
+                if request fails to update passkey properties of  an organisation
+
+                if new password is missing while changing passkey
+        """
+
+        current_password = b64encode(current_password.encode()).decode()
+
+        req_url = self._services['COMPANY_PASSKEY'] % (int(self.organization_id))
+
+        if action.lower() == 'enable':
+            req_json = {
+            "currentPasskey": current_password,
+            "confirmPasskey": current_password,
+            "passkeyOpType": "CREATE"
+            }
+
+        elif action.lower() == 'disable':
+            req_json = {
+            "currentPasskey": current_password,
+            "confirmPasskey": current_password,
+            "passkeyOpType": "DISABLE"
+            }
+
+        elif action.lower() == 'change passkey':
+            if new_password:
+                new_password = b64encode(new_password.encode()).decode()
+                req_json = {
+                "currentPasskey": current_password,
+                "newPasskey": new_password,
+                "confirmPasskey": new_password,
+                "passkeyOpType": "EDIT"
+                }
+            else:
+                raise SDKException('Organization', 102, 'New password is missing in input')
+
+        elif action.lower() == 'authorise':
+            req_json = {
+            "passkey": current_password,
+            "passkeySettings": {
+                "enableAuthorizeForRestore": True,
+                "passkeyExpirationInterval": {
+                "toTime": 1800
+                }
+            }
+            }
+            req_url = self._services['COMPANY_AUTH_RESTORE'] % (int(self.organization_id))
+
+        else:
+            raise SDKException('Organization', 102, 'Action is undefined, Invalid action passed as a parameter')
+
+        flag, response = self._cvpysdk_object.make_request('POST', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Organization', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Organization', '110')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def allow_owners_to_enable_passkey(self, flag):
+        """
+        Enable or Disable option to allow owners to enable privacy
+
+        Args:
+            flag (boolean)   --  True (Enable Passkey) or False (Disable Passkey)
+        """
+        self._update_properties_json({"allowUsersToEnablePasskey": flag})
+        self._update_properties()

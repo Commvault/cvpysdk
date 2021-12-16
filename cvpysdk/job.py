@@ -191,7 +191,7 @@ Job
 
     _initialize_job_properties()--  initializes the properties of the job
 
-    _wait_for_status()          --  waits for 2 minutes or till the job status is changed
+    _wait_for_status()          --  waits for 6 minutes or till the job status is changed
     to given status, whichever is earlier
 
     wait_for_completion()       --  waits for the job to finish, (job.is_finished == True)
@@ -2009,8 +2009,10 @@ class Job(object):
                     time.sleep(20)
 
             else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                if attempts > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
 
         raise SDKException('Job', '104')
 
@@ -2059,8 +2061,10 @@ class Job(object):
                         raise SDKException('Response', '102')
                     time.sleep(20)
             else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                if retry_count > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
 
         raise SDKException('Response', '102')
 

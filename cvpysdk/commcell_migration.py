@@ -78,7 +78,7 @@ class CommCellMigration(object):
 
                         "userName":"UserName",
 
-                        "password":"Password",
+                        "password":"User#####",
 
                         "sqlInstanceName":"SQLInstanceName",
 

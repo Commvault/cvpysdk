@@ -30,7 +30,11 @@ Activate instance Attributes
 
     **entity_manager**           --  returns object of entity_manager class based on entity type specified
 
+    **inventory_manager**        --  returns object of Inventories class
+
 """
+from .activateapps.inventory_manager import Inventories
+
 from .exception import SDKException
 
 from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
@@ -53,12 +57,20 @@ class Activate(object):
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._inventories = None
 
     def __del__(self):
         """Destructor method to delete all instances of apps referenced by this class"""
         del self._entity
         del self._tags
         del self._classifiers
+        del self._inventories
+
+    def inventory_manager(self):
+        """Returns the Inventories class object from inventory manager app from activate apps"""
+        if self._inventories is None:
+            self._inventories = Inventories(self._commcell_object)
+        return self._inventories
 
     def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
         """Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
