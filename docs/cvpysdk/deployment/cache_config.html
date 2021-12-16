@@ -46,7 +46,7 @@ commit_cache()                        --  commits CS cache
 <pre><code>__init__(commcell, client_object)     --  initialize commcell and client_object of RemoteCache class
 associated with the client
 
-get_remote_cache_path()               --  returns remote cache path
+get_remote_cache_path()               --  returns remote cache path, if exists, else None
 
 configure_remote_cache()              --  Configures client as remote cache
 
@@ -59,7 +59,7 @@ delete_remote_cache_contents()        --  deletes remote cache contents
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L1-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L1-L428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -104,7 +104,7 @@ RemoteCache
     __init__(commcell, client_object)     --  initialize commcell and client_object of RemoteCache class
     associated with the client
 
-    get_remote_cache_path()               --  returns remote cache path
+    get_remote_cache_path()               --  returns remote cache path, if exists, else None
 
     configure_remote_cache()              --  Configures client as remote cache
 
@@ -257,10 +257,11 @@ class RemoteCache(object):
 
     def get_remote_cache_path(self):
         &#34;&#34;&#34;
-        Returns remote cache path
+        Returns remote cache path, if exists, else None
 
         Returns:
-            remote_cache_path (str) - remote cache path of the client
+            remote_cache_path (str) - remote cache path of the client if exists
+            None                    - otherwise
 
         Raises:
             SDKException:
@@ -275,9 +276,8 @@ class RemoteCache(object):
             try:
                 for clients in response[&#34;uaInfo&#34;]:
                     if clients[&#39;client&#39;][&#39;clientName&#39;] == self.client_object.client_name:
-                        remote_cache_path = clients[&#34;uaCachePath&#34;]
-                        break
-                return remote_cache_path
+                        return clients[&#34;uaCachePath&#34;]
+                return None
             except Exception:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;)
         else:
@@ -516,7 +516,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L61-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L61-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommServeCache(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -641,7 +641,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L78-L89" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L78-L89" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def get_request_xml():
@@ -674,7 +674,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L146-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L146-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commit_cache(self):
     &#34;&#34;&#34;
@@ -719,7 +719,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L119-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L119-L144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_cache(self):
     &#34;&#34;&#34;
@@ -765,7 +765,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L91-L117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L91-L117" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_cs_cache_path(self):
     &#34;&#34;&#34;
@@ -817,7 +817,7 @@ client name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L175-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L175-L428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RemoteCache(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -841,10 +841,11 @@ client name</p>
 
     def get_remote_cache_path(self):
         &#34;&#34;&#34;
-        Returns remote cache path
+        Returns remote cache path, if exists, else None
 
         Returns:
-            remote_cache_path (str) - remote cache path of the client
+            remote_cache_path (str) - remote cache path of the client if exists
+            None                    - otherwise
 
         Raises:
             SDKException:
@@ -859,9 +860,8 @@ client name</p>
             try:
                 for clients in response[&#34;uaInfo&#34;]:
                     if clients[&#39;client&#39;][&#39;clientName&#39;] == self.client_object.client_name:
-                        remote_cache_path = clients[&#34;uaCachePath&#34;]
-                        break
-                return remote_cache_path
+                        return clients[&#34;uaCachePath&#34;]
+                return None
             except Exception:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;)
         else:
@@ -1095,7 +1095,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L353-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L353-L428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def assoc_entity_to_remote_cache(self, client_name=None, client_group_name=None):
     &#34;&#34;&#34;
@@ -1215,7 +1215,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L256-L322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L256-L322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_packages_to_sync(self, win_os=None, win_package_list=None, unix_os=None,
                                unix_package_list=None):
@@ -1303,7 +1303,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L223-L254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L223-L254" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_remotecache(self, cache_path):
     &#34;&#34;&#34;
@@ -1353,7 +1353,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L324-L351" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L324-L351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_remote_cache_contents(self):
     &#34;&#34;&#34;
@@ -1389,9 +1389,11 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <span>def <span class="ident">get_remote_cache_path</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns remote cache path</p>
+<div class="desc"><p>Returns remote cache path, if exists, else None</p>
 <h2 id="returns">Returns</h2>
-<p>remote_cache_path (str) - remote cache path of the client</p>
+<p>remote_cache_path (str) - remote cache path of the client if exists
+None
+- otherwise</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
 - Failed to execute the api</p>
@@ -1401,14 +1403,15 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deployment/cache_config.py#L195-L221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/cache_config.py#L195-L221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_remote_cache_path(self):
     &#34;&#34;&#34;
-    Returns remote cache path
+    Returns remote cache path, if exists, else None
 
     Returns:
-        remote_cache_path (str) - remote cache path of the client
+        remote_cache_path (str) - remote cache path of the client if exists
+        None                    - otherwise
 
     Raises:
         SDKException:
@@ -1423,9 +1426,8 @@ providing input to the configure_packages_to_sync method, it can be imported by<
         try:
             for clients in response[&#34;uaInfo&#34;]:
                 if clients[&#39;client&#39;][&#39;clientName&#39;] == self.client_object.client_name:
-                    remote_cache_path = clients[&#34;uaCachePath&#34;]
-                    break
-            return remote_cache_path
+                    return clients[&#34;uaCachePath&#34;]
+            return None
         except Exception:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
     else:

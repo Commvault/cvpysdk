@@ -24,8 +24,9 @@
 </header>
 <section id="section-intro">
 <p>Main file for performing plan operations.</p>
-<p>Plans and Plan are the classes defined in this file.</p>
+<p>Plans,PlanTypes and Plan are the classes defined in this file.</p>
 <p>Plans: Class for representing all the plans in the commcell</p>
+<p>PlanTypes : Class for representing plan types</p>
 <p>Plan: Class for representing a single plan of the commcell</p>
 <h1 id="plans">Plans</h1>
 <pre><code>__init__(commcell_object)   --  initialise object of plans class of the commcell
@@ -52,6 +53,8 @@ get()                       --  returns the instance of the Plans class
 delete()                    --  deletes the plan from the commcell
 
 refresh()                   --  refresh the plans associated with the commcell
+
+add_data_classification_plan()-  Adds data classification plan to the commcell
 </code></pre>
 <h2 id="attributes">Attributes</h2>
 <pre><code>**all_plans**   --  returns the dict consisting of plans and their details
@@ -88,6 +91,12 @@ modify_schedule()           --  modifies the RPO schedules of the plan
 add_storage_copy()          --  adds a storage pool as a copy to the plan
 
 disable_full_schedule()     --  disables the full schedule of a plan
+
+share()                     --  shares plan with given user by associating given role
+
+schedule()                  --  create/delete schedule on DC Plan
+
+edit_plan()                 --  edit plan options
 </code></pre>
 <h2 id="plan-attributes">Plan Attributes</h2>
 <pre><code>**plan_id**                 --  returns the id of the plan
@@ -115,11 +124,13 @@ disable_full_schedule()     --  disables the full schedule of a plan
 **full_operation_window**   --  returns the full operation window set by the plan
 
 **associated_entities**     --  returns all the entities associated with the plan
+
+**content_indexing_props**  --  returns the DC plan related properties from the plan
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1-L1681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1-L2170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -141,9 +152,11 @@ disable_full_schedule()     --  disables the full schedule of a plan
 
 &#34;&#34;&#34;Main file for performing plan operations.
 
-Plans and Plan are the classes defined in this file.
+Plans,PlanTypes and Plan are the classes defined in this file.
 
 Plans: Class for representing all the plans in the commcell
+
+PlanTypes : Class for representing plan types
 
 Plan: Class for representing a single plan of the commcell
 
@@ -174,6 +187,8 @@ Plans
     delete()                    --  deletes the plan from the commcell
 
     refresh()                   --  refresh the plans associated with the commcell
+
+    add_data_classification_plan()-  Adds data classification plan to the commcell
 
 Attributes
 ----------
@@ -212,6 +227,13 @@ Plan
 
     disable_full_schedule()     --  disables the full schedule of a plan
 
+    share()                     --  shares plan with given user by associating given role
+
+    schedule()                  --  create/delete schedule on DC Plan
+
+    edit_plan()                 --  edit plan options
+
+
 Plan Attributes
 ----------------
     **plan_id**                 --  returns the id of the plan
@@ -239,13 +261,34 @@ Plan Attributes
     **full_operation_window**   --  returns the full operation window set by the plan
 
     **associated_entities**     --  returns all the entities associated with the plan
-&#34;&#34;&#34;
 
+    **content_indexing_props**  --  returns the DC plan related properties from the plan
+&#34;&#34;&#34;
 from __future__ import unicode_literals
+
+import copy
+from enum import Enum
 
 from past.builtins import basestring
 
 from .exception import SDKException
+
+from .activateapps.constants import TargetApps, PlanConstants
+from functools import reduce
+
+
+class PlanTypes(Enum):
+    &#34;&#34;&#34;Class Enum to represent different plan types&#34;&#34;&#34;
+    Any = 0
+    DLO = 1
+    MSP = 2
+    FS = 3
+    SNAP = 4
+    VSA = 5
+    EXCHANGE = 6
+    DC = 7
+    EDISCOVERY = 8
+    ARCHIVER = 9
 
 
 class Plans(object):
@@ -786,6 +829,184 @@ class Plans(object):
         &#34;&#34;&#34;Refresh the plans associated with the Commcell.&#34;&#34;&#34;
         self._plans = self._get_plans()
 
+    def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
+        &#34;&#34;&#34;Adds data classification plan to the commcell
+
+            Args:
+
+                plan_name           (str)       --  Name of plan
+
+                index_server        (str)       --  Index server name
+
+
+                target_app          (enum)      --  Target app for this plan
+                                                        cvpysdk.activateapps.constants.TargetApps
+
+                **kwargs
+
+                    index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                    content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                    entity_list         (list)      --  list of entities which needs to be extracted
+
+                    classifier_list     (list)      --  list of classifier which needs to be classified
+
+                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                    ocr_language        (int)       --  Language to be used when doing OCR
+                                                            Default : English (Value-1)
+
+                     Supported Languages:
+
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+
+                    include_docs        (str)       --  Include documents type separated by comma
+
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+
+                    min_doc_size        (int)       --  Minimum document size in MB
+
+                    max_doc_size        (int)       --  Maximum document size in MB
+
+            Returns:
+
+                object  - Plan object
+
+            Raises:
+
+                SDKException:
+
+                        if input is not valid
+
+                        if failed to create plan
+
+                        if failed to find entities/classifier details
+
+        &#34;&#34;&#34;
+        extraction_policy_list = []
+        if not (isinstance(plan_name, basestring) and
+                isinstance(index_server, basestring)):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        request_json = self._get_plan_template(&#34;DataClassification&#34;, &#34;MSP&#34;)
+        request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;DC Plan Created from CvPySDK.&#34;
+        request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+        request_json[&#39;plan&#39;][&#39;options&#39;] = {
+            &#34;enableThreatAnalysis&#34;: False,
+            &#34;targetApps&#34;: [
+                target_app.value
+            ]
+        }
+        index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+        request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;analyticsIndexServer&#39;] = {
+            &#39;clientId&#39;: index_server_client_id
+        }
+        if target_app.value == TargetApps.FSO.value:
+            del request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;]
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = PlanConstants.INDEXING_ONLY_METADATA
+        elif target_app.value == TargetApps.SDG.value:
+            if &#39;content_analyzer&#39; not in kwargs:
+                raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
+            ca_list = []
+            for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_list.append({
+                    &#39;cloudId&#39;: ca_cloud_id
+                })
+            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+            if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
+                raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
+            activate_obj = self._commcell_object.activate
+            if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+                entity_mgr_obj = activate_obj.entity_manager()
+                # classifier is also an activate entity with type alone different so append this to entity list itself
+                entity_list = []
+                for entity in kwargs.get(&#39;entity_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in entity_list:
+                    entity_obj = entity_mgr_obj.get(entity)
+                    extraction_policy_list.append(entity_obj.container_details)
+
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;policyType&#39;] = 3
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;flags&#39;] = 8
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;detail&#39;] = {
+                &#34;eePolicy&#34;: {
+                    &#34;copyPrecedence&#34;: 0,
+                    &#34;extractionPolicyType&#34;: 6,  # container entities
+                    &#34;extractionPolicy&#34;: {
+                        &#34;extractionPolicyList&#34;: extraction_policy_list
+                    }
+
+                }
+            }
+            if &#39;index_content&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                    &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            if &#39;enable_ocr&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                    &#39;enable_ocr&#39;, False)
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [kwargs.get(&#39;ocr_language&#39;, 1)]
+            if &#39;include_docs&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                    &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if &#39;min_doc_size&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                    &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if &#39;max_doc_size&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if &#39;exclude_path&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+
+        headers = self._commcell_object._headers.copy()
+        headers[&#39;LookupNames&#39;] = &#39;False&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._PLANS, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = None
+
+                if &#39;errors&#39; in response_value:
+                    error_code = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorCode&#39;]
+                    error_message = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorMessage&#39;]
+
+                if error_code &gt; 1:
+                    o_str = &#39;Failed to create new Plan\nError: &#34;{0}&#34;&#39;.format(
+                        error_message
+                    )
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+
+                if &#39;plan&#39; in response_value:
+                    plan_name = response_value[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;]
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = (&#39;Failed to create new plan due to error code: &#34;{0}&#34;\n&#39;
+                             &#39;Please check the documentation for &#39;
+                             &#39;more details on the error&#39;).format(error_code)
+
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
 
 class Plan(object):
     &#34;&#34;&#34;Class for performing operations for a specific Plan.&#34;&#34;&#34;
@@ -821,6 +1042,8 @@ class Plan(object):
 
         self._PLAN = self._services[&#39;PLAN&#39;] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services[&#39;ADD_USERS_TO_PLAN&#39;] % (self.plan_id)
+        self._API_SECURITY = self._services[&#39;SECURITY_ASSOCIATION&#39;]
+        self._API_SECURITY_ENTITY = self._services[&#39;ENTITY_SECURITY_ASSOCIATION&#39;]
 
         self._properties = None
         self._sla_in_minutes = None
@@ -842,6 +1065,8 @@ class Plan(object):
         self._parent_plan_name = None
         self._addons = []
         self._associated_entities = {}
+        self._dc_plan_props = {}
+        self._plan_entity_type = 158
         self.refresh()
 
     def __repr__(self):
@@ -873,7 +1098,7 @@ class Plan(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        plan_properties_url = &#39;{0}?propertyLevel=20&#39;.format(self._PLAN)
+        plan_properties_url = &#39;{0}?propertyLevel=30&#39;.format(self._PLAN)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, plan_properties_url)
 
         if flag:
@@ -983,6 +1208,25 @@ class Plan(object):
 
                 if &#39;parent&#39; in self._plan_properties[&#39;summary&#39;]:
                     self._parent_plan_name = self._plan_properties[&#39;summary&#39;][&#39;parent&#39;][&#39;planName&#39;]
+
+                if &#39;eePolicy&#39; in self._plan_properties:
+                    extraction_policy = self._plan_properties[&#39;eePolicy&#39;]
+                    if &#39;policyEntity&#39; in extraction_policy:
+                        self._dc_plan_props[&#39;eePolicyId&#39;] = extraction_policy[&#39;policyEntity&#39;][&#39;policyId&#39;]
+                    if &#39;detail&#39; in extraction_policy:
+                        self._dc_plan_props[&#39;eePolicy&#39;] = extraction_policy[&#39;detail&#39;][&#39;eePolicy&#39;]
+
+                if &#39;ciPolicy&#39; in self._plan_properties:
+                    ci_policy = self._plan_properties[&#39;ciPolicy&#39;]
+                    if &#39;policyEntity&#39; in ci_policy:
+                        self._dc_plan_props[&#39;ciPolicyId&#39;] = ci_policy[&#39;policyEntity&#39;][&#39;policyId&#39;]
+                    if &#39;detail&#39; in ci_policy:
+                        self._dc_plan_props[&#39;ciPolicy&#39;] = ci_policy[&#39;detail&#39;][&#39;ciPolicy&#39;]
+
+                if &#39;options&#39; in self._plan_properties:
+                    plan_options = self._plan_properties[&#39;options&#39;]
+                    if &#39;targetApps&#39; in plan_options:
+                        self._dc_plan_props[&#39;targetApps&#39;] = plan_options[&#39;targetApps&#39;]
 
                 if &#39;securityAssociations&#39; in self._plan_properties:
                     for association in self._plan_properties[&#39;securityAssociations&#39;][&#39;associations&#39;]:
@@ -1744,6 +1988,11 @@ class Plan(object):
         &#34;&#34;&#34;
         return self._security_associations
 
+    @property
+    def content_indexing_props(self):
+        &#34;&#34;&#34;returns the DC plan related CI properties from Plan&#34;&#34;&#34;
+        return self._dc_plan_props
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
         self._properties = self._get_plan_properties()
@@ -1801,7 +2050,258 @@ class Plan(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
+        &#34;&#34;&#34;Shares plan with given user or group by associating with given role
+
+                Args:
+
+                    user_or_group_name      (str)       --  User or Group name to which we are sharing
+
+                    role_name               (str)       --  Role name which needs to associated with
+
+                    ops_type                (int)       --  Operation type
+
+                                                            Default : 1 (Add)
+
+                                                            Supported : 1 (Add)
+                                                                        3 (Delete)
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                            if input is not valid
+
+                            if failed to do sharing
+
+                            if user/group/role not exists on commcell
+
+                            if failed to get exisitng association details
+
+        &#34;&#34;&#34;
+        if not isinstance(user_or_group_name, basestring) or not isinstance(role_name, basestring):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        if ops_type not in [1, 3]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Sharing operation type provided is not supported&#34;)
+        if is_user:
+            if not self._commcell_object.users.has_user(user_or_group_name):
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;User doesn&#39;t exists in the commcell&#34;)
+        if not self._commcell_object.roles.has_role(role_name=role_name):
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Role doesn&#39;t exists in the commcell&#34;)
+        request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+        association_response = None
+        if ops_type == 1 and len(self.security_associations) &gt; 1:
+            association_request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+            del association_request_json[&#39;securityAssociations&#39;]
+            association_request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+            flag, response = self._cvpysdk_object.make_request(
+                &#39;GET&#39;, self._API_SECURITY_ENTITY %
+                (self._plan_entity_type, int(
+                    self._plan_id)), association_request_json)
+            if flag:
+                if response.json() and &#39;securityAssociations&#39; in response.json():
+                    association_response = response.json(
+                    )[&#39;securityAssociations&#39;][0][&#39;securityAssociations&#39;][&#39;associations&#39;]
+                else:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Failed to get existing security associations&#39;)
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        external_user = False
+        if &#39;\\&#39; in user_or_group_name:
+            external_user = True
+        if is_user:
+            user_obj = self._commcell_object.users.get(user_or_group_name)
+            user_id = user_obj.user_id
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userId&#39;] = int(user_id)
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;13&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userName&#39;] = user_or_group_name
+        elif external_user:
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;groupId&#39;] = 0
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;62&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+                &#39;externalGroupName&#39;] = user_or_group_name
+        else:
+            grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
+            grp_id = grp_obj.user_group_id
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userGroupId&#39;] = int(grp_id)
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;15&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+                &#39;userGroupName&#39;] = user_or_group_name
+
+        request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+        request_json[&#39;securityAssociations&#39;][&#39;associationsOperationType&#39;] = ops_type
+        role_obj = self._commcell_object.roles.get(role_name)
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleId&#39;] = role_obj.role_id
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleName&#39;] = role_obj.role_name
+
+        # Associate existing associations to the request
+        if ops_type == 1 and len(self.security_associations) &gt; 1:
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._API_SECURITY, request_json
+        )
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                if error_code != 0:
+                    error_message = response_json[&#39;errorString&#39;]
+                    raise SDKException(
+                        &#39;Plan&#39;,
+                        &#39;102&#39;, error_message)
+                self.refresh()
+            else:
+                raise SDKException(&#39;Plan&#39;, &#39;105&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def schedule(self, schedule_name, pattern_json, ops_type=2):
+        &#34;&#34;&#34;Creates or modifies the schedule associated with plan
+
+                Args:
+
+                    schedule_name       (str)       --  Schedule name
+
+                    pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
+
+                    ops_type            (int)       --  Operation type
+
+                                                            Default : 2 (Add)
+
+                                                            Supported : 2 (Add/Modify)
+
+                Raises:
+
+                      SDKException:
+
+                            if input is not valid
+
+                            if failed to create/modify schedule
+
+                            if plan is not of type Data classification plan
+
+        &#34;&#34;&#34;
+        if not isinstance(schedule_name, basestring) or not isinstance(pattern_json, dict):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        if self.plan_type not in [PlanTypes.DC.value]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Add/Modify Schedule is supported only for DC Plan via CvpySDK&#34;)
+        if ops_type not in [2]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Schedule operation type provided is not supported&#34;)
+        request_json = copy.deepcopy(PlanConstants.PLAN_SCHEDULE_REQUEST_JSON[self.plan_type])
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+        request_json[&#39;schedule&#39;][&#39;associations&#39;][0][&#39;entityId&#39;] = int(self.plan_id)
+        request_json[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;] = f&#34;Cvpysdk created Schedule policy for plan - {self.plan_name}&#34;
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][
+            &#39;subTaskName&#39;] = schedule_name
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;pattern&#39;] = pattern_json
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;contentIndexingOption&#39;][&#39;operationType&#39;] = ops_type
+        self._update_plan_props(request_json)
+
+    def edit_plan(self, **kwargs):
+        &#34;&#34;&#34;Edit plan options
+
+                Args:
+
+                    **kwargs for Data Classification Plan
+
+                    index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                    content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                    entity_list         (list)      --  list of entities which needs to be extracted
+
+                    classifier_list     (list)      --  list of classifier which needs to be classified
+
+                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                    ocr_language        (int)       --  Language to be used when doing OCR
+                                                            Default : English (Value-1)
+
+                     Supported Languages:
+
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+
+                    include_docs        (str)       --  Include documents type separated by comma
+
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+
+                    min_doc_size        (int)       --  Minimum document size in MB
+
+                    max_doc_size        (int)       --  Maximum document size in MB
+        &#34;&#34;&#34;
+        if self.plan_type != PlanTypes.DC.value:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Function Not supported for this plan type&#34;)
+        extraction_policy_list = []
+        request_json = None
+        if self.plan_type == PlanTypes.DC.value:
+            request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+            request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+            if TargetApps.SDG.value in self.content_indexing_props[&#39;targetApps&#39;]:
+                request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;] = self.content_indexing_props[&#39;eePolicy&#39;]
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;] = self.content_indexing_props[&#39;ciPolicy&#39;]
+                activate_obj = self._commcell_object.activate
+                if &#39;content_analyzer&#39; in kwargs:
+                    ca_list = []
+                    for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_list.append({
+                            &#39;cloudId&#39;: ca_cloud_id
+                        })
+                    request_json[&#39;eDiscoveryInfo&#39;] = {
+                        &#39;contentAnalyzerCloud&#39;: ca_list}
+                if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+                    entity_mgr_obj = activate_obj.entity_manager()
+                    # classifier is also an activate entity with type alone different so
+                    # append this to entity list itself
+                    entity_list = []
+                    for entity in kwargs.get(&#39;entity_list&#39;, []):
+                        entity_list.append(entity)
+                    for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                        entity_list.append(entity)
+                    for entity in entity_list:
+                        entity_obj = entity_mgr_obj.get(entity)
+                        extraction_policy_list.append(entity_obj.container_details)
+                    request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;][&#39;extractionPolicy&#39;][&#39;extractionPolicyList&#39;] = extraction_policy_list
+
+                if &#39;enable_ocr&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                        &#39;enable_ocr&#39;, False)
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [
+                        kwargs.get(&#39;ocr_language&#39;, 1)]
+                if &#39;include_docs&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                        &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+                if &#39;min_doc_size&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                        &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+                if &#39;max_doc_size&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                        &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+                if &#39;exclude_path&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                        &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+                if &#39;index_content&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                        &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            elif TargetApps.FSO.value in self.content_indexing_props[&#39;targetApps&#39;]:
+                # currently we dont have any thing to update in DC plan for FSO app so throw exception
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;No attributes to Edit for DC Plan with TargetApps as : FSO&#39;)
+        self._update_plan_props(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -1839,7 +2339,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L667-L1681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L877-L2170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plan(object):
     &#34;&#34;&#34;Class for performing operations for a specific Plan.&#34;&#34;&#34;
@@ -1875,6 +2375,8 @@ default: None</p>
 
         self._PLAN = self._services[&#39;PLAN&#39;] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services[&#39;ADD_USERS_TO_PLAN&#39;] % (self.plan_id)
+        self._API_SECURITY = self._services[&#39;SECURITY_ASSOCIATION&#39;]
+        self._API_SECURITY_ENTITY = self._services[&#39;ENTITY_SECURITY_ASSOCIATION&#39;]
 
         self._properties = None
         self._sla_in_minutes = None
@@ -1896,6 +2398,8 @@ default: None</p>
         self._parent_plan_name = None
         self._addons = []
         self._associated_entities = {}
+        self._dc_plan_props = {}
+        self._plan_entity_type = 158
         self.refresh()
 
     def __repr__(self):
@@ -1927,7 +2431,7 @@ default: None</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        plan_properties_url = &#39;{0}?propertyLevel=20&#39;.format(self._PLAN)
+        plan_properties_url = &#39;{0}?propertyLevel=30&#39;.format(self._PLAN)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, plan_properties_url)
 
         if flag:
@@ -2037,6 +2541,25 @@ default: None</p>
 
                 if &#39;parent&#39; in self._plan_properties[&#39;summary&#39;]:
                     self._parent_plan_name = self._plan_properties[&#39;summary&#39;][&#39;parent&#39;][&#39;planName&#39;]
+
+                if &#39;eePolicy&#39; in self._plan_properties:
+                    extraction_policy = self._plan_properties[&#39;eePolicy&#39;]
+                    if &#39;policyEntity&#39; in extraction_policy:
+                        self._dc_plan_props[&#39;eePolicyId&#39;] = extraction_policy[&#39;policyEntity&#39;][&#39;policyId&#39;]
+                    if &#39;detail&#39; in extraction_policy:
+                        self._dc_plan_props[&#39;eePolicy&#39;] = extraction_policy[&#39;detail&#39;][&#39;eePolicy&#39;]
+
+                if &#39;ciPolicy&#39; in self._plan_properties:
+                    ci_policy = self._plan_properties[&#39;ciPolicy&#39;]
+                    if &#39;policyEntity&#39; in ci_policy:
+                        self._dc_plan_props[&#39;ciPolicyId&#39;] = ci_policy[&#39;policyEntity&#39;][&#39;policyId&#39;]
+                    if &#39;detail&#39; in ci_policy:
+                        self._dc_plan_props[&#39;ciPolicy&#39;] = ci_policy[&#39;detail&#39;][&#39;ciPolicy&#39;]
+
+                if &#39;options&#39; in self._plan_properties:
+                    plan_options = self._plan_properties[&#39;options&#39;]
+                    if &#39;targetApps&#39; in plan_options:
+                        self._dc_plan_props[&#39;targetApps&#39;] = plan_options[&#39;targetApps&#39;]
 
                 if &#39;securityAssociations&#39; in self._plan_properties:
                     for association in self._plan_properties[&#39;securityAssociations&#39;][&#39;associations&#39;]:
@@ -2798,6 +3321,11 @@ default: None</p>
         &#34;&#34;&#34;
         return self._security_associations
 
+    @property
+    def content_indexing_props(self):
+        &#34;&#34;&#34;returns the DC plan related CI properties from Plan&#34;&#34;&#34;
+        return self._dc_plan_props
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
         self._properties = self._get_plan_properties()
@@ -2855,7 +3383,258 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
+        &#34;&#34;&#34;Shares plan with given user or group by associating with given role
+
+                Args:
+
+                    user_or_group_name      (str)       --  User or Group name to which we are sharing
+
+                    role_name               (str)       --  Role name which needs to associated with
+
+                    ops_type                (int)       --  Operation type
+
+                                                            Default : 1 (Add)
+
+                                                            Supported : 1 (Add)
+                                                                        3 (Delete)
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                            if input is not valid
+
+                            if failed to do sharing
+
+                            if user/group/role not exists on commcell
+
+                            if failed to get exisitng association details
+
+        &#34;&#34;&#34;
+        if not isinstance(user_or_group_name, basestring) or not isinstance(role_name, basestring):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        if ops_type not in [1, 3]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Sharing operation type provided is not supported&#34;)
+        if is_user:
+            if not self._commcell_object.users.has_user(user_or_group_name):
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;User doesn&#39;t exists in the commcell&#34;)
+        if not self._commcell_object.roles.has_role(role_name=role_name):
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Role doesn&#39;t exists in the commcell&#34;)
+        request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+        association_response = None
+        if ops_type == 1 and len(self.security_associations) &gt; 1:
+            association_request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+            del association_request_json[&#39;securityAssociations&#39;]
+            association_request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+            flag, response = self._cvpysdk_object.make_request(
+                &#39;GET&#39;, self._API_SECURITY_ENTITY %
+                (self._plan_entity_type, int(
+                    self._plan_id)), association_request_json)
+            if flag:
+                if response.json() and &#39;securityAssociations&#39; in response.json():
+                    association_response = response.json(
+                    )[&#39;securityAssociations&#39;][0][&#39;securityAssociations&#39;][&#39;associations&#39;]
+                else:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Failed to get existing security associations&#39;)
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        external_user = False
+        if &#39;\\&#39; in user_or_group_name:
+            external_user = True
+        if is_user:
+            user_obj = self._commcell_object.users.get(user_or_group_name)
+            user_id = user_obj.user_id
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userId&#39;] = int(user_id)
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;13&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userName&#39;] = user_or_group_name
+        elif external_user:
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;groupId&#39;] = 0
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;62&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+                &#39;externalGroupName&#39;] = user_or_group_name
+        else:
+            grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
+            grp_id = grp_obj.user_group_id
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userGroupId&#39;] = int(grp_id)
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;15&#34;
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+                &#39;userGroupName&#39;] = user_or_group_name
+
+        request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+        request_json[&#39;securityAssociations&#39;][&#39;associationsOperationType&#39;] = ops_type
+        role_obj = self._commcell_object.roles.get(role_name)
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleId&#39;] = role_obj.role_id
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleName&#39;] = role_obj.role_name
+
+        # Associate existing associations to the request
+        if ops_type == 1 and len(self.security_associations) &gt; 1:
+            request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._API_SECURITY, request_json
+        )
+        if flag:
+            if response.json() and &#39;response&#39; in response.json():
+                response_json = response.json()[&#39;response&#39;][0]
+                error_code = response_json[&#39;errorCode&#39;]
+                if error_code != 0:
+                    error_message = response_json[&#39;errorString&#39;]
+                    raise SDKException(
+                        &#39;Plan&#39;,
+                        &#39;102&#39;, error_message)
+                self.refresh()
+            else:
+                raise SDKException(&#39;Plan&#39;, &#39;105&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def schedule(self, schedule_name, pattern_json, ops_type=2):
+        &#34;&#34;&#34;Creates or modifies the schedule associated with plan
+
+                Args:
+
+                    schedule_name       (str)       --  Schedule name
+
+                    pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
+
+                    ops_type            (int)       --  Operation type
+
+                                                            Default : 2 (Add)
+
+                                                            Supported : 2 (Add/Modify)
+
+                Raises:
+
+                      SDKException:
+
+                            if input is not valid
+
+                            if failed to create/modify schedule
+
+                            if plan is not of type Data classification plan
+
+        &#34;&#34;&#34;
+        if not isinstance(schedule_name, basestring) or not isinstance(pattern_json, dict):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        if self.plan_type not in [PlanTypes.DC.value]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Add/Modify Schedule is supported only for DC Plan via CvpySDK&#34;)
+        if ops_type not in [2]:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Schedule operation type provided is not supported&#34;)
+        request_json = copy.deepcopy(PlanConstants.PLAN_SCHEDULE_REQUEST_JSON[self.plan_type])
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+        request_json[&#39;schedule&#39;][&#39;associations&#39;][0][&#39;entityId&#39;] = int(self.plan_id)
+        request_json[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;] = f&#34;Cvpysdk created Schedule policy for plan - {self.plan_name}&#34;
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][
+            &#39;subTaskName&#39;] = schedule_name
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;pattern&#39;] = pattern_json
+        request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;contentIndexingOption&#39;][&#39;operationType&#39;] = ops_type
+        self._update_plan_props(request_json)
+
+    def edit_plan(self, **kwargs):
+        &#34;&#34;&#34;Edit plan options
+
+                Args:
+
+                    **kwargs for Data Classification Plan
+
+                    index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                    content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                    entity_list         (list)      --  list of entities which needs to be extracted
+
+                    classifier_list     (list)      --  list of classifier which needs to be classified
+
+                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                    ocr_language        (int)       --  Language to be used when doing OCR
+                                                            Default : English (Value-1)
+
+                     Supported Languages:
+
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+
+                    include_docs        (str)       --  Include documents type separated by comma
+
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+
+                    min_doc_size        (int)       --  Minimum document size in MB
+
+                    max_doc_size        (int)       --  Maximum document size in MB
+        &#34;&#34;&#34;
+        if self.plan_type != PlanTypes.DC.value:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Function Not supported for this plan type&#34;)
+        extraction_policy_list = []
+        request_json = None
+        if self.plan_type == PlanTypes.DC.value:
+            request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+            request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+            if TargetApps.SDG.value in self.content_indexing_props[&#39;targetApps&#39;]:
+                request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;] = self.content_indexing_props[&#39;eePolicy&#39;]
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;] = self.content_indexing_props[&#39;ciPolicy&#39;]
+                activate_obj = self._commcell_object.activate
+                if &#39;content_analyzer&#39; in kwargs:
+                    ca_list = []
+                    for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_list.append({
+                            &#39;cloudId&#39;: ca_cloud_id
+                        })
+                    request_json[&#39;eDiscoveryInfo&#39;] = {
+                        &#39;contentAnalyzerCloud&#39;: ca_list}
+                if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+                    entity_mgr_obj = activate_obj.entity_manager()
+                    # classifier is also an activate entity with type alone different so
+                    # append this to entity list itself
+                    entity_list = []
+                    for entity in kwargs.get(&#39;entity_list&#39;, []):
+                        entity_list.append(entity)
+                    for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                        entity_list.append(entity)
+                    for entity in entity_list:
+                        entity_obj = entity_mgr_obj.get(entity)
+                        extraction_policy_list.append(entity_obj.container_details)
+                    request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;][&#39;extractionPolicy&#39;][&#39;extractionPolicyList&#39;] = extraction_policy_list
+
+                if &#39;enable_ocr&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                        &#39;enable_ocr&#39;, False)
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [
+                        kwargs.get(&#39;ocr_language&#39;, 1)]
+                if &#39;include_docs&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                        &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+                if &#39;min_doc_size&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                        &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+                if &#39;max_doc_size&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                        &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+                if &#39;exclude_path&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                        &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+                if &#39;index_content&#39; in kwargs:
+                    request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                        &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            elif TargetApps.FSO.value in self.content_indexing_props[&#39;targetApps&#39;]:
+                # currently we dont have any thing to update in DC plan for FSO app so throw exception
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;No attributes to Edit for DC Plan with TargetApps as : FSO&#39;)
+        self._update_plan_props(request_json)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2865,7 +3644,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1590-L1597" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1823-L1830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def addons(self):
@@ -2883,12 +3662,26 @@ def addons(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1604-L1607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1837-L1840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_entities(self):
     &#34;&#34;&#34;getter for the backup entities associated with the plan&#34;&#34;&#34;
     return self._associated_entities</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.content_indexing_props"><code class="name">var <span class="ident">content_indexing_props</span></code></dt>
+<dd>
+<div class="desc"><p>returns the DC plan related CI properties from Plan</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1857-L1860" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def content_indexing_props(self):
+    &#34;&#34;&#34;returns the DC plan related CI properties from Plan&#34;&#34;&#34;
+    return self._dc_plan_props</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.full_operation_window"><code class="name">var <span class="ident">full_operation_window</span></code></dt>
@@ -2897,7 +3690,7 @@ def associated_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1490-L1493" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1723-L1726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_operation_window(self):
@@ -2911,7 +3704,7 @@ def full_operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1442-L1445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1675-L1678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operation_window(self):
@@ -2925,7 +3718,7 @@ def operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1547-L1550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1780-L1783" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def override_entities(self):
@@ -2939,7 +3732,7 @@ def override_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1609-L1612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1842-L1845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_plan(self):
@@ -2953,7 +3746,7 @@ def parent_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1383-L1386" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1616-L1619" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_id(self):
@@ -2967,7 +3760,7 @@ def plan_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1388-L1391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1621-L1624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_name(self):
@@ -2981,7 +3774,7 @@ def plan_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1537-L1540" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1770-L1773" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_type(self):
@@ -2995,7 +3788,7 @@ def plan_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1585-L1588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1818-L1821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_policies(self):
@@ -3013,7 +3806,7 @@ def schedule_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1614-L1622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1847-L1855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_associations(self):
@@ -3032,7 +3825,7 @@ def security_associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1416-L1419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1649-L1652" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sla_in_minutes(self):
@@ -3046,7 +3839,7 @@ def sla_in_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1580-L1583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1813-L1816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_copies(self):
@@ -3060,7 +3853,7 @@ def storage_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1575-L1578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1808-L1811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -3074,7 +3867,7 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1599-L1602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1832-L1835" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_policy(self):
@@ -3088,7 +3881,7 @@ def subclient_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1542-L1545" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1775-L1778" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtype(self):
@@ -3127,7 +3920,7 @@ dictionary of all copies of this plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1222-L1254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1455-L1487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
     &#34;&#34;&#34;Add a storage copy as backup destination to this plan
@@ -3180,7 +3973,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1628-L1681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1866-L1919" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_user(self, userlist):
     &#34;&#34;&#34;associates the users to the plan.
@@ -3290,7 +4083,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L893-L1174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1126-L1407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def derive_and_add(self,
                    plan_name,
@@ -3584,7 +4377,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1256-L1263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1489-L1496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_full_schedule(self):
     &#34;&#34;&#34;Disable the full backup schedule of the plan&#34;&#34;&#34;
@@ -3624,7 +4417,7 @@ if plan not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1265-L1324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1498-L1557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_association(self, entities, new_plan=None):
     &#34;&#34;&#34;Reassociates or dissociates the entities from this plan
@@ -3688,6 +4481,164 @@ if plan not found</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.plan.Plan.edit_plan"><code class="name flex">
+<span>def <span class="ident">edit_plan</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Edit plan options</p>
+<h2 id="args">Args</h2>
+<p>**kwargs for Data Classification Plan</p>
+<p>index_content
+(bool)
+&ndash;
+Speifies whether to index content or not to index server</p>
+<p>content_analyzer
+(list)
+&ndash;
+list of Content analyzer cloud name</p>
+<p>entity_list
+(list)
+&ndash;
+list of entities which needs to be extracted</p>
+<p>classifier_list
+(list)
+&ndash;
+list of classifier which needs to be classified</p>
+<p>enable_ocr
+(bool)
+&ndash;
+specifies whether OCR is enabled or not</p>
+<p>ocr_language
+(int)
+&ndash;
+Language to be used when doing OCR
+Default : English (Value-1)</p>
+<p>Supported Languages:</p>
+<pre><code>            ENGLISH = 1,
+            HEBREW = 2,
+            SPANISH = 3,
+            FRENCH = 4,
+            ITALIAN = 5,
+            DANISH = 6
+</code></pre>
+<p>include_docs
+(str)
+&ndash;
+Include documents type separated by comma</p>
+<p>exclude_path
+(list)
+&ndash;
+List of paths which needs to be excluded</p>
+<p>min_doc_size
+(int)
+&ndash;
+Minimum document size in MB</p>
+<p>max_doc_size
+(int)
+&ndash;
+Maximum document size in MB</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L2076-L2170" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def edit_plan(self, **kwargs):
+    &#34;&#34;&#34;Edit plan options
+
+            Args:
+
+                **kwargs for Data Classification Plan
+
+                index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                entity_list         (list)      --  list of entities which needs to be extracted
+
+                classifier_list     (list)      --  list of classifier which needs to be classified
+
+                enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                ocr_language        (int)       --  Language to be used when doing OCR
+                                                        Default : English (Value-1)
+
+                 Supported Languages:
+
+                                ENGLISH = 1,
+                                HEBREW = 2,
+                                SPANISH = 3,
+                                FRENCH = 4,
+                                ITALIAN = 5,
+                                DANISH = 6
+
+                include_docs        (str)       --  Include documents type separated by comma
+
+                exclude_path        (list)      --  List of paths which needs to be excluded
+
+                min_doc_size        (int)       --  Minimum document size in MB
+
+                max_doc_size        (int)       --  Maximum document size in MB
+    &#34;&#34;&#34;
+    if self.plan_type != PlanTypes.DC.value:
+        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Function Not supported for this plan type&#34;)
+    extraction_policy_list = []
+    request_json = None
+    if self.plan_type == PlanTypes.DC.value:
+        request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+        if TargetApps.SDG.value in self.content_indexing_props[&#39;targetApps&#39;]:
+            request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;] = self.content_indexing_props[&#39;eePolicy&#39;]
+            request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;] = self.content_indexing_props[&#39;ciPolicy&#39;]
+            activate_obj = self._commcell_object.activate
+            if &#39;content_analyzer&#39; in kwargs:
+                ca_list = []
+                for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+                    ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                    ca_list.append({
+                        &#39;cloudId&#39;: ca_cloud_id
+                    })
+                request_json[&#39;eDiscoveryInfo&#39;] = {
+                    &#39;contentAnalyzerCloud&#39;: ca_list}
+            if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+                entity_mgr_obj = activate_obj.entity_manager()
+                # classifier is also an activate entity with type alone different so
+                # append this to entity list itself
+                entity_list = []
+                for entity in kwargs.get(&#39;entity_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in entity_list:
+                    entity_obj = entity_mgr_obj.get(entity)
+                    extraction_policy_list.append(entity_obj.container_details)
+                request_json[&#39;eePolicyInfo&#39;][&#39;eePolicy&#39;][&#39;detail&#39;][&#39;eePolicy&#39;][&#39;extractionPolicy&#39;][&#39;extractionPolicyList&#39;] = extraction_policy_list
+
+            if &#39;enable_ocr&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                    &#39;enable_ocr&#39;, False)
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [
+                    kwargs.get(&#39;ocr_language&#39;, 1)]
+            if &#39;include_docs&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                    &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if &#39;min_doc_size&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                    &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if &#39;max_doc_size&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if &#39;exclude_path&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+            if &#39;index_content&#39; in kwargs:
+                request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                    &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+        elif TargetApps.FSO.value in self.content_indexing_props[&#39;targetApps&#39;]:
+            # currently we dont have any thing to update in DC plan for FSO app so throw exception
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;No attributes to Edit for DC Plan with TargetApps as : FSO&#39;)
+    self._update_plan_props(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.plan.Plan.modify_schedule"><code class="name flex">
 <span>def <span class="ident">modify_schedule</span></span>(<span>self, schedule_json, is_full_schedule=False)</span>
 </code></dt>
@@ -3722,7 +4673,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1176-L1220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1409-L1453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_schedule(self, schedule_json, is_full_schedule=False):
     &#34;&#34;&#34;Modifies the incremental RPO schedule pattern of the plan with the given schedule json
@@ -3779,12 +4730,316 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L1624-L1626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1862-L1864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
     self._properties = self._get_plan_properties()</code></pre>
 </details>
+</dd>
+<dt id="cvpysdk.plan.Plan.schedule"><code class="name flex">
+<span>def <span class="ident">schedule</span></span>(<span>self, schedule_name, pattern_json, ops_type=2)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates or modifies the schedule associated with plan</p>
+<h2 id="args">Args</h2>
+<p>schedule_name
+(str)
+&ndash;
+Schedule name</p>
+<p>pattern_json
+(dict)
+&ndash;
+Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)</p>
+<p>ops_type
+(int)
+&ndash;
+Operation type</p>
+<pre><code>                                    Default : 2 (Add)
+
+                                    Supported : 2 (Add/Modify)
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>  if input is not valid
+
+  if failed to create/modify schedule
+
+  if plan is not of type Data classification plan
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L2034-L2074" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def schedule(self, schedule_name, pattern_json, ops_type=2):
+    &#34;&#34;&#34;Creates or modifies the schedule associated with plan
+
+            Args:
+
+                schedule_name       (str)       --  Schedule name
+
+                pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
+
+                ops_type            (int)       --  Operation type
+
+                                                        Default : 2 (Add)
+
+                                                        Supported : 2 (Add/Modify)
+
+            Raises:
+
+                  SDKException:
+
+                        if input is not valid
+
+                        if failed to create/modify schedule
+
+                        if plan is not of type Data classification plan
+
+    &#34;&#34;&#34;
+    if not isinstance(schedule_name, basestring) or not isinstance(pattern_json, dict):
+        raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+    if self.plan_type not in [PlanTypes.DC.value]:
+        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Add/Modify Schedule is supported only for DC Plan via CvpySDK&#34;)
+    if ops_type not in [2]:
+        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Schedule operation type provided is not supported&#34;)
+    request_json = copy.deepcopy(PlanConstants.PLAN_SCHEDULE_REQUEST_JSON[self.plan_type])
+    request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+    request_json[&#39;schedule&#39;][&#39;associations&#39;][0][&#39;entityId&#39;] = int(self.plan_id)
+    request_json[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;] = f&#34;Cvpysdk created Schedule policy for plan - {self.plan_name}&#34;
+    request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;][
+        &#39;subTaskName&#39;] = schedule_name
+    request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;pattern&#39;] = pattern_json
+    request_json[&#39;schedule&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;contentIndexingOption&#39;][&#39;operationType&#39;] = ops_type
+    self._update_plan_props(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.share"><code class="name flex">
+<span>def <span class="ident">share</span></span>(<span>self, user_or_group_name, role_name, is_user=True, ops_type=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Shares plan with given user or group by associating with given role</p>
+<h2 id="args">Args</h2>
+<p>user_or_group_name
+(str)
+&ndash;
+User or Group name to which we are sharing</p>
+<p>role_name
+(str)
+&ndash;
+Role name which needs to associated with</p>
+<p>ops_type
+(int)
+&ndash;
+Operation type</p>
+<pre><code>                                    Default : 1 (Add)
+
+                                    Supported : 1 (Add)
+                                                3 (Delete)
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>    if input is not valid
+
+    if failed to do sharing
+
+    if user/group/role not exists on commcell
+
+    if failed to get exisitng association details
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L1921-L2032" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
+    &#34;&#34;&#34;Shares plan with given user or group by associating with given role
+
+            Args:
+
+                user_or_group_name      (str)       --  User or Group name to which we are sharing
+
+                role_name               (str)       --  Role name which needs to associated with
+
+                ops_type                (int)       --  Operation type
+
+                                                        Default : 1 (Add)
+
+                                                        Supported : 1 (Add)
+                                                                    3 (Delete)
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                        if input is not valid
+
+                        if failed to do sharing
+
+                        if user/group/role not exists on commcell
+
+                        if failed to get exisitng association details
+
+    &#34;&#34;&#34;
+    if not isinstance(user_or_group_name, basestring) or not isinstance(role_name, basestring):
+        raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+    if ops_type not in [1, 3]:
+        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Sharing operation type provided is not supported&#34;)
+    if is_user:
+        if not self._commcell_object.users.has_user(user_or_group_name):
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;User doesn&#39;t exists in the commcell&#34;)
+    if not self._commcell_object.roles.has_role(role_name=role_name):
+        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#34;Role doesn&#39;t exists in the commcell&#34;)
+    request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+    association_response = None
+    if ops_type == 1 and len(self.security_associations) &gt; 1:
+        association_request_json = copy.deepcopy(PlanConstants.PLAN_SHARE_REQUEST_JSON)
+        del association_request_json[&#39;securityAssociations&#39;]
+        association_request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._API_SECURITY_ENTITY %
+            (self._plan_entity_type, int(
+                self._plan_id)), association_request_json)
+        if flag:
+            if response.json() and &#39;securityAssociations&#39; in response.json():
+                association_response = response.json(
+                )[&#39;securityAssociations&#39;][0][&#39;securityAssociations&#39;][&#39;associations&#39;]
+            else:
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Failed to get existing security associations&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    external_user = False
+    if &#39;\\&#39; in user_or_group_name:
+        external_user = True
+    if is_user:
+        user_obj = self._commcell_object.users.get(user_or_group_name)
+        user_id = user_obj.user_id
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userId&#39;] = int(user_id)
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;13&#34;
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userName&#39;] = user_or_group_name
+    elif external_user:
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;groupId&#39;] = 0
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;62&#34;
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+            &#39;externalGroupName&#39;] = user_or_group_name
+    else:
+        grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
+        grp_id = grp_obj.user_group_id
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;userGroupId&#39;] = int(grp_id)
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][&#39;_type_&#39;] = &#34;15&#34;
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;][0][
+            &#39;userGroupName&#39;] = user_or_group_name
+
+    request_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;entityId&#39;] = int(self._plan_id)
+    request_json[&#39;securityAssociations&#39;][&#39;associationsOperationType&#39;] = ops_type
+    role_obj = self._commcell_object.roles.get(role_name)
+    request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleId&#39;] = role_obj.role_id
+    request_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;role&#39;][&#39;roleName&#39;] = role_obj.role_name
+
+    # Associate existing associations to the request
+    if ops_type == 1 and len(self.security_associations) &gt; 1:
+        request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._API_SECURITY, request_json
+    )
+    if flag:
+        if response.json() and &#39;response&#39; in response.json():
+            response_json = response.json()[&#39;response&#39;][0]
+            error_code = response_json[&#39;errorCode&#39;]
+            if error_code != 0:
+                error_message = response_json[&#39;errorString&#39;]
+                raise SDKException(
+                    &#39;Plan&#39;,
+                    &#39;102&#39;, error_message)
+            self.refresh()
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;105&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes"><code class="flex name class">
+<span>class <span class="ident">PlanTypes</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class Enum to represent different plan types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L146-L157" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class PlanTypes(Enum):
+    &#34;&#34;&#34;Class Enum to represent different plan types&#34;&#34;&#34;
+    Any = 0
+    DLO = 1
+    MSP = 2
+    FS = 3
+    SNAP = 4
+    VSA = 5
+    EXCHANGE = 6
+    DC = 7
+    EDISCOVERY = 8
+    ARCHIVER = 9</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.plan.PlanTypes.ARCHIVER"><code class="name">var <span class="ident">ARCHIVER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.Any"><code class="name">var <span class="ident">Any</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.DC"><code class="name">var <span class="ident">DC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.DLO"><code class="name">var <span class="ident">DLO</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.EDISCOVERY"><code class="name">var <span class="ident">EDISCOVERY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.EXCHANGE"><code class="name">var <span class="ident">EXCHANGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.FS"><code class="name">var <span class="ident">FS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.MSP"><code class="name">var <span class="ident">MSP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.SNAP"><code class="name">var <span class="ident">SNAP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.plan.PlanTypes.VSA"><code class="name">var <span class="ident">VSA</span></code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </dd>
@@ -3803,7 +5058,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L128-L664" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L160-L874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plans(object):
     &#34;&#34;&#34;Class for representing all the plans in the commcell.&#34;&#34;&#34;
@@ -4341,7 +5596,185 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the plans associated with the Commcell.&#34;&#34;&#34;
-        self._plans = self._get_plans()</code></pre>
+        self._plans = self._get_plans()
+
+    def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
+        &#34;&#34;&#34;Adds data classification plan to the commcell
+
+            Args:
+
+                plan_name           (str)       --  Name of plan
+
+                index_server        (str)       --  Index server name
+
+
+                target_app          (enum)      --  Target app for this plan
+                                                        cvpysdk.activateapps.constants.TargetApps
+
+                **kwargs
+
+                    index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                    content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                    entity_list         (list)      --  list of entities which needs to be extracted
+
+                    classifier_list     (list)      --  list of classifier which needs to be classified
+
+                    enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                    ocr_language        (int)       --  Language to be used when doing OCR
+                                                            Default : English (Value-1)
+
+                     Supported Languages:
+
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+
+                    include_docs        (str)       --  Include documents type separated by comma
+
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+
+                    min_doc_size        (int)       --  Minimum document size in MB
+
+                    max_doc_size        (int)       --  Maximum document size in MB
+
+            Returns:
+
+                object  - Plan object
+
+            Raises:
+
+                SDKException:
+
+                        if input is not valid
+
+                        if failed to create plan
+
+                        if failed to find entities/classifier details
+
+        &#34;&#34;&#34;
+        extraction_policy_list = []
+        if not (isinstance(plan_name, basestring) and
+                isinstance(index_server, basestring)):
+            raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+        request_json = self._get_plan_template(&#34;DataClassification&#34;, &#34;MSP&#34;)
+        request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;DC Plan Created from CvPySDK.&#34;
+        request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+        request_json[&#39;plan&#39;][&#39;options&#39;] = {
+            &#34;enableThreatAnalysis&#34;: False,
+            &#34;targetApps&#34;: [
+                target_app.value
+            ]
+        }
+        index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+        request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;analyticsIndexServer&#39;] = {
+            &#39;clientId&#39;: index_server_client_id
+        }
+        if target_app.value == TargetApps.FSO.value:
+            del request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;]
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = PlanConstants.INDEXING_ONLY_METADATA
+        elif target_app.value == TargetApps.SDG.value:
+            if &#39;content_analyzer&#39; not in kwargs:
+                raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
+            ca_list = []
+            for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_list.append({
+                    &#39;cloudId&#39;: ca_cloud_id
+                })
+            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+            if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
+                raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
+            activate_obj = self._commcell_object.activate
+            if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+                entity_mgr_obj = activate_obj.entity_manager()
+                # classifier is also an activate entity with type alone different so append this to entity list itself
+                entity_list = []
+                for entity in kwargs.get(&#39;entity_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                    entity_list.append(entity)
+                for entity in entity_list:
+                    entity_obj = entity_mgr_obj.get(entity)
+                    extraction_policy_list.append(entity_obj.container_details)
+
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;policyType&#39;] = 3
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;flags&#39;] = 8
+            request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;detail&#39;] = {
+                &#34;eePolicy&#34;: {
+                    &#34;copyPrecedence&#34;: 0,
+                    &#34;extractionPolicyType&#34;: 6,  # container entities
+                    &#34;extractionPolicy&#34;: {
+                        &#34;extractionPolicyList&#34;: extraction_policy_list
+                    }
+
+                }
+            }
+            if &#39;index_content&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                    &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            if &#39;enable_ocr&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                    &#39;enable_ocr&#39;, False)
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [kwargs.get(&#39;ocr_language&#39;, 1)]
+            if &#39;include_docs&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                    &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if &#39;min_doc_size&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                    &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if &#39;max_doc_size&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if &#39;exclude_path&#39; in kwargs:
+                request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                    &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+
+        headers = self._commcell_object._headers.copy()
+        headers[&#39;LookupNames&#39;] = &#39;False&#39;
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._PLANS, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = None
+
+                if &#39;errors&#39; in response_value:
+                    error_code = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorCode&#39;]
+                    error_message = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorMessage&#39;]
+
+                if error_code &gt; 1:
+                    o_str = &#39;Failed to create new Plan\nError: &#34;{0}&#34;&#39;.format(
+                        error_message
+                    )
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+
+                if &#39;plan&#39; in response_value:
+                    plan_name = response_value[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;]
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = (&#39;Failed to create new plan due to error code: &#34;{0}&#34;\n&#39;
+                             &#39;Please check the documentation for &#39;
+                             &#39;more details on the error&#39;).format(error_code)
+
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -4358,7 +5791,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L280-L293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L312-L325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_plans(self):
@@ -4448,7 +5881,7 @@ if input parameters are incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L407-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L439-L650" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         plan_name,
@@ -4664,6 +6097,251 @@ if input parameters are incorrect</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.plan.Plans.add_data_classification_plan"><code class="name flex">
+<span>def <span class="ident">add_data_classification_plan</span></span>(<span>self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds data classification plan to the commcell</p>
+<h2 id="args">Args</h2>
+<p>plan_name
+(str)
+&ndash;
+Name of plan</p>
+<p>index_server
+(str)
+&ndash;
+Index server name</p>
+<p>target_app
+(enum)
+&ndash;
+Target app for this plan
+cvpysdk.activateapps.constants.TargetApps</p>
+<p>**kwargs</p>
+<pre><code>index_content       (bool)      --  Speifies whether to index content or not to index server
+
+content_analyzer    (list)      --  list of Content analyzer cloud name
+
+entity_list         (list)      --  list of entities which needs to be extracted
+
+classifier_list     (list)      --  list of classifier which needs to be classified
+
+enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+ocr_language        (int)       --  Language to be used when doing OCR
+                                        Default : English (Value-1)
+
+ Supported Languages:
+
+                ENGLISH = 1,
+                HEBREW = 2,
+                SPANISH = 3,
+                FRENCH = 4,
+                ITALIAN = 5,
+                DANISH = 6
+
+include_docs        (str)       --  Include documents type separated by comma
+
+exclude_path        (list)      --  List of paths which needs to be excluded
+
+min_doc_size        (int)       --  Minimum document size in MB
+
+max_doc_size        (int)       --  Maximum document size in MB
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object
+- Plan object</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>    if input is not valid
+
+    if failed to create plan
+
+    if failed to find entities/classifier details
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L698-L874" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
+    &#34;&#34;&#34;Adds data classification plan to the commcell
+
+        Args:
+
+            plan_name           (str)       --  Name of plan
+
+            index_server        (str)       --  Index server name
+
+
+            target_app          (enum)      --  Target app for this plan
+                                                    cvpysdk.activateapps.constants.TargetApps
+
+            **kwargs
+
+                index_content       (bool)      --  Speifies whether to index content or not to index server
+
+                content_analyzer    (list)      --  list of Content analyzer cloud name
+
+                entity_list         (list)      --  list of entities which needs to be extracted
+
+                classifier_list     (list)      --  list of classifier which needs to be classified
+
+                enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+
+                ocr_language        (int)       --  Language to be used when doing OCR
+                                                        Default : English (Value-1)
+
+                 Supported Languages:
+
+                                ENGLISH = 1,
+                                HEBREW = 2,
+                                SPANISH = 3,
+                                FRENCH = 4,
+                                ITALIAN = 5,
+                                DANISH = 6
+
+                include_docs        (str)       --  Include documents type separated by comma
+
+                exclude_path        (list)      --  List of paths which needs to be excluded
+
+                min_doc_size        (int)       --  Minimum document size in MB
+
+                max_doc_size        (int)       --  Maximum document size in MB
+
+        Returns:
+
+            object  - Plan object
+
+        Raises:
+
+            SDKException:
+
+                    if input is not valid
+
+                    if failed to create plan
+
+                    if failed to find entities/classifier details
+
+    &#34;&#34;&#34;
+    extraction_policy_list = []
+    if not (isinstance(plan_name, basestring) and
+            isinstance(index_server, basestring)):
+        raise SDKException(&#39;Plan&#39;, &#39;101&#39;)
+    request_json = self._get_plan_template(&#34;DataClassification&#34;, &#34;MSP&#34;)
+    request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;DC Plan Created from CvPySDK.&#34;
+    request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
+    request_json[&#39;plan&#39;][&#39;options&#39;] = {
+        &#34;enableThreatAnalysis&#34;: False,
+        &#34;targetApps&#34;: [
+            target_app.value
+        ]
+    }
+    index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+    request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;analyticsIndexServer&#39;] = {
+        &#39;clientId&#39;: index_server_client_id
+    }
+    if target_app.value == TargetApps.FSO.value:
+        del request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;]
+        request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = PlanConstants.INDEXING_ONLY_METADATA
+    elif target_app.value == TargetApps.SDG.value:
+        if &#39;content_analyzer&#39; not in kwargs:
+            raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
+        ca_list = []
+        for ca in kwargs.get(&#39;content_analyzer&#39;, []):
+            ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+            ca_list.append({
+                &#39;cloudId&#39;: ca_cloud_id
+            })
+        request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+        if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
+            raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
+        activate_obj = self._commcell_object.activate
+        if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
+            entity_mgr_obj = activate_obj.entity_manager()
+            # classifier is also an activate entity with type alone different so append this to entity list itself
+            entity_list = []
+            for entity in kwargs.get(&#39;entity_list&#39;, []):
+                entity_list.append(entity)
+            for entity in kwargs.get(&#39;classifier_list&#39;, []):
+                entity_list.append(entity)
+            for entity in entity_list:
+                entity_obj = entity_mgr_obj.get(entity)
+                extraction_policy_list.append(entity_obj.container_details)
+
+        request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;policyType&#39;] = 3
+        request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;flags&#39;] = 8
+        request_json[&#39;plan&#39;][&#39;eePolicy&#39;][&#39;detail&#39;] = {
+            &#34;eePolicy&#34;: {
+                &#34;copyPrecedence&#34;: 0,
+                &#34;extractionPolicyType&#34;: 6,  # container entities
+                &#34;extractionPolicy&#34;: {
+                    &#34;extractionPolicyList&#34;: extraction_policy_list
+                }
+
+            }
+        }
+        if &#39;index_content&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;opType&#39;] = kwargs.get(
+                &#39;index_content&#39;, PlanConstants.INDEXING_METADATA_AND_CONTENT)
+        if &#39;enable_ocr&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;enableImageExtraction&#39;] = kwargs.get(
+                &#39;enable_ocr&#39;, False)
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;ocrLanguages&#39;] = [kwargs.get(&#39;ocr_language&#39;, 1)]
+        if &#39;include_docs&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;includeDocTypes&#39;] = kwargs.get(
+                &#39;include_docs&#39;, PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+        if &#39;min_doc_size&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][&#39;minDocSize&#39;] = kwargs.get(
+                &#39;min_doc_size&#39;, PlanConstants.DEFAULT_MIN_DOC_SIZE)
+        if &#39;max_doc_size&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                &#39;maxDocSize&#39;] = kwargs.get(&#39;max_doc_size&#39;, PlanConstants.DEFAULT_MAX_DOC_SIZE)
+        if &#39;exclude_path&#39; in kwargs:
+            request_json[&#39;plan&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+                &#39;excludePaths&#39;] = kwargs.get(&#39;exclude_path&#39;, PlanConstants.DEFAULT_EXCLUDE_LIST)
+
+    headers = self._commcell_object._headers.copy()
+    headers[&#39;LookupNames&#39;] = &#39;False&#39;
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._PLANS, request_json, headers=headers
+    )
+
+    if flag:
+        if response.json():
+            response_value = response.json()
+            error_message = None
+            error_code = None
+
+            if &#39;errors&#39; in response_value:
+                error_code = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorCode&#39;]
+                error_message = response_value[&#39;errors&#39;][0][&#39;status&#39;][&#39;errorMessage&#39;]
+
+            if error_code &gt; 1:
+                o_str = &#39;Failed to create new Plan\nError: &#34;{0}&#34;&#39;.format(
+                    error_message
+                )
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+
+            if &#39;plan&#39; in response_value:
+                plan_name = response_value[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;]
+                # initialize the plans again
+                self.refresh()
+
+                return self.get(plan_name)
+            else:
+                o_str = (&#39;Failed to create new plan due to error code: &#34;{0}&#34;\n&#39;
+                         &#39;Please check the documentation for &#39;
+                         &#39;more details on the error&#39;).format(error_code)
+
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, 102)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.plan.Plans.delete"><code class="name flex">
 <span>def <span class="ident">delete</span></span>(<span>self, plan_name)</span>
 </code></dt>
@@ -4687,7 +6365,7 @@ if no plan exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L346-L405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L378-L437" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, plan_name):
     &#34;&#34;&#34;Deletes the plan from the commcell.
@@ -4770,7 +6448,7 @@ if type of the plan name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L314-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L346-L376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, plan_name):
     &#34;&#34;&#34;Returns a plan object of the specified plan name.
@@ -4829,7 +6507,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L620-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L652-L692" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_eligible_plans(self, entities):
     &#34;&#34;&#34;Returns dict of plans that are eligible for the specified entities
@@ -4894,7 +6572,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L295-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L327-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_plan(self, plan_name):
     &#34;&#34;&#34;Checks if a plan exists in the commcell with the input plan name.
@@ -4924,7 +6602,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/plan.py#L662-L664" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/plan.py#L694-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the plans associated with the Commcell.&#34;&#34;&#34;
@@ -5017,9 +6695,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.addons" href="#cvpysdk.plan.Plan.addons">addons</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.associate_user" href="#cvpysdk.plan.Plan.associate_user">associate_user</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.associated_entities" href="#cvpysdk.plan.Plan.associated_entities">associated_entities</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.content_indexing_props" href="#cvpysdk.plan.Plan.content_indexing_props">content_indexing_props</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.derive_and_add" href="#cvpysdk.plan.Plan.derive_and_add">derive_and_add</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.disable_full_schedule" href="#cvpysdk.plan.Plan.disable_full_schedule">disable_full_schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.edit_association" href="#cvpysdk.plan.Plan.edit_association">edit_association</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.edit_plan" href="#cvpysdk.plan.Plan.edit_plan">edit_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.full_operation_window" href="#cvpysdk.plan.Plan.full_operation_window">full_operation_window</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.modify_schedule" href="#cvpysdk.plan.Plan.modify_schedule">modify_schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.operation_window" href="#cvpysdk.plan.Plan.operation_window">operation_window</a></code></li>
@@ -5029,8 +6709,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.plan_name" href="#cvpysdk.plan.Plan.plan_name">plan_name</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.plan_type" href="#cvpysdk.plan.Plan.plan_type">plan_type</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.refresh" href="#cvpysdk.plan.Plan.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.schedule" href="#cvpysdk.plan.Plan.schedule">schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.schedule_policies" href="#cvpysdk.plan.Plan.schedule_policies">schedule_policies</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.security_associations" href="#cvpysdk.plan.Plan.security_associations">security_associations</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.share" href="#cvpysdk.plan.Plan.share">share</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.sla_in_minutes" href="#cvpysdk.plan.Plan.sla_in_minutes">sla_in_minutes</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.storage_copies" href="#cvpysdk.plan.Plan.storage_copies">storage_copies</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.storage_policy" href="#cvpysdk.plan.Plan.storage_policy">storage_policy</a></code></li>
@@ -5039,9 +6721,25 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
-<h4><code><a title="cvpysdk.plan.Plans" href="#cvpysdk.plan.Plans">Plans</a></code></h4>
+<h4><code><a title="cvpysdk.plan.PlanTypes" href="#cvpysdk.plan.PlanTypes">PlanTypes</a></code></h4>
 <ul class="two-column">
+<li><code><a title="cvpysdk.plan.PlanTypes.ARCHIVER" href="#cvpysdk.plan.PlanTypes.ARCHIVER">ARCHIVER</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.Any" href="#cvpysdk.plan.PlanTypes.Any">Any</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.DC" href="#cvpysdk.plan.PlanTypes.DC">DC</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.DLO" href="#cvpysdk.plan.PlanTypes.DLO">DLO</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.EDISCOVERY" href="#cvpysdk.plan.PlanTypes.EDISCOVERY">EDISCOVERY</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.EXCHANGE" href="#cvpysdk.plan.PlanTypes.EXCHANGE">EXCHANGE</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.FS" href="#cvpysdk.plan.PlanTypes.FS">FS</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.MSP" href="#cvpysdk.plan.PlanTypes.MSP">MSP</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.SNAP" href="#cvpysdk.plan.PlanTypes.SNAP">SNAP</a></code></li>
+<li><code><a title="cvpysdk.plan.PlanTypes.VSA" href="#cvpysdk.plan.PlanTypes.VSA">VSA</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.plan.Plans" href="#cvpysdk.plan.Plans">Plans</a></code></h4>
+<ul class="">
 <li><code><a title="cvpysdk.plan.Plans.add" href="#cvpysdk.plan.Plans.add">add</a></code></li>
+<li><code><a title="cvpysdk.plan.Plans.add_data_classification_plan" href="#cvpysdk.plan.Plans.add_data_classification_plan">add_data_classification_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.all_plans" href="#cvpysdk.plan.Plans.all_plans">all_plans</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.delete" href="#cvpysdk.plan.Plans.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.get" href="#cvpysdk.plan.Plans.get">get</a></code></li>

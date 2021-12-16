@@ -148,7 +148,7 @@ Returns the BLR pair properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L1-L833" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1-L1096" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -303,6 +303,11 @@ class BLRPairs:
         FILESYSTEM = 2
         DATABASE = 3
 
+    class AgentTypes(Enum):
+        VIRTUALIZATION = &#39;Virtual Server&#39;
+        FILESYSTEM = &#39;File system&#39;
+        DATABASE = &#39;Database&#39;
+
     class PendingStatus(Enum):
         NOLAG = 0
 
@@ -333,15 +338,22 @@ class BLRPairs:
         ABORT_VSA_FAILBACK = 18
         ABORT_FS_FAILBACK = 19
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object, replication_group_name: str = &#39;&#39;):
         &#34;&#34;&#34;Initialize object of the BLR Pairs
             Args:
                 commcell_object (Commcell)  --  instance of the Commcell class
+                replication_group_name (str)--  Name of the replication group (only for VSA BLR)
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._services = commcell_object._services
+        self._replication_group_name = replication_group_name.lower()
 
-        self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+        if replication_group_name:
+            self._LIST_BLR_PAIRS = (f&#34;{self._services[&#39;GET_BLR_PAIRS&#39;]}&#34;
+                                    f&#34;?replicationGroupId={self._get_replication_group_id()}&#34;)
+        else:
+            self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+
         self._DELETE_BLR = self._services[&#39;DELETE_BLR_PAIR&#39;]
         self._QEXEC = self._services[&#39;EXEC_QCOMMAND&#39;]
 
@@ -352,7 +364,22 @@ class BLRPairs:
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the BLR Pairs class.&#34;&#34;&#34;
-        return &#34;BLR Pairs for Commserv: &#39;{0}&#39;&#34;.format(self._commcell_object.commserv_name)
+        if not self._replication_group_name:
+            return &#34;BLR Pairs for Commserv: &#39;{0}&#39;&#34;.format(self._commcell_object.commserv_name)
+        else:
+            return &#34;BLR Pairs for Replication group: &#39;{0}&#39;&#34;.format(self._replication_group_name)
+
+    def _get_replication_group_id(self):
+        &#34;&#34;&#34;Returns the replication group ID
+            Args:
+            Returns:
+                replication_group_id (str):  The ID of the associated replication group
+            Raises:
+        &#34;&#34;&#34;
+        if not self._replication_group_name:
+            return &#39;&#39;
+        return (self._commcell_object.replication_groups.replication_groups
+                .get(self._replication_group_name, {}).get(&#39;id&#39;))
 
     def _update_data(self):
         &#34;&#34;&#34;REST API call for getting all the info for all pairs in the commcell.
@@ -370,7 +397,7 @@ class BLRPairs:
                 self._summary = response.json().get(&#39;summary&#39;, {})
                 self._site_info = response.json().get(&#39;siteInfo&#39;, [])
             else:
-                raise SDKException(&#39;Response&#39;, 102)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -383,21 +410,27 @@ class BLRPairs:
             Returns:
                 dict - consists of all BLR pairs
                     {
-                         &#34;blr_pair_1&#34;: &#34;blr_id1&#34;,
-                         &#34;blr_pair_2&#34;: &#34;blr_id2&#34;,
+                         &#34;blr_id_1&#34;: {
+                             &#34;sourceName&#34;: &#34;vm1&#34;,
+                             &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                             &#34;subclientName&#34;: &#34;BLR_vm1(&lt;guid&gt;)&#34;
+                         },
+                         &#34;blr_id_2&#34;: {
+                             &#34;sourceName&#34;: &#34;vm1&#34;,
+                             &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                             &#34;subclientName&#34;: &#34;BLRSC_vm1_DRvm1_E:&#34;
+                         },
                     }
-
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
         &#34;&#34;&#34;
         pairs = {}
         for pair_row in self._site_info:
-            pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
             pair_id = pair_row.get(&#39;id&#39;)
-            if pair_name and pair_id:
-                pairs[pair_name] = str(pair_id)
+            if pair_id:
+                pairs[str(pair_id)] = {
+                    &#39;sourceName&#39;: pair_row.get(&#39;sourceName&#39;, &#39;&#39;),
+                    &#39;destinationName&#39;: pair_row.get(&#39;destinationName&#39;, &#39;&#39;),
+                    &#39;subclientName&#39;: pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;)
+                }
         return pairs
 
     def has_blr_pair(self, source_name, destination_name):
@@ -416,7 +449,7 @@ class BLRPairs:
             raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                     destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
                 return True
@@ -537,11 +570,10 @@ class BLRPairs:
             raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                     destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-                pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
-                return BLRPair(self._commcell_object, pair_name)
+                return BLRPair(self._commcell_object, source_name, destination_name)
         else:
             raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;,
                                &#39;No BLR pair exists with source: &#34;{0}&#34; and destination: &#34;{1}&#34;&#39;
@@ -565,10 +597,9 @@ class BLRPairs:
         source_name = source_name.lower()
         destination_name = destination_name.lower()
         if self.has_blr_pair(source_name, destination_name):
-            for pair_row in self._site_info:
+            for pair_id, pair_row in self.blr_pairs.items():
                 if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                         destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-                    pair_id = str(pair_row.get(&#39;id&#39;))
                     flag, response = self._commcell_object._cvpysdk_object.make_request(
                         method=&#39;DELETE&#39;, url=self._DELETE_BLR % pair_id)
                     if flag:
@@ -578,7 +609,7 @@ class BLRPairs:
                             o_str = &#39;Failed to delete Source: {0} and Destination: {1} \nError: &#34;{2}&#34;&#39; \
                                 .format(source_name, destination_name, error_message)
 
-                            raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, o_str)
+                            raise SDKException(&#39;Response&#39;, &#39;101&#39;, o_str)
                         else:
                             self.refresh()
                     else:
@@ -610,36 +641,42 @@ class BLRPairs:
 
         response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
 
-        if response.ok:
-            if response.json() and &#39;libraryList&#39; in response.json():
-                rpstore_list = response.json().get(&#39;libraryList&#39;, [])
-                for rpstore in rpstore_list:
-                    if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;):
-                        return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                                   .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;))
-                else:
-                    raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+        if response and &#39;libraryList&#39; in response:
+            rpstore_list = response.get(&#39;libraryList&#39;, [])
+            for rpstore in rpstore_list:
+                if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+                    return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                               .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
 
 
 class BLRPair:
-    def __init__(self, commcell_object, pair_name):
+    class PairOperationsStatus(Enum):
+        SUSPEND = BLRPairs.PairStatus.SUSPENDED
+        START = BLRPairs.PairStatus.REPLICATING
+        RESUME = BLRPairs.PairStatus.REPLICATING
+        STOP = BLRPairs.PairStatus.STOPPED
+        RESYNC = BLRPairs.PairStatus.RESYNCING
+
+    def __init__(self, commcell_object, source_name, destination_name):
         &#34;&#34;&#34;Initialise the ReplicationGroup object for the given group name
             Args:
-                commcell_object (Commcell)  --  instance of the Commcell class
-                pair_name (str)             --  Name of the BLR pair
+                commcell_object (Commcell)      --  instance of the Commcell class
+                source_name (str)               --  Name of the source of BLR pair
+                destination_name (str)          --  Name of the destination of BLR pair
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._services = commcell_object._services
 
-        self._pair_name = pair_name.lower()
+        self._source_name = source_name.lower()
+        self._destination_name = destination_name.lower()
         self._pair_id = self._get_pair_id()
         self._pair_properties = None
+        self._source_instance = None
+        self._destination_instance = None
 
         self._GET_PAIR = self._services[&#39;GET_BLR_PAIR&#39;]
         self._PAIR_STATS = self._services[&#39;GET_BLR_PAIR_STATS&#39;]
@@ -650,13 +687,20 @@ class BLRPair:
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of the BLR pair&#34;&#34;&#34;
-        representation_string = &#39;BLR pair class instance for pair: &#34;{0}&#34;&#39;
-        return representation_string.format(self._pair_name)
+        representation_string = &#39;BLR pair class instance for pair: &#34;{0} -&gt; {1}&#34;&#39;
+        return representation_string.format(self._source_name, self._destination_name)
+
+    def __str__(self):
+        &#34;&#34;&#34;String representation of the instance of BLR pair&#34;&#34;&#34;
+        return f&#39;BLR Pair: {self._source_name} -&gt; {self._destination_name}&#39;
 
     def _get_pair_id(self):
         &#34;&#34;&#34; Gets BLR pair Id from the BLRPairs class&#34;&#34;&#34;
-        rgs_obj = BLRPairs(self._commcell_object)
-        return str(rgs_obj.blr_pairs.get(self._pair_name))
+        for pair_id, blr_pair in self._commcell_object.blr_pairs.blr_pairs.items():
+            if (blr_pair.get(&#39;sourceName&#39;).lower() == self._source_name and
+                    blr_pair.get(&#39;destinationName&#39;).lower() == self._destination_name):
+                return pair_id
+        raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;)
 
     def _get_pair_properties(self):
         &#34;&#34;&#34; Gets BLR pair properties
@@ -682,6 +726,35 @@ class BLRPair:
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def _perform_action(self, operation_type):
+        &#34;&#34;&#34;Performs an action on BLR pair
+            Args:
+                operation_type (PairOperations): An enum of pair operations of BLRPair class
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        status_to_be_set = operation_type.value
+        site_info = [self._pair_properties.copy()]
+        site_info[0][&#39;status&#39;] = status_to_be_set.value
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;,
+                                                                            self._services[&#39;GET_BLR_PAIRS&#39;],
+                                                                            {&#39;siteInfo&#39;: site_info})
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, -1)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     @property
     def pair_properties(self):
         &#34;&#34;&#34;Returns a dictionary of the pair properties&#34;&#34;&#34;
@@ -690,6 +763,7 @@ class BLRPair:
     @property
     def pair_status(self):
         &#34;&#34;&#34;Returns the status of the pair according the to PairStatus enum&#34;&#34;&#34;
+        self.refresh()
         return BLRPairs.PairStatus(self._pair_properties.get(&#39;status&#39;))
 
     @property
@@ -712,6 +786,11 @@ class BLRPair:
         }
 
     @property
+    def source_vm(self):
+        &#34;&#34;&#34;Returns (str): the source VM name&#34;&#34;&#34;
+        return self.source.get(&#39;name&#39;)
+
+    @property
     def destination(self):
         &#34;&#34;&#34;Returns: (dict) The properties of the destination client
         eg: {
@@ -728,6 +807,11 @@ class BLRPair:
             &#34;guid&#34;: self.pair_properties.get(&#39;destinationGuid&#39;),
             &#34;endpoint&#34;: BLRPairs.EndPointTypes(self.pair_properties.get(&#39;destEndPointType&#39;)),
         }
+
+    @property
+    def destination_vm(self):
+        &#34;&#34;&#34;Returns (str): the destination VM name&#34;&#34;&#34;
+        return self.destination.get(&#39;name&#39;)
 
     @property
     def lag_time(self):
@@ -858,13 +942,88 @@ class BLRPair:
                                                                              destination_client.client_guid))
         if flag:
             if response.json() and &#39;vmScale&#39; in response.json():
-                return response.json().get(&#39;vmScale&#39;, [])
+                return response.json().get(&#39;vmScale&#39;, {}).get(&#39;restorePoints&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get_test_failover_vms(self, boot_type: int = 1):
+        &#34;&#34;&#34;Returns the BLRTestFailovers object for all test failover VMs of the BLR pair
+        Args:
+            boot_type (int): Refer to BLRTestFailover.BLRBootType
+        Returns:
+            BLRTestFailovers object
+        &#34;&#34;&#34;
+        boot_type = BLRTestFailovers.BLRBootType(boot_type)
+        return BLRTestFailovers(self._commcell_object, self._pair_id, boot_type)
+
+    def stop(self):
+        &#34;&#34;&#34;Stops the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.STOP)
+
+    def start(self):
+        &#34;&#34;&#34;Starts the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.START)
+
+    def resume(self):
+        &#34;&#34;&#34;Resumes the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.RESUME)
+
+    def resync(self):
+        &#34;&#34;&#34;Resyncs the BLR pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.RESYNC)
+
+    def suspend(self):
+        &#34;&#34;&#34;Suspends the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.SUSPEND)
 
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         &#34;&#34;&#34;Perform the DR operation for the BLR pair
@@ -954,6 +1113,9 @@ class BLRPair:
                 ]
             }
         }
+        if restore_point is None:
+            admin_opts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+            del admin_opts[&#39;blockOperation&#39;][&#39;operations&#39;][0][&#39;fsMountInfo&#39;][&#39;rp&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;,
                                                                             self._services[&#39;RESTORE&#39;],
@@ -970,9 +1132,9 @@ class BLRPair:
                     error_message = response.json()[&#39;errorMessage&#39;]
 
                     o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
-                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                    raise SDKException(&#39;Job&#39;, &#39;102&#39;, o_str)
                 else:
-                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
+                    raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -982,7 +1144,108 @@ class BLRPair:
 
     def refresh(self):
         &#34;&#34;&#34; Refresh the BLR pair properties &#34;&#34;&#34;
-        self._get_pair_properties()</code></pre>
+        self._get_pair_properties()
+
+
+class BLRTestFailovers:
+    &#34;&#34;&#34;Class for getting all test failover VMs for BLR pair&#34;&#34;&#34;
+    class BLRBootType(Enum):
+        TESTBOOT = 1
+        PERMANENT = 2
+
+    class BootStatus(Enum):
+        NONE = 0
+        IN_PROGRESS = 1
+        SUCCESS = 2
+        FAILED = 3
+        ABOUT_TO_EXPIRE = 4
+        EXPIRED = 5
+        USER_DELETED = 6
+        DELETE_FAILED = 7
+        PARTIAL_SUCCESS = 8
+
+    def __init__(self, commcell_object, pair_id, boot_type: BLRBootType):
+        &#34;&#34;&#34;Method for making initial data members
+            Args:
+                commcell_object (Commcell)      --  instance of the Commcell class
+                pair_id (str)                   --  Id of the BLR pair
+                boot_type (BLRBootType)         --  The type of the boot for VMs
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._services = commcell_object._services
+
+        self._pair_id = pair_id
+        self._boot_type = boot_type
+        self._boot_vm_dict = None
+
+        self._GET_BOOT_VMS = self._services[&#39;BLR_BOOT_DETAILS&#39;]
+
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of BLRTestFailovers&#34;&#34;&#34;
+        representation_string = &#39;BLR Test failover VMs class instance for pair id: {0}&#39;
+        return representation_string.format(self._pair_id)
+
+    def _get_test_failover_vms(self):
+        &#34;&#34;&#34;Gets the list of all test failover VMs
+            Args:
+            Returns: Gets the BLR test failover VMs list
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._GET_BOOT_VMS % (self._pair_id, self._boot_type.value))
+        if flag:
+            if response.json() and &#39;siteInfo&#39; in response.json():
+                return response.json()[&#39;siteInfo&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the VMs list for BLR pair&#34;&#34;&#34;
+        self._boot_vm_dict = {boot_dict.get(&#39;name&#39;): boot_dict
+                              for boot_dict in self._get_test_failover_vms()}
+
+    @property
+    def all_boot_vms(self):
+        &#34;&#34;&#34;Returns a list of all boot VMs&#34;&#34;&#34;
+        return list(self._boot_vm_dict.keys())
+
+    def get_boot_vm_details(self, vm_name):
+        &#34;&#34;&#34;Get the boot VM details for a given vm name
+        Args:
+            vm_name (str): The name of the VM to fetch details for
+        Returns:
+            dict:  {
+                id (int)                : The ID of the test failover VM
+                uuid (str)              : The UUID of the test failover VM
+                name (str)              : The name of the test failover VM
+                creation_time (int)     : The timestamp of VM creation
+                vm_status (BootStatus)  : The status of the test failover VM
+                status_message (str)    : The description of the VM status
+            }
+        Raises:
+            BLRPair not found: If test boot VM name is not found
+        &#34;&#34;&#34;
+        vm_dict = self._boot_vm_dict.get(vm_name)
+        if not vm_dict:
+            raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;BLR test boot VM with name {vm_name} not found&#39;)
+        return {
+            &#39;id&#39;: vm_dict.get(&#39;id&#39;),
+            &#39;uuid&#39;: vm_dict.get(&#39;uuid&#39;),
+            &#39;name&#39;: vm_dict.get(&#39;name&#39;),
+            &#39;creation_time&#39;: vm_dict.get(&#39;creationTime&#39;),
+            &#39;vm_status&#39;: self.BootStatus(vm_dict.get(&#39;status&#39;)) if vm_dict.get(&#39;status&#39;) else None,
+            &#39;status_message&#39;: vm_dict.get(&#39;statusMessage&#39;),
+            &#39;expiration_time&#39;: vm_dict.get(&#39;bestBefore&#39;)
+        }</code></pre>
 </details>
 </section>
 <section>
@@ -996,7 +1259,7 @@ class BLRPair:
 <dl>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPair"><code class="flex name class">
 <span>class <span class="ident">BLRPair</span></span>
-<span>(</span><span>commcell_object, pair_name)</span>
+<span>(</span><span>commcell_object, source_name, destination_name)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialise the ReplicationGroup object for the given group name</p>
@@ -1004,27 +1267,41 @@ class BLRPair:
 <p>commcell_object (Commcell)
 &ndash;
 instance of the Commcell class
-pair_name (str)
+source_name (str)
 &ndash;
-Name of the BLR pair</p></div>
+Name of the source of BLR pair
+destination_name (str)
+&ndash;
+Name of the destination of BLR pair</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L478-L833" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L504-L995" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPair:
-    def __init__(self, commcell_object, pair_name):
+    class PairOperationsStatus(Enum):
+        SUSPEND = BLRPairs.PairStatus.SUSPENDED
+        START = BLRPairs.PairStatus.REPLICATING
+        RESUME = BLRPairs.PairStatus.REPLICATING
+        STOP = BLRPairs.PairStatus.STOPPED
+        RESYNC = BLRPairs.PairStatus.RESYNCING
+
+    def __init__(self, commcell_object, source_name, destination_name):
         &#34;&#34;&#34;Initialise the ReplicationGroup object for the given group name
             Args:
-                commcell_object (Commcell)  --  instance of the Commcell class
-                pair_name (str)             --  Name of the BLR pair
+                commcell_object (Commcell)      --  instance of the Commcell class
+                source_name (str)               --  Name of the source of BLR pair
+                destination_name (str)          --  Name of the destination of BLR pair
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._services = commcell_object._services
 
-        self._pair_name = pair_name.lower()
+        self._source_name = source_name.lower()
+        self._destination_name = destination_name.lower()
         self._pair_id = self._get_pair_id()
         self._pair_properties = None
+        self._source_instance = None
+        self._destination_instance = None
 
         self._GET_PAIR = self._services[&#39;GET_BLR_PAIR&#39;]
         self._PAIR_STATS = self._services[&#39;GET_BLR_PAIR_STATS&#39;]
@@ -1035,13 +1312,20 @@ Name of the BLR pair</p></div>
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of the BLR pair&#34;&#34;&#34;
-        representation_string = &#39;BLR pair class instance for pair: &#34;{0}&#34;&#39;
-        return representation_string.format(self._pair_name)
+        representation_string = &#39;BLR pair class instance for pair: &#34;{0} -&gt; {1}&#34;&#39;
+        return representation_string.format(self._source_name, self._destination_name)
+
+    def __str__(self):
+        &#34;&#34;&#34;String representation of the instance of BLR pair&#34;&#34;&#34;
+        return f&#39;BLR Pair: {self._source_name} -&gt; {self._destination_name}&#39;
 
     def _get_pair_id(self):
         &#34;&#34;&#34; Gets BLR pair Id from the BLRPairs class&#34;&#34;&#34;
-        rgs_obj = BLRPairs(self._commcell_object)
-        return str(rgs_obj.blr_pairs.get(self._pair_name))
+        for pair_id, blr_pair in self._commcell_object.blr_pairs.blr_pairs.items():
+            if (blr_pair.get(&#39;sourceName&#39;).lower() == self._source_name and
+                    blr_pair.get(&#39;destinationName&#39;).lower() == self._destination_name):
+                return pair_id
+        raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;)
 
     def _get_pair_properties(self):
         &#34;&#34;&#34; Gets BLR pair properties
@@ -1067,6 +1351,35 @@ Name of the BLR pair</p></div>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def _perform_action(self, operation_type):
+        &#34;&#34;&#34;Performs an action on BLR pair
+            Args:
+                operation_type (PairOperations): An enum of pair operations of BLRPair class
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        status_to_be_set = operation_type.value
+        site_info = [self._pair_properties.copy()]
+        site_info[0][&#39;status&#39;] = status_to_be_set.value
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;,
+                                                                            self._services[&#39;GET_BLR_PAIRS&#39;],
+                                                                            {&#39;siteInfo&#39;: site_info})
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, -1)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     @property
     def pair_properties(self):
         &#34;&#34;&#34;Returns a dictionary of the pair properties&#34;&#34;&#34;
@@ -1075,6 +1388,7 @@ Name of the BLR pair</p></div>
     @property
     def pair_status(self):
         &#34;&#34;&#34;Returns the status of the pair according the to PairStatus enum&#34;&#34;&#34;
+        self.refresh()
         return BLRPairs.PairStatus(self._pair_properties.get(&#39;status&#39;))
 
     @property
@@ -1097,6 +1411,11 @@ Name of the BLR pair</p></div>
         }
 
     @property
+    def source_vm(self):
+        &#34;&#34;&#34;Returns (str): the source VM name&#34;&#34;&#34;
+        return self.source.get(&#39;name&#39;)
+
+    @property
     def destination(self):
         &#34;&#34;&#34;Returns: (dict) The properties of the destination client
         eg: {
@@ -1113,6 +1432,11 @@ Name of the BLR pair</p></div>
             &#34;guid&#34;: self.pair_properties.get(&#39;destinationGuid&#39;),
             &#34;endpoint&#34;: BLRPairs.EndPointTypes(self.pair_properties.get(&#39;destEndPointType&#39;)),
         }
+
+    @property
+    def destination_vm(self):
+        &#34;&#34;&#34;Returns (str): the destination VM name&#34;&#34;&#34;
+        return self.destination.get(&#39;name&#39;)
 
     @property
     def lag_time(self):
@@ -1243,13 +1567,88 @@ Name of the BLR pair</p></div>
                                                                              destination_client.client_guid))
         if flag:
             if response.json() and &#39;vmScale&#39; in response.json():
-                return response.json().get(&#39;vmScale&#39;, [])
+                return response.json().get(&#39;vmScale&#39;, {}).get(&#39;restorePoints&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get_test_failover_vms(self, boot_type: int = 1):
+        &#34;&#34;&#34;Returns the BLRTestFailovers object for all test failover VMs of the BLR pair
+        Args:
+            boot_type (int): Refer to BLRTestFailover.BLRBootType
+        Returns:
+            BLRTestFailovers object
+        &#34;&#34;&#34;
+        boot_type = BLRTestFailovers.BLRBootType(boot_type)
+        return BLRTestFailovers(self._commcell_object, self._pair_id, boot_type)
+
+    def stop(self):
+        &#34;&#34;&#34;Stops the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.STOP)
+
+    def start(self):
+        &#34;&#34;&#34;Starts the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.START)
+
+    def resume(self):
+        &#34;&#34;&#34;Resumes the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.RESUME)
+
+    def resync(self):
+        &#34;&#34;&#34;Resyncs the BLR pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.RESYNC)
+
+    def suspend(self):
+        &#34;&#34;&#34;Suspends the BLR Pair
+            Args:
+
+            Returns:
+
+            Raises:
+            SDKException:
+            if response is empty
+            if response is not success
+        &#34;&#34;&#34;
+        self._perform_action(self.PairOperationsStatus.SUSPEND)
 
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         &#34;&#34;&#34;Perform the DR operation for the BLR pair
@@ -1339,6 +1738,9 @@ Name of the BLR pair</p></div>
                 ]
             }
         }
+        if restore_point is None:
+            admin_opts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+            del admin_opts[&#39;blockOperation&#39;][&#39;operations&#39;][0][&#39;fsMountInfo&#39;][&#39;rp&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;,
                                                                             self._services[&#39;RESTORE&#39;],
@@ -1355,9 +1757,9 @@ Name of the BLR pair</p></div>
                     error_message = response.json()[&#39;errorMessage&#39;]
 
                     o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
-                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                    raise SDKException(&#39;Job&#39;, &#39;102&#39;, o_str)
                 else:
-                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
+                    raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1369,6 +1771,13 @@ Name of the BLR pair</p></div>
         &#34;&#34;&#34; Refresh the BLR pair properties &#34;&#34;&#34;
         self._get_pair_properties()</code></pre>
 </details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.PairOperationsStatus"><code class="name">var <span class="ident">PairOperationsStatus</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.destination"><code class="name">var <span class="ident">destination</span></code></dt>
@@ -1383,7 +1792,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L562-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L641-L657" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination(self):
@@ -1404,13 +1813,27 @@ def destination(self):
     }</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.destination_vm"><code class="name">var <span class="ident">destination_vm</span></code></dt>
+<dd>
+<div class="desc"><p>Returns (str): the destination VM name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L659-L662" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def destination_vm(self):
+    &#34;&#34;&#34;Returns (str): the destination VM name&#34;&#34;&#34;
+    return self.destination.get(&#39;name&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.lag_time"><code class="name">var <span class="ident">lag_time</span></code></dt>
 <dd>
 <div class="desc"><p>Returns: (int) The replication lag for pair in minutes</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L580-L583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L664-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def lag_time(self):
@@ -1424,7 +1847,7 @@ def lag_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L595-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L679-L682" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_flag(self):
@@ -1449,7 +1872,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L647-L662" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L731-L746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_latest_stats(self):
@@ -1475,7 +1898,7 @@ def pair_latest_stats(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L533-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L606-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_properties(self):
@@ -1489,7 +1912,7 @@ def pair_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L613-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L697-L700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_recovery_type(self):
@@ -1514,7 +1937,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L618-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L702-L717" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_rpstore_intervals(self):
@@ -1540,11 +1963,12 @@ def pair_rpstore_intervals(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L538-L541" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L611-L615" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_status(self):
     &#34;&#34;&#34;Returns the status of the pair according the to PairStatus enum&#34;&#34;&#34;
+    self.refresh()
     return BLRPairs.PairStatus(self._pair_properties.get(&#39;status&#39;))</code></pre>
 </details>
 </dd>
@@ -1560,7 +1984,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L635-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L719-L729" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_volume_map(self):
@@ -1581,7 +2005,7 @@ def pair_volume_map(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L590-L593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L674-L677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_status(self):
@@ -1595,7 +2019,7 @@ def pending_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L585-L588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L669-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_group_name(self):
@@ -1616,7 +2040,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L543-L560" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L617-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source(self):
@@ -1638,6 +2062,20 @@ def source(self):
     }</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.source_vm"><code class="name">var <span class="ident">source_vm</span></code></dt>
+<dd>
+<div class="desc"><p>Returns (str): the source VM name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L636-L639" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def source_vm(self):
+    &#34;&#34;&#34;Returns (str): the source VM name&#34;&#34;&#34;
+    return self.source.get(&#39;name&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.subclient_props"><code class="name">var <span class="ident">subclient_props</span></code></dt>
 <dd>
 <div class="desc"><p>Returns: (dict) The subclient associated with pair's properties
@@ -1651,7 +2089,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L600-L611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L684-L695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_props(self):
@@ -1690,7 +2128,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L717-L829" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L876-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
     &#34;&#34;&#34;Perform the DR operation for the BLR pair
@@ -1780,6 +2218,9 @@ if response is not success</p></div>
             ]
         }
     }
+    if restore_point is None:
+        admin_opts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+        del admin_opts[&#39;blockOperation&#39;][&#39;operations&#39;][0][&#39;fsMountInfo&#39;][&#39;rp&#39;]
 
     flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;,
                                                                         self._services[&#39;RESTORE&#39;],
@@ -1796,9 +2237,9 @@ if response is not success</p></div>
                 error_message = response.json()[&#39;errorMessage&#39;]
 
                 o_str = &#39;Restore job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
-                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                raise SDKException(&#39;Job&#39;, &#39;102&#39;, o_str)
             else:
-                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
+                raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Failed to run the restore job&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
@@ -1826,7 +2267,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L664-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L748-L772" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pair_stats(self):
     &#34;&#34;&#34;Returns: (list) A list of dictionary of statistics for BLR pair
@@ -1869,7 +2310,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L690-L715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L774-L799" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_point_stores(self):
     &#34;&#34;&#34;Returns a list of all recovery point stores for the BLR pair
@@ -1890,13 +2331,41 @@ if response is empty</p>
                                                                          destination_client.client_guid))
     if flag:
         if response.json() and &#39;vmScale&#39; in response.json():
-            return response.json().get(&#39;vmScale&#39;, [])
+            return response.json().get(&#39;vmScale&#39;, {}).get(&#39;restorePoints&#39;, [])
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         response_string = self._commcell_object._update_response_(
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.get_test_failover_vms"><code class="name flex">
+<span>def <span class="ident">get_test_failover_vms</span></span>(<span>self, boot_type: int = 1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the BLRTestFailovers object for all test failover VMs of the BLR pair</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>boot_type</code></strong> :&ensp;<code>int</code></dt>
+<dd>Refer to BLRTestFailover.BLRBootType</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>BLRTestFailovers object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L801-L809" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_test_failover_vms(self, boot_type: int = 1):
+    &#34;&#34;&#34;Returns the BLRTestFailovers object for all test failover VMs of the BLR pair
+    Args:
+        boot_type (int): Refer to BLRTestFailover.BLRBootType
+    Returns:
+        BLRTestFailovers object
+    &#34;&#34;&#34;
+    boot_type = BLRTestFailovers.BLRBootType(boot_type)
+    return BLRTestFailovers(self._commcell_object, self._pair_id, boot_type)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.refresh"><code class="name flex">
@@ -1907,18 +2376,168 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L831-L833" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L993-L995" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pair properties &#34;&#34;&#34;
     self._get_pair_properties()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.resume"><code class="name flex">
+<span>def <span class="ident">resume</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resumes the BLR Pair
+Args:</p>
+<p>Returns:</p>
+<p>Raises:
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L837-L848" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def resume(self):
+    &#34;&#34;&#34;Resumes the BLR Pair
+        Args:
+
+        Returns:
+
+        Raises:
+        SDKException:
+        if response is empty
+        if response is not success
+    &#34;&#34;&#34;
+    self._perform_action(self.PairOperationsStatus.RESUME)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.resync"><code class="name flex">
+<span>def <span class="ident">resync</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resyncs the BLR pair
+Args:</p>
+<p>Returns:</p>
+<p>Raises:
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L850-L861" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def resync(self):
+    &#34;&#34;&#34;Resyncs the BLR pair
+        Args:
+
+        Returns:
+
+        Raises:
+        SDKException:
+        if response is empty
+        if response is not success
+    &#34;&#34;&#34;
+    self._perform_action(self.PairOperationsStatus.RESYNC)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Starts the BLR Pair
+Args:</p>
+<p>Returns:</p>
+<p>Raises:
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L824-L835" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def start(self):
+    &#34;&#34;&#34;Starts the BLR Pair
+        Args:
+
+        Returns:
+
+        Raises:
+        SDKException:
+        if response is empty
+        if response is not success
+    &#34;&#34;&#34;
+    self._perform_action(self.PairOperationsStatus.START)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Stops the BLR Pair
+Args:</p>
+<p>Returns:</p>
+<p>Raises:
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L811-L822" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def stop(self):
+    &#34;&#34;&#34;Stops the BLR Pair
+        Args:
+
+        Returns:
+
+        Raises:
+        SDKException:
+        if response is empty
+        if response is not success
+    &#34;&#34;&#34;
+    self._perform_action(self.PairOperationsStatus.STOP)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.suspend"><code class="name flex">
+<span>def <span class="ident">suspend</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Suspends the BLR Pair
+Args:</p>
+<p>Returns:</p>
+<p>Raises:
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L863-L874" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def suspend(self):
+    &#34;&#34;&#34;Suspends the BLR Pair
+        Args:
+
+        Returns:
+
+        Raises:
+        SDKException:
+        if response is empty
+        if response is not success
+    &#34;&#34;&#34;
+    self._perform_action(self.PairOperationsStatus.SUSPEND)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs"><code class="flex name class">
 <span>class <span class="ident">BLRPairs</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object, replication_group_name: str = '')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for getting all BLR pairs in commcell.</p>
@@ -1926,11 +2545,13 @@ if response is empty</p>
 <h2 id="args">Args</h2>
 <p>commcell_object (Commcell)
 &ndash;
-instance of the Commcell class</p></div>
+instance of the Commcell class
+replication_group_name (str)&ndash;
+Name of the replication group (only for VSA BLR)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L123-L475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L123-L501" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPairs:
     &#34;&#34;&#34;Class for getting all BLR pairs in commcell.&#34;&#34;&#34;
@@ -1963,6 +2584,11 @@ instance of the Commcell class</p></div>
         FILESYSTEM = 2
         DATABASE = 3
 
+    class AgentTypes(Enum):
+        VIRTUALIZATION = &#39;Virtual Server&#39;
+        FILESYSTEM = &#39;File system&#39;
+        DATABASE = &#39;Database&#39;
+
     class PendingStatus(Enum):
         NOLAG = 0
 
@@ -1993,15 +2619,22 @@ instance of the Commcell class</p></div>
         ABORT_VSA_FAILBACK = 18
         ABORT_FS_FAILBACK = 19
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object, replication_group_name: str = &#39;&#39;):
         &#34;&#34;&#34;Initialize object of the BLR Pairs
             Args:
                 commcell_object (Commcell)  --  instance of the Commcell class
+                replication_group_name (str)--  Name of the replication group (only for VSA BLR)
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._services = commcell_object._services
+        self._replication_group_name = replication_group_name.lower()
 
-        self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+        if replication_group_name:
+            self._LIST_BLR_PAIRS = (f&#34;{self._services[&#39;GET_BLR_PAIRS&#39;]}&#34;
+                                    f&#34;?replicationGroupId={self._get_replication_group_id()}&#34;)
+        else:
+            self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+
         self._DELETE_BLR = self._services[&#39;DELETE_BLR_PAIR&#39;]
         self._QEXEC = self._services[&#39;EXEC_QCOMMAND&#39;]
 
@@ -2012,7 +2645,22 @@ instance of the Commcell class</p></div>
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the BLR Pairs class.&#34;&#34;&#34;
-        return &#34;BLR Pairs for Commserv: &#39;{0}&#39;&#34;.format(self._commcell_object.commserv_name)
+        if not self._replication_group_name:
+            return &#34;BLR Pairs for Commserv: &#39;{0}&#39;&#34;.format(self._commcell_object.commserv_name)
+        else:
+            return &#34;BLR Pairs for Replication group: &#39;{0}&#39;&#34;.format(self._replication_group_name)
+
+    def _get_replication_group_id(self):
+        &#34;&#34;&#34;Returns the replication group ID
+            Args:
+            Returns:
+                replication_group_id (str):  The ID of the associated replication group
+            Raises:
+        &#34;&#34;&#34;
+        if not self._replication_group_name:
+            return &#39;&#39;
+        return (self._commcell_object.replication_groups.replication_groups
+                .get(self._replication_group_name, {}).get(&#39;id&#39;))
 
     def _update_data(self):
         &#34;&#34;&#34;REST API call for getting all the info for all pairs in the commcell.
@@ -2030,7 +2678,7 @@ instance of the Commcell class</p></div>
                 self._summary = response.json().get(&#39;summary&#39;, {})
                 self._site_info = response.json().get(&#39;siteInfo&#39;, [])
             else:
-                raise SDKException(&#39;Response&#39;, 102)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -2043,21 +2691,27 @@ instance of the Commcell class</p></div>
             Returns:
                 dict - consists of all BLR pairs
                     {
-                         &#34;blr_pair_1&#34;: &#34;blr_id1&#34;,
-                         &#34;blr_pair_2&#34;: &#34;blr_id2&#34;,
+                         &#34;blr_id_1&#34;: {
+                             &#34;sourceName&#34;: &#34;vm1&#34;,
+                             &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                             &#34;subclientName&#34;: &#34;BLR_vm1(&lt;guid&gt;)&#34;
+                         },
+                         &#34;blr_id_2&#34;: {
+                             &#34;sourceName&#34;: &#34;vm1&#34;,
+                             &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                             &#34;subclientName&#34;: &#34;BLRSC_vm1_DRvm1_E:&#34;
+                         },
                     }
-
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
         &#34;&#34;&#34;
         pairs = {}
         for pair_row in self._site_info:
-            pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
             pair_id = pair_row.get(&#39;id&#39;)
-            if pair_name and pair_id:
-                pairs[pair_name] = str(pair_id)
+            if pair_id:
+                pairs[str(pair_id)] = {
+                    &#39;sourceName&#39;: pair_row.get(&#39;sourceName&#39;, &#39;&#39;),
+                    &#39;destinationName&#39;: pair_row.get(&#39;destinationName&#39;, &#39;&#39;),
+                    &#39;subclientName&#39;: pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;)
+                }
         return pairs
 
     def has_blr_pair(self, source_name, destination_name):
@@ -2076,7 +2730,7 @@ instance of the Commcell class</p></div>
             raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                     destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
                 return True
@@ -2197,11 +2851,10 @@ instance of the Commcell class</p></div>
             raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
         source_name = source_name.lower()
         destination_name = destination_name.lower()
-        for pair_row in self._site_info:
+        for _, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                     destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-                pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
-                return BLRPair(self._commcell_object, pair_name)
+                return BLRPair(self._commcell_object, source_name, destination_name)
         else:
             raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;,
                                &#39;No BLR pair exists with source: &#34;{0}&#34; and destination: &#34;{1}&#34;&#39;
@@ -2225,10 +2878,9 @@ instance of the Commcell class</p></div>
         source_name = source_name.lower()
         destination_name = destination_name.lower()
         if self.has_blr_pair(source_name, destination_name):
-            for pair_row in self._site_info:
+            for pair_id, pair_row in self.blr_pairs.items():
                 if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                         destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-                    pair_id = str(pair_row.get(&#39;id&#39;))
                     flag, response = self._commcell_object._cvpysdk_object.make_request(
                         method=&#39;DELETE&#39;, url=self._DELETE_BLR % pair_id)
                     if flag:
@@ -2238,7 +2890,7 @@ instance of the Commcell class</p></div>
                             o_str = &#39;Failed to delete Source: {0} and Destination: {1} \nError: &#34;{2}&#34;&#39; \
                                 .format(source_name, destination_name, error_message)
 
-                            raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, o_str)
+                            raise SDKException(&#39;Response&#39;, &#39;101&#39;, o_str)
                         else:
                             self.refresh()
                     else:
@@ -2270,24 +2922,23 @@ instance of the Commcell class</p></div>
 
         response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
 
-        if response.ok:
-            if response.json() and &#39;libraryList&#39; in response.json():
-                rpstore_list = response.json().get(&#39;libraryList&#39;, [])
-                for rpstore in rpstore_list:
-                    if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;):
-                        return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                                   .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;))
-                else:
-                    raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+        if response and &#39;libraryList&#39; in response:
+            rpstore_list = response.get(&#39;libraryList&#39;, [])
+            for rpstore in rpstore_list:
+                if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+                    return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                               .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
         else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs.AgentTypes"><code class="name">var <span class="ident">AgentTypes</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs.DROperations"><code class="name">var <span class="ident">DROperations</span></code></dt>
 <dd>
 <div class="desc"><p>An enumeration.</p></div>
@@ -2318,17 +2969,21 @@ Args:</p>
 <h2 id="returns">Returns</h2>
 <p>dict - consists of all BLR pairs
 {
-"blr_pair_1": "blr_id1",
-"blr_pair_2": "blr_id2",
-}</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty
-if response is not success</p></div>
+"blr_id_1": {
+"sourceName": "vm1",
+"destinationName": "DRvm1",
+"subclientName": "BLR_vm1(<guid>)"
+},
+"blr_id_2": {
+"sourceName": "vm1",
+"destinationName": "DRvm1",
+"subclientName": "BLRSC_vm1_DRvm1_E:"
+},
+}</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L226-L249" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L253-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def blr_pairs(self):
@@ -2338,21 +2993,27 @@ def blr_pairs(self):
         Returns:
             dict - consists of all BLR pairs
                 {
-                     &#34;blr_pair_1&#34;: &#34;blr_id1&#34;,
-                     &#34;blr_pair_2&#34;: &#34;blr_id2&#34;,
+                     &#34;blr_id_1&#34;: {
+                         &#34;sourceName&#34;: &#34;vm1&#34;,
+                         &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                         &#34;subclientName&#34;: &#34;BLR_vm1(&lt;guid&gt;)&#34;
+                     },
+                     &#34;blr_id_2&#34;: {
+                         &#34;sourceName&#34;: &#34;vm1&#34;,
+                         &#34;destinationName&#34;: &#34;DRvm1&#34;,
+                         &#34;subclientName&#34;: &#34;BLRSC_vm1_DRvm1_E:&#34;
+                     },
                 }
-
-        Raises:
-            SDKException:
-                if response is empty
-                if response is not success
     &#34;&#34;&#34;
     pairs = {}
     for pair_row in self._site_info:
-        pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
         pair_id = pair_row.get(&#39;id&#39;)
-        if pair_name and pair_id:
-            pairs[pair_name] = str(pair_id)
+        if pair_id:
+            pairs[str(pair_id)] = {
+                &#39;sourceName&#39;: pair_row.get(&#39;sourceName&#39;, &#39;&#39;),
+                &#39;destinationName&#39;: pair_row.get(&#39;destinationName&#39;, &#39;&#39;),
+                &#39;subclientName&#39;: pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;)
+            }
     return pairs</code></pre>
 </details>
 </dd>
@@ -2398,7 +3059,7 @@ merge_only_off_peak(bool):Whether to merge RPstore only during off-peak time</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L274-L371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L307-L404" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_pair(self,
                       source_client_id,
@@ -2521,7 +3182,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L398-L440" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L430-L471" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, source_name, destination_name):
     &#34;&#34;&#34; Deletes the blr pair with source and destination names
@@ -2541,10 +3202,9 @@ if response is not success</p></div>
     source_name = source_name.lower()
     destination_name = destination_name.lower()
     if self.has_blr_pair(source_name, destination_name):
-        for pair_row in self._site_info:
+        for pair_id, pair_row in self.blr_pairs.items():
             if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                     destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-                pair_id = str(pair_row.get(&#39;id&#39;))
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     method=&#39;DELETE&#39;, url=self._DELETE_BLR % pair_id)
                 if flag:
@@ -2554,7 +3214,7 @@ if response is not success</p></div>
                         o_str = &#39;Failed to delete Source: {0} and Destination: {1} \nError: &#34;{2}&#34;&#39; \
                             .format(source_name, destination_name, error_message)
 
-                        raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, o_str)
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, o_str)
                     else:
                         self.refresh()
                 else:
@@ -2587,7 +3247,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L373-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L406-L428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, source_name, destination_name):
     &#34;&#34;&#34;Get pair name on the basis of source and destination name and return pair object
@@ -2604,11 +3264,10 @@ if proper inputs are not provided</p></div>
         raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
     source_name = source_name.lower()
     destination_name = destination_name.lower()
-    for pair_row in self._site_info:
+    for _, pair_row in self.blr_pairs.items():
         if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                 destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
-            pair_name = pair_row.get(&#39;entity&#39;, {}).get(&#39;subclientName&#39;, &#39;&#39;).lower()
-            return BLRPair(self._commcell_object, pair_name)
+            return BLRPair(self._commcell_object, source_name, destination_name)
     else:
         raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;,
                            &#39;No BLR pair exists with source: &#34;{0}&#34; and destination: &#34;{1}&#34;&#39;
@@ -2626,7 +3285,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L453-L475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L484-L501" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_rpstore_id(self, rpstore_name):
     &#34;&#34;&#34;Gets the RPStore ID for the given name
@@ -2636,21 +3295,16 @@ if proper inputs are not provided</p></div>
 
     response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
 
-    if response.ok:
-        if response.json() and &#39;libraryList&#39; in response.json():
-            rpstore_list = response.json().get(&#39;libraryList&#39;, [])
-            for rpstore in rpstore_list:
-                if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;):
-                    return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                               .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;))
-            else:
-                raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+    if response and &#39;libraryList&#39; in response:
+        rpstore_list = response.get(&#39;libraryList&#39;, [])
+        for rpstore in rpstore_list:
+            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+                return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                           .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
     else:
-        response_string = self._commcell_object._update_response_(
-            response.text)
-        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair"><code class="name flex">
@@ -2673,7 +3327,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L251-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L284-L305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_blr_pair(self, source_name, destination_name):
     &#34;&#34;&#34;Checks if BLR pair exists or not
@@ -2691,7 +3345,7 @@ if proper inputs are not provided</p></div>
         raise SDKException(&#39;BLRPairs&#39;, &#39;101&#39;)
     source_name = source_name.lower()
     destination_name = destination_name.lower()
-    for pair_row in self._site_info:
+    for _, pair_row in self.blr_pairs.items():
         if (source_name == pair_row.get(&#39;sourceName&#39;, &#39;&#39;).lower() and
                 destination_name == pair_row.get(&#39;destinationName&#39;, &#39;&#39;).lower()):
             return True
@@ -2710,7 +3364,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/drorchestration/blr_pairs.py#L442-L451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L473-L482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pairs created in the commcell.
@@ -2722,6 +3376,244 @@ Args:</p>
 
     &#34;&#34;&#34;
     self._update_data()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers"><code class="flex name class">
+<span>class <span class="ident">BLRTestFailovers</span></span>
+<span>(</span><span>commcell_object, pair_id, boot_type: <a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BLRBootType" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BLRBootType">BLRTestFailovers.BLRBootType</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for getting all test failover VMs for BLR pair</p>
+<p>Method for making initial data members</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (Commcell)
+&ndash;
+instance of the Commcell class
+pair_id (str)
+&ndash;
+Id of the BLR pair
+boot_type (BLRBootType)
+&ndash;
+The type of the boot for VMs</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L998-L1096" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class BLRTestFailovers:
+    &#34;&#34;&#34;Class for getting all test failover VMs for BLR pair&#34;&#34;&#34;
+    class BLRBootType(Enum):
+        TESTBOOT = 1
+        PERMANENT = 2
+
+    class BootStatus(Enum):
+        NONE = 0
+        IN_PROGRESS = 1
+        SUCCESS = 2
+        FAILED = 3
+        ABOUT_TO_EXPIRE = 4
+        EXPIRED = 5
+        USER_DELETED = 6
+        DELETE_FAILED = 7
+        PARTIAL_SUCCESS = 8
+
+    def __init__(self, commcell_object, pair_id, boot_type: BLRBootType):
+        &#34;&#34;&#34;Method for making initial data members
+            Args:
+                commcell_object (Commcell)      --  instance of the Commcell class
+                pair_id (str)                   --  Id of the BLR pair
+                boot_type (BLRBootType)         --  The type of the boot for VMs
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._services = commcell_object._services
+
+        self._pair_id = pair_id
+        self._boot_type = boot_type
+        self._boot_vm_dict = None
+
+        self._GET_BOOT_VMS = self._services[&#39;BLR_BOOT_DETAILS&#39;]
+
+        self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of BLRTestFailovers&#34;&#34;&#34;
+        representation_string = &#39;BLR Test failover VMs class instance for pair id: {0}&#39;
+        return representation_string.format(self._pair_id)
+
+    def _get_test_failover_vms(self):
+        &#34;&#34;&#34;Gets the list of all test failover VMs
+            Args:
+            Returns: Gets the BLR test failover VMs list
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._GET_BOOT_VMS % (self._pair_id, self._boot_type.value))
+        if flag:
+            if response.json() and &#39;siteInfo&#39; in response.json():
+                return response.json()[&#39;siteInfo&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the VMs list for BLR pair&#34;&#34;&#34;
+        self._boot_vm_dict = {boot_dict.get(&#39;name&#39;): boot_dict
+                              for boot_dict in self._get_test_failover_vms()}
+
+    @property
+    def all_boot_vms(self):
+        &#34;&#34;&#34;Returns a list of all boot VMs&#34;&#34;&#34;
+        return list(self._boot_vm_dict.keys())
+
+    def get_boot_vm_details(self, vm_name):
+        &#34;&#34;&#34;Get the boot VM details for a given vm name
+        Args:
+            vm_name (str): The name of the VM to fetch details for
+        Returns:
+            dict:  {
+                id (int)                : The ID of the test failover VM
+                uuid (str)              : The UUID of the test failover VM
+                name (str)              : The name of the test failover VM
+                creation_time (int)     : The timestamp of VM creation
+                vm_status (BootStatus)  : The status of the test failover VM
+                status_message (str)    : The description of the VM status
+            }
+        Raises:
+            BLRPair not found: If test boot VM name is not found
+        &#34;&#34;&#34;
+        vm_dict = self._boot_vm_dict.get(vm_name)
+        if not vm_dict:
+            raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;BLR test boot VM with name {vm_name} not found&#39;)
+        return {
+            &#39;id&#39;: vm_dict.get(&#39;id&#39;),
+            &#39;uuid&#39;: vm_dict.get(&#39;uuid&#39;),
+            &#39;name&#39;: vm_dict.get(&#39;name&#39;),
+            &#39;creation_time&#39;: vm_dict.get(&#39;creationTime&#39;),
+            &#39;vm_status&#39;: self.BootStatus(vm_dict.get(&#39;status&#39;)) if vm_dict.get(&#39;status&#39;) else None,
+            &#39;status_message&#39;: vm_dict.get(&#39;statusMessage&#39;),
+            &#39;expiration_time&#39;: vm_dict.get(&#39;bestBefore&#39;)
+        }</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BLRBootType"><code class="name">var <span class="ident">BLRBootType</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BootStatus"><code class="name">var <span class="ident">BootStatus</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.all_boot_vms"><code class="name">var <span class="ident">all_boot_vms</span></code></dt>
+<dd>
+<div class="desc"><p>Returns a list of all boot VMs</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1064-L1067" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_boot_vms(self):
+    &#34;&#34;&#34;Returns a list of all boot VMs&#34;&#34;&#34;
+    return list(self._boot_vm_dict.keys())</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.get_boot_vm_details"><code class="name flex">
+<span>def <span class="ident">get_boot_vm_details</span></span>(<span>self, vm_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the boot VM details for a given vm name</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vm_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the VM to fetch details for</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>{
+id (int)
+: The ID of the test failover VM
+uuid (str)
+: The UUID of the test failover VM
+name (str)
+: The name of the test failover VM
+creation_time (int)
+: The timestamp of VM creation
+vm_status (BootStatus)
+: The status of the test failover VM
+status_message (str)
+: The description of the VM status</dd>
+</dl>
+<p>}</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair" href="#cvpysdk.drorchestration.blr_pairs.BLRPair">BLRPair</a> not found</code></dt>
+<dd>If test boot VM name is not found</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1069-L1096" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_boot_vm_details(self, vm_name):
+    &#34;&#34;&#34;Get the boot VM details for a given vm name
+    Args:
+        vm_name (str): The name of the VM to fetch details for
+    Returns:
+        dict:  {
+            id (int)                : The ID of the test failover VM
+            uuid (str)              : The UUID of the test failover VM
+            name (str)              : The name of the test failover VM
+            creation_time (int)     : The timestamp of VM creation
+            vm_status (BootStatus)  : The status of the test failover VM
+            status_message (str)    : The description of the VM status
+        }
+    Raises:
+        BLRPair not found: If test boot VM name is not found
+    &#34;&#34;&#34;
+    vm_dict = self._boot_vm_dict.get(vm_name)
+    if not vm_dict:
+        raise SDKException(&#39;BLRPairs&#39;, &#39;102&#39;, f&#39;BLR test boot VM with name {vm_name} not found&#39;)
+    return {
+        &#39;id&#39;: vm_dict.get(&#39;id&#39;),
+        &#39;uuid&#39;: vm_dict.get(&#39;uuid&#39;),
+        &#39;name&#39;: vm_dict.get(&#39;name&#39;),
+        &#39;creation_time&#39;: vm_dict.get(&#39;creationTime&#39;),
+        &#39;vm_status&#39;: self.BootStatus(vm_dict.get(&#39;status&#39;)) if vm_dict.get(&#39;status&#39;) else None,
+        &#39;status_message&#39;: vm_dict.get(&#39;statusMessage&#39;),
+        &#39;expiration_time&#39;: vm_dict.get(&#39;bestBefore&#39;)
+    }</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the VMs list for BLR pair</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1059-L1062" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the VMs list for BLR pair&#34;&#34;&#34;
+    self._boot_vm_dict = {boot_dict.get(&#39;name&#39;): boot_dict
+                          for boot_dict in self._get_test_failover_vms()}</code></pre>
 </details>
 </dd>
 </dl>
@@ -2797,10 +3689,13 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair" href="#cvpysdk.drorchestration.blr_pairs.BLRPair">BLRPair</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.PairOperationsStatus" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.PairOperationsStatus">PairOperationsStatus</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.create_replica_copy" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.create_replica_copy">create_replica_copy</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.destination" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.destination">destination</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.destination_vm" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.destination_vm">destination_vm</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.get_pair_stats" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.get_pair_stats">get_pair_stats</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.get_recovery_point_stores" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.get_recovery_point_stores">get_recovery_point_stores</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.get_test_failover_vms" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.get_test_failover_vms">get_test_failover_vms</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.lag_time" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.lag_time">lag_time</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.pair_flag" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.pair_flag">pair_flag</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.pair_latest_stats" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.pair_latest_stats">pair_latest_stats</a></code></li>
@@ -2812,13 +3707,20 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.pending_status" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.pending_status">pending_status</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.refresh" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.replication_group_name" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.replication_group_name">replication_group_name</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.resume" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.resume">resume</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.resync" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.resync">resync</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.source" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.source">source</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.source_vm" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.source_vm">source_vm</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.start" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.start">start</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.stop" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.stop">stop</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.subclient_props" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.subclient_props">subclient_props</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.suspend" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.suspend">suspend</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs">BLRPairs</a></code></h4>
 <ul class="two-column">
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.AgentTypes" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.AgentTypes">AgentTypes</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.DROperations" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.DROperations">DROperations</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.EndPointTypes" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.EndPointTypes">EndPointTypes</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.PairStatus" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.PairStatus">PairStatus</a></code></li>
@@ -2831,6 +3733,16 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_id" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_id">get_rpstore_id</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair">has_blr_pair</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.refresh" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers">BLRTestFailovers</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BLRBootType" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BLRBootType">BLRBootType</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BootStatus" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.BootStatus">BootStatus</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.all_boot_vms" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.all_boot_vms">all_boot_vms</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.get_boot_vm_details" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.get_boot_vm_details">get_boot_vm_details</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.refresh" href="#cvpysdk.drorchestration.blr_pairs.BLRTestFailovers.refresh">refresh</a></code></li>
 </ul>
 </li>
 </ul>

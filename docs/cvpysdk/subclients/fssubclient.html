@@ -172,7 +172,7 @@ to the input client, at the specified destionation location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1-L2527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1-L2589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -411,7 +411,8 @@ class FileSystemSubclient(Subclient):
 
                     &#34;content&#34;: self._content,
                     &#34;commonProperties&#34;: self._commonProperties,
-                    &#34;contentOperationType&#34;: 1
+                    &#34;fsContentOperationType&#34;: &#34;OVERWRITE&#34;,
+                    &#34;fsExcludeFilterOperationType&#34;: &#34;OVERWRITE&#34; if not hasattr(self, &#39;_fsExcludeFilterOperationType&#39;) else self._fsExcludeFilterOperationType
                 }
         }
 
@@ -491,6 +492,8 @@ class FileSystemSubclient(Subclient):
             update_content.append(exception_dict)
 
         self._set_subclient_properties(&#34;_content&#34;, update_content)
+        self._fsExcludeFilterOperationType = &#34;OVERWRITE&#34;  # RESET THE OPERATION TYPE TO ITS DEFAULT
+
 
     def _common_backup_options(self, options):
         &#34;&#34;&#34;
@@ -573,6 +576,28 @@ class FileSystemSubclient(Subclient):
             else:
                 final_dict[&#39;dataOpt&#39;] = multi_stream_opts
 
+        if &#39;start_new_media&#39; in options and options[&#39;start_new_media&#39;]:
+
+            media_opts = {
+                &#39;startNewMedia&#39;: options.get(&#39;start_new_media&#39;, False)
+            }
+
+            if &#39;mediaOpt&#39; in final_dict and isinstance(final_dict[&#39;mediaOpt&#39;], dict):
+                final_dict[&#39;mediaOpt&#39;].update(media_opts)
+            else:
+                final_dict[&#39;mediaOpt&#39;] = media_opts
+        
+        if options.get(&#39;media_agent_name&#39;):
+            media_agent_name = options[&#39;media_agent_name&#39;]
+            if not isinstance(media_agent_name, str):
+                message = f&#34;media_agent_name: Expected str, received {type(media_agent_name)}&#34;
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;, message)
+            final_dict[&#39;dataPathOpt&#39;] = {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: media_agent_name
+                }
+            }
+
         return final_dict
 
     @property
@@ -641,6 +666,7 @@ class FileSystemSubclient(Subclient):
     @filter_content.setter
     def filter_content(self, value):
         &#34;&#34;&#34;Sets the filter content of the subclient as the value provided as input.
+            An empty list will clear all filters.
 
             example: [&#39;*book*&#39;, &#39;file**&#39;]
 
@@ -650,15 +676,17 @@ class FileSystemSubclient(Subclient):
 
                     if the type of value input is not list
 
-                    if value list is empty
         &#34;&#34;&#34;
-        if isinstance(value, list) and value != []:
+        if isinstance(value, list):
+            if value == []:
+                value = self.filter_content
+                self._fsExcludeFilterOperationType = &#34;DELETE&#34;
             self._set_content(filter_content=value)
         else:
             raise SDKException(
                 &#39;Subclient&#39;,
                 &#39;102&#39;,
-                &#39;Subclient filter content should be a list value and not empty&#39;)
+                &#39;Subclient filter content should be a list value&#39;)
 
     @property
     def exception_content(self):
@@ -933,7 +961,13 @@ class FileSystemSubclient(Subclient):
 
         &#34;&#34;&#34;
 
-        return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]
+        # For Indexing V2 clients
+        if &#39;afterDeletionKeepItemsForNDays&#39; in self._fsSubClientProp:
+            return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]
+
+        # For Indexing V1 clients
+        else:
+            return self._fsSubClientProp.get(&#39;daysToKeepItems&#39;, 0)
 
     @backup_retention_days.setter
     def backup_retention_days(self, value):
@@ -956,12 +990,19 @@ class FileSystemSubclient(Subclient):
         &#34;&#34;&#34;
 
         if isinstance(value, int):
-            if value != -1:
-                new_value = {
-                    &#39;afterDeletionKeepItemsForNDays&#39;: value,
-                    &#39;backupRetentionMode&#39;: 1}
+            if &#39;afterDeletionKeepItemsForNDays&#39; in self._fsSubClientProp:
+                if value != -1:
+                    new_value = {
+                        &#39;afterDeletionKeepItemsForNDays&#39;: value,
+                        &#39;backupRetentionMode&#39;: 1
+                    }
+                else:
+                    new_value = {&#39;afterDeletionKeepItemsForNDays&#39;: value}
             else:
-                new_value = {&#39;afterDeletionKeepItemsForNDays&#39;: value}
+                new_value = {
+                    &#39;daysToKeepItems&#39;: value
+                }
+
             self._set_subclient_properties(&#34;_fs_subclient_prop&#34;, new_value)
 
         else:
@@ -1315,6 +1356,14 @@ class FileSystemSubclient(Subclient):
                         (dict)  --  file version mode
         &#34;&#34;&#34;
         version = {}
+
+        # For Indexing V1 client, this property is not supported. Taking default versions by number
+        if &#39;olderFileVersionsMode&#39; not in self._fsSubClientProp:
+            return {
+                &#39;Mode&#39;: 2,
+                &#39;DaysOrNumber&#39;: self._fsSubClientProp.get(&#39;keepAtLeastPreviousVersions&#39;, 0)
+            }
+
         version[&#39;Mode&#39;] = self._fsSubClientProp[&#39;olderFileVersionsMode&#39;]
         modes = {
             1: self._fsSubClientProp[&#39;keepOlderVersionsForNDays&#39;],
@@ -1351,18 +1400,27 @@ class FileSystemSubclient(Subclient):
                     if value is invalid
 
         &#34;&#34;&#34;
-        if isinstance(value, dict):
-            if value[&#39;Mode&#39;] == 1 or value[&#39;Mode&#39;] == 2:
-                new_value = {&#39;olderFileVersionsMode&#39;: value[&#39;Mode&#39;]}
-            else:
-                raise SDKException(
-                    &#39;Subclient&#39;, &#39;102&#39;, &#34;File version mode can only be 1 or 2&#34;)
-            modes = {
-                1: &#39;keepOlderVersionsForNDays&#39;,
-                2: &#39;keepVersions&#39;
-            }
 
-            new_value[modes[value[&#39;Mode&#39;]]] = value[&#39;DaysOrNumber&#39;]
+        if isinstance(value, dict):
+            # For Indexing V2 client
+            if &#39;olderFileVersionsMode&#39; in self._fsSubClientProp:
+                if value[&#39;Mode&#39;] == 1 or value[&#39;Mode&#39;] == 2:
+                    new_value = {&#39;olderFileVersionsMode&#39;: value[&#39;Mode&#39;]}
+                else:
+                    raise SDKException(
+                        &#39;Subclient&#39;, &#39;102&#39;, &#34;File version mode can only be 1 or 2&#34;)
+                modes = {
+                    1: &#39;keepOlderVersionsForNDays&#39;,
+                    2: &#39;keepVersions&#39;
+                }
+
+                new_value[modes[value[&#39;Mode&#39;]]] = value[&#39;DaysOrNumber&#39;]
+
+            # For Indexing V1 client
+            else:
+                new_value = {
+                    &#39;keepAtLeastPreviousVersions&#39;: value[&#39;DaysOrNumber&#39;]
+                }
 
             self._set_subclient_properties(&#34;_fs_subclient_prop&#34;, new_value)
         else:
@@ -1741,7 +1799,7 @@ class FileSystemSubclient(Subclient):
                         only applicable in case of on demand subclient
                     default: None
 
-                advacnced_options   (dict)  --  advanced backup options to be included while
+                advanced_options    (dict)  --  advanced backup options to be included while
                                                     making the request
                         default: None
 
@@ -1751,6 +1809,8 @@ class FileSystemSubclient(Subclient):
                             adhoc_backup_contents   :   sets the contents for adhoc backup
                             inline_backup_copy      :   to run backup copy immediately(inline)
                             skip_catalog            :   skip catalog for intellisnap operation
+                            start_new_media         :   enables the option to start new media for the job
+                            media_agent_name        :   to run backup via this media agent
 
                 common_backup_options      (dict)  --  advanced job options to be included while
                                                         making request
@@ -2133,8 +2193,10 @@ class FileSystemSubclient(Subclient):
 
     def enable_content_indexing(self, policy_id):
         &#34;&#34;&#34;Enables Content indexing and add the policy associations&#34;&#34;&#34;
-        self._set_subclient_properties(&#39;enableContentIndexing&#39;, True)
-        self._set_subclient_properties(&#39;enableContentIndexing&#39;, int(policy_id))
+        update_properties = self.properties
+        update_properties[&#39;fsSubClientProp&#39;][&#39;enableContentIndexing&#39;] = True
+        update_properties[&#39;fsSubClientProp&#39;][&#39;contentIndexingPolicy&#39;] = int(policy_id)
+        self.update_properties(update_properties)
 
     def disable_content_indexing(self):
         &#34;&#34;&#34;Disables Content indexing and disassociate the CI policy&#34;&#34;&#34;
@@ -2738,7 +2800,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L195-L2527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L195-L2589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FileSystemSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a file system subclient,
@@ -2783,7 +2845,8 @@ default: None</p>
 
                     &#34;content&#34;: self._content,
                     &#34;commonProperties&#34;: self._commonProperties,
-                    &#34;contentOperationType&#34;: 1
+                    &#34;fsContentOperationType&#34;: &#34;OVERWRITE&#34;,
+                    &#34;fsExcludeFilterOperationType&#34;: &#34;OVERWRITE&#34; if not hasattr(self, &#39;_fsExcludeFilterOperationType&#39;) else self._fsExcludeFilterOperationType
                 }
         }
 
@@ -2863,6 +2926,8 @@ default: None</p>
             update_content.append(exception_dict)
 
         self._set_subclient_properties(&#34;_content&#34;, update_content)
+        self._fsExcludeFilterOperationType = &#34;OVERWRITE&#34;  # RESET THE OPERATION TYPE TO ITS DEFAULT
+
 
     def _common_backup_options(self, options):
         &#34;&#34;&#34;
@@ -2945,6 +3010,28 @@ default: None</p>
             else:
                 final_dict[&#39;dataOpt&#39;] = multi_stream_opts
 
+        if &#39;start_new_media&#39; in options and options[&#39;start_new_media&#39;]:
+
+            media_opts = {
+                &#39;startNewMedia&#39;: options.get(&#39;start_new_media&#39;, False)
+            }
+
+            if &#39;mediaOpt&#39; in final_dict and isinstance(final_dict[&#39;mediaOpt&#39;], dict):
+                final_dict[&#39;mediaOpt&#39;].update(media_opts)
+            else:
+                final_dict[&#39;mediaOpt&#39;] = media_opts
+        
+        if options.get(&#39;media_agent_name&#39;):
+            media_agent_name = options[&#39;media_agent_name&#39;]
+            if not isinstance(media_agent_name, str):
+                message = f&#34;media_agent_name: Expected str, received {type(media_agent_name)}&#34;
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;, message)
+            final_dict[&#39;dataPathOpt&#39;] = {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: media_agent_name
+                }
+            }
+
         return final_dict
 
     @property
@@ -3013,6 +3100,7 @@ default: None</p>
     @filter_content.setter
     def filter_content(self, value):
         &#34;&#34;&#34;Sets the filter content of the subclient as the value provided as input.
+            An empty list will clear all filters.
 
             example: [&#39;*book*&#39;, &#39;file**&#39;]
 
@@ -3022,15 +3110,17 @@ default: None</p>
 
                     if the type of value input is not list
 
-                    if value list is empty
         &#34;&#34;&#34;
-        if isinstance(value, list) and value != []:
+        if isinstance(value, list):
+            if value == []:
+                value = self.filter_content
+                self._fsExcludeFilterOperationType = &#34;DELETE&#34;
             self._set_content(filter_content=value)
         else:
             raise SDKException(
                 &#39;Subclient&#39;,
                 &#39;102&#39;,
-                &#39;Subclient filter content should be a list value and not empty&#39;)
+                &#39;Subclient filter content should be a list value&#39;)
 
     @property
     def exception_content(self):
@@ -3305,7 +3395,13 @@ default: None</p>
 
         &#34;&#34;&#34;
 
-        return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]
+        # For Indexing V2 clients
+        if &#39;afterDeletionKeepItemsForNDays&#39; in self._fsSubClientProp:
+            return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]
+
+        # For Indexing V1 clients
+        else:
+            return self._fsSubClientProp.get(&#39;daysToKeepItems&#39;, 0)
 
     @backup_retention_days.setter
     def backup_retention_days(self, value):
@@ -3328,12 +3424,19 @@ default: None</p>
         &#34;&#34;&#34;
 
         if isinstance(value, int):
-            if value != -1:
-                new_value = {
-                    &#39;afterDeletionKeepItemsForNDays&#39;: value,
-                    &#39;backupRetentionMode&#39;: 1}
+            if &#39;afterDeletionKeepItemsForNDays&#39; in self._fsSubClientProp:
+                if value != -1:
+                    new_value = {
+                        &#39;afterDeletionKeepItemsForNDays&#39;: value,
+                        &#39;backupRetentionMode&#39;: 1
+                    }
+                else:
+                    new_value = {&#39;afterDeletionKeepItemsForNDays&#39;: value}
             else:
-                new_value = {&#39;afterDeletionKeepItemsForNDays&#39;: value}
+                new_value = {
+                    &#39;daysToKeepItems&#39;: value
+                }
+
             self._set_subclient_properties(&#34;_fs_subclient_prop&#34;, new_value)
 
         else:
@@ -3687,6 +3790,14 @@ default: None</p>
                         (dict)  --  file version mode
         &#34;&#34;&#34;
         version = {}
+
+        # For Indexing V1 client, this property is not supported. Taking default versions by number
+        if &#39;olderFileVersionsMode&#39; not in self._fsSubClientProp:
+            return {
+                &#39;Mode&#39;: 2,
+                &#39;DaysOrNumber&#39;: self._fsSubClientProp.get(&#39;keepAtLeastPreviousVersions&#39;, 0)
+            }
+
         version[&#39;Mode&#39;] = self._fsSubClientProp[&#39;olderFileVersionsMode&#39;]
         modes = {
             1: self._fsSubClientProp[&#39;keepOlderVersionsForNDays&#39;],
@@ -3723,18 +3834,27 @@ default: None</p>
                     if value is invalid
 
         &#34;&#34;&#34;
-        if isinstance(value, dict):
-            if value[&#39;Mode&#39;] == 1 or value[&#39;Mode&#39;] == 2:
-                new_value = {&#39;olderFileVersionsMode&#39;: value[&#39;Mode&#39;]}
-            else:
-                raise SDKException(
-                    &#39;Subclient&#39;, &#39;102&#39;, &#34;File version mode can only be 1 or 2&#34;)
-            modes = {
-                1: &#39;keepOlderVersionsForNDays&#39;,
-                2: &#39;keepVersions&#39;
-            }
 
-            new_value[modes[value[&#39;Mode&#39;]]] = value[&#39;DaysOrNumber&#39;]
+        if isinstance(value, dict):
+            # For Indexing V2 client
+            if &#39;olderFileVersionsMode&#39; in self._fsSubClientProp:
+                if value[&#39;Mode&#39;] == 1 or value[&#39;Mode&#39;] == 2:
+                    new_value = {&#39;olderFileVersionsMode&#39;: value[&#39;Mode&#39;]}
+                else:
+                    raise SDKException(
+                        &#39;Subclient&#39;, &#39;102&#39;, &#34;File version mode can only be 1 or 2&#34;)
+                modes = {
+                    1: &#39;keepOlderVersionsForNDays&#39;,
+                    2: &#39;keepVersions&#39;
+                }
+
+                new_value[modes[value[&#39;Mode&#39;]]] = value[&#39;DaysOrNumber&#39;]
+
+            # For Indexing V1 client
+            else:
+                new_value = {
+                    &#39;keepAtLeastPreviousVersions&#39;: value[&#39;DaysOrNumber&#39;]
+                }
 
             self._set_subclient_properties(&#34;_fs_subclient_prop&#34;, new_value)
         else:
@@ -4113,7 +4233,7 @@ default: None</p>
                         only applicable in case of on demand subclient
                     default: None
 
-                advacnced_options   (dict)  --  advanced backup options to be included while
+                advanced_options    (dict)  --  advanced backup options to be included while
                                                     making the request
                         default: None
 
@@ -4123,6 +4243,8 @@ default: None</p>
                             adhoc_backup_contents   :   sets the contents for adhoc backup
                             inline_backup_copy      :   to run backup copy immediately(inline)
                             skip_catalog            :   skip catalog for intellisnap operation
+                            start_new_media         :   enables the option to start new media for the job
+                            media_agent_name        :   to run backup via this media agent
 
                 common_backup_options      (dict)  --  advanced job options to be included while
                                                         making request
@@ -4505,8 +4627,10 @@ default: None</p>
 
     def enable_content_indexing(self, policy_id):
         &#34;&#34;&#34;Enables Content indexing and add the policy associations&#34;&#34;&#34;
-        self._set_subclient_properties(&#39;enableContentIndexing&#39;, True)
-        self._set_subclient_properties(&#39;enableContentIndexing&#39;, int(policy_id))
+        update_properties = self.properties
+        update_properties[&#39;fsSubClientProp&#39;][&#39;enableContentIndexing&#39;] = True
+        update_properties[&#39;fsSubClientProp&#39;][&#39;contentIndexingPolicy&#39;] = int(policy_id)
+        self.update_properties(update_properties)
 
     def disable_content_indexing(self):
         &#34;&#34;&#34;Disables Content indexing and disassociate the CI policy&#34;&#34;&#34;
@@ -5098,7 +5222,7 @@ if archiver or modified time retention is not enabled for the subclient</p></div
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L900-L912" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L941-L953" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archiver_retention(self):
@@ -5124,7 +5248,7 @@ retention</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L946-L954" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L987-L995" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archiver_retention_days(self):
@@ -5143,7 +5267,7 @@ def archiver_retention_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2448-L2453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2510-L2515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_nodes(self):
@@ -5166,7 +5290,7 @@ if backup only archiving candidate is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1097-L1107" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1138-L1148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_only_archiving_candidate(self):
@@ -5194,7 +5318,7 @@ if PVTAUT on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2235-L2244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2297-L2306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_private_authorities(self):
@@ -5221,7 +5345,7 @@ if queue data on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2210-L2219" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2272-L2281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_queue_data(self):
@@ -5248,7 +5372,7 @@ if backup_rentention is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L663-L674" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L691-L702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_retention(self):
@@ -5272,7 +5396,7 @@ def backup_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L751-L760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L779-L794" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_retention_days(self):
@@ -5283,7 +5407,13 @@ def backup_retention_days(self):
 
     &#34;&#34;&#34;
 
-    return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]</code></pre>
+    # For Indexing V2 clients
+    if &#39;afterDeletionKeepItemsForNDays&#39; in self._fsSubClientProp:
+        return self._fsSubClientProp[&#39;afterDeletionKeepItemsForNDays&#39;]
+
+    # For Indexing V1 clients
+    else:
+        return self._fsSubClientProp.get(&#39;daysToKeepItems&#39;, 0)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_savf_file_data"><code class="name">var <span class="ident">backup_savf_file_data</span></code></dt>
@@ -5296,7 +5426,7 @@ Is savf file data going to be backed up</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2155-L2163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2217-L2225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_savf_file_data(self):
@@ -5322,7 +5452,7 @@ if spool file data on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2185-L2194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2247-L2256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_spool_file_data(self):
@@ -5349,7 +5479,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1221-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1279-L1288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_using_multiple_drives(self):
@@ -5372,7 +5502,7 @@ false - if blocklevel is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L701-L710" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L729-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def block_level_backup_option(self):
@@ -5396,7 +5526,7 @@ def block_level_backup_option(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1969-L1979" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2031-L2041" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def catalog_acl(self):
@@ -5419,7 +5549,7 @@ def catalog_acl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L420-L433" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L445-L458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5446,7 +5576,7 @@ false - if metadata collection is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L726-L735" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L754-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def create_file_level_index_option(self):
@@ -5472,7 +5602,7 @@ if disk Cleanup is enabled for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L992-L1008" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1033-L1049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_cleanup(self):
@@ -5503,7 +5633,7 @@ disk clean up rules</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1037-L1046" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1078-L1087" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_cleanup_rules(self):
@@ -5526,7 +5656,7 @@ Dictionary of synclib options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1344-L1358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1402-L1416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_synclib(self):
@@ -5551,7 +5681,7 @@ def enable_synclib(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L487-L496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L515-L524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def exception_content(self):
@@ -5574,7 +5704,7 @@ file version mode</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1134-L1148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1175-L1197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_version(self):
@@ -5584,6 +5714,14 @@ def file_version(self):
                     (dict)  --  file version mode
     &#34;&#34;&#34;
     version = {}
+
+    # For Indexing V1 client, this property is not supported. Taking default versions by number
+    if &#39;olderFileVersionsMode&#39; not in self._fsSubClientProp:
+        return {
+            &#39;Mode&#39;: 2,
+            &#39;DaysOrNumber&#39;: self._fsSubClientProp.get(&#39;keepAtLeastPreviousVersions&#39;, 0)
+        }
+
     version[&#39;Mode&#39;] = self._fsSubClientProp[&#39;olderFileVersionsMode&#39;]
     modes = {
         1: self._fsSubClientProp[&#39;keepOlderVersionsForNDays&#39;],
@@ -5599,7 +5737,7 @@ def file_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L454-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L479-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def filter_content(self):
@@ -5626,7 +5764,7 @@ if signature generation on IBMi is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1198-L1207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1256-L1265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def generate_signature_on_ibmi(self):
@@ -5646,7 +5784,7 @@ def generate_signature_on_ibmi(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1319-L1324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1377-L1382" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_filter_status(self):
@@ -5666,7 +5804,7 @@ Return the string value of IBMi compression property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2329-L2336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2391-L2398" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ibmi_compression(self):
@@ -5688,7 +5826,7 @@ Dictionary of DR parameters</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2107-L2121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2169-L2183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ibmi_dr_config(self):
@@ -5713,7 +5851,7 @@ def ibmi_dr_config(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2500-L2505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2562-L2567" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def impersonate_user(self):
@@ -5729,7 +5867,7 @@ def impersonate_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2054-L2058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2116-L2120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -5744,7 +5882,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2048-L2052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2110-L2114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -5759,7 +5897,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2039-L2046" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2101-L2108" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -5777,7 +5915,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1996-L2013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2058-L2075" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -5806,7 +5944,7 @@ auto-mounted during in-place restores.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2473-L2479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2535-L2541" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_share_auto_mount(self):
@@ -5830,7 +5968,7 @@ if object level backup is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1296-L1305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1354-L1363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def object_level_backup(self):
@@ -5857,7 +5995,7 @@ if system state property is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L817-L826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L858-L867" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_option(self):
@@ -5877,7 +6015,7 @@ def onetouch_option(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L835-L840" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L876-L881" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_server(self):
@@ -5893,7 +6031,7 @@ def onetouch_server(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L851-L856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L892-L897" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_server_directory(self):
@@ -5916,7 +6054,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1271-L1280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1329-L1338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def other_pending_changes(self):
@@ -5944,7 +6082,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1246-L1255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1304-L1313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_record_changes(self):
@@ -5968,7 +6106,7 @@ All the pre/post commands</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2395-L2410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2457-L2472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_post_commands(self):
@@ -5998,7 +6136,7 @@ Return the save access path string value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2283-L2290" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2345-L2352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def save_access_path(self):
@@ -6019,7 +6157,7 @@ Dictionary of save while active options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2352-L2363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2414-L2425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def save_while_active_option(self):
@@ -6052,7 +6190,7 @@ Change Journal Scan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L520-L531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L548-L559" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def scan_type(self):
@@ -6088,7 +6226,7 @@ Off</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1396-L1407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1454-L1465" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def software_compression(self):
@@ -6117,7 +6255,7 @@ if system state property is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L797-L806" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L838-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def system_state_option(self):
@@ -6141,7 +6279,7 @@ Return the target and release string value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2260-L2267" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2322-L2329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def target_release(self):
@@ -6160,7 +6298,7 @@ def target_release(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L867-L874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L908-L915" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def trueup_days(self):
@@ -6185,7 +6323,7 @@ if trueup is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L557-L568" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L585-L596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def trueup_option(self):
@@ -6211,7 +6349,7 @@ Return the string value of update history property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L2306-L2313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2368-L2375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def update_history(self):
@@ -6246,7 +6384,7 @@ useVssForAllFilesOptions:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1432-L1456" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1490-L1514" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_vss(self):
@@ -6312,7 +6450,7 @@ demand subclient</p>
 <pre><code>    only applicable in case of on demand subclient
 default: None
 </code></pre>
-<p>advacnced_options
+<p>advanced_options
 (dict)
 &ndash;
 advanced backup options to be included while
@@ -6324,6 +6462,8 @@ default: None</p>
         adhoc_backup_contents   :   sets the contents for adhoc backup
         inline_backup_copy      :   to run backup copy immediately(inline)
         skip_catalog            :   skip catalog for intellisnap operation
+        start_new_media         :   enables the option to start new media for the job
+        media_agent_name        :   to run backup via this media agent
 </code></pre>
 <p>common_backup_options
 (dict)
@@ -6379,7 +6519,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1536-L1671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1594-L1731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6413,7 +6553,7 @@ if response is not success
                     only applicable in case of on demand subclient
                 default: None
 
-            advacnced_options   (dict)  --  advanced backup options to be included while
+            advanced_options    (dict)  --  advanced backup options to be included while
                                                 making the request
                     default: None
 
@@ -6423,6 +6563,8 @@ if response is not success
                         adhoc_backup_contents   :   sets the contents for adhoc backup
                         inline_backup_copy      :   to run backup copy immediately(inline)
                         skip_catalog            :   skip catalog for intellisnap operation
+                        start_new_media         :   enables the option to start new media for the job
+                        media_agent_name        :   to run backup via this media agent
 
             common_backup_options      (dict)  --  advanced job options to be included while
                                                     making request
@@ -6527,7 +6669,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1963-L1967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2025-L2029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_content_indexing(self):
     &#34;&#34;&#34;Disables Content indexing and disassociate the CI policy&#34;&#34;&#34;
@@ -6544,12 +6686,14 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1958-L1961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L2018-L2023" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(self, policy_id):
     &#34;&#34;&#34;Enables Content indexing and add the policy associations&#34;&#34;&#34;
-    self._set_subclient_properties(&#39;enableContentIndexing&#39;, True)
-    self._set_subclient_properties(&#39;enableContentIndexing&#39;, int(policy_id))</code></pre>
+    update_properties = self.properties
+    update_properties[&#39;fsSubClientProp&#39;][&#39;enableContentIndexing&#39;] = True
+    update_properties[&#39;fsSubClientProp&#39;][&#39;contentIndexingPolicy&#39;] = int(policy_id)
+    self.update_properties(update_properties)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.find_all_versions"><code class="name flex">
@@ -6587,7 +6731,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1498-L1534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1556-L1592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient.
@@ -6755,7 +6899,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L1774-L1956" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L1834-L2016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -6962,7 +7106,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/fssubclient.py#L584-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/fssubclient.py#L612-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_copy(self):
     &#34;&#34;&#34;
@@ -7074,6 +7218,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclient.Subclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.list_media" href="../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>

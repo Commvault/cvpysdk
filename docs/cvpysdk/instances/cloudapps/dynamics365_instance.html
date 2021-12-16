@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>cvpysdk.instances.cloudapps.dynamics365_instance API documentation</title>
-<meta name="description" content="File for operating on a Google Instance …" />
+<meta name="description" content="File for performing operations on a MS Dynamics 365 Instance …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,22 +23,35 @@
 <h1 class="title">Module <code>cvpysdk.instances.cloudapps.dynamics365_instance</code></h1>
 </header>
 <section id="section-intro">
-<p>File for operating on a Google Instance.</p>
+<p>File for performing operations on a MS Dynamics 365 Instance.</p>
 <p>MSDynamics365Instance is the only class defined in this file.</p>
-<p>MSDynamics365Instance: Derived class from CloudAppsInstance Base class, representing a
-Dynamics 365 CRM instance,</p>
 <h2 id="msdynamics365instance">Msdynamics365Instance</h2>
+<p>Class derived from CloudAppsInstance Base class and representing a
+Dynamics 365 CRM instance,</p>
+<h2 id="msdynamics365instance_1">Msdynamics365Instance</h2>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>
+Methods
+</em></strong><strong><em>*</em></strong><strong><em>*</em></strong></p>
 <p>_get_instance_properties()
 &ndash;
-Instance class method overwritten to add cloud apps
-instance properties as well</p>
+Instance class method overwritten to fetch cloud apps
+instance properties</p>
 <p>_get_instance_properties_json()
 &ndash;
 Returns the instance properties json</p>
+<p>discover_content()
+&ndash;
+Discover content for the Dynamics 365 Instance</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>
+Properties
+</em></strong><strong><em>*</em></strong><strong><em>*</em></strong></p>
+<p>access_node
+&ndash;
+Name of the access node that the instance is associated with</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L1-L104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/dynamics365_instance.py#L1-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -58,20 +71,29 @@ Returns the instance properties json</p>
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-&#34;&#34;&#34;File for operating on a Google Instance.
+&#34;&#34;&#34;
+    File for performing operations on a MS Dynamics 365 Instance.
 
 MSDynamics365Instance is the only class defined in this file.
 
-MSDynamics365Instance: Derived class from CloudAppsInstance Base class, representing a
-Dynamics 365 CRM instance,
+MSDynamics365Instance:
+    Class derived from CloudAppsInstance Base class and representing a
+        Dynamics 365 CRM instance,
 
 MSDynamics365Instance:
 
-    _get_instance_properties()  --  Instance class method overwritten to add cloud apps
-    instance properties as well
+    *****************                       Methods                      *****************
 
-    _get_instance_properties_json()      --  Returns the instance properties json
+    _get_instance_properties()          --      Instance class method overwritten to fetch cloud apps
+                                                    instance properties
 
+    _get_instance_properties_json()     --      Returns the instance properties json
+
+    discover_content()                  --      Discover content for the Dynamics 365 Instance
+
+    *****************                       Properties                      *****************
+
+    access_node                         --      Name of the access node that the instance is associated with
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -94,19 +116,17 @@ class MSDynamics365Instance(CloudAppsInstance):
 
         &#34;&#34;&#34;
         super(MSDynamics365Instance, self)._get_instance_properties()
-        # Common properties for Google and OneDrive
+        # Common properties for Cloud Apps
         self._ca_instance_type = None
         self._manage_content_automatically = None
         self._auto_discovery_enabled = None
         self._auto_discovery_mode = None
-        self._proxy_client = None
 
         # Dynamics 365 CRM instance related properties
         self._client_id = None
         self._tenant = None
-        self.__proxy_client = None
+        self._access_node = None
         self._index_server = None
-
 
         if &#39;cloudAppsInstance&#39; in self._properties:
             cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
@@ -132,8 +152,9 @@ class MSDynamics365Instance(CloudAppsInstance):
 
             if &#39;generalCloudProperties&#39; in cloud_apps_instance:
                 general_cloud_properties = cloud_apps_instance[&#39;generalCloudProperties&#39;]
-                self._proxy_client = general_cloud_properties.get(&#34;memberServers&#34;,{})[0].get(&#34;client&#34;,{}).get(&#34;clientName&#34;,{})
-                self._index_server = general_cloud_properties.get(&#34;indexServer&#34;,{}).get(&#34;clientName&#34;,&#34;&#34;)
+                self._access_node = general_cloud_properties.get(&#34;memberServers&#34;, {})[0].get(&#34;client&#34;, {}).get(
+                    &#34;clientName&#34;, None)
+                self._index_server = general_cloud_properties.get(&#34;indexServer&#34;, {}).get(&#34;clientName&#34;, None)
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
@@ -141,9 +162,50 @@ class MSDynamics365Instance(CloudAppsInstance):
         return {&#39;instanceProperties&#39;: self._properties}
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
-        return self._proxy_client</code></pre>
+    def access_node(self):
+        &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+        return self._access_node
+
+    def discover_content(self, environment_discovery: bool = False):
+        &#34;&#34;&#34;
+            Run Discovery for a MS Dynamics 365 Instance
+            Arguments:
+                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
+                    If True
+                        Discovery will run for Dynamics 365 environments
+                    If False
+                        Table level discovered content would be run
+            Returns:
+                discovered_content              (dict)--        Dictionary of the discovered content
+
+        &#34;&#34;&#34;
+        discovery_type: int
+        if environment_discovery is False:
+            discovery_type = 8
+        else:
+            discovery_type = 5
+
+        url = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (
+            self.instance_id, self._agent_object._client_object.client_id, discovery_type)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, url)
+
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+
+                if discover_content.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, 0) == -304283248:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, discover_content)
+
+                if &#39;userAccounts&#39; in response.json():
+                    _discover_content = discover_content[&#39;userAccounts&#39;]
+                    return _discover_content
+
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -181,7 +243,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L41-L104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/dynamics365_instance.py#L50-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MSDynamics365Instance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the MSDynamics365 instance type.&#34;&#34;&#34;
@@ -197,19 +259,17 @@ default: None</p>
 
         &#34;&#34;&#34;
         super(MSDynamics365Instance, self)._get_instance_properties()
-        # Common properties for Google and OneDrive
+        # Common properties for Cloud Apps
         self._ca_instance_type = None
         self._manage_content_automatically = None
         self._auto_discovery_enabled = None
         self._auto_discovery_mode = None
-        self._proxy_client = None
 
         # Dynamics 365 CRM instance related properties
         self._client_id = None
         self._tenant = None
-        self.__proxy_client = None
+        self._access_node = None
         self._index_server = None
-
 
         if &#39;cloudAppsInstance&#39; in self._properties:
             cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
@@ -235,8 +295,9 @@ default: None</p>
 
             if &#39;generalCloudProperties&#39; in cloud_apps_instance:
                 general_cloud_properties = cloud_apps_instance[&#39;generalCloudProperties&#39;]
-                self._proxy_client = general_cloud_properties.get(&#34;memberServers&#34;,{})[0].get(&#34;client&#34;,{}).get(&#34;clientName&#34;,{})
-                self._index_server = general_cloud_properties.get(&#34;indexServer&#34;,{}).get(&#34;clientName&#34;,&#34;&#34;)
+                self._access_node = general_cloud_properties.get(&#34;memberServers&#34;, {})[0].get(&#34;client&#34;, {}).get(
+                    &#34;clientName&#34;, None)
+                self._index_server = general_cloud_properties.get(&#34;indexServer&#34;, {}).get(&#34;clientName&#34;, None)
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
@@ -244,9 +305,50 @@ default: None</p>
         return {&#39;instanceProperties&#39;: self._properties}
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
-        return self._proxy_client</code></pre>
+    def access_node(self):
+        &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+        return self._access_node
+
+    def discover_content(self, environment_discovery: bool = False):
+        &#34;&#34;&#34;
+            Run Discovery for a MS Dynamics 365 Instance
+            Arguments:
+                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
+                    If True
+                        Discovery will run for Dynamics 365 environments
+                    If False
+                        Table level discovered content would be run
+            Returns:
+                discovered_content              (dict)--        Dictionary of the discovered content
+
+        &#34;&#34;&#34;
+        discovery_type: int
+        if environment_discovery is False:
+            discovery_type = 8
+        else:
+            discovery_type = 5
+
+        url = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (
+            self.instance_id, self._agent_object._client_object.client_id, discovery_type)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, url)
+
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+
+                if discover_content.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, 0) == -304283248:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, discover_content)
+
+                if &#39;userAccounts&#39; in response.json():
+                    _discover_content = discover_content[&#39;userAccounts&#39;]
+                    return _discover_content
+
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -255,18 +357,85 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.proxy_client"><code class="name">var <span class="ident">proxy_client</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node"><code class="name">var <span class="ident">access_node</span></code></dt>
 <dd>
-<div class="desc"><p>Returns the proxy client name to this instance</p></div>
+<div class="desc"><p>Returns the name of the access node for this MS Dynamics 365 instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L101-L104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/dynamics365_instance.py#L109-L112" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def proxy_client(self):
-    &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
-    return self._proxy_client</code></pre>
+def access_node(self):
+    &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+    return self._access_node</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.discover_content"><code class="name flex">
+<span>def <span class="ident">discover_content</span></span>(<span>self, environment_discovery: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run Discovery for a MS Dynamics 365 Instance</p>
+<h2 id="arguments">Arguments</h2>
+<p>environment_discovery
+(bool)&ndash;
+Whether to run discovery for Dynamics 365 environments
+If True
+Discovery will run for Dynamics 365 environments
+If False
+Table level discovered content would be run</p>
+<h2 id="returns">Returns</h2>
+<p>discovered_content
+(dict)&ndash;
+Dictionary of the discovered content</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/dynamics365_instance.py#L114-L153" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def discover_content(self, environment_discovery: bool = False):
+    &#34;&#34;&#34;
+        Run Discovery for a MS Dynamics 365 Instance
+        Arguments:
+            environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
+                If True
+                    Discovery will run for Dynamics 365 environments
+                If False
+                    Table level discovered content would be run
+        Returns:
+            discovered_content              (dict)--        Dictionary of the discovered content
+
+    &#34;&#34;&#34;
+    discovery_type: int
+    if environment_discovery is False:
+        discovery_type = 8
+    else:
+        discovery_type = 5
+
+    url = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (
+        self.instance_id, self._agent_object._client_object.client_id, discovery_type)
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, url)
+
+    if flag:
+        if response and response.json():
+            discover_content = response.json()
+
+            if discover_content.get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, 0) == -304283248:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, discover_content)
+
+            if &#39;userAccounts&#39; in response.json():
+                _discover_content = discover_content[&#39;userAccounts&#39;]
+                return _discover_content
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 </dl>
@@ -357,7 +526,8 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance" href="#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance">MSDynamics365Instance</a></code></h4>
 <ul class="">
-<li><code><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.proxy_client" href="#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.proxy_client">proxy_client</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node" href="#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node">access_node</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.discover_content" href="#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.discover_content">discover_content</a></code></li>
 </ul>
 </li>
 </ul>

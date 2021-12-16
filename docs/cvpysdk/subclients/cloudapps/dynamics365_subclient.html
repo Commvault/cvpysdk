@@ -29,16 +29,59 @@
 Derived class from CloudAppsSubclient Base class, representing a
 Dynamics 365 subclient, and to perform operations on that subclient</p>
 <h2 id="msdynamics365subclient">Msdynamics365Subclient</h2>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>
+Methods
+</em></strong><strong><em>*</em></strong><strong><em>*</em></strong></p>
 <p>_get_subclient_properties()
 &ndash;
-gets the properties of Google Subclient</p>
+gets the properties of MS Dynamics 365 Subclient</p>
 <p>_get_subclient_properties_json()
 &ndash;
-gets the properties JSON of Google Subclient</p>
+gets the properties JSON of MS Dynamics 365 Subclient</p>
+<p>get_discovered_tables()
+&ndash;
+Method to run a discovery for tables and get them
+get_discovered_environments()
+&ndash;
+Method to run a discovery for environments and return them
+_get_associated_content()
+&ndash;
+Get content associated with a Dynamics 365 subclient
+get_associated_tables()
+&ndash;
+Get list of associated tables
+get_associated_environments()
+&ndash;
+Get list of associated environments
+associate_tables()
+&ndash;
+Associate tables to a Dynamics 365 subclient
+associate_environment()
+&ndash;
+Associate list of environments to the sub
+client
+backup_tables()
+&ndash;
+Backup the specified tables
+backup_environments()
+&ndash;
+Backup the specified environments
+restore_in_place()
+&ndash;
+Run in-place restore for the specified content</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>
+Properties
+</em></strong><strong><em>*</em></strong><strong><em>*</em></strong></p>
+<p>discovered_environments
+&ndash;
+Dictionary of environments discovered by the subclient
+discovered_tables
+&ndash;
+Dictionary of tables discovered by the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1-L53" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -58,18 +101,38 @@ gets the properties JSON of Google Subclient</p>
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-&#34;&#34;&#34;File for operating on a Dynamics 365 CRM Subclient.
+&#34;&#34;&#34;
+    File for operating on a Dynamics 365 CRM Subclient.
 
 MSDynamics365Subclient is the only class defined in this file.
 
-MSDynamics365Subclient:    Derived class from CloudAppsSubclient Base class, representing a
-                            Dynamics 365 subclient, and to perform operations on that subclient
+MSDynamics365Subclient:             Derived class from CloudAppsSubclient Base class, representing a
+                                    Dynamics 365 subclient, and to perform operations on that subclient
 
 MSDynamics365Subclient:
 
-    _get_subclient_properties()         --  gets the properties of Google Subclient
+    *****************                       Methods                      *****************
 
-    _get_subclient_properties_json()    --  gets the properties JSON of Google Subclient
+    _get_subclient_properties()             --  gets the properties of MS Dynamics 365 Subclient
+
+    _get_subclient_properties_json()        --  gets the properties JSON of MS Dynamics 365 Subclient
+
+    get_discovered_tables()                 --  Method to run a discovery for tables and get them
+    get_discovered_environments()           --  Method to run a discovery for environments and return them
+    _get_associated_content()               --  Get content associated with a Dynamics 365 subclient
+    get_associated_tables()                 --  Get list of associated tables
+    get_associated_environments()           --  Get list of associated environments
+    associate_tables()                      --  Associate tables to a Dynamics 365 subclient
+    associate_environment()                 --  Associate list of environments to the sub   client
+    backup_tables()                         --  Backup the specified tables
+    backup_environments()                   --  Backup the specified environments
+    restore_in_place()                      --  Run in-place restore for the specified content
+
+
+    *****************                       Properties                      *****************
+
+    discovered_environments                 --  Dictionary of environments discovered by the subclient
+    discovered_tables                       --  Dictionary of tables discovered by the subclient
 
 &#34;&#34;&#34;
 
@@ -77,11 +140,40 @@ from ...exception import SDKException
 
 from ..casubclient import CloudAppsSubclient
 
+
 class MSDynamics365Subclient(CloudAppsSubclient):
-    &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a MSDynamics365 subclient&#34;&#34;&#34;
+    &#34;&#34;&#34;
+        Class representing a MS Dynamics 365 subclient.
+            Class has been derived from the CloudAppsSubclient.
+    &#34;&#34;&#34;
+
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Initialize the Subclient object for the given MSDynamics365 Subclient.
+
+            Args:
+                backupset_object    (object)    --  instance of the backup-set class
+
+                subclient_name      (str)       --  subclient name
+
+                subclient_id        (int)       --  subclient id
+
+        &#34;&#34;&#34;
+        super(MSDynamics365Subclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+
+        self._instance_object = backupset_object._instance_object
+        self._client_object = self._instance_object._agent_object._client_object
+        self._associated_tables: dict = dict()
+        self._associated_environments: dict = dict()
+        self._discovered_environments: dict = dict()
+        self._discovered_tables: dict = dict()
+        self._instance_type: int = 35
+        self._app_id: int = 134
+        # App ID for cloud apps
+        self._Dynamics365_SET_USER_POLICY_ASSOCIATION = self._commcell_object._services[&#39;SET_USER_POLICY_ASSOCIATION&#39;]
 
     def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of a Dynamics 365 subclient..&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the subclient  related properties of a MS Dynamics 365 subclient&#34;&#34;&#34;
         super(MSDynamics365Subclient, self)._get_subclient_properties()
 
     def _get_subclient_properties_json(self):
@@ -92,7 +184,754 @@ class MSDynamics365Subclient(CloudAppsSubclient):
 
         &#34;&#34;&#34;
 
-        return {&#39;subClientProperties&#39;: self._subclient_properties}</code></pre>
+        return {&#39;subClientProperties&#39;: self._subclient_properties}
+
+    def discover_tables(self):
+        &#34;&#34;&#34;
+            Method to get the tables discovered from the MS Dynamics 365 CRM subclient
+
+            Returns:
+                discovered_tables       (dict)--    Dictionary of returned tables
+
+        &#34;&#34;&#34;
+        self._discovered_tables = self._instance_object.discover_content(environment_discovery=False)
+        return self._discovered_tables
+
+    def discover_environments(self):
+        &#34;&#34;&#34;
+            Method to get the environments discovered from the Dynamics 365 CRM subclient
+
+            Returns:
+                discovered_environments       (dict)--    Dictionary of discovered environments
+
+        &#34;&#34;&#34;
+        self._discovered_environments = self._instance_object.discover_content(environment_discovery=True)
+        return self._discovered_environments
+
+    @property
+    def discovered_environments(self):
+        &#34;&#34;&#34;
+            Property to get the environments discovered by the Dynamics 365 subclient.
+
+            If updated list is required, call refresh method prior to using this property.
+
+            Returns:
+                discovered_environments       (dict)--    Dictionary of discovered environments
+        &#34;&#34;&#34;
+        if not bool(self._discovered_environments):
+            self.discover_environments()
+        return self._discovered_environments
+
+    @property
+    def discovered_tables(self):
+        &#34;&#34;&#34;
+            Property to get the tables discovered by the Dynamics 365 subclient.
+
+            If updated list is required, call refresh method prior to using this property.
+
+            Returns:
+                discovered_tables      (dict)--    Dictionary of discovered tables
+        &#34;&#34;&#34;
+        if not bool(self._discovered_tables):
+            self.discover_tables()
+        return self._discovered_tables
+
+    def _get_associated_content(self, is_environment=False):
+        &#34;&#34;&#34;
+            Method to get the content associated with a Dynamics 365 CRM subclient
+
+            Arguments:
+                is_environment      (bool)--    Whether to get the associated environments or tables
+                    Default Value:
+                        False
+                            Returns the associated tables
+
+            Returns:
+                associated_content_list     (list)--    List of content associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular environment/ table
+        &#34;&#34;&#34;
+        discover_by_type: int
+        if is_environment is True:
+            discover_by_type = 5
+        else:
+            discover_by_type = 14
+
+        _GET_ASSOCIATED_CONTENT = self._services[&#39;USER_POLICY_ASSOCIATION&#39;]
+        request_json = {
+            &#34;discoverByType&#34;: discover_by_type,
+            &#34;bIncludeDeleted&#34;: False,
+            &#34;cloudAppAssociation&#34;: {
+                &#34;subclientEntity&#34;: {
+                    &#34;subclientId&#34;: int(self.subclient_id)
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, _GET_ASSOCIATED_CONTENT, request_json
+        )
+        if flag:
+            if response and response.json():
+                no_of_records = int()
+                if &#39;associations&#39; in response.json():
+                    no_of_records = response.json().get(&#39;associations&#39;, [])[0].get(&#39;pagingInfo&#39;, {}). \
+                        get(&#39;totalRecords&#39;, -1)
+
+                    associations = response.json().get(&#39;associations&#39;, [])
+                    content_list = list()
+                    if discover_by_type == 5:
+                        for environment in associations:
+                            environment_name = environment.get(&#34;groups&#34;, {}).get(&#34;name&#34;)
+                            env_dict = {
+                                &#34;name&#34;: environment_name,
+                                &#34;id&#34;: environment.get(&#34;groups&#34;, {}).get(&#34;id&#34;),
+                                &#34;userAccountInfo&#34;: environment.get(&#34;userAccountInfo&#34;, {}),
+                                &#34;plan&#34;: environment.get(&#34;plan&#34;, {}),
+                                &#34;is_environment&#34;: True
+                            }
+                            content_list.append(env_dict)
+
+                    elif discover_by_type == 14:
+                        for table in associations:
+                            table_name = table.get(&#34;userAccountInfo&#34;, {}).get(&#34;displayName&#34;)
+                            table_dict = {
+                                &#34;name&#34;: table_name.lower(),
+                                &#34;environment_name&#34;: table.get(&#34;userAccountInfo&#34;, {}).get(&#34;ParentWebGuid&#34;, &#34;&#34;).lower(),
+                                &#34;userAccountInfo&#34;: table.get(&#34;userAccountInfo&#34;, {}),
+                                &#34;plan&#34;: table.get(&#34;plan&#34;, {}),
+                                &#34;is_environment&#34;: False
+                            }
+                            content_list.append(table_dict)
+                    return content_list
+                    # return content_list, no_of_records
+            return {}, 0
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_associated_tables(self, refresh: bool = False):
+        &#34;&#34;&#34;
+            Method to get the tables associated with a Dynamics 365 CRM client
+
+            Arguments:
+                refresh                     (bool)--    Whether to refresh the dictionary contents
+                    If True
+                        get associated environments, will fetch the latest associations and return them
+
+            Returns:
+                associated_tables     (list)--    List of tables associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular  table
+                        Dictionary keys/ format will be:
+                            name : name of the table
+                            environment_name : name of the environment to which the table belongs to
+                            plan: Dynamics 365 plan used for content association
+                            is_environment: False for a Table
+                            userAccountInfo:    Metadata info for that table
+
+                    Sample Response:
+                        {
+                            &#39;name&#39;: &#39;account&#39;,
+                            &#39;environment_name&#39;: &#39;sample-environment-name&#39;,
+                            &#39;userAccountInfo&#39;:
+                                {
+                                &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com/api/data/v9.1/account&#39;,
+                                &#39;displayName&#39;: &#39;Account,
+                                &#39;ParentWebGuid&#39;: &#39;org-environment-name&#39;,
+                                &#39;lastBackupJobRanTime&#39;: {&#39;time&#39;: &lt;last-backup-time&gt;},
+                                &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-time&gt;},
+                                &#39;user&#39;: {
+                                    &#39;_type_&#39;: 13,
+                                     &#39;userGUID&#39;: &#39;&lt;table-GUID&gt;&gt;&#39;
+                                     }
+                                },
+                            &#39;plan&#39;: {
+                                &#39;planName&#39;: &#39;&lt;PLAN-NAME&gt;&#39;, &#39;planId&#39;: &lt;plan-id&gt;},
+                            &#39;is_environment&#39;: False
+                        }
+                    Environment name/ URL in the sample response is for description purpose only
+
+        &#34;&#34;&#34;
+        if refresh is True:
+            self._associated_tables = self._get_associated_content(is_environment=False)
+        return self._associated_tables
+
+    def get_associated_environments(self, refresh: bool = False):
+        &#34;&#34;&#34;
+            Method to get the environments associated with a Dynamics 365 CRM client
+
+            Arguments:
+                refresh                     (bool)--    Whether to refresh the dictionary contents
+                    If True
+                        get associated environments, will fetch the latest associations and return them
+
+            Returns:
+                associated_environments     (list)--    List of environments associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular environment
+                        Dictionary keys/ format will be:
+                            name :              name of the table
+                            plan:               Dynamics 365 plan used for content association
+                            is_environment:     True for an environment
+                            userAccountInfo:    Metadata info for that environment
+
+                    Sample Response:
+                        {
+                                &#39;name&#39;: &#39;sample-environment-name&#39;,
+                                &#39;id&#39;: &#39;&lt;environment-ID&gt;&gt;&#39;,
+                                &#39;userAccountInfo&#39;:
+                                {
+                                    &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com&#39;,
+                                    &#39;itemType&#39;: 0,
+                                    &#39;ItemClassification&#39;: 0,
+                                    &#39;displayName&#39;: &#39;org-environment-display-name&#39;,
+                                    &#39;BackupSetId&#39;: 0,
+                                    &#39;isAutoDiscoveredUser&#39;: False,
+                                    &#39;lastBackupJobRanTime&#39;: &#39;time&#39;: &lt;last-backup-time&gt;,
+                                    &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-playback-time&gt;},
+                                    user&#39;: {
+                                        &#39;_type_&#39;: 13,
+                                        &#39;userGUID&#39;: &#39;&lt;env-GUID&gt;&#39;
+                                        }
+                                },
+                                &#39;plan&#39;: {&#39;planName&#39;: &#39;&lt;name-of-plan&gt;&#39;, &#39;planId&#39;: &lt;id-of-plan&gt;},
+                                 &#39;is_environment&#39;: True}
+
+        &#34;&#34;&#34;
+        if refresh is True:
+            self._associated_environments = self._get_associated_content(is_environment=True)
+        return self._associated_environments
+
+    def _set_association_json(self, is_environment: bool = False):
+        &#34;&#34;&#34;
+            JSON to set the content association for a Dynamics 365 CRM client
+
+            Arguments:
+                is_environment      (bool):     Whether the content to be associated is an environment
+                    Default Value:
+                        False
+            Returns:
+                set_content_association_json    (dict)--    Content Association JSON
+        &#34;&#34;&#34;
+        set_content_association_json = {&#34;LaunchAutoDiscovery&#34;: is_environment,
+                                        &#34;cloudAppAssociation&#34;: {
+                                            &#34;accountStatus&#34;: 0,
+                                            &#34;cloudAppDiscoverinfo&#34;: {
+                                                &#34;userAccounts&#34;: [
+                                                ],
+                                                &#34;groups&#34;: [],
+                                                &#34;discoverByType&#34;: 14 if is_environment is False else 15
+                                            }
+                                            , &#34;subclientEntity&#34;: self._subClientEntity}}
+
+        return set_content_association_json
+
+    def _set_content_association(self, content_json: dict):
+        &#34;&#34;&#34;
+            Method to associate some content to a Dynamics 365 CRM client...
+
+            Arguments:
+                content_json        (dict)--        Association JSON to be used for the content
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._Dynamics365_SET_USER_POLICY_ASSOCIATION, content_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json()[&#39;resp&#39;][&#39;errorCode&#39;] != 0:
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        output_string = &#39;Failed to Create Association for a Dynamics 365 CRM client\nError: &#34;{0}&#34;&#39;
+                        raise SDKException(
+                            &#39;Subclient&#39;, &#39;102&#39;, output_string.format(error_message)
+                        )
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _table_association_info_json(self, tables_list: list):
+        &#34;&#34;&#34;
+            Private Method to create the association JSON for associating tables
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                tables_list     (list)--    List of tables to be associated to the content
+                    List Format:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be associated
+
+            Returns:
+                tables_info     (list)--    List of metadata info for the tables to be used for associating content
+        &#34;&#34;&#34;
+        tables_info: list = list()
+        _discovered_tables = self.discovered_tables
+
+        if not bool(_discovered_tables):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                               &#34;Discovered Tables is Empty.&#34;)
+
+        for _table in _discovered_tables:
+            _table_name, _parent_env_name = _table[&#34;displayName&#34;].lower(), _table[&#34;ParentWebGuid&#34;].lower()
+            try:
+                if (_parent_env_name, _table_name) in tables_list:
+                    _table_assoc_info = _table
+                    _table_assoc_info[&#34;user.userGUID&#34;] = _table.get(&#34;user&#34;).get(&#34;userGUID&#34;)
+                    tables_info.append(_table_assoc_info)
+            except TypeError:
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                   &#34;For Associating tables, content list should be a list of tuples&#34;)
+
+        if len(tables_info) == 0:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;None of the input tables were in the list of discovered tables&#34;)
+
+        return tables_info
+
+    def set_table_associations(self, tables_list: list, plan_name: str = str()):
+        &#34;&#34;&#34;
+            Method to add table associations
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                tables_list     (list)--    List of tables to be associated to the content
+                    List Format:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be associated
+                    Sample input:
+                        [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+        &#34;&#34;&#34;
+
+        plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+        tables_info = self._table_association_info_json(tables_list=tables_list)
+
+        _table_association_json = self._set_association_json(is_environment=False)
+        _table_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+            &#34;planId&#34;: plan_id
+        }
+        _table_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = tables_info
+        self._set_content_association(content_json=_table_association_json)
+
+    def _environment_association_info_json(self, environments_name: list):
+        &#34;&#34;&#34;
+            Method to create the association JSON for associating environments
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                environments_name     (list)--    List of environments to be associated to the content
+                    List Format:
+                        Each list element should be a string of the name of the environment
+
+            Returns:
+                environments_info     (list)--    List of metadata info for the environments to
+                                                    be used for associating content
+        &#34;&#34;&#34;
+        environments_info: list = list()
+        _discovered_envs = self.discovered_environments
+
+        if not bool(_discovered_envs):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                               &#34;Discovered Environments List is Empty&#34;)
+
+        for environment in _discovered_envs:
+            if environment[&#34;displayName&#34;] in environments_name:
+                _env_assoc_info = environment
+                _env_assoc_info[&#34;user.userGUID&#34;] = environment.get(&#34;user&#34;).get(&#34;userGUID&#34;)
+                _env_assoc_info[&#34;rawCommonFlag&#34;] = environment.get(&#34;commonFlags&#34;, 0)
+
+                environments_info.append(_env_assoc_info)
+
+        if len(environments_info) == 0:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                               &#34;None of the input environments were in the list of discovered environments&#34;)
+
+        return environments_info
+
+    def set_environment_associations(self, environments_name: list, plan_name: str = str()):
+        &#34;&#34;&#34;
+            Method to add environment associations
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                environments_name     (list)--    List of environments to be associated to the content
+                    List Format:
+                        Each list element should be a string of the name of the environment
+                    Sample Values:
+                        [&#39;testenv1&#39; , &#39;testenv2&#39;, &#39;testenv3&#39;]
+
+                plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+        &#34;&#34;&#34;
+        environments_info: list = self._environment_association_info_json(environments_name=environments_name)
+
+        if self._commcell_object.plans.has_plan(plan_name.lower()):
+            plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+        else:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                               &#34;Dynamics 365 Plan does not exist&#34;)
+
+        _env_association_json = self._set_association_json(is_environment=True)
+        _env_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+            &#34;planId&#34;: plan_id
+        }
+        _env_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = environments_info
+        self._set_content_association(content_json=_env_association_json)
+
+    def _json_for_backup_task(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to create the association JSON for backing up content for a Dynamics 365 subclient
+
+            Arguments:
+                content_list     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                _backup_task_json     (list)--    JSON for backing up the content
+        &#34;&#34;&#34;
+        _backup_task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
+        _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
+
+        backup_options = {
+            &#39;backupLevel&#39;: 2,  # Incremental
+            &#39;cloudAppOptions&#39;: {
+                &#39;userAccounts&#39;: _sub_client_content_json
+            }
+        }
+        _backup_task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
+        return _backup_task_json
+
+    def _backup_content_json(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to fetch the metadata properties for backing up content for a Dynamics 365 subclient
+
+            Arguments:
+                content_list     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                _bkp_content_json     (list)--    Metadata JSON for backing up that content
+        &#34;&#34;&#34;
+        _bkp_content_json = list()
+
+        if is_environment is True:
+            for environment in self.get_associated_environments(refresh=True):
+                if environment[&#34;name&#34;] in content_list:
+                    _env_bkp_info = environment[&#34;userAccountInfo&#34;]
+                    _bkp_content_json.append(_env_bkp_info)
+
+        elif is_environment is False:
+            for _table in self.get_associated_tables(refresh=True):
+                _table_name, _parent_env_name = _table[&#34;name&#34;].lower(), _table[&#34;environment_name&#34;].lower()
+                try:
+                    if (_parent_env_name, _table_name) in content_list:
+                        _table_bkp_info = _table[&#34;userAccountInfo&#34;]
+                        _bkp_content_json.append(_table_bkp_info)
+                except TypeError:
+                    raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                       &#34;For backing up tables, content list should be a list of tuples&#34;)
+
+        return _bkp_content_json
+
+    def _run_backup(self, backup_content: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to run backup for the content of a Dynamics 365 subclient
+
+            Arguments:
+                backup_content     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment)
+        backup_endpoint = self._services[&#39;CREATE_TASK&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;POST&#34;, backup_endpoint, _backup_json)
+        return self._process_backup_response(flag, response)
+
+    def backup_tables(self, tables_list: list):
+        &#34;&#34;&#34;
+            Method to run backup for the specified tables of a Dynamics 365 subclient
+
+            Arguments:
+                tables_list     (list)--    List of tables to be backed up
+                    List Format
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+
+                    Sample input:
+                        [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=tables_list, is_environment=False)
+
+    def backup_environments(self, environments_list: list):
+        &#34;&#34;&#34;
+            Method to run backup for the specified environments of a Dynamics 365 subclient
+
+            Arguments:
+                environments_list     (list)--    List of environments to be backed up
+                    List Format, for backing up specified environments:
+                        Each list element should be a string of the name of the environment
+                    Sample List:
+                        [&#39;testenv1&#39;,&#39;testenv2&#39;,&#39;testenv3&#39;]
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=environments_list, is_environment=True)
+
+    def _restore_content_json(self):
+        &#34;&#34;&#34;
+            Restore JSON for restoring content for a Dynamics 365 subclient
+
+            Returns:
+                _restore_task_json          (dict)--    JSON to be used for running a restore task
+        &#34;&#34;&#34;
+        _restore_task_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [self._subclient_properties[&#39;subClientEntity&#39;]],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 3,
+                            &#34;operationType&#34;: 1001
+                        },
+                        &#34;options&#34;: {
+                            &#34;restoreOptions&#34;: {
+                                &#34;browseOption&#34;: {
+                                    &#34;timeRange&#34;: {}
+                                },
+                                &#34;commonOptions&#34;: {
+                                    &#34;skip&#34;: True,
+                                    &#34;overwriteFiles&#34;: False,
+                                    &#34;unconditionalOverwrite&#34;: False
+                                },
+                                &#34;destination&#34;: {
+                                    &#34;destAppId&#34;: self._app_id,
+                                    &#34;inPlace&#34;: True,
+                                    &#34;destClient&#34;: {
+                                        &#34;clientId&#34;: int(self._client_object.client_id),
+                                        &#34;clientName&#34;: self._client_object.client_name
+                                    },
+                                    &#34;destPath&#34;: []
+                                },
+                                &#34;fileOption&#34;: {
+                                    &#34;sourceItem&#34;: list()
+                                },
+                                &#34;cloudAppsRestoreOptions&#34;: {
+                                    &#34;instanceType&#34;: self._instance_type,
+                                    &#34;d365RestoreOptions&#34;: {
+                                        &#34;restoreAllMatching&#34;: False,
+                                        &#34;restoreToDynamics365&#34;: True,
+                                        &#34;overWriteItems&#34;: False,
+                                        &#34;destLocation&#34;: &#34;&#34;,
+                                        &#34;restoreUsingFindQuery&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        return _restore_task_json
+
+    def _get_restore_item_path(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Get the complete path of the content for running a restore job
+
+            Arguments:
+                content_list            (list)--        List of content ot be restored
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                is_environment          (bool)--        Whether the content is environment or tables
+            Returns:
+                __restore_content_list  (list)--        List of complete path for running restore job for the specifiec content
+        &#34;&#34;&#34;
+        __restore_content_list = list()
+
+        if is_environment is True:
+            for environment in self.get_associated_environments(refresh=True):
+                if environment[&#34;name&#34;] in content_list:
+                    _restore_id = environment[&#34;id&#34;]
+                    __restore_content_list.append(_restore_id)
+
+        elif is_environment is False:
+            for _table in self.get_associated_tables(refresh=True):
+                _table_name, _parent_env_name = _table[&#34;name&#34;].lower(), _table[&#34;environment_name&#34;].lower()
+                try:
+                    if (_parent_env_name, _table_name) in content_list:
+                        _id = _table.get(&#34;userAccountInfo&#34;).get(&#34;smtpAddress&#34;).split(&#39;/&#39;)
+                        _table_id = _id[-1]
+                        _env_id = _id[-2]
+                        _restore_id = f&#34;{_env_id}/{_table_id}&#34;
+                        __restore_content_list.append(_restore_id)
+
+                except TypeError:
+                    raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                       &#34;For restoring the tables, content list should be a list of tuples&#34;)
+        __restore_content_list = list(
+            map(lambda _restore_id: f&#34;/tenant/{_restore_id}&#34;, __restore_content_list)
+        )
+        return __restore_content_list
+
+    def _prepare_in_place_restore_json(self,
+                                       restore_content: list,
+                                       restore_path: list = None,
+                                       overwrite: bool = True,
+                                       job_id: int = None,
+                                       is_environment: bool = False
+                                       ):
+        &#34;&#34;&#34;
+            Method to prepare JSON/ Python dict for  in- place restore for the content specified.
+
+            Arguments:
+                restore_content         (str)--     List of the content to restore
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                restore_path            (list)--    List of the paths of the items to restore
+                    Instead of passing, the restore content, restore path can be passed
+                    Restore path, is the path for each item, that is to be restored.
+                        Path is returned by the browse operation
+
+                is_environment          (bool)--    Whether to content to be restored is a table or an environment
+                overwrite               (bool)--    Skip or overwrite content
+                job_id                  (int)--     Job ID for point in time restores
+            Returns:
+                _restore_content_json   (dict)--    Python dict to be used for restore content request
+        &#34;&#34;&#34;
+        _restore_content_json = self._restore_content_json()
+        if restore_path is None:
+            restore_path = self._get_restore_item_path(content_list=restore_content, is_environment=is_environment)
+
+        _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;fileOption&#34;][
+            &#34;sourceItem&#34;] = restore_path
+
+        if job_id is not None:
+            _job = self._commcell_object.job_controller.get(job_id)
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][&#34;timeRange&#34;][
+                &#34;toTime&#34;] = _job.end_timestamp
+
+        if overwrite is True:
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][&#34;overwriteFiles&#34;] = True
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][
+                &#34;skip&#34;] = False
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][
+                &#34;unconditionalOverwrite&#34;] = True
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] \
+                [&#34;d365RestoreOptions&#34;][&#34;overWriteItems&#34;] = True
+        return _restore_content_json
+
+    def restore_in_place(
+            self,
+            restore_content: list = None,
+            restore_path: list = None,
+            is_environment: bool = False,
+            overwrite: bool = True,
+            job_id: int = None):
+        &#34;&#34;&#34;
+            Method to run in- place restore for the content specified.
+
+            Arguments:
+                restore_content         (str)--     List of the content to restore
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+                        Sample Input:
+                            [ &#39;testenv1&#39; , &#39;testenv2&#39; , &#39;testenv3&#39; ]
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                restore_path            (list)--    List of the paths of the items to restore
+                    Instead of passing, the restore content, restore path can be passed
+                    Restore path, is the path for each item, that is to be restored.
+                        Path is returned by the browse operation
+
+                is_environment          (bool)--    Whether to content to be restored is a table or an environment
+                overwrite               (bool)--    Skip or overwrite content
+                job_id                  (int)--     Job ID for point in time restores
+            Returns:
+                restore_job             (job)--     Instance of CVPySDK.Job for the restore job
+        &#34;&#34;&#34;
+
+        if restore_content is None and restore_path is None:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;Need to have either of restore content or restore path&#34;)
+
+        _restore_json = self._prepare_in_place_restore_json(
+            restore_content=restore_content,
+            restore_path=restore_path,
+            is_environment=is_environment,
+            job_id=job_id,
+            overwrite=overwrite)
+        return self._process_restore_response(_restore_json)</code></pre>
 </details>
 </section>
 <section>
@@ -109,33 +948,60 @@ class MSDynamics365Subclient(CloudAppsSubclient):
 <span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from CloudAppsSubclient Base class, representing a MSDynamics365 subclient</p>
-<p>Initialise the Subclient object.</p>
+<div class="desc"><p>Class representing a MS Dynamics 365 subclient.
+Class has been derived from the CloudAppsSubclient.</p>
+<p>Initialize the Subclient object for the given MSDynamics365 Subclient.</p>
 <h2 id="args">Args</h2>
-<p>backupset_object (object)
+<p>backupset_object
+(object)
 &ndash;
-instance of the Backupset class</p>
+instance of the backup-set class</p>
 <p>subclient_name
 (str)
 &ndash;
-name of the subclient</p>
+subclient name</p>
 <p>subclient_id
-(str)
+(int)
 &ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L38-L53" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L59-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MSDynamics365Subclient(CloudAppsSubclient):
-    &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a MSDynamics365 subclient&#34;&#34;&#34;
+    &#34;&#34;&#34;
+        Class representing a MS Dynamics 365 subclient.
+            Class has been derived from the CloudAppsSubclient.
+    &#34;&#34;&#34;
+
+    def __init__(self, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Initialize the Subclient object for the given MSDynamics365 Subclient.
+
+            Args:
+                backupset_object    (object)    --  instance of the backup-set class
+
+                subclient_name      (str)       --  subclient name
+
+                subclient_id        (int)       --  subclient id
+
+        &#34;&#34;&#34;
+        super(MSDynamics365Subclient, self).__init__(
+            backupset_object, subclient_name, subclient_id)
+
+        self._instance_object = backupset_object._instance_object
+        self._client_object = self._instance_object._agent_object._client_object
+        self._associated_tables: dict = dict()
+        self._associated_environments: dict = dict()
+        self._discovered_environments: dict = dict()
+        self._discovered_tables: dict = dict()
+        self._instance_type: int = 35
+        self._app_id: int = 134
+        # App ID for cloud apps
+        self._Dynamics365_SET_USER_POLICY_ASSOCIATION = self._commcell_object._services[&#39;SET_USER_POLICY_ASSOCIATION&#39;]
 
     def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of a Dynamics 365 subclient..&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the subclient  related properties of a MS Dynamics 365 subclient&#34;&#34;&#34;
         super(MSDynamics365Subclient, self)._get_subclient_properties()
 
     def _get_subclient_properties_json(self):
@@ -146,13 +1012,1368 @@ default: None</p>
 
         &#34;&#34;&#34;
 
-        return {&#39;subClientProperties&#39;: self._subclient_properties}</code></pre>
+        return {&#39;subClientProperties&#39;: self._subclient_properties}
+
+    def discover_tables(self):
+        &#34;&#34;&#34;
+            Method to get the tables discovered from the MS Dynamics 365 CRM subclient
+
+            Returns:
+                discovered_tables       (dict)--    Dictionary of returned tables
+
+        &#34;&#34;&#34;
+        self._discovered_tables = self._instance_object.discover_content(environment_discovery=False)
+        return self._discovered_tables
+
+    def discover_environments(self):
+        &#34;&#34;&#34;
+            Method to get the environments discovered from the Dynamics 365 CRM subclient
+
+            Returns:
+                discovered_environments       (dict)--    Dictionary of discovered environments
+
+        &#34;&#34;&#34;
+        self._discovered_environments = self._instance_object.discover_content(environment_discovery=True)
+        return self._discovered_environments
+
+    @property
+    def discovered_environments(self):
+        &#34;&#34;&#34;
+            Property to get the environments discovered by the Dynamics 365 subclient.
+
+            If updated list is required, call refresh method prior to using this property.
+
+            Returns:
+                discovered_environments       (dict)--    Dictionary of discovered environments
+        &#34;&#34;&#34;
+        if not bool(self._discovered_environments):
+            self.discover_environments()
+        return self._discovered_environments
+
+    @property
+    def discovered_tables(self):
+        &#34;&#34;&#34;
+            Property to get the tables discovered by the Dynamics 365 subclient.
+
+            If updated list is required, call refresh method prior to using this property.
+
+            Returns:
+                discovered_tables      (dict)--    Dictionary of discovered tables
+        &#34;&#34;&#34;
+        if not bool(self._discovered_tables):
+            self.discover_tables()
+        return self._discovered_tables
+
+    def _get_associated_content(self, is_environment=False):
+        &#34;&#34;&#34;
+            Method to get the content associated with a Dynamics 365 CRM subclient
+
+            Arguments:
+                is_environment      (bool)--    Whether to get the associated environments or tables
+                    Default Value:
+                        False
+                            Returns the associated tables
+
+            Returns:
+                associated_content_list     (list)--    List of content associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular environment/ table
+        &#34;&#34;&#34;
+        discover_by_type: int
+        if is_environment is True:
+            discover_by_type = 5
+        else:
+            discover_by_type = 14
+
+        _GET_ASSOCIATED_CONTENT = self._services[&#39;USER_POLICY_ASSOCIATION&#39;]
+        request_json = {
+            &#34;discoverByType&#34;: discover_by_type,
+            &#34;bIncludeDeleted&#34;: False,
+            &#34;cloudAppAssociation&#34;: {
+                &#34;subclientEntity&#34;: {
+                    &#34;subclientId&#34;: int(self.subclient_id)
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, _GET_ASSOCIATED_CONTENT, request_json
+        )
+        if flag:
+            if response and response.json():
+                no_of_records = int()
+                if &#39;associations&#39; in response.json():
+                    no_of_records = response.json().get(&#39;associations&#39;, [])[0].get(&#39;pagingInfo&#39;, {}). \
+                        get(&#39;totalRecords&#39;, -1)
+
+                    associations = response.json().get(&#39;associations&#39;, [])
+                    content_list = list()
+                    if discover_by_type == 5:
+                        for environment in associations:
+                            environment_name = environment.get(&#34;groups&#34;, {}).get(&#34;name&#34;)
+                            env_dict = {
+                                &#34;name&#34;: environment_name,
+                                &#34;id&#34;: environment.get(&#34;groups&#34;, {}).get(&#34;id&#34;),
+                                &#34;userAccountInfo&#34;: environment.get(&#34;userAccountInfo&#34;, {}),
+                                &#34;plan&#34;: environment.get(&#34;plan&#34;, {}),
+                                &#34;is_environment&#34;: True
+                            }
+                            content_list.append(env_dict)
+
+                    elif discover_by_type == 14:
+                        for table in associations:
+                            table_name = table.get(&#34;userAccountInfo&#34;, {}).get(&#34;displayName&#34;)
+                            table_dict = {
+                                &#34;name&#34;: table_name.lower(),
+                                &#34;environment_name&#34;: table.get(&#34;userAccountInfo&#34;, {}).get(&#34;ParentWebGuid&#34;, &#34;&#34;).lower(),
+                                &#34;userAccountInfo&#34;: table.get(&#34;userAccountInfo&#34;, {}),
+                                &#34;plan&#34;: table.get(&#34;plan&#34;, {}),
+                                &#34;is_environment&#34;: False
+                            }
+                            content_list.append(table_dict)
+                    return content_list
+                    # return content_list, no_of_records
+            return {}, 0
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_associated_tables(self, refresh: bool = False):
+        &#34;&#34;&#34;
+            Method to get the tables associated with a Dynamics 365 CRM client
+
+            Arguments:
+                refresh                     (bool)--    Whether to refresh the dictionary contents
+                    If True
+                        get associated environments, will fetch the latest associations and return them
+
+            Returns:
+                associated_tables     (list)--    List of tables associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular  table
+                        Dictionary keys/ format will be:
+                            name : name of the table
+                            environment_name : name of the environment to which the table belongs to
+                            plan: Dynamics 365 plan used for content association
+                            is_environment: False for a Table
+                            userAccountInfo:    Metadata info for that table
+
+                    Sample Response:
+                        {
+                            &#39;name&#39;: &#39;account&#39;,
+                            &#39;environment_name&#39;: &#39;sample-environment-name&#39;,
+                            &#39;userAccountInfo&#39;:
+                                {
+                                &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com/api/data/v9.1/account&#39;,
+                                &#39;displayName&#39;: &#39;Account,
+                                &#39;ParentWebGuid&#39;: &#39;org-environment-name&#39;,
+                                &#39;lastBackupJobRanTime&#39;: {&#39;time&#39;: &lt;last-backup-time&gt;},
+                                &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-time&gt;},
+                                &#39;user&#39;: {
+                                    &#39;_type_&#39;: 13,
+                                     &#39;userGUID&#39;: &#39;&lt;table-GUID&gt;&gt;&#39;
+                                     }
+                                },
+                            &#39;plan&#39;: {
+                                &#39;planName&#39;: &#39;&lt;PLAN-NAME&gt;&#39;, &#39;planId&#39;: &lt;plan-id&gt;},
+                            &#39;is_environment&#39;: False
+                        }
+                    Environment name/ URL in the sample response is for description purpose only
+
+        &#34;&#34;&#34;
+        if refresh is True:
+            self._associated_tables = self._get_associated_content(is_environment=False)
+        return self._associated_tables
+
+    def get_associated_environments(self, refresh: bool = False):
+        &#34;&#34;&#34;
+            Method to get the environments associated with a Dynamics 365 CRM client
+
+            Arguments:
+                refresh                     (bool)--    Whether to refresh the dictionary contents
+                    If True
+                        get associated environments, will fetch the latest associations and return them
+
+            Returns:
+                associated_environments     (list)--    List of environments associated with the client
+                    Format:
+                        Each list element will be a dictionary denoting that particular environment
+                        Dictionary keys/ format will be:
+                            name :              name of the table
+                            plan:               Dynamics 365 plan used for content association
+                            is_environment:     True for an environment
+                            userAccountInfo:    Metadata info for that environment
+
+                    Sample Response:
+                        {
+                                &#39;name&#39;: &#39;sample-environment-name&#39;,
+                                &#39;id&#39;: &#39;&lt;environment-ID&gt;&gt;&#39;,
+                                &#39;userAccountInfo&#39;:
+                                {
+                                    &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com&#39;,
+                                    &#39;itemType&#39;: 0,
+                                    &#39;ItemClassification&#39;: 0,
+                                    &#39;displayName&#39;: &#39;org-environment-display-name&#39;,
+                                    &#39;BackupSetId&#39;: 0,
+                                    &#39;isAutoDiscoveredUser&#39;: False,
+                                    &#39;lastBackupJobRanTime&#39;: &#39;time&#39;: &lt;last-backup-time&gt;,
+                                    &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-playback-time&gt;},
+                                    user&#39;: {
+                                        &#39;_type_&#39;: 13,
+                                        &#39;userGUID&#39;: &#39;&lt;env-GUID&gt;&#39;
+                                        }
+                                },
+                                &#39;plan&#39;: {&#39;planName&#39;: &#39;&lt;name-of-plan&gt;&#39;, &#39;planId&#39;: &lt;id-of-plan&gt;},
+                                 &#39;is_environment&#39;: True}
+
+        &#34;&#34;&#34;
+        if refresh is True:
+            self._associated_environments = self._get_associated_content(is_environment=True)
+        return self._associated_environments
+
+    def _set_association_json(self, is_environment: bool = False):
+        &#34;&#34;&#34;
+            JSON to set the content association for a Dynamics 365 CRM client
+
+            Arguments:
+                is_environment      (bool):     Whether the content to be associated is an environment
+                    Default Value:
+                        False
+            Returns:
+                set_content_association_json    (dict)--    Content Association JSON
+        &#34;&#34;&#34;
+        set_content_association_json = {&#34;LaunchAutoDiscovery&#34;: is_environment,
+                                        &#34;cloudAppAssociation&#34;: {
+                                            &#34;accountStatus&#34;: 0,
+                                            &#34;cloudAppDiscoverinfo&#34;: {
+                                                &#34;userAccounts&#34;: [
+                                                ],
+                                                &#34;groups&#34;: [],
+                                                &#34;discoverByType&#34;: 14 if is_environment is False else 15
+                                            }
+                                            , &#34;subclientEntity&#34;: self._subClientEntity}}
+
+        return set_content_association_json
+
+    def _set_content_association(self, content_json: dict):
+        &#34;&#34;&#34;
+            Method to associate some content to a Dynamics 365 CRM client...
+
+            Arguments:
+                content_json        (dict)--        Association JSON to be used for the content
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._Dynamics365_SET_USER_POLICY_ASSOCIATION, content_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json()[&#39;resp&#39;][&#39;errorCode&#39;] != 0:
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        output_string = &#39;Failed to Create Association for a Dynamics 365 CRM client\nError: &#34;{0}&#34;&#39;
+                        raise SDKException(
+                            &#39;Subclient&#39;, &#39;102&#39;, output_string.format(error_message)
+                        )
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _table_association_info_json(self, tables_list: list):
+        &#34;&#34;&#34;
+            Private Method to create the association JSON for associating tables
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                tables_list     (list)--    List of tables to be associated to the content
+                    List Format:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be associated
+
+            Returns:
+                tables_info     (list)--    List of metadata info for the tables to be used for associating content
+        &#34;&#34;&#34;
+        tables_info: list = list()
+        _discovered_tables = self.discovered_tables
+
+        if not bool(_discovered_tables):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                               &#34;Discovered Tables is Empty.&#34;)
+
+        for _table in _discovered_tables:
+            _table_name, _parent_env_name = _table[&#34;displayName&#34;].lower(), _table[&#34;ParentWebGuid&#34;].lower()
+            try:
+                if (_parent_env_name, _table_name) in tables_list:
+                    _table_assoc_info = _table
+                    _table_assoc_info[&#34;user.userGUID&#34;] = _table.get(&#34;user&#34;).get(&#34;userGUID&#34;)
+                    tables_info.append(_table_assoc_info)
+            except TypeError:
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                   &#34;For Associating tables, content list should be a list of tuples&#34;)
+
+        if len(tables_info) == 0:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;None of the input tables were in the list of discovered tables&#34;)
+
+        return tables_info
+
+    def set_table_associations(self, tables_list: list, plan_name: str = str()):
+        &#34;&#34;&#34;
+            Method to add table associations
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                tables_list     (list)--    List of tables to be associated to the content
+                    List Format:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be associated
+                    Sample input:
+                        [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+        &#34;&#34;&#34;
+
+        plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+        tables_info = self._table_association_info_json(tables_list=tables_list)
+
+        _table_association_json = self._set_association_json(is_environment=False)
+        _table_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+            &#34;planId&#34;: plan_id
+        }
+        _table_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = tables_info
+        self._set_content_association(content_json=_table_association_json)
+
+    def _environment_association_info_json(self, environments_name: list):
+        &#34;&#34;&#34;
+            Method to create the association JSON for associating environments
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                environments_name     (list)--    List of environments to be associated to the content
+                    List Format:
+                        Each list element should be a string of the name of the environment
+
+            Returns:
+                environments_info     (list)--    List of metadata info for the environments to
+                                                    be used for associating content
+        &#34;&#34;&#34;
+        environments_info: list = list()
+        _discovered_envs = self.discovered_environments
+
+        if not bool(_discovered_envs):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                               &#34;Discovered Environments List is Empty&#34;)
+
+        for environment in _discovered_envs:
+            if environment[&#34;displayName&#34;] in environments_name:
+                _env_assoc_info = environment
+                _env_assoc_info[&#34;user.userGUID&#34;] = environment.get(&#34;user&#34;).get(&#34;userGUID&#34;)
+                _env_assoc_info[&#34;rawCommonFlag&#34;] = environment.get(&#34;commonFlags&#34;, 0)
+
+                environments_info.append(_env_assoc_info)
+
+        if len(environments_info) == 0:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                               &#34;None of the input environments were in the list of discovered environments&#34;)
+
+        return environments_info
+
+    def set_environment_associations(self, environments_name: list, plan_name: str = str()):
+        &#34;&#34;&#34;
+            Method to add environment associations
+            to a Dynamics 365 CRM client.
+
+            Arguments:
+                environments_name     (list)--    List of environments to be associated to the content
+                    List Format:
+                        Each list element should be a string of the name of the environment
+                    Sample Values:
+                        [&#39;testenv1&#39; , &#39;testenv2&#39;, &#39;testenv3&#39;]
+
+                plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+        &#34;&#34;&#34;
+        environments_info: list = self._environment_association_info_json(environments_name=environments_name)
+
+        if self._commcell_object.plans.has_plan(plan_name.lower()):
+            plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+        else:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                               &#34;Dynamics 365 Plan does not exist&#34;)
+
+        _env_association_json = self._set_association_json(is_environment=True)
+        _env_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+            &#34;planId&#34;: plan_id
+        }
+        _env_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = environments_info
+        self._set_content_association(content_json=_env_association_json)
+
+    def _json_for_backup_task(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to create the association JSON for backing up content for a Dynamics 365 subclient
+
+            Arguments:
+                content_list     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                _backup_task_json     (list)--    JSON for backing up the content
+        &#34;&#34;&#34;
+        _backup_task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
+        _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
+
+        backup_options = {
+            &#39;backupLevel&#39;: 2,  # Incremental
+            &#39;cloudAppOptions&#39;: {
+                &#39;userAccounts&#39;: _sub_client_content_json
+            }
+        }
+        _backup_task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
+        return _backup_task_json
+
+    def _backup_content_json(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to fetch the metadata properties for backing up content for a Dynamics 365 subclient
+
+            Arguments:
+                content_list     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                _bkp_content_json     (list)--    Metadata JSON for backing up that content
+        &#34;&#34;&#34;
+        _bkp_content_json = list()
+
+        if is_environment is True:
+            for environment in self.get_associated_environments(refresh=True):
+                if environment[&#34;name&#34;] in content_list:
+                    _env_bkp_info = environment[&#34;userAccountInfo&#34;]
+                    _bkp_content_json.append(_env_bkp_info)
+
+        elif is_environment is False:
+            for _table in self.get_associated_tables(refresh=True):
+                _table_name, _parent_env_name = _table[&#34;name&#34;].lower(), _table[&#34;environment_name&#34;].lower()
+                try:
+                    if (_parent_env_name, _table_name) in content_list:
+                        _table_bkp_info = _table[&#34;userAccountInfo&#34;]
+                        _bkp_content_json.append(_table_bkp_info)
+                except TypeError:
+                    raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                       &#34;For backing up tables, content list should be a list of tuples&#34;)
+
+        return _bkp_content_json
+
+    def _run_backup(self, backup_content: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Method to run backup for the content of a Dynamics 365 subclient
+
+            Arguments:
+                backup_content     (list)--    List of content to be backed up
+                    List Format, if content to be backed up is tables:
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+                    List Format, if content to be associated is environments:
+                        Each list element should be a string of the name of the environment
+
+                is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment)
+        backup_endpoint = self._services[&#39;CREATE_TASK&#39;]
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;POST&#34;, backup_endpoint, _backup_json)
+        return self._process_backup_response(flag, response)
+
+    def backup_tables(self, tables_list: list):
+        &#34;&#34;&#34;
+            Method to run backup for the specified tables of a Dynamics 365 subclient
+
+            Arguments:
+                tables_list     (list)--    List of tables to be backed up
+                    List Format
+                        Each list element should be a tuple of the format:
+                            (&#34;environment_name&#34;,&#34;table_name&#34;)
+                                environment_name is the name of the environment to which the table belongs to
+                                table_name is the name of the table to be backed up
+
+                    Sample input:
+                        [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=tables_list, is_environment=False)
+
+    def backup_environments(self, environments_list: list):
+        &#34;&#34;&#34;
+            Method to run backup for the specified environments of a Dynamics 365 subclient
+
+            Arguments:
+                environments_list     (list)--    List of environments to be backed up
+                    List Format, for backing up specified environments:
+                        Each list element should be a string of the name of the environment
+                    Sample List:
+                        [&#39;testenv1&#39;,&#39;testenv2&#39;,&#39;testenv3&#39;]
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=environments_list, is_environment=True)
+
+    def _restore_content_json(self):
+        &#34;&#34;&#34;
+            Restore JSON for restoring content for a Dynamics 365 subclient
+
+            Returns:
+                _restore_task_json          (dict)--    JSON to be used for running a restore task
+        &#34;&#34;&#34;
+        _restore_task_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [self._subclient_properties[&#39;subClientEntity&#39;]],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 3,
+                            &#34;operationType&#34;: 1001
+                        },
+                        &#34;options&#34;: {
+                            &#34;restoreOptions&#34;: {
+                                &#34;browseOption&#34;: {
+                                    &#34;timeRange&#34;: {}
+                                },
+                                &#34;commonOptions&#34;: {
+                                    &#34;skip&#34;: True,
+                                    &#34;overwriteFiles&#34;: False,
+                                    &#34;unconditionalOverwrite&#34;: False
+                                },
+                                &#34;destination&#34;: {
+                                    &#34;destAppId&#34;: self._app_id,
+                                    &#34;inPlace&#34;: True,
+                                    &#34;destClient&#34;: {
+                                        &#34;clientId&#34;: int(self._client_object.client_id),
+                                        &#34;clientName&#34;: self._client_object.client_name
+                                    },
+                                    &#34;destPath&#34;: []
+                                },
+                                &#34;fileOption&#34;: {
+                                    &#34;sourceItem&#34;: list()
+                                },
+                                &#34;cloudAppsRestoreOptions&#34;: {
+                                    &#34;instanceType&#34;: self._instance_type,
+                                    &#34;d365RestoreOptions&#34;: {
+                                        &#34;restoreAllMatching&#34;: False,
+                                        &#34;restoreToDynamics365&#34;: True,
+                                        &#34;overWriteItems&#34;: False,
+                                        &#34;destLocation&#34;: &#34;&#34;,
+                                        &#34;restoreUsingFindQuery&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        return _restore_task_json
+
+    def _get_restore_item_path(self, content_list: list, is_environment: bool = False):
+        &#34;&#34;&#34;
+            Get the complete path of the content for running a restore job
+
+            Arguments:
+                content_list            (list)--        List of content ot be restored
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                is_environment          (bool)--        Whether the content is environment or tables
+            Returns:
+                __restore_content_list  (list)--        List of complete path for running restore job for the specifiec content
+        &#34;&#34;&#34;
+        __restore_content_list = list()
+
+        if is_environment is True:
+            for environment in self.get_associated_environments(refresh=True):
+                if environment[&#34;name&#34;] in content_list:
+                    _restore_id = environment[&#34;id&#34;]
+                    __restore_content_list.append(_restore_id)
+
+        elif is_environment is False:
+            for _table in self.get_associated_tables(refresh=True):
+                _table_name, _parent_env_name = _table[&#34;name&#34;].lower(), _table[&#34;environment_name&#34;].lower()
+                try:
+                    if (_parent_env_name, _table_name) in content_list:
+                        _id = _table.get(&#34;userAccountInfo&#34;).get(&#34;smtpAddress&#34;).split(&#39;/&#39;)
+                        _table_id = _id[-1]
+                        _env_id = _id[-2]
+                        _restore_id = f&#34;{_env_id}/{_table_id}&#34;
+                        __restore_content_list.append(_restore_id)
+
+                except TypeError:
+                    raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
+                                       &#34;For restoring the tables, content list should be a list of tuples&#34;)
+        __restore_content_list = list(
+            map(lambda _restore_id: f&#34;/tenant/{_restore_id}&#34;, __restore_content_list)
+        )
+        return __restore_content_list
+
+    def _prepare_in_place_restore_json(self,
+                                       restore_content: list,
+                                       restore_path: list = None,
+                                       overwrite: bool = True,
+                                       job_id: int = None,
+                                       is_environment: bool = False
+                                       ):
+        &#34;&#34;&#34;
+            Method to prepare JSON/ Python dict for  in- place restore for the content specified.
+
+            Arguments:
+                restore_content         (str)--     List of the content to restore
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                restore_path            (list)--    List of the paths of the items to restore
+                    Instead of passing, the restore content, restore path can be passed
+                    Restore path, is the path for each item, that is to be restored.
+                        Path is returned by the browse operation
+
+                is_environment          (bool)--    Whether to content to be restored is a table or an environment
+                overwrite               (bool)--    Skip or overwrite content
+                job_id                  (int)--     Job ID for point in time restores
+            Returns:
+                _restore_content_json   (dict)--    Python dict to be used for restore content request
+        &#34;&#34;&#34;
+        _restore_content_json = self._restore_content_json()
+        if restore_path is None:
+            restore_path = self._get_restore_item_path(content_list=restore_content, is_environment=is_environment)
+
+        _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;fileOption&#34;][
+            &#34;sourceItem&#34;] = restore_path
+
+        if job_id is not None:
+            _job = self._commcell_object.job_controller.get(job_id)
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][&#34;timeRange&#34;][
+                &#34;toTime&#34;] = _job.end_timestamp
+
+        if overwrite is True:
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][&#34;overwriteFiles&#34;] = True
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][
+                &#34;skip&#34;] = False
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;commonOptions&#34;][
+                &#34;unconditionalOverwrite&#34;] = True
+            _restore_content_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
+                [&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] \
+                [&#34;d365RestoreOptions&#34;][&#34;overWriteItems&#34;] = True
+        return _restore_content_json
+
+    def restore_in_place(
+            self,
+            restore_content: list = None,
+            restore_path: list = None,
+            is_environment: bool = False,
+            overwrite: bool = True,
+            job_id: int = None):
+        &#34;&#34;&#34;
+            Method to run in- place restore for the content specified.
+
+            Arguments:
+                restore_content         (str)--     List of the content to restore
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+                        Sample Input:
+                            [ &#39;testenv1&#39; , &#39;testenv2&#39; , &#39;testenv3&#39; ]
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+                restore_path            (list)--    List of the paths of the items to restore
+                    Instead of passing, the restore content, restore path can be passed
+                    Restore path, is the path for each item, that is to be restored.
+                        Path is returned by the browse operation
+
+                is_environment          (bool)--    Whether to content to be restored is a table or an environment
+                overwrite               (bool)--    Skip or overwrite content
+                job_id                  (int)--     Job ID for point in time restores
+            Returns:
+                restore_job             (job)--     Instance of CVPySDK.Job for the restore job
+        &#34;&#34;&#34;
+
+        if restore_content is None and restore_path is None:
+            raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;Need to have either of restore content or restore path&#34;)
+
+        _restore_json = self._prepare_in_place_restore_json(
+            restore_content=restore_content,
+            restore_path=restore_path,
+            is_environment=is_environment,
+            job_id=job_id,
+            overwrite=overwrite)
+        return self._process_restore_response(_restore_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">CloudAppsSubclient</a></li>
 <li><a title="cvpysdk.subclient.Subclient" href="../../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_environments"><code class="name">var <span class="ident">discovered_environments</span></code></dt>
+<dd>
+<div class="desc"><p>Property to get the environments discovered by the Dynamics 365 subclient.</p>
+<p>If updated list is required, call refresh method prior to using this property.</p>
+<h2 id="returns">Returns</h2>
+<p>discovered_environments
+(dict)&ndash;
+Dictionary of discovered environments</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L126-L138" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def discovered_environments(self):
+    &#34;&#34;&#34;
+        Property to get the environments discovered by the Dynamics 365 subclient.
+
+        If updated list is required, call refresh method prior to using this property.
+
+        Returns:
+            discovered_environments       (dict)--    Dictionary of discovered environments
+    &#34;&#34;&#34;
+    if not bool(self._discovered_environments):
+        self.discover_environments()
+    return self._discovered_environments</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_tables"><code class="name">var <span class="ident">discovered_tables</span></code></dt>
+<dd>
+<div class="desc"><p>Property to get the tables discovered by the Dynamics 365 subclient.</p>
+<p>If updated list is required, call refresh method prior to using this property.</p>
+<h2 id="returns">Returns</h2>
+<p>discovered_tables
+(dict)&ndash;
+Dictionary of discovered tables</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L140-L152" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def discovered_tables(self):
+    &#34;&#34;&#34;
+        Property to get the tables discovered by the Dynamics 365 subclient.
+
+        If updated list is required, call refresh method prior to using this property.
+
+        Returns:
+            discovered_tables      (dict)--    Dictionary of discovered tables
+    &#34;&#34;&#34;
+    if not bool(self._discovered_tables):
+        self.discover_tables()
+    return self._discovered_tables</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_environments"><code class="name flex">
+<span>def <span class="ident">backup_environments</span></span>(<span>self, environments_list: list)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to run backup for the specified environments of a Dynamics 365 subclient</p>
+<h2 id="arguments">Arguments</h2>
+<p>environments_list
+(list)&ndash;
+List of environments to be backed up
+List Format, for backing up specified environments:
+Each list element should be a string of the name of the environment
+Sample List:
+['testenv1','testenv2','testenv3']</p>
+<h2 id="returns">Returns</h2>
+<p>backup_job
+(Job)&ndash;
+CVPySDK.Job class instance for that particular backup job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L618-L632" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backup_environments(self, environments_list: list):
+    &#34;&#34;&#34;
+        Method to run backup for the specified environments of a Dynamics 365 subclient
+
+        Arguments:
+            environments_list     (list)--    List of environments to be backed up
+                List Format, for backing up specified environments:
+                    Each list element should be a string of the name of the environment
+                Sample List:
+                    [&#39;testenv1&#39;,&#39;testenv2&#39;,&#39;testenv3&#39;]
+
+        Returns:
+            backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+    &#34;&#34;&#34;
+    return self._run_backup(backup_content=environments_list, is_environment=True)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_tables"><code class="name flex">
+<span>def <span class="ident">backup_tables</span></span>(<span>self, tables_list: list)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to run backup for the specified tables of a Dynamics 365 subclient</p>
+<h2 id="arguments">Arguments</h2>
+<p>tables_list
+(list)&ndash;
+List of tables to be backed up
+List Format
+Each list element should be a tuple of the format:
+("environment_name","table_name")
+environment_name is the name of the environment to which the table belongs to
+table_name is the name of the table to be backed up</p>
+<pre><code>Sample input:
+    [ ("testenv1" , "account") , ("testenv2","note") , ("testenv1","attachments")]
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>backup_job
+(Job)&ndash;
+CVPySDK.Job class instance for that particular backup job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L599-L616" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backup_tables(self, tables_list: list):
+    &#34;&#34;&#34;
+        Method to run backup for the specified tables of a Dynamics 365 subclient
+
+        Arguments:
+            tables_list     (list)--    List of tables to be backed up
+                List Format
+                    Each list element should be a tuple of the format:
+                        (&#34;environment_name&#34;,&#34;table_name&#34;)
+                            environment_name is the name of the environment to which the table belongs to
+                            table_name is the name of the table to be backed up
+
+                Sample input:
+                    [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+        Returns:
+            backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+    &#34;&#34;&#34;
+    return self._run_backup(backup_content=tables_list, is_environment=False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_environments"><code class="name flex">
+<span>def <span class="ident">discover_environments</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get the environments discovered from the Dynamics 365 CRM subclient</p>
+<h2 id="returns">Returns</h2>
+<p>discovered_environments
+(dict)&ndash;
+Dictionary of discovered environments</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L115-L124" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def discover_environments(self):
+    &#34;&#34;&#34;
+        Method to get the environments discovered from the Dynamics 365 CRM subclient
+
+        Returns:
+            discovered_environments       (dict)--    Dictionary of discovered environments
+
+    &#34;&#34;&#34;
+    self._discovered_environments = self._instance_object.discover_content(environment_discovery=True)
+    return self._discovered_environments</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_tables"><code class="name flex">
+<span>def <span class="ident">discover_tables</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get the tables discovered from the MS Dynamics 365 CRM subclient</p>
+<h2 id="returns">Returns</h2>
+<p>discovered_tables
+(dict)&ndash;
+Dictionary of returned tables</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L104-L113" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def discover_tables(self):
+    &#34;&#34;&#34;
+        Method to get the tables discovered from the MS Dynamics 365 CRM subclient
+
+        Returns:
+            discovered_tables       (dict)--    Dictionary of returned tables
+
+    &#34;&#34;&#34;
+    self._discovered_tables = self._instance_object.discover_content(environment_discovery=False)
+    return self._discovered_tables</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_environments"><code class="name flex">
+<span>def <span class="ident">get_associated_environments</span></span>(<span>self, refresh: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get the environments associated with a Dynamics 365 CRM client</p>
+<h2 id="arguments">Arguments</h2>
+<p>refresh
+(bool)&ndash;
+Whether to refresh the dictionary contents
+If True
+get associated environments, will fetch the latest associations and return them</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt>associated_environments
+(list)&ndash;
+List of environments associated with the client</dt>
+<dt>Format:</dt>
+<dt>Each list element will be a dictionary denoting that particular environment</dt>
+<dt>Dictionary keys/ format will be:</dt>
+<dt><code>
+name </code></dt>
+<dd>
+<pre><code>     name of the table
+plan:               Dynamics 365 plan used for content association
+is_environment:     True for an environment
+userAccountInfo:    Metadata info for that environment
+</code></pre>
+<p>Sample Response:
+{
+'name': 'sample-environment-name',
+'id': '<environment-ID>&gt;',
+'userAccountInfo':
+{
+'aliasName': 'https://<org-url-name>.crm.dynamics.com',
+'itemType': 0,
+'ItemClassification': 0,
+'displayName': 'org-environment-display-name',
+'BackupSetId': 0,
+'isAutoDiscoveredUser': False,
+'lastBackupJobRanTime': 'time': <last-backup-time>,
+'IdxCollectionTime': {'time': <last-index-playback-time>},
+user': {
+'<em>type</em>': 13,
+'userGUID': '<env-GUID>'
+}
+},
+'plan': {'planName': '<name-of-plan>', 'planId': <id-of-plan>},
+'is_environment': True}</p>
+</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L272-L316" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_associated_environments(self, refresh: bool = False):
+    &#34;&#34;&#34;
+        Method to get the environments associated with a Dynamics 365 CRM client
+
+        Arguments:
+            refresh                     (bool)--    Whether to refresh the dictionary contents
+                If True
+                    get associated environments, will fetch the latest associations and return them
+
+        Returns:
+            associated_environments     (list)--    List of environments associated with the client
+                Format:
+                    Each list element will be a dictionary denoting that particular environment
+                    Dictionary keys/ format will be:
+                        name :              name of the table
+                        plan:               Dynamics 365 plan used for content association
+                        is_environment:     True for an environment
+                        userAccountInfo:    Metadata info for that environment
+
+                Sample Response:
+                    {
+                            &#39;name&#39;: &#39;sample-environment-name&#39;,
+                            &#39;id&#39;: &#39;&lt;environment-ID&gt;&gt;&#39;,
+                            &#39;userAccountInfo&#39;:
+                            {
+                                &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com&#39;,
+                                &#39;itemType&#39;: 0,
+                                &#39;ItemClassification&#39;: 0,
+                                &#39;displayName&#39;: &#39;org-environment-display-name&#39;,
+                                &#39;BackupSetId&#39;: 0,
+                                &#39;isAutoDiscoveredUser&#39;: False,
+                                &#39;lastBackupJobRanTime&#39;: &#39;time&#39;: &lt;last-backup-time&gt;,
+                                &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-playback-time&gt;},
+                                user&#39;: {
+                                    &#39;_type_&#39;: 13,
+                                    &#39;userGUID&#39;: &#39;&lt;env-GUID&gt;&#39;
+                                    }
+                            },
+                            &#39;plan&#39;: {&#39;planName&#39;: &#39;&lt;name-of-plan&gt;&#39;, &#39;planId&#39;: &lt;id-of-plan&gt;},
+                             &#39;is_environment&#39;: True}
+
+    &#34;&#34;&#34;
+    if refresh is True:
+        self._associated_environments = self._get_associated_content(is_environment=True)
+    return self._associated_environments</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_tables"><code class="name flex">
+<span>def <span class="ident">get_associated_tables</span></span>(<span>self, refresh: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get the tables associated with a Dynamics 365 CRM client</p>
+<h2 id="arguments">Arguments</h2>
+<p>refresh
+(bool)&ndash;
+Whether to refresh the dictionary contents
+If True
+get associated environments, will fetch the latest associations and return them</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt>associated_tables
+(list)&ndash;
+List of tables associated with the client</dt>
+<dt>Format:</dt>
+<dt>Each list element will be a dictionary denoting that particular
+table</dt>
+<dt>Dictionary keys/ format will be:</dt>
+<dt><code>
+name </code></dt>
+<dd>
+<p>name of the table
+environment_name : name of the environment to which the table belongs to
+plan: Dynamics 365 plan used for content association
+is_environment: False for a Table
+userAccountInfo:
+Metadata info for that table</p>
+<p>Sample Response:
+{
+'name': 'account',
+'environment_name': 'sample-environment-name',
+'userAccountInfo':
+{
+'aliasName': 'https://<org-url-name>.crm.dynamics.com/api/data/v9.1/account',
+'displayName': 'Account,
+'ParentWebGuid': 'org-environment-name',
+'lastBackupJobRanTime': {'time': <last-backup-time>},
+'IdxCollectionTime': {'time': <last-index-time>},
+'user': {
+'<em>type</em>': 13,
+'userGUID': '<table-GUID>&gt;'
+}
+},
+'plan': {
+'planName': '<PLAN-NAME>', 'planId': <plan-id>},
+'is_environment': False
+}
+Environment name/ URL in the sample response is for description purpose only</p>
+</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L225-L270" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_associated_tables(self, refresh: bool = False):
+    &#34;&#34;&#34;
+        Method to get the tables associated with a Dynamics 365 CRM client
+
+        Arguments:
+            refresh                     (bool)--    Whether to refresh the dictionary contents
+                If True
+                    get associated environments, will fetch the latest associations and return them
+
+        Returns:
+            associated_tables     (list)--    List of tables associated with the client
+                Format:
+                    Each list element will be a dictionary denoting that particular  table
+                    Dictionary keys/ format will be:
+                        name : name of the table
+                        environment_name : name of the environment to which the table belongs to
+                        plan: Dynamics 365 plan used for content association
+                        is_environment: False for a Table
+                        userAccountInfo:    Metadata info for that table
+
+                Sample Response:
+                    {
+                        &#39;name&#39;: &#39;account&#39;,
+                        &#39;environment_name&#39;: &#39;sample-environment-name&#39;,
+                        &#39;userAccountInfo&#39;:
+                            {
+                            &#39;aliasName&#39;: &#39;https://&lt;org-url-name&gt;.crm.dynamics.com/api/data/v9.1/account&#39;,
+                            &#39;displayName&#39;: &#39;Account,
+                            &#39;ParentWebGuid&#39;: &#39;org-environment-name&#39;,
+                            &#39;lastBackupJobRanTime&#39;: {&#39;time&#39;: &lt;last-backup-time&gt;},
+                            &#39;IdxCollectionTime&#39;: {&#39;time&#39;: &lt;last-index-time&gt;},
+                            &#39;user&#39;: {
+                                &#39;_type_&#39;: 13,
+                                 &#39;userGUID&#39;: &#39;&lt;table-GUID&gt;&gt;&#39;
+                                 }
+                            },
+                        &#39;plan&#39;: {
+                            &#39;planName&#39;: &#39;&lt;PLAN-NAME&gt;&#39;, &#39;planId&#39;: &lt;plan-id&gt;},
+                        &#39;is_environment&#39;: False
+                    }
+                Environment name/ URL in the sample response is for description purpose only
+
+    &#34;&#34;&#34;
+    if refresh is True:
+        self._associated_tables = self._get_associated_content(is_environment=False)
+    return self._associated_tables</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place"><code class="name flex">
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, restore_content: list = None, restore_path: list = None, is_environment: bool = False, overwrite: bool = True, job_id: int = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to run in- place restore for the content specified.</p>
+<h2 id="arguments">Arguments</h2>
+<p>restore_content
+(str)&ndash;
+List of the content to restore
+If content is environment,
+List format:
+list of strings, with each string corresponding to the environments display name, in lower case
+Sample Input:
+[ 'testenv1' , 'testenv2' , 'testenv3' ]</p>
+<pre><code>If content is tables:
+    List format:
+        list of tuples, with each tuple, of the form: "environment_name","table_name"
+            where environment name if the name of the environment to which the table belongs to
+    Sample input:
+        [ ("testenv1" , "account") , ("testenv2","note") , ("testenv1","attachments")]
+</code></pre>
+<p>restore_path
+(list)&ndash;
+List of the paths of the items to restore
+Instead of passing, the restore content, restore path can be passed
+Restore path, is the path for each item, that is to be restored.
+Path is returned by the browse operation</p>
+<p>is_environment
+(bool)&ndash;
+Whether to content to be restored is a table or an environment
+overwrite
+(bool)&ndash;
+Skip or overwrite content
+job_id
+(int)&ndash;
+Job ID for point in time restores</p>
+<h2 id="returns">Returns</h2>
+<p>restore_job
+(job)&ndash;
+Instance of CVPySDK.Job for the restore job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L803-L849" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_in_place(
+        self,
+        restore_content: list = None,
+        restore_path: list = None,
+        is_environment: bool = False,
+        overwrite: bool = True,
+        job_id: int = None):
+    &#34;&#34;&#34;
+        Method to run in- place restore for the content specified.
+
+        Arguments:
+            restore_content         (str)--     List of the content to restore
+                If content is environment,
+                    List format:
+                        list of strings, with each string corresponding to the environments display name, in lower case
+                    Sample Input:
+                        [ &#39;testenv1&#39; , &#39;testenv2&#39; , &#39;testenv3&#39; ]
+
+                If content is tables:
+                    List format:
+                        list of tuples, with each tuple, of the form: &#34;environment_name&#34;,&#34;table_name&#34;
+                            where environment name if the name of the environment to which the table belongs to
+                    Sample input:
+                        [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+            restore_path            (list)--    List of the paths of the items to restore
+                Instead of passing, the restore content, restore path can be passed
+                Restore path, is the path for each item, that is to be restored.
+                    Path is returned by the browse operation
+
+            is_environment          (bool)--    Whether to content to be restored is a table or an environment
+            overwrite               (bool)--    Skip or overwrite content
+            job_id                  (int)--     Job ID for point in time restores
+        Returns:
+            restore_job             (job)--     Instance of CVPySDK.Job for the restore job
+    &#34;&#34;&#34;
+
+    if restore_content is None and restore_path is None:
+        raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;Need to have either of restore content or restore path&#34;)
+
+    _restore_json = self._prepare_in_place_restore_json(
+        restore_content=restore_content,
+        restore_path=restore_path,
+        is_environment=is_environment,
+        job_id=job_id,
+        overwrite=overwrite)
+    return self._process_restore_response(_restore_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_environment_associations"><code class="name flex">
+<span>def <span class="ident">set_environment_associations</span></span>(<span>self, environments_name: list, plan_name: str = '')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to add environment associations
+to a Dynamics 365 CRM client.</p>
+<h2 id="arguments">Arguments</h2>
+<p>environments_name
+(list)&ndash;
+List of environments to be associated to the content
+List Format:
+Each list element should be a string of the name of the environment
+Sample Values:
+['testenv1' , 'testenv2', 'testenv3']</p>
+<p>plan_name
+(str)&ndash;
+Name of the Dynamics 365 Plan to be used for content association</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L473-L501" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_environment_associations(self, environments_name: list, plan_name: str = str()):
+    &#34;&#34;&#34;
+        Method to add environment associations
+        to a Dynamics 365 CRM client.
+
+        Arguments:
+            environments_name     (list)--    List of environments to be associated to the content
+                List Format:
+                    Each list element should be a string of the name of the environment
+                Sample Values:
+                    [&#39;testenv1&#39; , &#39;testenv2&#39;, &#39;testenv3&#39;]
+
+            plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+    &#34;&#34;&#34;
+    environments_info: list = self._environment_association_info_json(environments_name=environments_name)
+
+    if self._commcell_object.plans.has_plan(plan_name.lower()):
+        plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+    else:
+        raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                           &#34;Dynamics 365 Plan does not exist&#34;)
+
+    _env_association_json = self._set_association_json(is_environment=True)
+    _env_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+        &#34;planId&#34;: plan_id
+    }
+    _env_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = environments_info
+    self._set_content_association(content_json=_env_association_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_table_associations"><code class="name flex">
+<span>def <span class="ident">set_table_associations</span></span>(<span>self, tables_list: list, plan_name: str = '')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to add table associations
+to a Dynamics 365 CRM client.</p>
+<h2 id="arguments">Arguments</h2>
+<p>tables_list
+(list)&ndash;
+List of tables to be associated to the content
+List Format:
+Each list element should be a tuple of the format:
+("environment_name","table_name")
+environment_name is the name of the environment to which the table belongs to
+table_name is the name of the table to be associated
+Sample input:
+[ ("testenv1" , "account") , ("testenv2","note") , ("testenv1","attachments")]</p>
+<p>plan_name
+(str)&ndash;
+Name of the Dynamics 365 Plan to be used for content association</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L409-L436" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_table_associations(self, tables_list: list, plan_name: str = str()):
+    &#34;&#34;&#34;
+        Method to add table associations
+        to a Dynamics 365 CRM client.
+
+        Arguments:
+            tables_list     (list)--    List of tables to be associated to the content
+                List Format:
+                    Each list element should be a tuple of the format:
+                        (&#34;environment_name&#34;,&#34;table_name&#34;)
+                            environment_name is the name of the environment to which the table belongs to
+                            table_name is the name of the table to be associated
+                Sample input:
+                    [ (&#34;testenv1&#34; , &#34;account&#34;) , (&#34;testenv2&#34;,&#34;note&#34;) , (&#34;testenv1&#34;,&#34;attachments&#34;)]
+
+            plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
+    &#34;&#34;&#34;
+
+    plan_id = int(self._commcell_object.plans[plan_name.lower()])
+
+    tables_info = self._table_association_info_json(tables_list=tables_list)
+
+    _table_association_json = self._set_association_json(is_environment=False)
+    _table_association_json[&#34;cloudAppAssociation&#34;][&#34;plan&#34;] = {
+        &#34;planId&#34;: plan_id
+    }
+    _table_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = tables_info
+    self._set_content_association(content_json=_table_association_json)</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">CloudAppsSubclient</a></b></code>:
@@ -183,6 +2404,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.is_on_demand_subclient" href="../../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.is_trueup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.last_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.list_media" href="../../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.name" href="../../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.network_agent" href="../../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
@@ -190,7 +2412,6 @@ default: None</p>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
-<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
@@ -278,6 +2499,19 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient">MSDynamics365Subclient</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_environments" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_environments">backup_environments</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_tables">backup_tables</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_environments" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_environments">discover_environments</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_tables">discover_tables</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_environments" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_environments">discovered_environments</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_tables">discovered_tables</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_environments" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_environments">get_associated_environments</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_tables">get_associated_tables</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place">restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_environment_associations" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_environment_associations">set_environment_associations</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_table_associations" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_table_associations">set_table_associations</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

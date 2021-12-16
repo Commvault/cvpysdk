@@ -83,10 +83,24 @@ starts the table level restore job</p>
 <p>_table_level_restore_request_json() &ndash;
 returns a json to be sent to the server for
 table level restore job</p>
+<p>mssql_instance_prop()
+&ndash;
+sets instance properties for the mssql instance</p>
+<p>SQLServerInstance Attributes:</p>
+<pre><code>ag_group_name           --  returns the Availability Group name for an AG instance
+
+ag_primary_replica      --  returns the Availability Group primary replica for an AG instance
+
+ag_replicas_list        --  returns the Availability Group replicas list for an AG instance
+
+ag_listener_list        --  returns the Availability Group listener list for an AG instance
+
+mssql_instance_prop     --  returns the mssql instance properties
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1-L1250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1-L1339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -126,25 +140,25 @@ SQLServerInstance:
     _get_sql_restore_options()      --  returns the dict containing destination sql server names
 
     _run_backup()                   --  runs full backup for this subclients and appends the
-                                            job object to the return list
+    job object to the return list
 
     _process_browse_request()       --  processes response received for Browse request
 
     _recoverypoint_request_json()   -- returns a json to be sent to server to create
-                                            a recovery point
+    a recovery point
 
-    get_recovery_points()         --    lists all the recovery points
+    get_recovery_points()           --    lists all the recovery points
 
     _process_recovery_point_request() --  starts the recovery point job and process
-                                                the response
+    the response
 
     backup()                        --  runs full backup for all subclients associated
-                                            with this instance
+    with this instance
 
     browse()                        --  gets the content of the backup for this instance
 
     browse_in_time()                --  gets the content of the backup for this instance
-                                            in the time range specified
+    in the time range specified
 
     restore()                       --  runs the restore job for specified
 
@@ -155,11 +169,23 @@ SQLServerInstance:
     table_level_restore()           --  starts the table level restore job
 
     _table_level_restore_request_json() --  returns a json to be sent to the server for
-                                            table level restore job
+    table level restore job
+
+    mssql_instance_prop()           --  sets instance properties for the mssql instance
+
+SQLServerInstance Attributes:
+
+    ag_group_name           --  returns the Availability Group name for an AG instance
+
+    ag_primary_replica      --  returns the Availability Group primary replica for an AG instance
+
+    ag_replicas_list        --  returns the Availability Group replicas list for an AG instance
+
+    ag_listener_list        --  returns the Availability Group listener list for an AG instance
+
+    mssql_instance_prop     --  returns the mssql instance properties
 
 &#34;&#34;&#34;
-
-from __future__ import unicode_literals
 
 import re
 import time
@@ -189,7 +215,43 @@ class SQLServerInstance(Instance):
 
         super(SQLServerInstance, self)._get_instance_properties()
 
+        self._ag_group_name = None
+        self._primary_replica = None
+        self._replica_list = []
+        self._ag_group_listener_list = []
+
         self._mssql_instance_prop = self._properties.get(&#39;mssqlInstance&#39;, {})
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;INSTANCE&#39;] %self._instance_id + &#34;?propertyLevel=20&#34;
+        )
+
+        if flag:
+            if response.json():
+                self._mssql_instance_prop = response.json()[&#39;instanceProperties&#39;][0][&#39;mssqlInstance&#39;]
+
+        if &#39;agProperties&#39; in self._mssql_instance_prop:
+            self.ag_group_name = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;name&#39;)
+            self.ag_primary_replica = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;primaryReplicaServerName&#39;)
+
+            listener_list_tmp = []
+            listener_list = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;SQLAvailabilityGroupListenerList&#39;, {})
+            for listener in listener_list:
+                self.ag_listener_list.append(listener[&#39;availabilityGroupListenerName&#39;])
+
+            replica_list = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;SQLAvailabilityReplicasList&#39;, [{}])
+            if replica_list:
+                for replica in replica_list[&#39;SQLAvailabilityReplicasList&#39;]:
+                    replica_dict = {
+                        &#34;serverName&#34; : replica[&#39;name&#39;],
+                        &#34;clientId&#34; : replica[&#39;replicaClient&#39;][&#39;clientId&#39;],
+                        &#34;clientName&#34;: replica[&#39;replicaClient&#39;][&#39;clientName&#39;]
+                    }
+                    self.ag_replicas_list.append(replica_dict)
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;get the all instance related properties of this instance.
@@ -208,6 +270,46 @@ class SQLServerInstance(Instance):
                 }
         }
         return instance_json
+
+    @property
+    def ag_group_name(self):
+        &#34;&#34;&#34;Returns the Availability Group Name&#34;&#34;&#34;
+        return self._ag_group_name
+
+    @property
+    def ag_primary_replica(self):
+        &#34;&#34;&#34;Returns the Availability Group Primary Replica&#34;&#34;&#34;
+        return self._primary_replica
+
+    @property
+    def ag_replicas_list(self):
+        &#34;&#34;&#34;Returns the Availability Group Replicas List&#34;&#34;&#34;
+        return self._replica_list
+
+    @property
+    def ag_listener_list(self):
+        &#34;&#34;&#34;Returns the Availability Group Listener List&#34;&#34;&#34;
+        return self._ag_group_listener_list
+
+    @ag_group_name.setter
+    def ag_group_name(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Name&#34;&#34;&#34;
+        self._ag_group_name = value
+
+    @ag_primary_replica.setter
+    def ag_primary_replica(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Primary Replica&#34;&#34;&#34;
+        self._primary_replica = value
+
+    @ag_replicas_list.setter
+    def ag_replicas_list(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Replicas List&#34;&#34;&#34;
+        self._replica_list = value
+
+    @ag_listener_list.setter
+    def ag_listener_list(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Listener List&#34;&#34;&#34;
+        self._ag_group_listener_list = value
 
     def _restore_request_json(
             self,
@@ -255,13 +357,14 @@ class SQLServerInstance(Instance):
 
         if destination_instance is None:
             destination_instance = (self.instance_name).lower()
-        else:
-            if destination_instance not in self.destination_instances_dict:
-                raise SDKException(
-                    &#39;Instance&#39;,
-                    &#39;102&#39;,
-                    &#39;No Instance exists with name: {0}&#39;.format(destination_instance)
-                )
+
+        if destination_instance not in self.destination_instances_dict:
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#39;SQL Instance [{0}] not suitable for restore destination or does not exist.&#39;
+                    .format(destination_instance)
+            )
 
         destination_client_id = int(
             self.destination_instances_dict[destination_instance][&#39;clientId&#39;]
@@ -1376,7 +1479,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L86-L1250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L98-L1339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLServerInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a SQL Server instance,
@@ -1394,7 +1497,43 @@ default: None</p>
 
         super(SQLServerInstance, self)._get_instance_properties()
 
+        self._ag_group_name = None
+        self._primary_replica = None
+        self._replica_list = []
+        self._ag_group_listener_list = []
+
         self._mssql_instance_prop = self._properties.get(&#39;mssqlInstance&#39;, {})
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;INSTANCE&#39;] %self._instance_id + &#34;?propertyLevel=20&#34;
+        )
+
+        if flag:
+            if response.json():
+                self._mssql_instance_prop = response.json()[&#39;instanceProperties&#39;][0][&#39;mssqlInstance&#39;]
+
+        if &#39;agProperties&#39; in self._mssql_instance_prop:
+            self.ag_group_name = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;name&#39;)
+            self.ag_primary_replica = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;primaryReplicaServerName&#39;)
+
+            listener_list_tmp = []
+            listener_list = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;availabilityGroup&#39;, [{}]).get(&#39;SQLAvailabilityGroupListenerList&#39;, {})
+            for listener in listener_list:
+                self.ag_listener_list.append(listener[&#39;availabilityGroupListenerName&#39;])
+
+            replica_list = self.mssql_instance_prop.get(
+                &#39;agProperties&#39;, {}).get(&#39;SQLAvailabilityReplicasList&#39;, [{}])
+            if replica_list:
+                for replica in replica_list[&#39;SQLAvailabilityReplicasList&#39;]:
+                    replica_dict = {
+                        &#34;serverName&#34; : replica[&#39;name&#39;],
+                        &#34;clientId&#34; : replica[&#39;replicaClient&#39;][&#39;clientId&#39;],
+                        &#34;clientName&#34;: replica[&#39;replicaClient&#39;][&#39;clientName&#39;]
+                    }
+                    self.ag_replicas_list.append(replica_dict)
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;get the all instance related properties of this instance.
@@ -1413,6 +1552,46 @@ default: None</p>
                 }
         }
         return instance_json
+
+    @property
+    def ag_group_name(self):
+        &#34;&#34;&#34;Returns the Availability Group Name&#34;&#34;&#34;
+        return self._ag_group_name
+
+    @property
+    def ag_primary_replica(self):
+        &#34;&#34;&#34;Returns the Availability Group Primary Replica&#34;&#34;&#34;
+        return self._primary_replica
+
+    @property
+    def ag_replicas_list(self):
+        &#34;&#34;&#34;Returns the Availability Group Replicas List&#34;&#34;&#34;
+        return self._replica_list
+
+    @property
+    def ag_listener_list(self):
+        &#34;&#34;&#34;Returns the Availability Group Listener List&#34;&#34;&#34;
+        return self._ag_group_listener_list
+
+    @ag_group_name.setter
+    def ag_group_name(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Name&#34;&#34;&#34;
+        self._ag_group_name = value
+
+    @ag_primary_replica.setter
+    def ag_primary_replica(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Primary Replica&#34;&#34;&#34;
+        self._primary_replica = value
+
+    @ag_replicas_list.setter
+    def ag_replicas_list(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Replicas List&#34;&#34;&#34;
+        self._replica_list = value
+
+    @ag_listener_list.setter
+    def ag_listener_list(self, value):
+        &#34;&#34;&#34;Sets the Availability Group Listener List&#34;&#34;&#34;
+        self._ag_group_listener_list = value
 
     def _restore_request_json(
             self,
@@ -1460,13 +1639,14 @@ default: None</p>
 
         if destination_instance is None:
             destination_instance = (self.instance_name).lower()
-        else:
-            if destination_instance not in self.destination_instances_dict:
-                raise SDKException(
-                    &#39;Instance&#39;,
-                    &#39;102&#39;,
-                    &#39;No Instance exists with name: {0}&#39;.format(destination_instance)
-                )
+
+        if destination_instance not in self.destination_instances_dict:
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#39;SQL Instance [{0}] not suitable for restore destination or does not exist.&#39;
+                    .format(destination_instance)
+            )
 
         destination_client_id = int(
             self.destination_instances_dict[destination_instance][&#39;clientId&#39;]
@@ -2550,13 +2730,69 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_group_name"><code class="name">var <span class="ident">ag_group_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Availability Group Name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L170-L173" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ag_group_name(self):
+    &#34;&#34;&#34;Returns the Availability Group Name&#34;&#34;&#34;
+    return self._ag_group_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_listener_list"><code class="name">var <span class="ident">ag_listener_list</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Availability Group Listener List</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L185-L188" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ag_listener_list(self):
+    &#34;&#34;&#34;Returns the Availability Group Listener List&#34;&#34;&#34;
+    return self._ag_group_listener_list</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_primary_replica"><code class="name">var <span class="ident">ag_primary_replica</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Availability Group Primary Replica</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L175-L178" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ag_primary_replica(self):
+    &#34;&#34;&#34;Returns the Availability Group Primary Replica&#34;&#34;&#34;
+    return self._primary_replica</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_replicas_list"><code class="name">var <span class="ident">ag_replicas_list</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Availability Group Replicas List</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L180-L183" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ag_replicas_list(self):
+    &#34;&#34;&#34;Returns the Availability Group Replicas List&#34;&#34;&#34;
+    return self._replica_list</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.sqlinstance.SQLServerInstance.mssql_instance_prop"><code class="name">var <span class="ident">mssql_instance_prop</span></code></dt>
 <dd>
 <div class="desc"><p>getter for sql server instance properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1157-L1160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1246-L1249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mssql_instance_prop(self):
@@ -2578,7 +2814,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L446-L469" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L535-L558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self):
     &#34;&#34;&#34;Run full backup job for all subclients in this instance.
@@ -2626,7 +2862,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L471-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L560-L581" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, get_full_details=False):
     &#34;&#34;&#34;Gets the list of the backed up databases for this instance.
@@ -2684,7 +2920,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L494-L555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L583-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(self, from_date=None, to_date=None):
     &#34;&#34;&#34;Gets the list of the backed up databases for this instance in the given time frame.
@@ -2779,7 +3015,7 @@ recovery_point_name (str) : name of the database created
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L768-L816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L857-L905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_recovery_point(self,
                           database_name,
@@ -2842,7 +3078,7 @@ object (list) - list of all the recovery points and clones</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L557-L572" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L646-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self):
     &#34;&#34;&#34;
@@ -2881,7 +3117,7 @@ password of user account</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1204-L1250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1293-L1339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def impersonation(self, enable, username=None, password=None):
     &#34;&#34;&#34;Sets impersonation on SQL instance with local system account or provided user account.
@@ -2986,7 +3222,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1043-L1111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1132-L1200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -3092,7 +3328,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1113-L1155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1202-L1244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_destination_server(
         self,
@@ -3159,7 +3395,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L818-L859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L907-L948" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def table_level_restore(self,
                         src_db_name,
@@ -3217,7 +3453,7 @@ value of vdi timeout for sql vdi operations</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1190-L1202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1279-L1291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vdi_timeout(self, value):
     &#34;&#34;&#34;Sets the SQL VDI timeout value on SQL instance
@@ -3246,7 +3482,7 @@ Boolean value whether to set VSS option on or off</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/sqlinstance.py#L1176-L1188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/sqlinstance.py#L1265-L1277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vss_option(self, value):
     &#34;&#34;&#34;Enables or disables VSS option on SQL instance
@@ -3350,6 +3586,10 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance" href="#cvpysdk.instances.sqlinstance.SQLServerInstance">SQLServerInstance</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_group_name" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.ag_group_name">ag_group_name</a></code></li>
+<li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_listener_list" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.ag_listener_list">ag_listener_list</a></code></li>
+<li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_primary_replica" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.ag_primary_replica">ag_primary_replica</a></code></li>
+<li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.ag_replicas_list" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.ag_replicas_list">ag_replicas_list</a></code></li>
 <li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.backup" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.browse" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.browse">browse</a></code></li>
 <li><code><a title="cvpysdk.instances.sqlinstance.SQLServerInstance.browse_in_time" href="#cvpysdk.instances.sqlinstance.SQLServerInstance.browse_in_time">browse_in_time</a></code></li>

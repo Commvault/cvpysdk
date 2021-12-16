@@ -113,6 +113,8 @@ browse()                        -- browse the content of the backupset
 
 find()                          -- find content in the backupset
 
+list_media()                    -- List media required to browse and restore backed up data from the backupset
+
 refresh()                       -- refresh the properties of the backupset
 
 delete_data()                   -- deletes items from the backupset and makes then unavailable
@@ -132,7 +134,7 @@ of the Backupset class
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1-L2264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1-L2329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -248,6 +250,8 @@ Backupset:
     browse()                        -- browse the content of the backupset
 
     find()                          -- find content in the backupset
+
+    list_media()                    -- List media required to browse and restore backed up data from the backupset
 
     refresh()                       -- refresh the properties of the backupset
 
@@ -1541,6 +1545,7 @@ class Backupset(object):
             &#39;browse&#39;: 0,
             &#39;find&#39;: 1,
             &#39;all_versions&#39;: 2,
+            &#39;list_media&#39;: 3,
             &#39;delete_data&#39;: 7
         }
 
@@ -1554,7 +1559,7 @@ class Backupset(object):
         browse_mode = {
             &#39;virtual server&#39;: 4,
             &#39;cloud apps&#39;: 3,
-            &#39;azure ad&#39; : 3                                                
+            &#39;azure ad&#39;: 3
         }
 
         mode = 2
@@ -1664,6 +1669,9 @@ class Backupset(object):
             request_json[&#39;options&#39;][&#39;vsVolumeBrowse&#39;] = True
             request_json[&#39;advOptions&#39;][&#39;browseViewName&#39;] = options[&#39;browse_view_name&#39;]
 
+        if options[&#39;operation&#39;] == &#39;list_media&#39;:
+            request_json[&#39;options&#39;][&#39;doPrediction&#39;] = True
+
         if options[&#39;_custom_queries&#39;]:
             request_json[&#39;queries&#39;] = options[&#39;_custom_queries&#39;]
 
@@ -1766,6 +1774,9 @@ class Backupset(object):
             ),
             &#34;delete_data&#34;: (
                 &#39;113&#39;, &#39;Failed to perform delete data operation for given content\nError: &#34;{0}&#34;&#39;
+            ),
+            &#34;list_media&#34;: (
+                &#39;113&#39;, &#39;Failed to perform list media operation for given content\nError: &#34;{0}&#34;&#39;
             )
         }
 
@@ -1857,7 +1868,6 @@ class Backupset(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-
     def _do_browse(self, options=None, retry=10):
         &#34;&#34;&#34;Performs a browse operation with the given options.
 
@@ -1888,9 +1898,6 @@ class Backupset(object):
                 break
             attempt += 1
         return self._process_browse_response(flag, response, options)
-    
-    
-
 
     def update_properties(self, properties_dict):
         &#34;&#34;&#34;Updates the backupset properties
@@ -2130,7 +2137,6 @@ class Backupset(object):
                 &#39;Plan not eligible to be associated with the backupset&#39;
             )
 
-
     def set_default_backupset(self):
         &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
             if it is not the default backupset.
@@ -2189,8 +2195,6 @@ class Backupset(object):
 
         return return_list
 
-
-
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
 
@@ -2199,7 +2203,7 @@ class Backupset(object):
                     Example:
 
                         browse({
-                            &#39;path&#39;: &#39;c:\\\\hello&#39;,
+                            &#39;path&#39;: &#39;c:\\hello&#39;,
 
                             &#39;show_deleted&#39;: True,
 
@@ -2375,6 +2379,69 @@ class Backupset(object):
         if files:
             raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Delete data operation gave unexpected results&#39;)
 
+    def list_media(self, *args, **kwargs):
+        &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            &#39;path&#39;: &#39;c:\\hello&#39;,
+                            &#39;show_deleted&#39;: True,
+                            &#39;from_time&#39;: &#39;2020-04-20 12:00:00&#39;,
+                            &#39;to_time&#39;: &#39;2021-04-19 12:00:00&#39;
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path=&#39;c:\\hello&#39;,
+                            show_deleted=True,
+                            from_time=&#39;2020-04-20 12:00:00&#39;,
+                            to_time=&#39;2021-04-19 12:00:00&#39;
+                        )
+
+            Note:
+                Refer `_default_browse_options` for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options[&#39;operation&#39;] = &#39;list_media&#39;
+        options[&#39;_raw_response&#39;] = True
+
+        _, response = self._do_browse(options)
+
+        if response and &#39;browseResponses&#39; in response:
+            responses = response[&#39;browseResponses&#39;]
+            list_media_response = responses[0]
+
+            prediction_data = list_media_response.get(&#39;predictionData&#39;, [])
+            browse_result = list_media_response.get(&#39;browseResult&#39;, {})
+
+            return prediction_data, browse_result
+        else:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;List media operation gave unexpected results&#39;)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
         self._get_backupset_properties()
@@ -2435,7 +2502,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1037-L2264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1039-L2329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
@@ -2808,6 +2875,7 @@ default: None</p>
             &#39;browse&#39;: 0,
             &#39;find&#39;: 1,
             &#39;all_versions&#39;: 2,
+            &#39;list_media&#39;: 3,
             &#39;delete_data&#39;: 7
         }
 
@@ -2821,7 +2889,7 @@ default: None</p>
         browse_mode = {
             &#39;virtual server&#39;: 4,
             &#39;cloud apps&#39;: 3,
-            &#39;azure ad&#39; : 3                                                
+            &#39;azure ad&#39;: 3
         }
 
         mode = 2
@@ -2931,6 +2999,9 @@ default: None</p>
             request_json[&#39;options&#39;][&#39;vsVolumeBrowse&#39;] = True
             request_json[&#39;advOptions&#39;][&#39;browseViewName&#39;] = options[&#39;browse_view_name&#39;]
 
+        if options[&#39;operation&#39;] == &#39;list_media&#39;:
+            request_json[&#39;options&#39;][&#39;doPrediction&#39;] = True
+
         if options[&#39;_custom_queries&#39;]:
             request_json[&#39;queries&#39;] = options[&#39;_custom_queries&#39;]
 
@@ -3033,6 +3104,9 @@ default: None</p>
             ),
             &#34;delete_data&#34;: (
                 &#39;113&#39;, &#39;Failed to perform delete data operation for given content\nError: &#34;{0}&#34;&#39;
+            ),
+            &#34;list_media&#34;: (
+                &#39;113&#39;, &#39;Failed to perform list media operation for given content\nError: &#34;{0}&#34;&#39;
             )
         }
 
@@ -3124,7 +3198,6 @@ default: None</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-
     def _do_browse(self, options=None, retry=10):
         &#34;&#34;&#34;Performs a browse operation with the given options.
 
@@ -3155,9 +3228,6 @@ default: None</p>
                 break
             attempt += 1
         return self._process_browse_response(flag, response, options)
-    
-    
-
 
     def update_properties(self, properties_dict):
         &#34;&#34;&#34;Updates the backupset properties
@@ -3397,7 +3467,6 @@ default: None</p>
                 &#39;Plan not eligible to be associated with the backupset&#39;
             )
 
-
     def set_default_backupset(self):
         &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
             if it is not the default backupset.
@@ -3456,8 +3525,6 @@ default: None</p>
 
         return return_list
 
-
-
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
 
@@ -3466,7 +3533,7 @@ default: None</p>
                     Example:
 
                         browse({
-                            &#39;path&#39;: &#39;c:\\\\hello&#39;,
+                            &#39;path&#39;: &#39;c:\\hello&#39;,
 
                             &#39;show_deleted&#39;: True,
 
@@ -3642,6 +3709,69 @@ default: None</p>
         if files:
             raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Delete data operation gave unexpected results&#39;)
 
+    def list_media(self, *args, **kwargs):
+        &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
+
+            Args:
+                Dictionary of options:
+                    Example:
+
+                        list_media({
+                            &#39;path&#39;: &#39;c:\\hello&#39;,
+                            &#39;show_deleted&#39;: True,
+                            &#39;from_time&#39;: &#39;2020-04-20 12:00:00&#39;,
+                            &#39;to_time&#39;: &#39;2021-04-19 12:00:00&#39;
+                        })
+
+            Kwargs:
+                Keyword argument of options:
+                    Example:
+
+                        list_media(
+                            path=&#39;c:\\hello&#39;,
+                            show_deleted=True,
+                            from_time=&#39;2020-04-20 12:00:00&#39;,
+                            to_time=&#39;2021-04-19 12:00:00&#39;
+                        )
+
+            Note:
+                Refer `_default_browse_options` for all the supported options.
+
+            Returns:
+                (List, Dict) -
+                    List - List of all the media required for the given options
+
+                    Dict - Total size of the media
+
+            Raises:
+                SDKException:
+                    if failed to list media for content
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if args and isinstance(args[0], dict):
+            options = args[0]
+        else:
+            options = kwargs
+
+        options[&#39;operation&#39;] = &#39;list_media&#39;
+        options[&#39;_raw_response&#39;] = True
+
+        _, response = self._do_browse(options)
+
+        if response and &#39;browseResponses&#39; in response:
+            responses = response[&#39;browseResponses&#39;]
+            list_media_response = responses[0]
+
+            prediction_data = list_media_response.get(&#39;predictionData&#39;, [])
+            browse_result = list_media_response.get(&#39;browseResult&#39;, {})
+
+            return prediction_data, browse_result
+        else:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;List media operation gave unexpected results&#39;)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
         self._get_backupset_properties()
@@ -3686,7 +3816,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1813-L1816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1818-L1821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -3700,7 +3830,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1818-L1821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1823-L1826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -3714,7 +3844,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1823-L1826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1828-L1831" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3728,7 +3858,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1849-L1856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1854-L1861" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -3746,7 +3876,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1828-L1831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1833-L1836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_backupset(self):
@@ -3760,7 +3890,7 @@ def is_default_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1833-L1836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1838-L1841" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_backupset(self):
@@ -3774,7 +3904,7 @@ def is_on_demand_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1808-L1811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1813-L1816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3788,7 +3918,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1838-L1847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1843-L1852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -3808,7 +3938,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1803-L1806" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1808-L1811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3828,7 +3958,7 @@ of all the subclients of the given backupset.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2249-L2264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2314-L2329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backed_up_files_count(self):
     &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
@@ -3873,7 +4003,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2019-L2054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2023-L2058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, **kwargs):
     &#34;&#34;&#34;Runs backup job for all subclients in this backupset.
@@ -3922,7 +4052,7 @@ the subclients in the backupset</p></div>
 <p>Dictionary of browse options:
 Example:</p>
 <pre><code>    browse({
-        'path': 'c:\\hello',
+        'path': 'c:\hello',
 
         'show_deleted': True,
 
@@ -3957,7 +4087,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2058-L2109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2060-L2111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -3967,7 +4097,7 @@ from browse operation
                 Example:
 
                     browse({
-                        &#39;path&#39;: &#39;c:\\\\hello&#39;,
+                        &#39;path&#39;: &#39;c:\\hello&#39;,
 
                         &#39;show_deleted&#39;: True,
 
@@ -4030,7 +4160,7 @@ If fail to create subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2193-L2212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2195-L2214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_subclient(self, subclient, storagepolicyname, description):
 
@@ -4074,7 +4204,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2214-L2240" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2216-L2242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data(self, paths):
     &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -4161,7 +4291,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2111-L2191" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2113-L2193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the backupset,
@@ -4246,6 +4376,112 @@ file_size_et    (int)   --  Find files with size equal to size
     return self._do_browse(options)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.backupset.Backupset.list_media"><code class="name flex">
+<span>def <span class="ident">list_media</span></span>(<span>self, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>List media required to browse and restore backed up data from the backupset</p>
+<h2 id="args">Args</h2>
+<p>Dictionary of options:
+Example:</p>
+<pre><code>    list_media({
+        'path': 'c:\hello',
+        'show_deleted': True,
+        'from_time': '2020-04-20 12:00:00',
+        'to_time': '2021-04-19 12:00:00'
+    })
+</code></pre>
+<h2 id="kwargs">Kwargs</h2>
+<p>Keyword argument of options:
+Example:</p>
+<pre><code>    list_media(
+        path='c:\hello',
+        show_deleted=True,
+        from_time='2020-04-20 12:00:00',
+        to_time='2021-04-19 12:00:00'
+    )
+</code></pre>
+<h2 id="note">Note</h2>
+<p>Refer <code>_default_browse_options</code> for all the supported options.</p>
+<h2 id="returns">Returns</h2>
+<p>(List, Dict) -
+List - List of all the media required for the given options</p>
+<pre><code>Dict - Total size of the media
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to list media for content</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2244-L2305" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def list_media(self, *args, **kwargs):
+    &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
+
+        Args:
+            Dictionary of options:
+                Example:
+
+                    list_media({
+                        &#39;path&#39;: &#39;c:\\hello&#39;,
+                        &#39;show_deleted&#39;: True,
+                        &#39;from_time&#39;: &#39;2020-04-20 12:00:00&#39;,
+                        &#39;to_time&#39;: &#39;2021-04-19 12:00:00&#39;
+                    })
+
+        Kwargs:
+            Keyword argument of options:
+                Example:
+
+                    list_media(
+                        path=&#39;c:\\hello&#39;,
+                        show_deleted=True,
+                        from_time=&#39;2020-04-20 12:00:00&#39;,
+                        to_time=&#39;2021-04-19 12:00:00&#39;
+                    )
+
+        Note:
+            Refer `_default_browse_options` for all the supported options.
+
+        Returns:
+            (List, Dict) -
+                List - List of all the media required for the given options
+
+                Dict - Total size of the media
+
+        Raises:
+            SDKException:
+                if failed to list media for content
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    if args and isinstance(args[0], dict):
+        options = args[0]
+    else:
+        options = kwargs
+
+    options[&#39;operation&#39;] = &#39;list_media&#39;
+    options[&#39;_raw_response&#39;] = True
+
+    _, response = self._do_browse(options)
+
+    if response and &#39;browseResponses&#39; in response:
+        responses = response[&#39;browseResponses&#39;]
+        list_media_response = responses[0]
+
+        prediction_data = list_media_response.get(&#39;predictionData&#39;, [])
+        browse_result = list_media_response.get(&#39;browseResult&#39;, {})
+
+        return prediction_data, browse_result
+    else:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;List media operation gave unexpected results&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.backupset.Backupset.refresh"><code class="name flex">
 <span>def <span class="ident">refresh</span></span>(<span>self)</span>
 </code></dt>
@@ -4254,7 +4490,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L2242-L2247" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2307-L2312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
@@ -4276,7 +4512,7 @@ if failed to set this as the default backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1998-L2017" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2002-L2021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_backupset(self):
     &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
@@ -4324,7 +4560,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1759-L1801" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1764-L1806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the backupset properties
@@ -4395,7 +4631,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L151-L1034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L153-L1036" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupsets(object):
     &#34;&#34;&#34;Class for getting all the backupsets associated with a client.&#34;&#34;&#34;
@@ -5301,7 +5537,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L355-L371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L357-L373" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_backupsets(self):
@@ -5328,7 +5564,7 @@ def all_backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1031-L1034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1033-L1036" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_backup_set(self):
@@ -5381,7 +5617,7 @@ if backupset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L440-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L442-L579" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         &#34;&#34;&#34;Adds a new backup set to the agent.
@@ -5551,7 +5787,7 @@ if archiveset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L579-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L581-L699" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
     &#34;&#34;&#34; 
@@ -5728,7 +5964,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L810-L915" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L812-L917" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_backupset(
         self,
@@ -5891,7 +6127,7 @@ Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L699-L808" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L701-L810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_v1_sharepoint_client(
         self,
@@ -6028,7 +6264,7 @@ if no backupset exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L960-L1025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L962-L1027" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, backupset_name):
     &#34;&#34;&#34;Deletes the backup set from the agent.
@@ -6117,7 +6353,7 @@ if type of the backupset name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L917-L958" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L919-L960" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, backupset_name):
     &#34;&#34;&#34;Returns a backupset object of the specified backupset name.
@@ -6180,7 +6416,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L373-L389" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L375-L391" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_backupset(self, backupset_name):
     &#34;&#34;&#34;Checks if a backupset exists for the agent with the input backupset name.
@@ -6209,7 +6445,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupset.py#L1027-L1029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1029-L1031" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the backupsets associated with the Agent / Instance.&#34;&#34;&#34;
@@ -6307,6 +6543,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.backupset.Backupset.guid" href="#cvpysdk.backupset.Backupset.guid">guid</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.is_default_backupset" href="#cvpysdk.backupset.Backupset.is_default_backupset">is_default_backupset</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.is_on_demand_backupset" href="#cvpysdk.backupset.Backupset.is_on_demand_backupset">is_on_demand_backupset</a></code></li>
+<li><code><a title="cvpysdk.backupset.Backupset.list_media" href="#cvpysdk.backupset.Backupset.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.name" href="#cvpysdk.backupset.Backupset.name">name</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.plan" href="#cvpysdk.backupset.Backupset.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.properties" href="#cvpysdk.backupset.Backupset.properties">properties</a></code></li>

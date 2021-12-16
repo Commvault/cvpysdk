@@ -162,7 +162,7 @@ gives the error_code and message</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1-L2385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1-L2400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1162,9 +1162,10 @@ class Schedules:
         from .backupset import Backupset
         from .subclient import Subclient
         from .instance import Instance
+        from .activateapps.inventory_manager import Inventory
 
         self.class_object = class_object
-
+        self._single_scheduled_entity = False
         self._repr_str = &#34;&#34;
 
         if isinstance(class_object, Commcell):
@@ -1184,6 +1185,14 @@ class Schedules:
                     class_object.commserv_name)
             else:
                 raise SDKException(&#39;Schedules&#39;, &#39;103&#39;)
+
+        elif isinstance(class_object, Inventory):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;INVENTORY_SCHEDULES&#39;] % (
+                class_object.inventory_id)
+            self._repr_str = &#34;Inventory: {0}&#34;.format(class_object.inventory_name)
+            self._commcell_object = class_object._commcell_object
+            # set below flag to denote inventory type entity will always have only one schedule associated to it
+            self._single_scheduled_entity = True
 
         elif isinstance(class_object, Client):
             self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
@@ -1343,6 +1352,12 @@ class Schedules:
             Returns:
             (int) schedule id of the schedule
         &#34;&#34;&#34;
+
+        if self._single_scheduled_entity:
+            # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            for subtask_id, subtask_dict in self.schedules.items():
+                return subtask_id
+
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
                 &#39;Schedules&#39;,
@@ -2568,7 +2583,7 @@ class Schedule:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L159-L162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L159-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationType:
     &#34;&#34;&#34; Operation Types supported to get schedules of particular optype&#34;&#34;&#34;
@@ -2611,7 +2626,7 @@ task ids of the Schedule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1310-L2385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1325-L2400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Schedule:
     &#34;&#34;&#34;Class for performing operations for a specific Schedule.&#34;&#34;&#34;
@@ -3699,7 +3714,7 @@ Returns: (str) &ndash; date in %m/%d/%Y</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2053-L2063" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2068-L2078" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_end_date(self):
@@ -3721,7 +3736,7 @@ Returns: (str) &ndash; date in %m/%d/%Y</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2007-L2014" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2022-L2029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_start_date(self):
@@ -3740,7 +3755,7 @@ Returns: (str) &ndash; time in %H/%S</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2030-L2037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2045-L2052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_start_time(self):
@@ -3783,7 +3798,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1857-L1931" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1872-L1946" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def automatic(self):
@@ -3873,7 +3888,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1823-L1837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1838-L1852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def continuous(self):
@@ -3904,7 +3919,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1562-L1578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1577-L1593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def daily(self):
@@ -3932,7 +3947,7 @@ Returns: (int) &ndash; end occurence</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2116-L2122" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2131-L2137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_after(self):
@@ -3951,7 +3966,7 @@ def end_after(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2079-L2099" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2094-L2114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def exception_dates(self):
@@ -3984,7 +3999,7 @@ def exception_dates(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1500-L1507" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1515-L1522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_disabled(self):
@@ -4009,7 +4024,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1645-L1665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1660-L1680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def monthly(self):
@@ -4048,7 +4063,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1687-L1711" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1702-L1726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def monthly_relative(self):
@@ -4094,7 +4109,7 @@ False</code></dt>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1518-L1541" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1533-L1556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def one_time(self):
@@ -4133,7 +4148,7 @@ Returns: (dict) &ndash; the repeat pattern
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2139-L2160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2154-L2175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def repeat_pattern(self):
@@ -4167,7 +4182,7 @@ def repeat_pattern(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1509-L1516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1524-L1531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_freq_type(self):
@@ -4186,7 +4201,7 @@ Returns (int) &ndash; Subtask id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1409-L1415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1424-L1430" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtask_id(self):
@@ -4210,7 +4225,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1599-L1622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1614-L1637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def weekly(self):
@@ -4251,7 +4266,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1735-L1754" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1750-L1769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def yearly(self):
@@ -4289,7 +4304,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1776-L1799" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1791-L1814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def yearly_relative(self):
@@ -4335,7 +4350,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2298-L2341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2313-L2356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34;Disable a Schedule.
@@ -4398,7 +4413,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2254-L2296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2269-L2311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34;Enable a schedule.
@@ -4453,7 +4468,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2383-L2385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2398-L2400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Schedule.&#34;&#34;&#34;
@@ -4469,7 +4484,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L2175-L2213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2190-L2228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_now(self):
     &#34;&#34;&#34;
@@ -4524,7 +4539,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L165-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L165-L971" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SchedulePattern:
     &#34;&#34;&#34;Class for getting the schedule pattern&#34;&#34;&#34;
@@ -5347,7 +5362,7 @@ Returns (int) &ndash; on_day number for the pattern json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L758-L771" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L758-L771" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def exception_dates(day_list):
@@ -5463,7 +5478,7 @@ request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L804-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L804-L971" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_schedule(self, task_req, pattern_dict, schedule_id=None):
     &#34;&#34;&#34;
@@ -5651,7 +5666,7 @@ create or modify schedules</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L773-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L773-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_schedule_pattern(self, pattern_dict):
     &#34;&#34;&#34;
@@ -5708,7 +5723,7 @@ Subclient class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L974-L1307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L974-L1322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Schedules:
     &#34;&#34;&#34;Class for getting the schedules of a commcell entity.&#34;&#34;&#34;
@@ -5735,9 +5750,10 @@ Subclient class</p></div>
         from .backupset import Backupset
         from .subclient import Subclient
         from .instance import Instance
+        from .activateapps.inventory_manager import Inventory
 
         self.class_object = class_object
-
+        self._single_scheduled_entity = False
         self._repr_str = &#34;&#34;
 
         if isinstance(class_object, Commcell):
@@ -5757,6 +5773,14 @@ Subclient class</p></div>
                     class_object.commserv_name)
             else:
                 raise SDKException(&#39;Schedules&#39;, &#39;103&#39;)
+
+        elif isinstance(class_object, Inventory):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;INVENTORY_SCHEDULES&#39;] % (
+                class_object.inventory_id)
+            self._repr_str = &#34;Inventory: {0}&#34;.format(class_object.inventory_name)
+            self._commcell_object = class_object._commcell_object
+            # set below flag to denote inventory type entity will always have only one schedule associated to it
+            self._single_scheduled_entity = True
 
         elif isinstance(class_object, Client):
             self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
@@ -5916,6 +5940,12 @@ Subclient class</p></div>
             Returns:
             (int) schedule id of the schedule
         &#34;&#34;&#34;
+
+        if self._single_scheduled_entity:
+            # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            for subtask_id, subtask_dict in self.schedules.items():
+                return subtask_id
+
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
                 &#39;Schedules&#39;,
@@ -6066,7 +6096,7 @@ if no schedule exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1250-L1303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1265-L1318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;deletes the specified schedule name.
@@ -6146,7 +6176,7 @@ if type of the schedule name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1226-L1248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1241-L1263" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;Returns a schedule object of the specified schedule name.
@@ -6193,7 +6223,7 @@ if type of the schedule name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1207-L1224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1222-L1239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_schedule(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;Checks if a schedule exists for the commcell entity with the input schedule name.
@@ -6223,7 +6253,7 @@ if type of the schedule name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/schedules.py#L1305-L1307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1320-L1322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the Schedules associated with the Client / Agent / Backupset / Subclient.&#34;&#34;&#34;

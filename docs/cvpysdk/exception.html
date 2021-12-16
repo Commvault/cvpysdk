@@ -77,7 +77,7 @@ where the user given message is appended to the original message joined by new l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/exception.py#L1-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/exception.py#L1-L542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -174,7 +174,8 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Failed to get the CommServ details&#39;,
         &#39;104&#39;: &#39;Failed to send an email to specified user&#39;,
         &#39;105&#39;: &#39;Failed to run the Data Aging job&#39;,
-        &#39;106&#39;: &#39;Failed to get the SAML token&#39;
+        &#39;106&#39;: &#39;Failed to get the SAML token&#39;,
+        &#39;107&#39;: &#39;Data type of the input(s) is not valid&#39;
     },
     &#39;CVPySDK&#39;: {
         &#39;101&#39;: &#39;Failed to Login with the credentials provided&#39;,
@@ -222,7 +223,8 @@ EXCEPTION_DICT = {
         &#39;105&#39;: &#39;Could not fetch instance property&#39;,
         &#39;106&#39;: &#39;Invalid policy name under given instance. Validate the policy name&#39;,
         &#39;107&#39;: &#39;Unsupported auto discovery mode provided.&#39;
-               &#39;Valid values are REGEX and GROUP&#39;
+               &#39;Valid values are REGEX and GROUP&#39;,
+        &#39;108&#39;: &#39;Invalid FREL client&#39;
     },
     &#39;Subclient&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -322,7 +324,8 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Failed to get entity regex details from commcell&#39;,
         &#39;104&#39;: &#39;Unable to create regex entity in the commcell&#39;,
         &#39;105&#39;: &#39;Unable to delete regex entity in the commcell&#39;,
-        &#39;106&#39;: &#39;Unable to modify regex entity in the commcell&#39;
+        &#39;106&#39;: &#39;Unable to modify regex entity in the commcell&#39;,
+        &#39;107&#39;: &#39;Failed to get entity container details from commcell&#39;
     },
     &#39;Classifier&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -354,7 +357,32 @@ EXCEPTION_DICT = {
     },
     &#39;Plan&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
-        &#39;102&#39;: &#39;&#39;
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Content Analyzer input is missing&#39;,
+        &#39;104&#39;: &#39;Please provide either entity list or classifier list in input&#39;,
+        &#39;105&#39;: &#39;Failed to share plan with user or group&#39;
+    },
+    &#39;Inventory&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to fetch inventories details from commcell&#39;,
+        &#39;104&#39;: &#39;Failed to fetch inventory properties from commcell&#39;,
+        &#39;105&#39;: &#39;Failed to create an Inventory&#39;,
+        &#39;106&#39;: &#39;Unable to find inventory in commcell&#39;,
+        &#39;107&#39;: &#39;Failed to Delete an Inventory&#39;,
+        &#39;108&#39;: &#39;Failed to add asset to Inventory&#39;,
+        &#39;109&#39;: &#39;Unable to find asset in the Inventory&#39;,
+        &#39;110&#39;: &#39;Failed to delete asset from Inventory&#39;,
+        &#39;111&#39;: &#39;Failed to share Inventory&#39;
+
+
+    },
+    &#39;EdiscoveryClients&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to start crawl job&#39;,
+        &#39;104&#39;: &#39;Failed to get job history&#39;,
+        &#39;105&#39;: &#39;Failed to get job status&#39;,
     },
     &#39;Salesforce&#39;: {
         &#39;101&#39;: &#39;Neither Sync Database enabled nor user provided database details for restore&#39;,
@@ -423,7 +451,8 @@ EXCEPTION_DICT = {
         &#39;111&#39;: (&#39;Plan is not associated with the organization. &#39;
                 &#39;Add plan to the Organization, and then set it as the default&#39;),
         &#39;112&#39;: &#39;Failed to activate organization&#39;,
-        &#39;113&#39;: &#39;Failed to deactivate organization&#39;
+        &#39;113&#39;: &#39;Failed to deactivate organization&#39;,
+        &#39;114&#39;: &#39;Input is not provided in expected manner&#39;
     },
     &#39;StoragePool&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -434,7 +463,15 @@ EXCEPTION_DICT = {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;
     },
-
+    &#39;BLRPairs&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;BLR Pair not found&#39;,
+        &#39;103&#39;: &#39;RPStore not found&#39;
+    },
+    &#39;ReplicationGroup&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
     &#39;FailoverGroup&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;
@@ -544,6 +581,12 @@ EXCEPTION_DICT = {
     &#39;Metallic&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;
+    },
+    &#39;KeyManagementServer&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;Key Management Server not found&#39;,
+        &#39;103&#39;: &#39;Key Management Server type is not valid&#39;,
+        &#39;104&#39;: &#39;Key Management Server type not found&#39;,
     }
 }
 
@@ -565,6 +608,8 @@ class SDKException(Exception):
                 object  -   instance of the SDKException class of type Exception
 
         &#34;&#34;&#34;
+        exception_id = str(exception_id)
+
         self.exception_module = exception_module
         self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]
@@ -613,7 +658,7 @@ instance of the SDKException class of type Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/exception.py#L470-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/exception.py#L513-L542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SDKException(Exception):
     &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;
@@ -632,6 +677,8 @@ instance of the SDKException class of type Exception</p></div>
                 object  -   instance of the SDKException class of type Exception
 
         &#34;&#34;&#34;
+        exception_id = str(exception_id)
+
         self.exception_module = exception_module
         self.exception_id = exception_id
         self.exception_message = EXCEPTION_DICT[exception_module][exception_id]

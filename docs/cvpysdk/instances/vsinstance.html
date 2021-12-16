@@ -45,6 +45,9 @@ getter or setter for the associated clients</p>
 <p>co_ordinator
 &ndash;
 getter</p>
+<p>frel
+&ndash;
+setter or getter for the FREL client</p>
 <p>To add a new Virtual Instance, create a class in a new module under virtualserver sub package</p>
 <p>The new module which is created has to named in the following manner:
 1. Name the module with the name of the Virtual Server without special characters
@@ -57,7 +60,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/vsinstance.py#L1-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L1-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,6 +100,8 @@ VirtualServerInstance:
     associated_clients                --  getter or setter for the associated clients
 
     co_ordinator                    --  getter
+
+    frel                            --  setter or getter for the FREL client
 
 To add a new Virtual Instance, create a class in a new module under virtualserver sub package
 
@@ -228,43 +233,28 @@ class VirtualServerInstance(Instance):
             it replaces the list of proxies in the GUI
 
         Args:
-                client_list:    (list)       --- list of clients or client groups
+                clients_list:    (list/str)       --- list of clients or client groups
 
         Raises:
             SDKException:
                 if response is not success
 
-                if input is not list of strings
+                if input is not string or list of strings
 
                 if input is not client of CS
-
-
         &#34;&#34;&#34;
+        if not isinstance(clients_list, list):
+            clients_list = [clients_list]
+        if not isinstance(clients_list, list):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         for client_name in clients_list:
             if not isinstance(client_name, basestring):
                 raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
         client_json_list = []
 
-        associated_clients = {&#34;memberServers&#34;: client_json_list}
-
         for client_name in clients_list:
-            client_json = {
-                &#34;clientName&#34;: client_name
-            }
-
-            client_group_json = {
-                &#34;clientGroupName&#34;: client_name
-            }
-
-            common_json = {
-                &#34;srmReportSet&#34;: 0,
-                &#34;type&#34;: 0,
-                &#34;srmReportType&#34;: 0,
-                &#34;clientSidePackage&#34;: True,
-                &#34;_type_&#34;: 28,
-                &#34;consumeLicense&#34;: True
-            }
+            common_json = {}
             final_json = {}
             if self._commcell_object.clients.has_client(client_name):
                 common_json[&#39;clientName&#39;] = client_name
@@ -272,15 +262,31 @@ class VirtualServerInstance(Instance):
                 final_json[&#39;client&#39;] = common_json
             elif self._commcell_object.client_groups.has_clientgroup(client_name):
                 common_json[&#39;clientGroupName&#39;] = client_name
+                common_json[&#39;_type_&#39;] = 28
                 final_json[&#39;client&#39;] = common_json
             else:
                 raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
             client_json_list.append(final_json)
 
-        associated_clients = {&#34;memberServers&#34;: client_json_list}
-        self._set_instance_properties(&#34;_virtualserverinstance[&#39;associatedClients&#39;]&#34;,
-                                      associated_clients)
+        request_json = {
+            &#39;App_UpdateInstancePropertiesRequest&#39;: {
+                &#39;instanceProperties&#39;: {
+                    &#39;virtualServerInstance&#39;: {
+                        &#39;associatedClients&#39;: {&#34;memberServers&#34;: client_json_list}
+                    }
+                },
+                &#39;association&#39;: {
+                    &#39;entity&#39;: [{
+                        &#39;instanceId&#39;: self.instance_id,
+                        &#39;_type&#39;: 5
+                    }
+                    ]
+                }
+            }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+        self.refresh()
 
     @property
     def co_ordinator(self):
@@ -291,7 +297,83 @@ class VirtualServerInstance(Instance):
             return associated_client
         elif self._commcell_object.client_groups.has_clientgroup(associated_client):
             associated_client_group = self._commcell_object.client_groups.get(associated_client)
-            return associated_client_group._associated_clients[0]</code></pre>
+            return associated_client_group._associated_clients[0]
+
+    @property
+    def frel(self):
+        &#34;&#34;&#34;
+        Returns the FREL associated at the instance level
+            Returns:
+                string : frel client name
+
+            Raises:
+                SDKException:
+                    if failed to fetch properties
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
+        if flag:
+            if response.json():
+                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
+                    &#39;mediaAgentName&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @frel.setter
+    def frel(self, frel_client):
+        &#34;&#34;&#34;sets the FREL in the instance provided as input
+        Args:
+                frel_client:    (string)       --- FREL client to be set as FREL
+
+        Raises:
+            SDKException:
+                if response is not success
+
+                if input is not string
+
+                if input is not client of CS
+        &#34;&#34;&#34;
+        recovery_enablers = self._services[&#39;RECOVERY_ENABLERS&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, recovery_enablers)
+        if flag:
+            if response.json():
+                frel_ready_ma = response.json().get(&#39;mediaAgentList&#39;)
+                if list(filter(lambda ma: ma[&#39;mediaAgentName&#39;].lower() == frel_client.lower(), frel_ready_ma)):
+                    _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
+                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
+                    if flag:
+                        if response.json():
+                            _json = response.json()
+                            if _json.get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}):
+                                _json[&#39;virtualServerInfo&#39;][&#39;defaultFBRUnixMediaAgent&#39;][&#39;mediaAgentName&#39;] = frel_client
+                            else:
+                                raise SDKException(&#39;Instance&#39;, &#39;102&#39;,
+                                                   &#39;Not possible to assign/add FREL MA. Please check if the &#39;
+                                                   &#39;instance supports FREL&#39;)
+                            if _json.get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
+                                    &#39;mediaAgentId&#39;):
+                                del _json[&#39;virtualServerInfo&#39;][&#39;defaultFBRUnixMediaAgent&#39;][&#39;mediaAgentId&#39;]
+                            _json = {&#39;prop&#39;: _json}
+                            _application_upate = self._services[&#39;APPLICATION&#39;]
+                            flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, _application_upate, _json)
+                            if not flag:
+                                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                        else:
+                            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    else:
+                        raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
+                else:
+                    raise SDKException(&#39;Instance&#39;, &#39;108&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </section>
 <section>
@@ -329,7 +411,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/vsinstance.py#L86-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L88-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
@@ -415,43 +497,28 @@ default: None</p>
             it replaces the list of proxies in the GUI
 
         Args:
-                client_list:    (list)       --- list of clients or client groups
+                clients_list:    (list/str)       --- list of clients or client groups
 
         Raises:
             SDKException:
                 if response is not success
 
-                if input is not list of strings
+                if input is not string or list of strings
 
                 if input is not client of CS
-
-
         &#34;&#34;&#34;
+        if not isinstance(clients_list, list):
+            clients_list = [clients_list]
+        if not isinstance(clients_list, list):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         for client_name in clients_list:
             if not isinstance(client_name, basestring):
                 raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
         client_json_list = []
 
-        associated_clients = {&#34;memberServers&#34;: client_json_list}
-
         for client_name in clients_list:
-            client_json = {
-                &#34;clientName&#34;: client_name
-            }
-
-            client_group_json = {
-                &#34;clientGroupName&#34;: client_name
-            }
-
-            common_json = {
-                &#34;srmReportSet&#34;: 0,
-                &#34;type&#34;: 0,
-                &#34;srmReportType&#34;: 0,
-                &#34;clientSidePackage&#34;: True,
-                &#34;_type_&#34;: 28,
-                &#34;consumeLicense&#34;: True
-            }
+            common_json = {}
             final_json = {}
             if self._commcell_object.clients.has_client(client_name):
                 common_json[&#39;clientName&#39;] = client_name
@@ -459,15 +526,31 @@ default: None</p>
                 final_json[&#39;client&#39;] = common_json
             elif self._commcell_object.client_groups.has_clientgroup(client_name):
                 common_json[&#39;clientGroupName&#39;] = client_name
+                common_json[&#39;_type_&#39;] = 28
                 final_json[&#39;client&#39;] = common_json
             else:
                 raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
             client_json_list.append(final_json)
 
-        associated_clients = {&#34;memberServers&#34;: client_json_list}
-        self._set_instance_properties(&#34;_virtualserverinstance[&#39;associatedClients&#39;]&#34;,
-                                      associated_clients)
+        request_json = {
+            &#39;App_UpdateInstancePropertiesRequest&#39;: {
+                &#39;instanceProperties&#39;: {
+                    &#39;virtualServerInstance&#39;: {
+                        &#39;associatedClients&#39;: {&#34;memberServers&#34;: client_json_list}
+                    }
+                },
+                &#39;association&#39;: {
+                    &#39;entity&#39;: [{
+                        &#39;instanceId&#39;: self.instance_id,
+                        &#39;_type&#39;: 5
+                    }
+                    ]
+                }
+            }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+        self.refresh()
 
     @property
     def co_ordinator(self):
@@ -478,7 +561,83 @@ default: None</p>
             return associated_client
         elif self._commcell_object.client_groups.has_clientgroup(associated_client):
             associated_client_group = self._commcell_object.client_groups.get(associated_client)
-            return associated_client_group._associated_clients[0]</code></pre>
+            return associated_client_group._associated_clients[0]
+
+    @property
+    def frel(self):
+        &#34;&#34;&#34;
+        Returns the FREL associated at the instance level
+            Returns:
+                string : frel client name
+
+            Raises:
+                SDKException:
+                    if failed to fetch properties
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
+        if flag:
+            if response.json():
+                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
+                    &#39;mediaAgentName&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @frel.setter
+    def frel(self, frel_client):
+        &#34;&#34;&#34;sets the FREL in the instance provided as input
+        Args:
+                frel_client:    (string)       --- FREL client to be set as FREL
+
+        Raises:
+            SDKException:
+                if response is not success
+
+                if input is not string
+
+                if input is not client of CS
+        &#34;&#34;&#34;
+        recovery_enablers = self._services[&#39;RECOVERY_ENABLERS&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, recovery_enablers)
+        if flag:
+            if response.json():
+                frel_ready_ma = response.json().get(&#39;mediaAgentList&#39;)
+                if list(filter(lambda ma: ma[&#39;mediaAgentName&#39;].lower() == frel_client.lower(), frel_ready_ma)):
+                    _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
+                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
+                    if flag:
+                        if response.json():
+                            _json = response.json()
+                            if _json.get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}):
+                                _json[&#39;virtualServerInfo&#39;][&#39;defaultFBRUnixMediaAgent&#39;][&#39;mediaAgentName&#39;] = frel_client
+                            else:
+                                raise SDKException(&#39;Instance&#39;, &#39;102&#39;,
+                                                   &#39;Not possible to assign/add FREL MA. Please check if the &#39;
+                                                   &#39;instance supports FREL&#39;)
+                            if _json.get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
+                                    &#39;mediaAgentId&#39;):
+                                del _json[&#39;virtualServerInfo&#39;][&#39;defaultFBRUnixMediaAgent&#39;][&#39;mediaAgentId&#39;]
+                            _json = {&#39;prop&#39;: _json}
+                            _application_upate = self._services[&#39;APPLICATION&#39;]
+                            flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, _application_upate, _json)
+                            if not flag:
+                                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                        else:
+                            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    else:
+                        raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
+                else:
+                    raise SDKException(&#39;Instance&#39;, &#39;108&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -514,7 +673,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/vsinstance.py#L148-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L150-L163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -538,7 +697,7 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/vsinstance.py#L224-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L227-L236" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def co_ordinator(self):
@@ -552,13 +711,58 @@ def co_ordinator(self):
         return associated_client_group._associated_clients[0]</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.frel"><code class="name">var <span class="ident">frel</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the FREL associated at the instance level
+Returns:
+string : frel client name</p>
+<pre><code>Raises:
+    SDKException:
+        if failed to fetch properties
+
+        if response is empty
+
+        if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L238-L262" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def frel(self):
+    &#34;&#34;&#34;
+    Returns the FREL associated at the instance level
+        Returns:
+            string : frel client name
+
+        Raises:
+            SDKException:
+                if failed to fetch properties
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
+    if flag:
+        if response.json():
+            return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
+                &#39;mediaAgentName&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the PseudoClient Name of the associated isntance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/vsinstance.py#L143-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/vsinstance.py#L145-L148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):
@@ -656,6 +860,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients" href="#cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients">associated_clients</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator" href="#cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator">co_ordinator</a></code></li>
+<li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.frel" href="#cvpysdk.instances.vsinstance.VirtualServerInstance.frel">frel</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.server_name" href="#cvpysdk.instances.vsinstance.VirtualServerInstance.server_name">server_name</a></code></li>
 </ul>
 </li>

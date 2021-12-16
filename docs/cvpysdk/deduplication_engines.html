@@ -117,7 +117,7 @@ store_id, substore-id)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1-L1105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -937,7 +937,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
         &#34;&#34;&#34;
         runs DDB Space reclaimation job with provided level
 
@@ -947,6 +947,8 @@ class Store(object):
 
             clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
                         Default: False
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -962,6 +964,9 @@ class Store(object):
                 if response in not success
         &#34;&#34;&#34;
         if not (isinstance(level, int)) and level not in range(1, 4):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if not isinstance(use_scalable_resource, bool):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         level_map = {
@@ -1002,7 +1007,7 @@ class Store(object):
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         },
-                                        &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                        &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                     }
                                 }
                             },
@@ -1037,7 +1042,8 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_ddb_verification(self, incremental_verification=True, quick_verification=True):
+    def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
+                             use_scalable_resource=False):
         &#34;&#34;&#34;
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1047,6 +1053,8 @@ class Store(object):
 
             quick_verification (bool)       - DV2 job option, Quick or Complete (True/False)
                                             Default: True (quick verification)
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1067,6 +1075,9 @@ class Store(object):
         verification_option = &#39;QUICK_DDB_VERIFICATION&#39;
         if not quick_verification:
             verification_option = &#39;DDB_AND_DATA_VERIFICATION&#39;
+
+        if not isinstance(use_scalable_resource, bool):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_json = {
             &#34;TMMsg_CreateTaskReq&#34;: {
@@ -1099,7 +1110,7 @@ class Store(object):
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         },
-                                        &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                        &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                     }
                                 }
                             },
@@ -1245,7 +1256,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L278-L453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L278-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngine(object):
     &#34;&#34;&#34;Class to get all stores associated for deduplication engine&#34;&#34;&#34;
@@ -1432,7 +1443,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L396-L403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L396-L403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_stores(self):
@@ -1450,7 +1461,7 @@ def all_stores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L410-L413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L410-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -1464,7 +1475,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L405-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L405-L408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -1490,7 +1501,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L431-L453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L431-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, store_id):
     &#34;&#34;&#34;
@@ -1532,7 +1543,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L415-L429" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L415-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_store(self, store_id):
     &#34;&#34;&#34;Checks if a deduplication store exists in a engine with provided storeid id.
@@ -1559,7 +1570,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L392-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L392-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engine properties&#34;&#34;&#34;
@@ -1584,7 +1595,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L130-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L130-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngines(object):
     &#34;&#34;&#34;Class for getting all the deduplication engines associated with the commcell.&#34;&#34;&#34;
@@ -1741,7 +1752,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L217-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L217-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_engines(self):
@@ -1770,7 +1781,7 @@ if type of arguments are not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L245-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L245-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;
@@ -1825,7 +1836,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L226-L243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L226-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_engine(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;Checks if a deduplication engine exists in the commcell with the input storage policy and copy name.
@@ -1855,7 +1866,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L222-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L222-L224" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engines and their properties&#34;&#34;&#34;
@@ -1883,7 +1894,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L456-L1011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L456-L1022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Store(object):
     &#34;&#34;&#34;Class for performing deduplication store level operations for deduplication engine&#34;&#34;&#34;
@@ -2248,7 +2259,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
         &#34;&#34;&#34;
         runs DDB Space reclaimation job with provided level
 
@@ -2258,6 +2269,8 @@ if type of the storage policy and copy name arguments are not string</p></div>
 
             clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
                         Default: False
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -2273,6 +2286,9 @@ if type of the storage policy and copy name arguments are not string</p></div>
                 if response in not success
         &#34;&#34;&#34;
         if not (isinstance(level, int)) and level not in range(1, 4):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if not isinstance(use_scalable_resource, bool):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         level_map = {
@@ -2313,7 +2329,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         },
-                                        &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                        &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                     }
                                 }
                             },
@@ -2348,7 +2364,8 @@ if type of the storage policy and copy name arguments are not string</p></div>
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_ddb_verification(self, incremental_verification=True, quick_verification=True):
+    def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
+                             use_scalable_resource=False):
         &#34;&#34;&#34;
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -2358,6 +2375,8 @@ if type of the storage policy and copy name arguments are not string</p></div>
 
             quick_verification (bool)       - DV2 job option, Quick or Complete (True/False)
                                             Default: True (quick verification)
+
+            use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -2378,6 +2397,9 @@ if type of the storage policy and copy name arguments are not string</p></div>
         verification_option = &#39;QUICK_DDB_VERIFICATION&#39;
         if not quick_verification:
             verification_option = &#39;DDB_AND_DATA_VERIFICATION&#39;
+
+        if not isinstance(use_scalable_resource, bool):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_json = {
             &#34;TMMsg_CreateTaskReq&#34;: {
@@ -2410,7 +2432,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         },
-                                        &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                        &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                     }
                                 }
                             },
@@ -2450,7 +2472,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L550-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L550-L557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_substores(self):
@@ -2468,7 +2490,7 @@ def all_substores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L636-L639" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L636-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -2482,7 +2504,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L631-L634" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L631-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -2496,7 +2518,7 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L641-L646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L641-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_garbage_collection(self):
@@ -2512,7 +2534,7 @@ def enable_garbage_collection(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L648-L651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L648-L651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_store_pruning(self):
@@ -2526,7 +2548,7 @@ def enable_store_pruning(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L621-L624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L621-L624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -2540,7 +2562,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L626-L629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L626-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
@@ -2554,7 +2576,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L600-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L600-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_flags(self):
@@ -2569,7 +2591,7 @@ def store_flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L611-L614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L611-L614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -2583,7 +2605,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L606-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L606-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_name(self):
@@ -2597,7 +2619,7 @@ def store_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L616-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L616-L619" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2623,7 +2645,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L575-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L575-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, substore_id):
     &#34;&#34;&#34;
@@ -2666,7 +2688,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L559-L573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L559-L573" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_substore(self, substore_id):
     &#34;&#34;&#34;Checks if a substore exists in a deduplication store with provided substore id.
@@ -2707,7 +2729,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L729-L817" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L729-L817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
     &#34;&#34;&#34;
@@ -2808,7 +2830,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L546-L548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L546-L548" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication store properties&#34;&#34;&#34;
@@ -2816,7 +2838,7 @@ if DDB Reconstruction job failed</p>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.run_ddb_verification"><code class="name flex">
-<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, incremental_verification=True, quick_verification=True)</span>
+<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, incremental_verification=True, quick_verification=True, use_scalable_resource=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>runs deduplication data verification(dv2) job with verification type and dv2 option</p>
@@ -2826,6 +2848,8 @@ Default: True (Incremental)</p>
 <p>quick_verification (bool)
 - DV2 job option, Quick or Complete (True/False)
 Default: True (quick verification)</p>
+<p>use_scalable_resource (bool)
+- Use Scalable Resource Allocation while running DDB Verification Job</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of Job class for DDB Verification job</p>
 <h2 id="raises">Raises</h2>
@@ -2836,9 +2860,10 @@ if DDB Verification job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L919-L1011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L924-L1022" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_ddb_verification(self, incremental_verification=True, quick_verification=True):
+<pre><code class="python">def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
+                         use_scalable_resource=False):
     &#34;&#34;&#34;
     runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -2848,6 +2873,8 @@ if DDB Verification job failed</p>
 
         quick_verification (bool)       - DV2 job option, Quick or Complete (True/False)
                                         Default: True (quick verification)
+
+        use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
 
     Returns:
          object - instance of Job class for DDB Verification job
@@ -2868,6 +2895,9 @@ if DDB Verification job failed</p>
     verification_option = &#39;QUICK_DDB_VERIFICATION&#39;
     if not quick_verification:
         verification_option = &#39;DDB_AND_DATA_VERIFICATION&#39;
+
+    if not isinstance(use_scalable_resource, bool):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request_json = {
         &#34;TMMsg_CreateTaskReq&#34;: {
@@ -2900,7 +2930,7 @@ if DDB Verification job failed</p>
                                     &#34;mediaAgent&#34;: {
                                         &#34;mediaAgentName&#34;: &#34;&#34;
                                     },
-                                    &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                    &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                 }
                             }
                         },
@@ -2934,7 +2964,7 @@ if DDB Verification job failed</p>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.run_space_reclaimation"><code class="name flex">
-<span>def <span class="ident">run_space_reclaimation</span></span>(<span>self, level=3, clean_orphan_data=False)</span>
+<span>def <span class="ident">run_space_reclaimation</span></span>(<span>self, level=3, clean_orphan_data=False, use_scalable_resource=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>runs DDB Space reclaimation job with provided level</p>
@@ -2943,6 +2973,8 @@ if DDB Verification job failed</p>
 Default: 3</p>
 <p>clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
 Default: False</p>
+<p>use_scalable_resource (bool)
+- Use Scalable Resource Allocation while running DDB Space Reclamation Job</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of Job class for DDB Verification job</p>
 <h2 id="raises">Raises</h2>
@@ -2954,9 +2986,9 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L819-L917" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L819-L922" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_space_reclaimation(self, level=3, clean_orphan_data=False):
+<pre><code class="python">def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
     &#34;&#34;&#34;
     runs DDB Space reclaimation job with provided level
 
@@ -2966,6 +2998,8 @@ if invalid level is provided</p>
 
         clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
                     Default: False
+
+        use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
 
     Returns:
          object - instance of Job class for DDB Verification job
@@ -2981,6 +3015,9 @@ if invalid level is provided</p>
             if response in not success
     &#34;&#34;&#34;
     if not (isinstance(level, int)) and level not in range(1, 4):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if not isinstance(use_scalable_resource, bool):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     level_map = {
@@ -3021,7 +3058,7 @@ if invalid level is provided</p>
                                     &#34;mediaAgent&#34;: {
                                         &#34;mediaAgentName&#34;: &#34;&#34;
                                     },
-                                    &#34;useScallableResourceManagement&#34;: &#34;false&#34;
+                                    &#34;useScallableResourceManagement&#34;: f&#34;{use_scalable_resource}&#34;
                                 }
                             }
                         },
@@ -3065,7 +3102,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L719-L727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L719-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def seal_deduplication_database(self):
     &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
@@ -3089,7 +3126,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L126-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L126-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912</code></pre>
@@ -3127,7 +3164,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1014-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1025-L1105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SubStore(object):
     &#34;&#34;&#34;Class to performing substore level operations for Deduplication engine&#34;&#34;&#34;
@@ -3219,7 +3256,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1076-L1079" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1087-L1090" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -3233,7 +3270,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1081-L1084" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1092-L1095" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def path(self):
@@ -3247,7 +3284,7 @@ def path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1086-L1089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1097-L1100" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -3261,7 +3298,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1091-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1102-L1105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def substore_id(self):
@@ -3280,7 +3317,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1058-L1074" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1069-L1085" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self):
     &#34;&#34;&#34;mark a substore for recovery and refresh substore properties&#34;&#34;&#34;
@@ -3309,7 +3346,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/deduplication_engines.py#L1054-L1056" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deduplication_engines.py#L1065-L1067" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refresh the properties of a substore&#34;&#34;&#34;

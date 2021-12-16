@@ -25,7 +25,7 @@
 <section id="section-intro">
 <p>File for operating on a Virtual Server Subclient.</p>
 <p>VirualServerSubclient is the only class defined in this file.</p>
-<p>VirtualServerSubclient: Derived class from Subclient Base class, representing a
+<p>VirtualServerSubclient: Derived class from the Subclient Base class, representing a
 virtual server subclient, and to perform operations
 on that subclient</p>
 <h2 id="virtualserversubclient">Virtualserversubclient</h2>
@@ -133,6 +133,9 @@ run a backup job for the subclient</p>
 <p>_advanced_backup_options()
 &ndash;
 sets the advanced backup options</p>
+<p>update_properties()
+&ndash;
+child method to add vsa specific properties to update</p>
 <p>To add a new Virtual Subclient,
 create a class in a new module under virtualserver sub package</p>
 <p>The new module which is created has to named in the following manner:
@@ -146,7 +149,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1-L2743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1-L2809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -170,7 +173,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 
 VirualServerSubclient is the only class defined in this file.
 
-VirtualServerSubclient: Derived class from Subclient Base class, representing a
+VirtualServerSubclient: Derived class from the Subclient Base class, representing a
                             virtual server subclient, and to perform operations
                             on that subclient
 
@@ -272,6 +275,8 @@ VirtualServerSubclient:
 
     _advanced_backup_options()              --  sets the advanced backup options
 
+    update_properties()                       --  child method to add vsa specific properties to update
+
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
@@ -345,7 +350,7 @@ class VirtualServerSubclient(Subclient):
             &#39;2&#39;: &#39;Resource Pool&#39;,
             &#39;4&#39;: &#39;Datacenter&#39;,
             &#39;9&#39;: &#39;Virtual Machine&#39;,
-            &#39;16&#39;: &#39;All unprotected VMs&#39;,
+            &#39;16&#39;: &#39;UnprotectedVMs&#39;,
             &#39;17&#39;: &#39;Root&#39;,
             &#39;34&#39;: &#39;Tag&#39;,
             &#39;35&#39;: &#39;TagCategory&#39;
@@ -355,10 +360,11 @@ class VirtualServerSubclient(Subclient):
             &#39;1&#39;: &#39;Datastore&#39;,
             &#39;2&#39;: &#39;Virtual Disk Name/Pattern&#39;,
             &#39;3&#39;: &#39;Virtual Device Node&#39;,
-            &#39;4&#39;: &#39;Repository&#39;,
+            &#39;4&#39;: &#39;Container&#39;,
             &#39;5&#39;: &#39;Disk Label&#39;,
             &#39;6&#39;: &#39;Disk Type&#39;,
-            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;
+            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;,
+            &#39;10&#39;:&#39;Repository&#39;
         }
 
         self._disk_option = {
@@ -479,17 +485,6 @@ class VirtualServerSubclient(Subclient):
         return vm_diskfilter
 
     @property
-    def cbtvalue(self):
-        &#34;&#34;&#34;
-        Get CBT value for given subclient. Returns status as True/False (string)
-
-        &#34;&#34;&#34;
-        self._get_subclient_properties()
-        cbt_attr = r&#39;useChangedTrackingOnVM&#39;
-        vsasubclient_cbt_status = self._vsaSubclientProp[cbt_attr]
-        return vsasubclient_cbt_status
-
-    @property
     def metadata(self):
         &#34;&#34;&#34;
             Get if collect files/metadata value for given subclient.
@@ -555,35 +550,36 @@ class VirtualServerSubclient(Subclient):
         &#34;&#34;&#34;
         content = []
         try:
-            for item in subclient_content:
-                virtual_server_dict = {}
-                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
-                temp = {
-                    &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
-                    &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
-                    &#39;name&#39;: item[&#39;name&#39;],
-                    &#39;displayName&#39;: item[&#39;display_name&#39;],
-                    &#39;path&#39;: &#39;&#39;,
-                    &#39;type&#39;: item[&#39;type&#39;].value
-                }
-                if item[&#39;type&#39;] == VSAObjects.VMNotes:
-                    temp[&#39;value&#39;] = item[&#39;display_name&#39;]
-                    temp[&#39;displayName&#39;] = item[&#39;display_name&#39;]
-                    temp[&#39;name&#39;] = &#34;Notes&#34;
-                if (item[&#39;type&#39;] ==
-                        VSAObjects.VMPowerState and
-                        item[&#39;state&#39;] == &#39;true&#39;):
-                    temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                    temp[&#39;value&#39;] = 1
-                    temp[&#39;displayName&#39;] = &#34;Powered On&#34;
-                if (item[&#39;type&#39;] ==
-                        VSAObjects.VMPowerState and
-                        item[&#39;state&#39;] == &#39;false&#39;):
-                    temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                    temp[&#39;value&#39;] = 0
-                    temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                virtual_server_dict.update(temp)
-                content.append(virtual_server_dict)
+            for entity in subclient_content:
+                for item in entity:
+                    virtual_server_dict = {}
+                    virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
+                    temp = {
+                        &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
+                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
+                        &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
+                        &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
+                        &#39;path&#39;: &#39;&#39;,
+                        &#39;type&#39;: item[&#39;type&#39;].value
+                    }
+                    if item[&#39;type&#39;] == VSAObjects.VMNotes:
+                        temp[&#39;value&#39;] = item[&#39;display_name&#39;]
+                        temp[&#39;displayName&#39;] = item[&#39;display_name&#39;]
+                        temp[&#39;name&#39;] = &#34;Notes&#34;
+                    if (item[&#39;type&#39;] ==
+                            VSAObjects.VMPowerState and
+                            item[&#39;state&#39;] == &#39;true&#39;):
+                        temp[&#39;name&#39;] = &#34;PoweredState&#34;
+                        temp[&#39;value&#39;] = 1
+                        temp[&#39;displayName&#39;] = &#34;Powered On&#34;
+                    if (item[&#39;type&#39;] ==
+                            VSAObjects.VMPowerState and
+                            item[&#39;state&#39;] == &#39;false&#39;):
+                        temp[&#39;name&#39;] = &#34;PoweredState&#34;
+                        temp[&#39;value&#39;] = 0
+                        temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
+                    virtual_server_dict.update(temp)
+                    content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -677,26 +673,6 @@ class VirtualServerSubclient(Subclient):
         }
         self._set_subclient_properties(&#34;_vmDiskFilter&#34;, vs_diskfilter_content)
 
-    @cbtvalue.setter
-    def cbtvalue(self, value=1):
-        &#34;&#34;&#34;
-        Set given value (enabled/disabled) on the subclient
-
-        Args:
-                value   (int)   - enabled(1)/disabled(0)
-
-        Raise Exception:
-                If unable to set the give CBT value
-
-        &#34;&#34;&#34;
-        try:
-            cbt_status = bool(value)
-            cbt_attr = r&#39;useChangedTrackingOnVM&#39;
-            self._set_subclient_properties(&#34;_vsaSubclientProp[&#39;useChangedTrackingOnVM&#39;]&#34;,
-                                           cbt_status)
-        except BaseException:
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
     @property
     def live_sync(self):
         &#34;&#34;&#34;Returns the instance of the VSALiveSync class&#34;&#34;&#34;
@@ -735,6 +711,44 @@ class VirtualServerSubclient(Subclient):
         collectdetails = r&#39;collectFileDetails&#39;
         if collectdetails in self._vsaSubclientProp:
             self._set_subclient_properties(&#34;_vsaSubclientProp[&#39;collectFileDetails&#39;]&#34;, value)
+
+    @property
+    def cbtvalue(self):
+        &#34;&#34;&#34;
+        Get CBT value for given subclient.
+
+        Returns:
+            (Boolean)    True/False
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(&#39;vsaSubclientProp&#39;, {}).get(&#34;useChangedTrackingOnVM&#34;, False)
+
+
+    @cbtvalue.setter
+    def cbtvalue(self, value):
+        &#34;&#34;&#34;
+        Set CBT value for given subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#34;vsaSubclientProp&#34;][&#39;useChangedTrackingOnVM&#39;] = value
+        self.update_properties(update_properties)
+
+    def update_properties(self, properties_dict):
+        &#34;&#34;&#34;
+        child method to add any specific attributes for vsa
+        Args:
+            properties_dict         (dict):     dict of all propterties of subclient
+        &#34;&#34;&#34;
+        properties_dict.update({
+            &#34;vmFilterOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;vmContentOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;vmDiskFilterOperationType&#34;: &#34;OVERWRITE&#34;
+        })
+        super().update_properties(properties_dict)
 
     def _get_content_list(self, children):
         &#34;&#34;&#34;
@@ -786,15 +800,13 @@ class VirtualServerSubclient(Subclient):
         return content_list
 
     def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of File System subclient.
+        &#34;&#34;&#34;Gets the subclient  related properties of Virtual server subclient.
 
         &#34;&#34;&#34;
 
         self._vmDiskFilter = None
         self._vmFilter = None
-
-        if not bool(self._subclient_properties):
-            super(VirtualServerSubclient, self)._get_subclient_properties()
+        super(VirtualServerSubclient, self)._get_subclient_properties()
 
         if &#39;vmContent&#39; in self._subclient_properties:
             self._vmContent = self._subclient_properties[&#39;vmContent&#39;]
@@ -956,11 +968,11 @@ class VirtualServerSubclient(Subclient):
             nics = {
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
-                &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;,&#34;&#34;),
-                &#34;networkName&#34;:_destnetwork ,
-                &#34;name&#34;: network_card_dict[&#39;label&#39;],
-                &#34;networkName&#34;: _destnetwork,
-                &#34;destinationNetwork&#34;: _destnetwork
+                &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
+                &#34;name&#34;: network_card_dict[
+                    &#39;label&#39;] if self._instance_object.instance_name == &#39;google cloud platform&#39; else &#39;&#39;,
+                &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
+                &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
 
             # setting nics for azureRM instance
@@ -1338,9 +1350,11 @@ class VirtualServerSubclient(Subclient):
 
         if operation == &#39;find&#39;:
             # Return all VMs browse content for find operation
-            vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
             vm_path_list = []
             browse_content_dict = {}
+            if not vm_names:
+                _vm_ids, vm_names = self._get_vm_ids_and_names_dict_from_browse()
+            vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
             for vm_path in vm_paths:
                 vm_path = self._parse_vm_path(vm_names, vm_path)
                 browse_content = super(VirtualServerSubclient, self).browse(
@@ -2890,7 +2904,62 @@ class VirtualServerSubclient(Subclient):
             &#34;destinationNetwork&#34;: restore_option[&#34;destination_network&#34;]
         }
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
-        self._advanced_restore_option_list.append(temp_dict)</code></pre>
+        self._advanced_restore_option_list.append(temp_dict)
+
+    def _prepare_preview_json(self):
+        &#34;&#34;&#34;Prepares the JSON for previewing subclient contents
+
+        Returns:
+            JSON - for previewing subclient contents
+
+        &#34;&#34;&#34;
+        return(
+            {
+                &#34;appId&#34;: {
+                    &#34;subclientId&#34;: int(self.subclient_id),
+                    &#34;clientId&#34;: int(self._client_object.client_id),
+                    &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                    &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+                    &#34;apptypeId&#34;: int(self._agent_object.agent_id)
+                },
+                &#34;filterEntity&#34;: self._vmFilter,
+                &#34;contentEntity&#34;: self._vmContent
+            }
+        )
+
+    def _parse_preview_vms(self, subclient_vm_list):
+        &#34;&#34;&#34;Parses the vm list from the preview vm response
+
+        Returns:
+            _vm_list        (list)  - List of the vms as the subclient content
+        &#34;&#34;&#34;
+        _vm_list = []
+        for vm in subclient_vm_list:
+            _vm_list.append(vm[&#39;name&#39;])
+        return _vm_list
+
+    def preview_content(self):
+        &#34;&#34;&#34;
+        Preview the subclient and get the content
+
+        Returns:
+            list       - List of the vms as the subclient content
+
+        &#34;&#34;&#34;
+        preview = self._commcell_object._services[&#39;PREVIEW&#39;]
+        preview_json = self._prepare_preview_json()
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, preview, preview_json
+        )
+        if flag and &#39;scList&#39; in response.json():
+            return self._parse_preview_vms(response.json()[&#39;scList&#39;])
+        else:
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 </section>
 <section>
@@ -2926,7 +2995,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L158-L2743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L160-L2809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -2968,7 +3037,7 @@ subclient id</p></div>
             &#39;2&#39;: &#39;Resource Pool&#39;,
             &#39;4&#39;: &#39;Datacenter&#39;,
             &#39;9&#39;: &#39;Virtual Machine&#39;,
-            &#39;16&#39;: &#39;All unprotected VMs&#39;,
+            &#39;16&#39;: &#39;UnprotectedVMs&#39;,
             &#39;17&#39;: &#39;Root&#39;,
             &#39;34&#39;: &#39;Tag&#39;,
             &#39;35&#39;: &#39;TagCategory&#39;
@@ -2978,10 +3047,11 @@ subclient id</p></div>
             &#39;1&#39;: &#39;Datastore&#39;,
             &#39;2&#39;: &#39;Virtual Disk Name/Pattern&#39;,
             &#39;3&#39;: &#39;Virtual Device Node&#39;,
-            &#39;4&#39;: &#39;Repository&#39;,
+            &#39;4&#39;: &#39;Container&#39;,
             &#39;5&#39;: &#39;Disk Label&#39;,
             &#39;6&#39;: &#39;Disk Type&#39;,
-            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;
+            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;,
+            &#39;10&#39;:&#39;Repository&#39;
         }
 
         self._disk_option = {
@@ -3102,17 +3172,6 @@ subclient id</p></div>
         return vm_diskfilter
 
     @property
-    def cbtvalue(self):
-        &#34;&#34;&#34;
-        Get CBT value for given subclient. Returns status as True/False (string)
-
-        &#34;&#34;&#34;
-        self._get_subclient_properties()
-        cbt_attr = r&#39;useChangedTrackingOnVM&#39;
-        vsasubclient_cbt_status = self._vsaSubclientProp[cbt_attr]
-        return vsasubclient_cbt_status
-
-    @property
     def metadata(self):
         &#34;&#34;&#34;
             Get if collect files/metadata value for given subclient.
@@ -3178,35 +3237,36 @@ subclient id</p></div>
         &#34;&#34;&#34;
         content = []
         try:
-            for item in subclient_content:
-                virtual_server_dict = {}
-                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
-                temp = {
-                    &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
-                    &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
-                    &#39;name&#39;: item[&#39;name&#39;],
-                    &#39;displayName&#39;: item[&#39;display_name&#39;],
-                    &#39;path&#39;: &#39;&#39;,
-                    &#39;type&#39;: item[&#39;type&#39;].value
-                }
-                if item[&#39;type&#39;] == VSAObjects.VMNotes:
-                    temp[&#39;value&#39;] = item[&#39;display_name&#39;]
-                    temp[&#39;displayName&#39;] = item[&#39;display_name&#39;]
-                    temp[&#39;name&#39;] = &#34;Notes&#34;
-                if (item[&#39;type&#39;] ==
-                        VSAObjects.VMPowerState and
-                        item[&#39;state&#39;] == &#39;true&#39;):
-                    temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                    temp[&#39;value&#39;] = 1
-                    temp[&#39;displayName&#39;] = &#34;Powered On&#34;
-                if (item[&#39;type&#39;] ==
-                        VSAObjects.VMPowerState and
-                        item[&#39;state&#39;] == &#39;false&#39;):
-                    temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                    temp[&#39;value&#39;] = 0
-                    temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                virtual_server_dict.update(temp)
-                content.append(virtual_server_dict)
+            for entity in subclient_content:
+                for item in entity:
+                    virtual_server_dict = {}
+                    virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
+                    temp = {
+                        &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
+                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
+                        &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
+                        &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
+                        &#39;path&#39;: &#39;&#39;,
+                        &#39;type&#39;: item[&#39;type&#39;].value
+                    }
+                    if item[&#39;type&#39;] == VSAObjects.VMNotes:
+                        temp[&#39;value&#39;] = item[&#39;display_name&#39;]
+                        temp[&#39;displayName&#39;] = item[&#39;display_name&#39;]
+                        temp[&#39;name&#39;] = &#34;Notes&#34;
+                    if (item[&#39;type&#39;] ==
+                            VSAObjects.VMPowerState and
+                            item[&#39;state&#39;] == &#39;true&#39;):
+                        temp[&#39;name&#39;] = &#34;PoweredState&#34;
+                        temp[&#39;value&#39;] = 1
+                        temp[&#39;displayName&#39;] = &#34;Powered On&#34;
+                    if (item[&#39;type&#39;] ==
+                            VSAObjects.VMPowerState and
+                            item[&#39;state&#39;] == &#39;false&#39;):
+                        temp[&#39;name&#39;] = &#34;PoweredState&#34;
+                        temp[&#39;value&#39;] = 0
+                        temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
+                    virtual_server_dict.update(temp)
+                    content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -3300,26 +3360,6 @@ subclient id</p></div>
         }
         self._set_subclient_properties(&#34;_vmDiskFilter&#34;, vs_diskfilter_content)
 
-    @cbtvalue.setter
-    def cbtvalue(self, value=1):
-        &#34;&#34;&#34;
-        Set given value (enabled/disabled) on the subclient
-
-        Args:
-                value   (int)   - enabled(1)/disabled(0)
-
-        Raise Exception:
-                If unable to set the give CBT value
-
-        &#34;&#34;&#34;
-        try:
-            cbt_status = bool(value)
-            cbt_attr = r&#39;useChangedTrackingOnVM&#39;
-            self._set_subclient_properties(&#34;_vsaSubclientProp[&#39;useChangedTrackingOnVM&#39;]&#34;,
-                                           cbt_status)
-        except BaseException:
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
     @property
     def live_sync(self):
         &#34;&#34;&#34;Returns the instance of the VSALiveSync class&#34;&#34;&#34;
@@ -3358,6 +3398,44 @@ subclient id</p></div>
         collectdetails = r&#39;collectFileDetails&#39;
         if collectdetails in self._vsaSubclientProp:
             self._set_subclient_properties(&#34;_vsaSubclientProp[&#39;collectFileDetails&#39;]&#34;, value)
+
+    @property
+    def cbtvalue(self):
+        &#34;&#34;&#34;
+        Get CBT value for given subclient.
+
+        Returns:
+            (Boolean)    True/False
+
+        &#34;&#34;&#34;
+        return self._subclient_properties.get(&#39;vsaSubclientProp&#39;, {}).get(&#34;useChangedTrackingOnVM&#34;, False)
+
+
+    @cbtvalue.setter
+    def cbtvalue(self, value):
+        &#34;&#34;&#34;
+        Set CBT value for given subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#34;vsaSubclientProp&#34;][&#39;useChangedTrackingOnVM&#39;] = value
+        self.update_properties(update_properties)
+
+    def update_properties(self, properties_dict):
+        &#34;&#34;&#34;
+        child method to add any specific attributes for vsa
+        Args:
+            properties_dict         (dict):     dict of all propterties of subclient
+        &#34;&#34;&#34;
+        properties_dict.update({
+            &#34;vmFilterOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;vmContentOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;vmDiskFilterOperationType&#34;: &#34;OVERWRITE&#34;
+        })
+        super().update_properties(properties_dict)
 
     def _get_content_list(self, children):
         &#34;&#34;&#34;
@@ -3409,15 +3487,13 @@ subclient id</p></div>
         return content_list
 
     def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of File System subclient.
+        &#34;&#34;&#34;Gets the subclient  related properties of Virtual server subclient.
 
         &#34;&#34;&#34;
 
         self._vmDiskFilter = None
         self._vmFilter = None
-
-        if not bool(self._subclient_properties):
-            super(VirtualServerSubclient, self)._get_subclient_properties()
+        super(VirtualServerSubclient, self)._get_subclient_properties()
 
         if &#39;vmContent&#39; in self._subclient_properties:
             self._vmContent = self._subclient_properties[&#39;vmContent&#39;]
@@ -3579,11 +3655,11 @@ subclient id</p></div>
             nics = {
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
-                &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;,&#34;&#34;),
-                &#34;networkName&#34;:_destnetwork ,
-                &#34;name&#34;: network_card_dict[&#39;label&#39;],
-                &#34;networkName&#34;: _destnetwork,
-                &#34;destinationNetwork&#34;: _destnetwork
+                &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
+                &#34;name&#34;: network_card_dict[
+                    &#39;label&#39;] if self._instance_object.instance_name == &#39;google cloud platform&#39; else &#39;&#39;,
+                &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
+                &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
 
             # setting nics for azureRM instance
@@ -3961,9 +4037,11 @@ subclient id</p></div>
 
         if operation == &#39;find&#39;:
             # Return all VMs browse content for find operation
-            vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
             vm_path_list = []
             browse_content_dict = {}
+            if not vm_names:
+                _vm_ids, vm_names = self._get_vm_ids_and_names_dict_from_browse()
+            vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
             for vm_path in vm_paths:
                 vm_path = self._parse_vm_path(vm_names, vm_path)
                 browse_content = super(VirtualServerSubclient, self).browse(
@@ -5513,7 +5591,62 @@ subclient id</p></div>
             &#34;destinationNetwork&#34;: restore_option[&#34;destination_network&#34;]
         }
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
-        self._advanced_restore_option_list.append(temp_dict)</code></pre>
+        self._advanced_restore_option_list.append(temp_dict)
+
+    def _prepare_preview_json(self):
+        &#34;&#34;&#34;Prepares the JSON for previewing subclient contents
+
+        Returns:
+            JSON - for previewing subclient contents
+
+        &#34;&#34;&#34;
+        return(
+            {
+                &#34;appId&#34;: {
+                    &#34;subclientId&#34;: int(self.subclient_id),
+                    &#34;clientId&#34;: int(self._client_object.client_id),
+                    &#34;instanceId&#34;: int(self._instance_object.instance_id),
+                    &#34;backupsetId&#34;: int(self._backupset_object.backupset_id),
+                    &#34;apptypeId&#34;: int(self._agent_object.agent_id)
+                },
+                &#34;filterEntity&#34;: self._vmFilter,
+                &#34;contentEntity&#34;: self._vmContent
+            }
+        )
+
+    def _parse_preview_vms(self, subclient_vm_list):
+        &#34;&#34;&#34;Parses the vm list from the preview vm response
+
+        Returns:
+            _vm_list        (list)  - List of the vms as the subclient content
+        &#34;&#34;&#34;
+        _vm_list = []
+        for vm in subclient_vm_list:
+            _vm_list.append(vm[&#39;name&#39;])
+        return _vm_list
+
+    def preview_content(self):
+        &#34;&#34;&#34;
+        Preview the subclient and get the content
+
+        Returns:
+            list       - List of the vms as the subclient content
+
+        &#34;&#34;&#34;
+        preview = self._commcell_object._services[&#39;PREVIEW&#39;]
+        preview_json = self._prepare_preview_json()
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, preview, preview_json
+        )
+        if flag and &#39;scList&#39; in response.json():
+            return self._parse_preview_vms(response.json()[&#39;scList&#39;])
+        else:
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5553,22 +5686,25 @@ subclient id</p></div>
 <dl>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.cbtvalue"><code class="name">var <span class="ident">cbtvalue</span></code></dt>
 <dd>
-<div class="desc"><p>Get CBT value for given subclient. Returns status as True/False (string)</p></div>
+<div class="desc"><p>Get CBT value for given subclient.</p>
+<h2 id="returns">Returns</h2>
+<p>(Boolean)
+True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L331-L340" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L562-L571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
     &#34;&#34;&#34;
-    Get CBT value for given subclient. Returns status as True/False (string)
+    Get CBT value for given subclient.
+
+    Returns:
+        (Boolean)    True/False
 
     &#34;&#34;&#34;
-    self._get_subclient_properties()
-    cbt_attr = r&#39;useChangedTrackingOnVM&#39;
-    vsasubclient_cbt_status = self._vsaSubclientProp[cbt_attr]
-    return vsasubclient_cbt_status</code></pre>
+    return self._subclient_properties.get(&#39;vsaSubclientProp&#39;, {}).get(&#34;useChangedTrackingOnVM&#34;, False)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.content"><code class="name">var <span class="ident">content</span></code></dt>
@@ -5579,7 +5715,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L242-L256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L245-L259" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5608,7 +5744,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L268-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L271-L279" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -5627,7 +5763,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L550-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L523-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -5647,7 +5783,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L342-L354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L334-L346" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -5674,7 +5810,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L258-L266" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L261-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -5695,7 +5831,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L293-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L296-L332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -5744,7 +5880,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L278-L291" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L281-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -5781,7 +5917,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L2239-L2274" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2250-L2285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -5879,7 +6015,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L2515-L2590" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2526-L2601" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6006,7 +6142,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1139-L1215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1148-L1226" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6060,9 +6196,11 @@ if failed to browse content</p>
 
     if operation == &#39;find&#39;:
         # Return all VMs browse content for find operation
-        vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
         vm_path_list = []
         browse_content_dict = {}
+        if not vm_names:
+            _vm_ids, vm_names = self._get_vm_ids_and_names_dict_from_browse()
+        vm_paths = [&#39;\\&#39; + vm_id for vm_id in vm_names.values()]
         for vm_path in vm_paths:
             vm_path = self._parse_vm_path(vm_names, vm_path)
             browse_content = super(VirtualServerSubclient, self).browse(
@@ -6168,7 +6306,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1307-L1390" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1318-L1401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6313,7 +6451,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1392-L1464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1403-L1475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6411,7 +6549,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1260-L1305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1271-L1316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6474,7 +6612,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1600-L1695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1611-L1706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -6637,7 +6775,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1466-L1534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1477-L1545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -6732,7 +6870,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1217-L1258" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1228-L1269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -6778,6 +6916,43 @@ if input parameter is not proper</p></div>
     return nic_list</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content"><code class="name flex">
+<span>def <span class="ident">preview_content</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Preview the subclient and get the content</p>
+<h2 id="returns">Returns</h2>
+<p>list
+- List of the vms as the subclient content</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2788-L2809" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def preview_content(self):
+    &#34;&#34;&#34;
+    Preview the subclient and get the content
+
+    Returns:
+        list       - List of the vms as the subclient content
+
+    &#34;&#34;&#34;
+    preview = self._commcell_object._services[&#39;PREVIEW&#39;]
+    preview_json = self._prepare_preview_json()
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, preview, preview_json
+    )
+    if flag and &#39;scList&#39; in response.json():
+        return self._parse_preview_vms(response.json()[&#39;scList&#39;])
+    else:
+        raise SDKException(
+            &#39;Subclient&#39;,
+            &#39;102&#39;,
+            self._update_response_(
+                response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options"><code class="name flex">
 <span>def <span class="ident">set_advanced_attach_disk_restore_options</span></span>(<span>self, vm_to_restore, restore_option)</span>
 </code></dt>
@@ -6806,7 +6981,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L2130-L2199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2141-L2210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6910,7 +7085,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1990-L2128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2001-L2139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7053,6 +7228,34 @@ name                        - name of the VM to be restored
     self._advanced_restore_option_list.append(temp_dict)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties"><code class="name flex">
+<span>def <span class="ident">update_properties</span></span>(<span>self, properties_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>child method to add any specific attributes for vsa</p>
+<h2 id="args">Args</h2>
+<p>properties_dict
+(dict):
+dict of all propterties of subclient</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L587-L598" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_properties(self, properties_dict):
+    &#34;&#34;&#34;
+    child method to add any specific attributes for vsa
+    Args:
+        properties_dict         (dict):     dict of all propterties of subclient
+    &#34;&#34;&#34;
+    properties_dict.update({
+        &#34;vmFilterOperationType&#34;: &#34;OVERWRITE&#34;,
+        &#34;vmContentOperationType&#34;: &#34;OVERWRITE&#34;,
+        &#34;vmDiskFilterOperationType&#34;: &#34;OVERWRITE&#34;
+    })
+    super().update_properties(properties_dict)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse"><code class="name flex">
 <span>def <span class="ident">vm_files_browse</span></span>(<span>self, vm_path='\\', show_deleted_files=False, operation='browse', copy_precedence=0)</span>
 </code></dt>
@@ -7095,7 +7298,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1697-L1729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1708-L1740" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7188,7 +7391,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vssubclient.py#L1731-L1790" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1742-L1801" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,
@@ -7281,6 +7484,7 @@ if from date value is incorrect</p>
 <li><code><a title="cvpysdk.subclient.Subclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.list_media" href="../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
@@ -7301,7 +7505,6 @@ if from date value is incorrect</p>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
-<li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
 </ul>
@@ -7392,9 +7595,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.live_sync" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.live_sync">live_sync</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata">metadata</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml">parse_nics_xml</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time">vm_files_browse_in_time</a></code></li>

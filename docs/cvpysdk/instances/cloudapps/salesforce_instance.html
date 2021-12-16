@@ -72,7 +72,7 @@ class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L1-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L1-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -394,8 +394,10 @@ class SalesforceInstance(CloudAppsInstance):
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files&#39;, &#39;/Objects/&#39;]),
             client=kwargs.get(&#39;client&#39;, self.proxy_client),
             restore_to_file_system=True,
             **kwargs
@@ -406,7 +408,7 @@ class SalesforceInstance(CloudAppsInstance):
     def restore_to_database(
             self,
             db_type,
-            db_host,
+            db_host_name,
             db_name,
             db_user_name,
             db_password,
@@ -418,7 +420,7 @@ class SalesforceInstance(CloudAppsInstance):
         Args:
             db_type (str): Type of database out of &#39;POSTGRESQL&#39; or &#39;SQLSERVER&#39;
 
-            db_host (str): Hostname of database server
+            db_host_name (str): Hostname of database server
 
             db_name (str): Database name where objects will be restored
 
@@ -465,7 +467,7 @@ class SalesforceInstance(CloudAppsInstance):
 
                 if paths is given but is not a list
         &#34;&#34;&#34;
-        PARAMS = (db_type, db_host,  db_name, db_user_name, db_password)
+        PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
 
         if not isinstance(kwargs.get(&#39;paths&#39;, list()), list):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -474,11 +476,13 @@ class SalesforceInstance(CloudAppsInstance):
                 (isinstance(kwargs.get(&#39;db_instance&#39;, None), str) != (db_type == &#39;SQLSERVER&#39;)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Objects/&#39;]),
             db_enabled=True,
             db_type=db_type,
-            db_host=db_host,
+            db_host=db_host_name,
             db_name=db_name,
             db_user_name=db_user_name,
             db_password=db_password,
@@ -570,8 +574,10 @@ class SalesforceInstance(CloudAppsInstance):
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
             kwargs[&#39;db_enabled&#39;] = True
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
             restore_to_salesforce=True,
             restore_from_database=True,
             **kwargs
@@ -663,8 +669,10 @@ class SalesforceInstance(CloudAppsInstance):
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
             kwargs[&#39;db_enabled&#39;] = True
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
             restore_to_salesforce=True,
             **kwargs
         )
@@ -726,9 +734,11 @@ class SalesforceInstance(CloudAppsInstance):
         if any(param in kwargs for param in PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
         
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
             restore_to_file_system=True,
             is_metadata_restore=True,
             **kwargs
@@ -791,9 +801,11 @@ class SalesforceInstance(CloudAppsInstance):
         if any(param in kwargs for param in DEST_PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
         
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
             restore_to_salesforce=True,
             is_metadata_restore=True,
             **kwargs
@@ -837,7 +849,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L70-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L70-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SalesforceInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the Salesforce instance type.&#34;&#34;&#34;
@@ -1090,8 +1102,10 @@ default: None</p>
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files&#39;, &#39;/Objects/&#39;]),
             client=kwargs.get(&#39;client&#39;, self.proxy_client),
             restore_to_file_system=True,
             **kwargs
@@ -1102,7 +1116,7 @@ default: None</p>
     def restore_to_database(
             self,
             db_type,
-            db_host,
+            db_host_name,
             db_name,
             db_user_name,
             db_password,
@@ -1114,7 +1128,7 @@ default: None</p>
         Args:
             db_type (str): Type of database out of &#39;POSTGRESQL&#39; or &#39;SQLSERVER&#39;
 
-            db_host (str): Hostname of database server
+            db_host_name (str): Hostname of database server
 
             db_name (str): Database name where objects will be restored
 
@@ -1161,7 +1175,7 @@ default: None</p>
 
                 if paths is given but is not a list
         &#34;&#34;&#34;
-        PARAMS = (db_type, db_host,  db_name, db_user_name, db_password)
+        PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
 
         if not isinstance(kwargs.get(&#39;paths&#39;, list()), list):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1170,11 +1184,13 @@ default: None</p>
                 (isinstance(kwargs.get(&#39;db_instance&#39;, None), str) != (db_type == &#39;SQLSERVER&#39;)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Objects/&#39;]),
             db_enabled=True,
             db_type=db_type,
-            db_host=db_host,
+            db_host=db_host_name,
             db_name=db_name,
             db_user_name=db_user_name,
             db_password=db_password,
@@ -1266,8 +1282,10 @@ default: None</p>
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
             kwargs[&#39;db_enabled&#39;] = True
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
             restore_to_salesforce=True,
             restore_from_database=True,
             **kwargs
@@ -1359,8 +1377,10 @@ default: None</p>
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
             kwargs[&#39;db_enabled&#39;] = True
 
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
             restore_to_salesforce=True,
             **kwargs
         )
@@ -1422,9 +1442,11 @@ default: None</p>
         if any(param in kwargs for param in PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
         
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
             restore_to_file_system=True,
             is_metadata_restore=True,
             **kwargs
@@ -1487,9 +1509,11 @@ default: None</p>
         if any(param in kwargs for param in DEST_PARAMS) and \
                 not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if not &#39;paths&#39; in kwargs:
+            kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
         
         request_json = self._restore_json(
-            paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
             restore_to_salesforce=True,
             is_metadata_restore=True,
             **kwargs
@@ -1518,7 +1542,7 @@ whether a single client or a client group is configured as access node.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L160-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L160-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node(self):
@@ -1550,7 +1574,7 @@ def access_node(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L73-L81" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L73-L81" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1576,7 +1600,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L115-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L115-L129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def consumer_id(self):
@@ -1608,7 +1632,7 @@ def consumer_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L99-L113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L99-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def login_url(self):
@@ -1640,7 +1664,7 @@ def login_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L83-L97" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L83-L97" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self):
@@ -1672,7 +1696,7 @@ if attribute could not be fetched</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L131-L158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L131-L158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_client(self):
@@ -1762,7 +1786,7 @@ if client or path_to_store_csv are not strings
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L598-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L606-L670" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metadata_restore_to_file_system(self, **kwargs):
     &#34;&#34;&#34;
@@ -1819,9 +1843,11 @@ if client or path_to_store_csv are not strings
     if any(param in kwargs for param in PARAMS) and \
             not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
     
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
         restore_to_file_system=True,
         is_metadata_restore=True,
         **kwargs
@@ -1884,7 +1910,7 @@ if client, instance and backupset are not strings
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L662-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L672-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metadata_restore_to_salesforce(self, **kwargs):
     &#34;&#34;&#34;
@@ -1942,9 +1968,11 @@ if client, instance and backupset are not strings
     if any(param in kwargs for param in DEST_PARAMS) and \
             not all(isinstance(kwargs.get(param, None), str) for param in DEST_PARAMS):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Metadata/unpackaged/&#39;]
     
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Metadata/unpackaged/&#39;]),
         restore_to_salesforce=True,
         is_metadata_restore=True,
         **kwargs
@@ -1954,7 +1982,7 @@ if client, instance and backupset are not strings
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.salesforce_instance.SalesforceInstance.restore_to_database"><code class="name flex">
-<span>def <span class="ident">restore_to_database</span></span>(<span>self, db_type, db_host, db_name, db_user_name, db_password, **kwargs)</span>
+<span>def <span class="ident">restore_to_database</span></span>(<span>self, db_type, db_host_name, db_name, db_user_name, db_password, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs object level restore to database and returns object of Job or Schedule class</p>
@@ -1962,7 +1990,7 @@ if client, instance and backupset are not strings
 <dl>
 <dt><strong><code>db_type</code></strong> :&ensp;<code>str</code></dt>
 <dd>Type of database out of 'POSTGRESQL' or 'SQLSERVER'</dd>
-<dt><strong><code>db_host</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>db_host_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Hostname of database server</dd>
 <dt><strong><code>db_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Database name where objects will be restored</dd>
@@ -2014,12 +2042,12 @@ if paths is given but is not a list
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L330-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L332-L416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_database(
         self,
         db_type,
-        db_host,
+        db_host_name,
         db_name,
         db_user_name,
         db_password,
@@ -2031,7 +2059,7 @@ if paths is given but is not a list
     Args:
         db_type (str): Type of database out of &#39;POSTGRESQL&#39; or &#39;SQLSERVER&#39;
 
-        db_host (str): Hostname of database server
+        db_host_name (str): Hostname of database server
 
         db_name (str): Database name where objects will be restored
 
@@ -2078,7 +2106,7 @@ if paths is given but is not a list
 
             if paths is given but is not a list
     &#34;&#34;&#34;
-    PARAMS = (db_type, db_host,  db_name, db_user_name, db_password)
+    PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
 
     if not isinstance(kwargs.get(&#39;paths&#39;, list()), list):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -2087,11 +2115,13 @@ if paths is given but is not a list
             (isinstance(kwargs.get(&#39;db_instance&#39;, None), str) != (db_type == &#39;SQLSERVER&#39;)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Objects/&#39;]
+
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Objects/&#39;]),
         db_enabled=True,
         db_type=db_type,
-        db_host=db_host,
+        db_host=db_host_name,
         db_name=db_name,
         db_user_name=db_user_name,
         db_password=db_password,
@@ -2154,7 +2184,7 @@ if client or path_to_store_csv are not strings
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L266-L328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L266-L330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_file_system(self, **kwargs):
     &#34;&#34;&#34;
@@ -2211,8 +2241,10 @@ if client or path_to_store_csv are not strings
             not all(isinstance(kwargs.get(param, None), str) for param in PARAMS):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Files&#39;, &#39;/Objects/&#39;]),
         client=kwargs.get(&#39;client&#39;, self.proxy_client),
         restore_to_file_system=True,
         **kwargs
@@ -2295,7 +2327,7 @@ if client, instance and backupset are not strings
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L414-L504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L418-L510" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_salesforce_from_database(self, **kwargs):
     &#34;&#34;&#34;
@@ -2380,8 +2412,10 @@ if client, instance and backupset are not strings
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         kwargs[&#39;db_enabled&#39;] = True
 
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
         restore_to_salesforce=True,
         restore_from_database=True,
         **kwargs
@@ -2465,7 +2499,7 @@ if client, instance and backupset are not strings
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instances/cloudapps/salesforce_instance.py#L506-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/salesforce_instance.py#L512-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_salesforce_from_media(self, **kwargs):
     &#34;&#34;&#34;
@@ -2551,8 +2585,10 @@ if client, instance and backupset are not strings
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         kwargs[&#39;db_enabled&#39;] = True
 
+    if not &#39;paths&#39; in kwargs:
+        kwargs[&#39;paths&#39;] = [&#39;/Files/&#39;, &#39;/Objects/&#39;]
+
     request_json = self._restore_json(
-        paths=kwargs.get(&#39;paths&#39;, [&#39;/Files/&#39;, &#39;/Objects/&#39;]),
         restore_to_salesforce=True,
         **kwargs
     )

@@ -39,7 +39,7 @@ full_vm_restore_in_place()                      --  restores the VM specified by
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -105,7 +105,8 @@ class nutanixsubclient(VirtualServerSubclient):
                                      overwrite=True,
                                      power_on=True,
                                      copy_precedence=0,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     vcenter_client=None):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
@@ -129,6 +130,9 @@ class nutanixsubclient(VirtualServerSubclient):
 
                         restore_option        (dict)       --  complete dictionary with
                                                                all advanced option
+
+                        vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                                        should be restored
                             default: {}
 
                     Returns:
@@ -163,6 +167,8 @@ class nutanixsubclient(VirtualServerSubclient):
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             esx_host=host,
+            esx_server=vcenter_client,
+            vcenter_client=vcenter_client,
             datastore=container,
             client_name=proxy_client,
             in_place=False,
@@ -377,7 +383,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class nutanixsubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -403,7 +409,8 @@ backupset class, subclient name, subclient id</p></div>
                                      overwrite=True,
                                      power_on=True,
                                      copy_precedence=0,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     vcenter_client=None):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
@@ -427,6 +434,9 @@ backupset class, subclient name, subclient id</p></div>
 
                         restore_option        (dict)       --  complete dictionary with
                                                                all advanced option
+
+                        vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                                        should be restored
                             default: {}
 
                     Returns:
@@ -461,6 +471,8 @@ backupset class, subclient name, subclient id</p></div>
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             esx_host=host,
+            esx_server=vcenter_client,
+            vcenter_client=vcenter_client,
             datastore=container,
             client_name=proxy_client,
             in_place=False,
@@ -723,7 +735,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L185-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L191-L313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -891,7 +903,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L134-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L140-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -946,7 +958,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, host=None, container=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, copy_precedence=0, restore_option=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, host=None, container=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, copy_precedence=0, restore_option=None, vcenter_client=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -983,7 +995,12 @@ restored VM</p>
 (dict)
 &ndash;
 complete dictionary with
-all advanced option
+all advanced option</p>
+<p>vcenter_client
+(str)
+&ndash;
+name of the vcenter client where the VM
+should be restored
 default: {}</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
@@ -1000,7 +1017,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -1011,7 +1028,8 @@ if response is not success
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
-                                 restore_option=None):
+                                 restore_option=None,
+                                 vcenter_client=None):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                 at the specified destination location.
 
@@ -1035,6 +1053,9 @@ if response is not success
 
                     restore_option        (dict)       --  complete dictionary with
                                                            all advanced option
+
+                    vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                                    should be restored
                         default: {}
 
                 Returns:
@@ -1069,6 +1090,8 @@ if response is not success
         copy_precedence=copy_precedence,
         volume_level_restore=1,
         esx_host=host,
+        esx_server=vcenter_client,
+        vcenter_client=vcenter_client,
         datastore=container,
         client_name=proxy_client,
         in_place=False,
@@ -1122,6 +1145,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_on_demand_subclient" href="../../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_trueup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.last_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.list_media" href="../../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.live_sync" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.live_sync">live_sync</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata">metadata</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.name" href="../../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
@@ -1129,6 +1153,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml">parse_nics_xml</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
@@ -1148,7 +1173,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
-<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse_in_time">vm_files_browse_in_time</a></code></li>

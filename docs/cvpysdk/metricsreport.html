@@ -92,7 +92,11 @@ called to save the configuration changes made in this object</p>
 <p>wait_for_uploadnow_completion()&ndash; waits for complete metrics operation to complete</p>
 <p>get_possible_uploaded_filenames&ndash; gives the possible names for the uploaded files</p>
 <p>refresh()
-&ndash; refresh the properties and config of the Metrics Server</p>
+&ndash; refresh the properties and config of the Metrics Server
+get_uploaded_filename()
+&ndash; Gets last uploaded file name
+get_uploaded_zip_filename()
+&ndash; Gets last uploaded zip file name</p>
 <h2 id="privatemetrics">Privatemetrics</h2>
 <p><strong>init</strong>(Commcell_object)
 &ndash;
@@ -123,7 +127,7 @@ enables chargeback service</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L1-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L1-L655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -207,7 +211,8 @@ Metrics:
     get_possible_uploaded_filenames-- gives the possible names for the uploaded files
 
     refresh()                      -- refresh the properties and config of the Metrics Server
-
+    get_uploaded_filename()        -- Gets last uploaded file name
+    get_uploaded_zip_filename()    -- Gets last uploaded zip file name
 PrivateMetrics:
     __init__(Commcell_object)   --  initialise with object of CommCell
 
@@ -573,18 +578,22 @@ class _Metrics(object):
             commcellid = hex(ccid).split(&#39;x&#39;)[1].upper()
         return commcellid
 
-    def get_uploaded_filename(self, query_id=None):
+    def get_uploaded_filename(self, query_id=None, last_collection_time=None):
         &#34;&#34;&#34;
         Gets last uploaded file name
 
         Args:
             query_id (int): optional argument to get file name specific to a query
+            last_collection_time (int): optional argument to get file name for specified last collection time
 
-        Returns : Last uploaded file name
+        Returns: Last uploaded file name
         &#34;&#34;&#34;
 
         commcellid = self._get_commcell_id()
-        cs_lastcollectiontime = int(self.lastcollectiontime)
+        if last_collection_time is None:
+            cs_lastcollectiontime = int(self.lastcollectiontime)
+        else:
+            cs_lastcollectiontime = last_collection_time
         if cs_lastcollectiontime == 0:
             raise Exception(&#34;last collection time is 0, Upload didn&#39;t complete or failed&#34;)
         if query_id is None:
@@ -594,6 +603,20 @@ class _Metrics(object):
                 commcellid) + &#34;_&#34; + str(query_id) + &#34;.xml&#34;
         return file_name
 
+    def get_uploaded_zip_filename(self, commserv_guid, backupjob_id):
+        &#34;&#34;&#34;
+        Gets last uploaded zip file name
+        Args:
+            query_id (int): optional argument to get file name specific to a query
+        Returns : Last uploaded file name
+        &#34;&#34;&#34;
+        commcellid = self._get_commcell_id()
+        cs_lastcollectiontime = int(self.lastcollectiontime)
+        if cs_lastcollectiontime == 0:
+            raise Exception(&#34;last collection time is 0, Upload didn&#39;t complete or failed&#34;)
+        file_name = &#34;CSS&#34; + &#34;&#34; + str(cs_lastcollectiontime) + &#34;_&#34; + str(commcellid)\
+                    + &#34;_&#34; + str(commserv_guid) + &#34;_&#34; + str(backupjob_id) + &#34;.zip&#34;
+        return file_name
 
 class PrivateMetrics(_Metrics):
     &#34;&#34;&#34;Class for operations in private Metrics reporting&#34;&#34;&#34;
@@ -788,7 +811,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L566-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L585-L655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudMetrics(_Metrics):
     &#34;&#34;&#34;Class for operations in Cloud Metrics reporting&#34;&#34;&#34;
@@ -874,7 +897,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L580-L582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L599-L601" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def randomization_minutes(self):
@@ -892,7 +915,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L616-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L635-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_cloud_assist(self):
     &#34;&#34;&#34;disables Cloud Assist service&#34;&#34;&#34;
@@ -908,7 +931,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L604-L607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L623-L626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_proactive_support(self):
     &#34;&#34;&#34;disables Proactive Support service&#34;&#34;&#34;
@@ -924,7 +947,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L594-L597" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L613-L616" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_upgrade_readiness(self):
     &#34;&#34;&#34;disables pre upgrade readiness service&#34;&#34;&#34;
@@ -940,7 +963,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L584-L587" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L603-L606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_chargeback(self):
     &#34;&#34;&#34;Enables Chargeback service&#34;&#34;&#34;
@@ -956,7 +979,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L609-L614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L628-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_cloud_assist(self):
     &#34;&#34;&#34;Enables Cloud Assist service and proactive support if not already enabled&#34;&#34;&#34;
@@ -974,7 +997,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L599-L602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L618-L621" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_proactive_support(self):
     &#34;&#34;&#34;Enables Proactive Support service&#34;&#34;&#34;
@@ -990,7 +1013,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L589-L592" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L608-L611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_upgrade_readiness(self):
     &#34;&#34;&#34;Enables pre upgrade readiness service&#34;&#34;&#34;
@@ -1011,7 +1034,7 @@ def randomization_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L621-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L640-L655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_randomization_minutes(self, minutes=0):
     &#34;&#34;&#34;
@@ -1050,7 +1073,7 @@ type &ndash; 1 for private, 0 for public</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L471-L563" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L490-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PrivateMetrics(_Metrics):
     &#34;&#34;&#34;Class for operations in private Metrics reporting&#34;&#34;&#34;
@@ -1158,7 +1181,7 @@ type &ndash; 1 for private, 0 for public</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L506-L509" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L525-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def downloadurl(self):
@@ -1172,7 +1195,7 @@ def downloadurl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L516-L518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L535-L537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def private_metrics_server_name(self):
@@ -1185,7 +1208,7 @@ def private_metrics_server_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L511-L514" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L530-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def uploadurl(self):
@@ -1204,7 +1227,7 @@ def uploadurl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L561-L563" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L580-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_forwarding(self):
     &#34;&#34;&#34;Disables forwarding&#34;&#34;&#34;
@@ -1227,7 +1250,7 @@ def uploadurl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L533-L544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L552-L563" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_chargeback(self, daily=True, weekly=False, monthly=False):
     &#34;&#34;&#34;
@@ -1256,7 +1279,7 @@ def uploadurl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L546-L559" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L565-L578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_forwarding(self, forwarding_url):
     &#34;&#34;&#34;
@@ -1293,7 +1316,7 @@ default: http</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/metricsreport.py#L520-L531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metricsreport.py#L539-L550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_url(self, hostname, port=80, protocol=&#39;http&#39;):
     &#34;&#34;&#34;

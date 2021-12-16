@@ -182,6 +182,8 @@ adds the regex entity in the commcell</p>
 <p>delete()
 &ndash;
 deletes the regex entity in the commcell for given entity name</p>
+<p>_process_entity_containers()
+&ndash; returns the container details for the entity</p>
 <h2 id="activateentity">Activateentity</h2>
 <p><strong>init</strong>(
 commcell_object,
@@ -219,6 +221,8 @@ Modifies the entity properties for the associated regex entity</p>
 **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)
 
 **entity_xml**        --  returns the entity xml associated with this entity
+
+**container_details** --  returns the container details for this entity
 </code></pre>
 <h2 id="classifiers">Classifiers</h2>
 <p><strong>init</strong>(commcell_object)
@@ -332,7 +336,7 @@ Cancels training for this classifier</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1-L2519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1-L2571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -487,6 +491,8 @@ ActivateEntities:
 
     delete()                            --  deletes the regex entity in the commcell for given entity name
 
+    _process_entity_containers()        -- returns the container details for the entity
+
 ActivateEntity:
 
     __init__(
@@ -522,6 +528,8 @@ ActivateEntity Attributes
     **entity_type**       --  returns the type of entity (1- NER 2-RER 3-Derived 4-Classifier)
 
     **entity_xml**        --  returns the entity xml associated with this entity
+
+    **container_details** --  returns the container details for this entity
 
 Classifiers:
 
@@ -654,7 +662,9 @@ class ActivateEntities(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._regex_entities = None
+        self._entities_containers = None
         self._api_get_all_regex_entities = self._services[&#39;ACTIVATE_ENTITIES&#39;]
+        self._api_get_containers = self._services[&#39;ACTIVATE_ENTITY_CONTAINER&#39;]
         self._api_create_regex_entity = self._api_get_all_regex_entities
         self._api_delete_regex_entity = self._services[&#39;ACTIVATE_ENTITY&#39;]
         self.refresh()
@@ -845,6 +855,17 @@ class ActivateEntities(object):
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._api_get_containers
+        )
+        if flag:
+            if response.json() and &#39;containerTypesList&#39; in response.json():
+                self._entities_containers = response.json()[&#39;containerTypesList&#39;]
+            else:
+                raise SDKException(&#39;ActivateEntity&#39;, &#39;107&#39;)
+        else:
+            self._response_not_success(response)
+
+        flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._api_get_all_regex_entities
         )
 
@@ -854,8 +875,33 @@ class ActivateEntities(object):
             raise SDKException(&#39;ActivateEntity&#39;, &#39;103&#39;)
         self._response_not_success(response)
 
-    @staticmethod
-    def _get_regex_entity_from_collections(collections):
+    def _process_entity_containers(self, entity_name, container_name):
+        &#34;&#34;&#34;Returns container details for given entity name &amp; container name
+
+            Args:
+
+                entity_name         (str)       --  Entity name
+
+                container_name      (str)       --  Container name
+
+            Returns:
+
+                dict    --  Container details of entity
+        &#34;&#34;&#34;
+        output = {}
+        for dept in self._entities_containers:
+            items_list = dept[&#39;tagSetsAndItems&#39;]
+            for country in items_list:
+                tags_list = country[&#39;tags&#39;]
+                for tag in tags_list:
+                    if entity_name.lower() == tag[&#39;entityDetail&#39;][&#39;entityName&#39;].lower() and \
+                            container_name.lower() == country[&#39;container&#39;][&#39;containerName&#39;].lower():
+                        output[&#39;tags&#39;] = [tag]
+                        output[&#39;container&#39;] = country[&#39;container&#39;]
+                        return output
+        return output
+
+    def _get_regex_entity_from_collections(self, collections):
         &#34;&#34;&#34;Extracts all the regex entities, and their details from the list of collections given,
             and returns the dictionary of all regex entities
 
@@ -873,6 +919,9 @@ class ActivateEntities(object):
             regex_entity_dict[&#39;displayName&#39;] = regex_entity.get(&#39;displayName&#39;, &#34;&#34;)
             regex_entity_dict[&#39;entityKey&#39;] = regex_entity.get(&#39;entityKey&#39;, &#34;&#34;)
             regex_entity_dict[&#39;categoryName&#39;] = regex_entity.get(&#39;categoryName&#39;, &#34;&#34;)
+            if regex_entity_dict[&#39;categoryName&#39;] is not None:
+                regex_entity_dict[&#39;containerDetails&#39;] = self._process_entity_containers(
+                    entity_name=regex_entity_dict[&#39;displayName&#39;], container_name=regex_entity_dict[&#39;categoryName&#39;])
             regex_entity_dict[&#39;entityXML&#39;] = regex_entity.get(&#39;entityXML&#39;, &#34;&#34;)
             regex_entity_dict[&#39;entityId&#39;] = regex_entity.get(&#39;entityId&#39;, 0)
             regex_entity_dict[&#39;flags&#39;] = regex_entity.get(&#39;flags&#39;, 0)
@@ -1008,6 +1057,7 @@ class ActivateEntity(object):
         self._entity_key = None
         self._entity_xml = None
         self._category_name = None
+        self._container_details = None
         if entity_id is None:
             self._entity_id = self._get_entity_id(entity_name)
         else:
@@ -1128,7 +1178,13 @@ class ActivateEntity(object):
         self._entity_key = regex_entity_dict[&#39;entityKey&#39;]
         self._entity_type = regex_entity_dict[&#39;entityType&#39;]
         self._entity_xml = regex_entity_dict[&#39;entityXML&#39;]
+        self._container_details = regex_entity_dict[&#39;containerDetails&#39;]
         return regex_entity_dict
+
+    @property
+    def container_details(self):
+        &#34;&#34;&#34;Returns the container details for this entity&#34;&#34;&#34;
+        return self._container_details
 
     @property
     def entity_id(self):
@@ -2883,7 +2939,7 @@ instance of the ActivateEntities class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L303-L643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L307-L688" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivateEntities(object):
     &#34;&#34;&#34;Class for representing all the regex entities in the commcell.&#34;&#34;&#34;
@@ -2903,7 +2959,9 @@ instance of the ActivateEntities class</p></div>
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._regex_entities = None
+        self._entities_containers = None
         self._api_get_all_regex_entities = self._services[&#39;ACTIVATE_ENTITIES&#39;]
+        self._api_get_containers = self._services[&#39;ACTIVATE_ENTITY_CONTAINER&#39;]
         self._api_create_regex_entity = self._api_get_all_regex_entities
         self._api_delete_regex_entity = self._services[&#39;ACTIVATE_ENTITY&#39;]
         self.refresh()
@@ -3094,6 +3152,17 @@ instance of the ActivateEntities class</p></div>
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._api_get_containers
+        )
+        if flag:
+            if response.json() and &#39;containerTypesList&#39; in response.json():
+                self._entities_containers = response.json()[&#39;containerTypesList&#39;]
+            else:
+                raise SDKException(&#39;ActivateEntity&#39;, &#39;107&#39;)
+        else:
+            self._response_not_success(response)
+
+        flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._api_get_all_regex_entities
         )
 
@@ -3103,8 +3172,33 @@ instance of the ActivateEntities class</p></div>
             raise SDKException(&#39;ActivateEntity&#39;, &#39;103&#39;)
         self._response_not_success(response)
 
-    @staticmethod
-    def _get_regex_entity_from_collections(collections):
+    def _process_entity_containers(self, entity_name, container_name):
+        &#34;&#34;&#34;Returns container details for given entity name &amp; container name
+
+            Args:
+
+                entity_name         (str)       --  Entity name
+
+                container_name      (str)       --  Container name
+
+            Returns:
+
+                dict    --  Container details of entity
+        &#34;&#34;&#34;
+        output = {}
+        for dept in self._entities_containers:
+            items_list = dept[&#39;tagSetsAndItems&#39;]
+            for country in items_list:
+                tags_list = country[&#39;tags&#39;]
+                for tag in tags_list:
+                    if entity_name.lower() == tag[&#39;entityDetail&#39;][&#39;entityName&#39;].lower() and \
+                            container_name.lower() == country[&#39;container&#39;][&#39;containerName&#39;].lower():
+                        output[&#39;tags&#39;] = [tag]
+                        output[&#39;container&#39;] = country[&#39;container&#39;]
+                        return output
+        return output
+
+    def _get_regex_entity_from_collections(self, collections):
         &#34;&#34;&#34;Extracts all the regex entities, and their details from the list of collections given,
             and returns the dictionary of all regex entities
 
@@ -3122,6 +3216,9 @@ instance of the ActivateEntities class</p></div>
             regex_entity_dict[&#39;displayName&#39;] = regex_entity.get(&#39;displayName&#39;, &#34;&#34;)
             regex_entity_dict[&#39;entityKey&#39;] = regex_entity.get(&#39;entityKey&#39;, &#34;&#34;)
             regex_entity_dict[&#39;categoryName&#39;] = regex_entity.get(&#39;categoryName&#39;, &#34;&#34;)
+            if regex_entity_dict[&#39;categoryName&#39;] is not None:
+                regex_entity_dict[&#39;containerDetails&#39;] = self._process_entity_containers(
+                    entity_name=regex_entity_dict[&#39;displayName&#39;], container_name=regex_entity_dict[&#39;categoryName&#39;])
             regex_entity_dict[&#39;entityXML&#39;] = regex_entity.get(&#39;entityXML&#39;, &#34;&#34;)
             regex_entity_dict[&#39;entityId&#39;] = regex_entity.get(&#39;entityId&#39;, 0)
             regex_entity_dict[&#39;flags&#39;] = regex_entity.get(&#39;flags&#39;, 0)
@@ -3272,7 +3369,7 @@ represents whether it is derived entity or not</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L326-L391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L332-L397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, entity_name, entity_regex, entity_keywords, entity_flag, is_derived=False, parent_entity=None):
     &#34;&#34;&#34;Adds the specified regex entity name in the commcell
@@ -3368,7 +3465,7 @@ name of the regex entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L393-L431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L399-L437" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, entity_name):
     &#34;&#34;&#34;deletes the specified regex entity name in the commcell
@@ -3433,7 +3530,7 @@ if entity_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L552-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L597-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, entity_name):
     &#34;&#34;&#34;Returns a ActivateEntity object for the given regex entity name.
@@ -3479,7 +3576,7 @@ names of the regex entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L580-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L625-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_ids(self, entity_name):
     &#34;&#34;&#34;Returns a list of entity id for the given regex entity name list.
@@ -3520,7 +3617,7 @@ names of the regex entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L603-L624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L648-L669" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_keys(self, entity_name):
     &#34;&#34;&#34;Returns a list of entity keys for the given regex entity name list.
@@ -3561,7 +3658,7 @@ properties for the given regex entity name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L444-L455" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L450-L461" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, entity_name):
     &#34;&#34;&#34;Returns a properties of the specified regex entity name.
@@ -3594,7 +3691,7 @@ if type of the regex entity name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L626-L643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L671-L688" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_entity(self, entity_name):
     &#34;&#34;&#34;Checks if a regex entity exists in the commcell with the input name.
@@ -3624,7 +3721,7 @@ if type of the regex entity name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L548-L550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L593-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the activate regex entities associated with the commcell.&#34;&#34;&#34;
@@ -3661,7 +3758,7 @@ instance of the ActivateEntity class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L646-L834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L691-L886" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivateEntity(object):
     &#34;&#34;&#34;Class for performing operations on a single regex entity&#34;&#34;&#34;
@@ -3692,6 +3789,7 @@ instance of the ActivateEntity class</p></div>
         self._entity_key = None
         self._entity_xml = None
         self._category_name = None
+        self._container_details = None
         if entity_id is None:
             self._entity_id = self._get_entity_id(entity_name)
         else:
@@ -3812,7 +3910,13 @@ instance of the ActivateEntity class</p></div>
         self._entity_key = regex_entity_dict[&#39;entityKey&#39;]
         self._entity_type = regex_entity_dict[&#39;entityType&#39;]
         self._entity_xml = regex_entity_dict[&#39;entityXML&#39;]
+        self._container_details = regex_entity_dict[&#39;containerDetails&#39;]
         return regex_entity_dict
+
+    @property
+    def container_details(self):
+        &#34;&#34;&#34;Returns the container details for this entity&#34;&#34;&#34;
+        return self._container_details
 
     @property
     def entity_id(self):
@@ -3861,12 +3965,26 @@ instance of the ActivateEntity class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L807-L810" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L859-L862" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def category_name(self):
     &#34;&#34;&#34;Returns the entity category name attribute.&#34;&#34;&#34;
     return self._category_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.entity_manager.ActivateEntity.container_details"><code class="name">var <span class="ident">container_details</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the container details for this entity</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L844-L847" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def container_details(self):
+    &#34;&#34;&#34;Returns the container details for this entity&#34;&#34;&#34;
+    return self._container_details</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.entity_manager.ActivateEntity.display_name"><code class="name">var <span class="ident">display_name</span></code></dt>
@@ -3875,7 +3993,7 @@ def category_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L812-L815" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L864-L867" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -3889,7 +4007,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L797-L800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L849-L852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_id(self):
@@ -3903,7 +4021,7 @@ def entity_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L822-L825" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L874-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_key(self):
@@ -3917,7 +4035,7 @@ def entity_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L802-L805" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L854-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_type(self):
@@ -3931,7 +4049,7 @@ def entity_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L827-L830" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L879-L882" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_xml(self):
@@ -3945,7 +4063,7 @@ def entity_xml(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L817-L820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L869-L872" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_enabled(self):
@@ -3996,7 +4114,7 @@ represents whether it is derived entity or not</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L693-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L739-L805" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify(self, entity_regex, entity_keywords, entity_flag, is_derived=False, parent_entity=None):
     &#34;&#34;&#34;Modifies the specified regex entity details
@@ -4075,7 +4193,7 @@ represents whether it is derived entity or not</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L832-L834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L884-L886" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the regex entity details for associated object&#34;&#34;&#34;
@@ -4112,7 +4230,7 @@ instance of the Classifier class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1973-L2519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2025-L2571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Classifier(object):
     &#34;&#34;&#34;Class for performing operations on a single classifier entity&#34;&#34;&#34;
@@ -4670,7 +4788,7 @@ instance of the Classifier class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2462-L2465" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2514-L2517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def category_name(self):
@@ -4684,7 +4802,7 @@ def category_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2467-L2470" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2519-L2522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -4698,7 +4816,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2452-L2455" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2504-L2507" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_id(self):
@@ -4712,7 +4830,7 @@ def entity_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2477-L2480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2529-L2532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_key(self):
@@ -4726,7 +4844,7 @@ def entity_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2457-L2460" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2509-L2512" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_type(self):
@@ -4740,7 +4858,7 @@ def entity_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2482-L2485" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2534-L2537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_xml(self):
@@ -4754,7 +4872,7 @@ def entity_xml(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2472-L2475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2524-L2527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_enabled(self):
@@ -4768,7 +4886,7 @@ def is_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2502-L2505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2554-L2557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def last_training_time(self):
@@ -4782,7 +4900,7 @@ def last_training_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2512-L2515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2564-L2567" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sample_details(self):
@@ -4796,7 +4914,7 @@ def sample_details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2507-L2510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2559-L2562" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sycn_ca_client_id(self):
@@ -4810,7 +4928,7 @@ def sycn_ca_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2487-L2490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2539-L2542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def trained_ca_cloud_id(self):
@@ -4824,7 +4942,7 @@ def trained_ca_cloud_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2497-L2500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2549-L2552" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def training_accuracy(self):
@@ -4838,7 +4956,7 @@ def training_accuracy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2492-L2495" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2544-L2547" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def training_status(self):
@@ -4865,7 +4983,7 @@ def training_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2257-L2293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2309-L2345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def cancel_training(self):
     &#34;&#34;&#34;Cancels training on this classifier
@@ -4933,7 +5051,7 @@ flag to denote whether classifier is enabled or disabled</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2295-L2348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2347-L2400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify(self, classifier_new_name=None, description=&#34;Modified from CvPySDK&#34;, enabled=True):
     &#34;&#34;&#34;Modifies the classifier entity
@@ -5010,7 +5128,7 @@ to denote whether training got completed or not.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2184-L2224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2236-L2276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def monitor_training(self, timeout=30):
     &#34;&#34;&#34;Monitor the training status on this classifier
@@ -5063,7 +5181,7 @@ to denote whether training got completed or not.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2517-L2519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2569-L2571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the classifier details for associated object&#34;&#34;&#34;
@@ -5089,7 +5207,7 @@ Specifies whether we need to wait or not for training completion</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2226-L2255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2278-L2307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_training(self, wait_for=True):
     &#34;&#34;&#34;Starts training on this classifier
@@ -5147,7 +5265,7 @@ Raises</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L2350-L2406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2402-L2458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_data(self, zip_file, start_training=False):
     &#34;&#34;&#34;Uploads the model training data set zip file to content analyzer machine
@@ -5229,7 +5347,7 @@ instance of the Classifiers class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1650-L1970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1702-L2022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Classifiers(object):
     &#34;&#34;&#34;Class for representing all the Classifier entities in the commcell.&#34;&#34;&#34;
@@ -5594,7 +5712,7 @@ if failed to find content analyzer cloud details
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1794-L1860" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1846-L1912" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, classifier_name, content_analyzer, description=&#34;Created from CvPySDK&#34;, training_zip_data_file=None):
     &#34;&#34;&#34;Creates new classifier with given name in the commcell
@@ -5691,7 +5809,7 @@ name of the classifier</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1752-L1792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1804-L1844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, classifier_name):
     &#34;&#34;&#34;deletes the specified classifier in the commcell
@@ -5757,7 +5875,7 @@ if classifier_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1862-L1887" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1914-L1939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, classifier_name):
     &#34;&#34;&#34;Returns a Classifier object for the given classifier name.
@@ -5808,7 +5926,7 @@ if unable to find entity id for classifier
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1889-L1918" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1941-L1970" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_ids(self, classifier_name):
     &#34;&#34;&#34;Returns a list of entity id for the given classifier name list.
@@ -5863,7 +5981,7 @@ if unable to find entity key for classifier
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1920-L1950" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1972-L2002" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_keys(self, classifier_name):
     &#34;&#34;&#34;Returns a list of entity keys for the given classifier name list.
@@ -5913,7 +6031,7 @@ properties for the given classifier name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1684-L1695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1736-L1747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, classifier_name):
     &#34;&#34;&#34;Returns a properties of the specified classifier name.
@@ -5947,7 +6065,7 @@ name of the classifier</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1952-L1970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L2004-L2022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_classifier(self, classifier_name):
     &#34;&#34;&#34;Checks if a classifier entity exists in the commcell with the input name.
@@ -5978,7 +6096,7 @@ name of the classifier</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1748-L1750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1800-L1802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the classifier associated with the commcell.&#34;&#34;&#34;
@@ -5996,7 +6114,7 @@ name of the classifier</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L296-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L300-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EntityManagerTypes(Enum):
     &#34;&#34;&#34;Class to represent different entity types in entity manager&#34;&#34;&#34;
@@ -6056,7 +6174,7 @@ instance of the Tag class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1486-L1647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1538-L1699" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tag(object):
     &#34;&#34;&#34;Class for performing operations on a single Tag&#34;&#34;&#34;
@@ -6229,7 +6347,7 @@ instance of the Tag class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1634-L1637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1686-L1689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_name(self):
@@ -6243,7 +6361,7 @@ def full_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1639-L1642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1691-L1694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -6257,7 +6375,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1644-L1647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1696-L1699" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tag_id(self):
@@ -6293,7 +6411,7 @@ New name for Tag</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1583-L1628" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1635-L1680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify(self, new_name):
     &#34;&#34;&#34;Modifies the tag name in the tagset
@@ -6351,7 +6469,7 @@ New name for Tag</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1630-L1632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1682-L1684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the TagSet details for associated object&#34;&#34;&#34;
@@ -6388,7 +6506,7 @@ instance of the Tagset class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1117-L1483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1169-L1535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TagSet(object):
     &#34;&#34;&#34;Class for performing operations on a TagSet&#34;&#34;&#34;
@@ -6766,7 +6884,7 @@ instance of the Tagset class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1460-L1463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1512-L1515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def comment(self):
@@ -6780,7 +6898,7 @@ def comment(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1455-L1458" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1507-L1510" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_name(self):
@@ -6794,7 +6912,7 @@ def full_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1450-L1453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1502-L1505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -6808,7 +6926,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1465-L1468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1517-L1520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def owner(self):
@@ -6822,7 +6940,7 @@ def owner(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1470-L1473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1522-L1525" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def owner_alias_name(self):
@@ -6836,7 +6954,7 @@ def owner_alias_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1480-L1483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1532-L1535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tag_set_id(self):
@@ -6850,7 +6968,7 @@ def tag_set_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1475-L1478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1527-L1530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self):
@@ -6887,7 +7005,7 @@ Object of Tag class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1239-L1277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1291-L1329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_tag(self, tag_name):
     &#34;&#34;&#34;Adds the specified tag name in the tagset container in commcell
@@ -6951,7 +7069,7 @@ if tag_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1191-L1214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1243-L1266" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, tag_name):
     &#34;&#34;&#34;Returns a Tag object for the given Tag name.
@@ -7000,7 +7118,7 @@ Tag id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1216-L1237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1268-L1289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_tag_id(self, tag_name):
     &#34;&#34;&#34;Returns the tag id for the given tag name
@@ -7046,7 +7164,7 @@ True if it exists or else false</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1168-L1189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1220-L1241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_tag(self, tag_name):
     &#34;&#34;&#34;Returns whether tag exists with given name or not in tagset
@@ -7101,7 +7219,7 @@ New comment which needs to be added for Tagset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1360-L1404" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1412-L1456" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify(self, new_name=None, comment=&#34;Modified from CvPySDK&#34;):
     &#34;&#34;&#34;Modifies the specified tagset in the commcell
@@ -7158,7 +7276,7 @@ New comment which needs to be added for Tagset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1406-L1408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1458-L1460" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the TagSet details for associated object&#34;&#34;&#34;
@@ -7205,7 +7323,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1279-L1358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1331-L1410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares tagset with given user or group in commcell
@@ -7310,7 +7428,7 @@ instance of the Tags class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L837-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L889-L1166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tags(object):
     &#34;&#34;&#34;Class for representing all the Tagsets in the commcell.&#34;&#34;&#34;
@@ -7622,7 +7740,7 @@ Object of TagSet class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1071-L1110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1123-L1162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, tag_set_name, comment=&#34;Created from CvPySDK&#34;):
     &#34;&#34;&#34;Adds the specified TagSet name in the commcell
@@ -7693,7 +7811,7 @@ Name of the Tagset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1027-L1069" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1079-L1121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, tag_set_name):
     &#34;&#34;&#34;Deletes the specified tagset from the commcell
@@ -7762,7 +7880,7 @@ if tag_set_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L938-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L990-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, tag_set_name):
     &#34;&#34;&#34;Returns a TagSet object for the given Tagset name.
@@ -7839,7 +7957,7 @@ properties for the given TagSet name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L984-L1025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1036-L1077" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, tag_set_name):
     &#34;&#34;&#34;Returns a properties of the specified TagSet name.
@@ -7902,7 +8020,7 @@ if type of the TagSet name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L966-L982" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1018-L1034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_tag_set(self, tag_set_name):
     &#34;&#34;&#34;Checks if a tagset exists in the commcell with the input name or not
@@ -7931,7 +8049,7 @@ if type of the TagSet name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activateapps/entity_manager.py#L1112-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/entity_manager.py#L1164-L1166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the TagSet entities associated with the commcell.&#34;&#34;&#34;
@@ -8030,6 +8148,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity" href="#cvpysdk.activateapps.entity_manager.ActivateEntity">ActivateEntity</a></code></h4>
 <ul class="two-column">
 <li><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity.category_name" href="#cvpysdk.activateapps.entity_manager.ActivateEntity.category_name">category_name</a></code></li>
+<li><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity.container_details" href="#cvpysdk.activateapps.entity_manager.ActivateEntity.container_details">container_details</a></code></li>
 <li><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity.display_name" href="#cvpysdk.activateapps.entity_manager.ActivateEntity.display_name">display_name</a></code></li>
 <li><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity.entity_id" href="#cvpysdk.activateapps.entity_manager.ActivateEntity.entity_id">entity_id</a></code></li>
 <li><code><a title="cvpysdk.activateapps.entity_manager.ActivateEntity.entity_key" href="#cvpysdk.activateapps.entity_manager.ActivateEntity.entity_key">entity_key</a></code></li>

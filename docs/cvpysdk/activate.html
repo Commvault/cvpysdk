@@ -31,11 +31,13 @@
 </code></pre>
 <h1 id="activate-instance-attributes">Activate instance Attributes</h1>
 <pre><code>**entity_manager**           --  returns object of entity_manager class based on entity type specified
+
+**inventory_manager**        --  returns object of Inventories class
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activate.py#L1-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activate.py#L1-L111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -69,7 +71,11 @@ Activate instance Attributes
 
     **entity_manager**           --  returns object of entity_manager class based on entity type specified
 
+    **inventory_manager**        --  returns object of Inventories class
+
 &#34;&#34;&#34;
+from .activateapps.inventory_manager import Inventories
+
 from .exception import SDKException
 
 from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
@@ -92,12 +98,20 @@ class Activate(object):
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._inventories = None
 
     def __del__(self):
         &#34;&#34;&#34;Destructor method to delete all instances of apps referenced by this class&#34;&#34;&#34;
         del self._entity
         del self._tags
         del self._classifiers
+        del self._inventories
+
+    def inventory_manager(self):
+        &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+        if self._inventories is None:
+            self._inventories = Inventories(self._commcell_object)
+        return self._inventories
 
     def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
         &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
@@ -166,7 +180,7 @@ instance of the Activate class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activate.py#L39-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activate.py#L43-L111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Activate(object):
     &#34;&#34;&#34;Class for representing activate apps in the commcell.&#34;&#34;&#34;
@@ -185,12 +199,20 @@ instance of the Activate class</p></div>
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._inventories = None
 
     def __del__(self):
         &#34;&#34;&#34;Destructor method to delete all instances of apps referenced by this class&#34;&#34;&#34;
         del self._entity
         del self._tags
         del self._classifiers
+        del self._inventories
+
+    def inventory_manager(self):
+        &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+        if self._inventories is None:
+            self._inventories = Inventories(self._commcell_object)
+        return self._inventories
 
     def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
         &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
@@ -257,7 +279,7 @@ Instance of ActivateEntities or Classifiers or Tags class based on entity_type</
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/activate.py#L63-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activate.py#L75-L111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
     &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
@@ -296,6 +318,23 @@ Instance of ActivateEntities or Classifiers or Tags class based on entity_type</
             self._classifiers = Classifiers(self._commcell_object)
         return self._classifiers
     raise SDKException(&#39;EntityManager&#39;, &#39;102&#39;, &#39;Unsupported entity type specified&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activate.Activate.inventory_manager"><code class="name flex">
+<span>def <span class="ident">inventory_manager</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the Inventories class object from inventory manager app from activate apps</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activate.py#L69-L73" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def inventory_manager(self):
+    &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+    if self._inventories is None:
+        self._inventories = Inventories(self._commcell_object)
+    return self._inventories</code></pre>
 </details>
 </dd>
 </dl>
@@ -374,6 +413,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.activate.Activate" href="#cvpysdk.activate.Activate">Activate</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.activate.Activate.entity_manager" href="#cvpysdk.activate.Activate.entity_manager">entity_manager</a></code></li>
+<li><code><a title="cvpysdk.activate.Activate.inventory_manager" href="#cvpysdk.activate.Activate.inventory_manager">inventory_manager</a></code></li>
 </ul>
 </li>
 </ul>

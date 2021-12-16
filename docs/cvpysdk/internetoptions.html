@@ -49,11 +49,13 @@ sets Internet gateway with provided client</p>
 &ndash;Removes HTTP authentication</p>
 <p>refresh()
 &ndash;
-refresh the internet options</p>
+refresh the internet options
+set_gateway_for_sendlogs
+&mdash; sets internet gateway for sendlog files</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L1-L178" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L1-L197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,6 +99,7 @@ set_http_authentication(username, pwd)
 disable_http_authentication()   --Removes HTTP authentication
 
 refresh()                       --  refresh the internet options
+set_gateway_for_sendlogs    --- sets internet gateway for sendlog files
 
 &#34;&#34;&#34;
 from __future__ import absolute_import
@@ -180,6 +183,24 @@ class InternetOptions(object):
             self._config[&#39;useInternetGatewayPrivate&#39;] = False
         self._save_config()
 
+    def set_gateway_for_sendlogs(self,
+                                 client_name
+                                 ):
+        &#34;&#34;&#34;
+        set internet gateway with the client name provided for sendlogs.
+        Args:
+            client_name     (str): client to be used as internet gateway
+        Raises:
+            SDKException:
+                if client doesnt exist in CommServe
+        &#34;&#34;&#34;
+        clientid = int(self._commcell_object.clients.get(client_name).client_id)
+        self._config[&#39;proxyType&#39;] = 2
+        self._config[&#39;proxyClient&#39;][&#39;clientId&#39;] = clientid
+        self._config[&#39;proxyClient&#39;][&#39;clientName&#39;] = client_name
+        self._config[&#39;useInternetGatewaySendLogFile&#39;] = True
+        self._save_config()
+
     def set_metrics_internet_gateway(self):
         &#34;&#34;&#34;sets metrics server as internet gateway&#34;&#34;&#34;
         self._config[&#39;proxyType&#39;] = 3
@@ -253,7 +274,7 @@ class InternetOptions(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L53-L178" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L54-L197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InternetOptions(object):
     &#34;&#34;&#34;Class for setting Internet options in CommServe&#34;&#34;&#34;
@@ -328,6 +349,24 @@ class InternetOptions(object):
             self._config[&#39;useInternetGatewayPrivate&#39;] = False
         self._save_config()
 
+    def set_gateway_for_sendlogs(self,
+                                 client_name
+                                 ):
+        &#34;&#34;&#34;
+        set internet gateway with the client name provided for sendlogs.
+        Args:
+            client_name     (str): client to be used as internet gateway
+        Raises:
+            SDKException:
+                if client doesnt exist in CommServe
+        &#34;&#34;&#34;
+        clientid = int(self._commcell_object.clients.get(client_name).client_id)
+        self._config[&#39;proxyType&#39;] = 2
+        self._config[&#39;proxyClient&#39;][&#39;clientId&#39;] = clientid
+        self._config[&#39;proxyClient&#39;][&#39;clientName&#39;] = client_name
+        self._config[&#39;useInternetGatewaySendLogFile&#39;] = True
+        self._save_config()
+
     def set_metrics_internet_gateway(self):
         &#34;&#34;&#34;sets metrics server as internet gateway&#34;&#34;&#34;
         self._config[&#39;proxyType&#39;] = 3
@@ -392,7 +431,7 @@ class InternetOptions(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L171-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L190-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_http_authentication(self):
     &#34;&#34;&#34;Removes HTTP authentication&#34;&#34;&#34;
@@ -408,7 +447,7 @@ class InternetOptions(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L153-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L172-L175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_http_proxy(self):
     &#34;&#34;&#34;Removes HTTP proxy&#34;&#34;&#34;
@@ -424,11 +463,46 @@ class InternetOptions(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L176-L178" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L195-L197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the Internet Options.&#34;&#34;&#34;
     self._get_internet_config()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.internetoptions.InternetOptions.set_gateway_for_sendlogs"><code class="name flex">
+<span>def <span class="ident">set_gateway_for_sendlogs</span></span>(<span>self, client_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>set internet gateway with the client name provided for sendlogs.</p>
+<h2 id="args">Args</h2>
+<p>client_name
+(str): client to be used as internet gateway</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if client doesnt exist in CommServe</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L127-L143" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_gateway_for_sendlogs(self,
+                             client_name
+                             ):
+    &#34;&#34;&#34;
+    set internet gateway with the client name provided for sendlogs.
+    Args:
+        client_name     (str): client to be used as internet gateway
+    Raises:
+        SDKException:
+            if client doesnt exist in CommServe
+    &#34;&#34;&#34;
+    clientid = int(self._commcell_object.clients.get(client_name).client_id)
+    self._config[&#39;proxyType&#39;] = 2
+    self._config[&#39;proxyClient&#39;][&#39;clientId&#39;] = clientid
+    self._config[&#39;proxyClient&#39;][&#39;clientName&#39;] = client_name
+    self._config[&#39;useInternetGatewaySendLogFile&#39;] = True
+    self._save_config()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.internetoptions.InternetOptions.set_http_authentication"><code class="name flex">
@@ -446,7 +520,7 @@ class InternetOptions(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L158-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L177-L188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_http_authentication(self, username=&#39;&#39;, pwd=&#39;&#39;):
     &#34;&#34;&#34;
@@ -480,7 +554,7 @@ if proxy server name and port are empty</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L136-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L155-L170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_http_proxy(self, servername=None, port=None):
     &#34;&#34;&#34;
@@ -517,7 +591,7 @@ if client doesnt exist in CommServe</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L95-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L96-L125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_internet_gateway_client(self,
                                 client_name=None,
@@ -559,7 +633,7 @@ if client doesnt exist in CommServe</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L126-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L145-L148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_metrics_internet_gateway(self):
     &#34;&#34;&#34;sets metrics server as internet gateway&#34;&#34;&#34;
@@ -575,7 +649,7 @@ if client doesnt exist in CommServe</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/internetoptions.py#L131-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/internetoptions.py#L150-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_no_gateway(self):
     &#34;&#34;&#34;Removes internet gateway&#34;&#34;&#34;
@@ -659,6 +733,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.disable_http_authentication" href="#cvpysdk.internetoptions.InternetOptions.disable_http_authentication">disable_http_authentication</a></code></li>
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.disable_http_proxy" href="#cvpysdk.internetoptions.InternetOptions.disable_http_proxy">disable_http_proxy</a></code></li>
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.refresh" href="#cvpysdk.internetoptions.InternetOptions.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.internetoptions.InternetOptions.set_gateway_for_sendlogs" href="#cvpysdk.internetoptions.InternetOptions.set_gateway_for_sendlogs">set_gateway_for_sendlogs</a></code></li>
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.set_http_authentication" href="#cvpysdk.internetoptions.InternetOptions.set_http_authentication">set_http_authentication</a></code></li>
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.set_http_proxy" href="#cvpysdk.internetoptions.InternetOptions.set_http_proxy">set_http_proxy</a></code></li>
 <li><code><a title="cvpysdk.internetoptions.InternetOptions.set_internet_gateway_client" href="#cvpysdk.internetoptions.InternetOptions.set_internet_gateway_client">set_internet_gateway_client</a></code></li>

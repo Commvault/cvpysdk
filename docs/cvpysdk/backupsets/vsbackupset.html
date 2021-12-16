@@ -42,7 +42,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupsets/vsbackupset.py#L1-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/vsbackupset.py#L1-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -197,9 +197,14 @@ class VSBackupset(Backupset):
             response_json = response.json()
             if response_json and &#39;browseResponses&#39; in response_json:
                 _browse_responses = response_json[&#39;browseResponses&#39;]
+                if not isinstance(_browse_responses, list):
+                    _browse_responses = [_browse_responses]
                 for browse_response in _browse_responses:
                     resp_type = browse_response[&#39;respType&#39;]
                     if &#39;messages&#39; in browse_response:
+                        # checking if it is not a list, then converting it to list
+                        if not isinstance(browse_response[&#39;messages&#39;], list):
+                            browse_response[&#39;messages&#39;] = [browse_response[&#39;messages&#39;]]
                         message = browse_response[&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
                         if resp_type == 2 or resp_type == 3 and &#39;No items found in the index, possibly index is being rebuilt&#39; in \
@@ -214,11 +219,17 @@ class VSBackupset(Backupset):
                         browse_result = browse_response[&#39;browseResult&#39;]
                         if &#39;dataResultSet&#39; in browse_result:
                             result_set = browse_result[&#39;dataResultSet&#39;]
+                            if not isinstance(result_set, list):
+                                result_set = [result_set]
                             break
                 if not browse_result:
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
+                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
+                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
                         message = response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
+                        if error_message == &#39;Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.&#39;:
+                            return [], {}
                         raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, str(error_message))
 
                     else:
@@ -239,14 +250,14 @@ class VSBackupset(Backupset):
                     else:
                         path = &#39;\\&#39;.join([options[&#39;path&#39;], name])
 
-                    if &#39;modificationTime&#39; in result and result[&#39;modificationTime&#39;] &gt; 0:
-                        mod_time = time.localtime(result[&#39;modificationTime&#39;])
+                    if &#39;modificationTime&#39; in result and int(result[&#39;modificationTime&#39;]) &gt; 0:
+                        mod_time = time.localtime(int(result[&#39;modificationTime&#39;]))
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
-                        if result[&#39;flags&#39;][&#39;file&#39;] is True:
+                        if result[&#39;flags&#39;][&#39;file&#39;] is True or result[&#39;flags&#39;][&#39;file&#39;] == &#34;1&#34;:
                             file_or_folder = &#39;File&#39;
                         else:
                             file_or_folder = &#39;Folder&#39;
@@ -326,7 +337,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupsets/vsbackupset.py#L54-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/vsbackupset.py#L54-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a vs backupset,
@@ -428,9 +439,14 @@ default: None</p>
             response_json = response.json()
             if response_json and &#39;browseResponses&#39; in response_json:
                 _browse_responses = response_json[&#39;browseResponses&#39;]
+                if not isinstance(_browse_responses, list):
+                    _browse_responses = [_browse_responses]
                 for browse_response in _browse_responses:
                     resp_type = browse_response[&#39;respType&#39;]
                     if &#39;messages&#39; in browse_response:
+                        # checking if it is not a list, then converting it to list
+                        if not isinstance(browse_response[&#39;messages&#39;], list):
+                            browse_response[&#39;messages&#39;] = [browse_response[&#39;messages&#39;]]
                         message = browse_response[&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
                         if resp_type == 2 or resp_type == 3 and &#39;No items found in the index, possibly index is being rebuilt&#39; in \
@@ -445,11 +461,17 @@ default: None</p>
                         browse_result = browse_response[&#39;browseResult&#39;]
                         if &#39;dataResultSet&#39; in browse_result:
                             result_set = browse_result[&#39;dataResultSet&#39;]
+                            if not isinstance(result_set, list):
+                                result_set = [result_set]
                             break
                 if not browse_result:
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
+                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
+                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
                         message = response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
+                        if error_message == &#39;Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.&#39;:
+                            return [], {}
                         raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, str(error_message))
 
                     else:
@@ -470,14 +492,14 @@ default: None</p>
                     else:
                         path = &#39;\\&#39;.join([options[&#39;path&#39;], name])
 
-                    if &#39;modificationTime&#39; in result and result[&#39;modificationTime&#39;] &gt; 0:
-                        mod_time = time.localtime(result[&#39;modificationTime&#39;])
+                    if &#39;modificationTime&#39; in result and int(result[&#39;modificationTime&#39;]) &gt; 0:
+                        mod_time = time.localtime(int(result[&#39;modificationTime&#39;]))
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
-                        if result[&#39;flags&#39;][&#39;file&#39;] is True:
+                        if result[&#39;flags&#39;][&#39;file&#39;] is True or result[&#39;flags&#39;][&#39;file&#39;] == &#34;1&#34;:
                             file_or_folder = &#39;File&#39;
                         else:
                             file_or_folder = &#39;Folder&#39;
@@ -532,7 +554,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupsets/vsbackupset.py#L231-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/vsbackupset.py#L242-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -595,7 +617,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/backupsets/vsbackupset.py#L74-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/vsbackupset.py#L74-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -660,6 +682,7 @@ from browse operation
 <li><code><a title="cvpysdk.backupset.Backupset.guid" href="../backupset.html#cvpysdk.backupset.Backupset.guid">guid</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.is_default_backupset" href="../backupset.html#cvpysdk.backupset.Backupset.is_default_backupset">is_default_backupset</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.is_on_demand_backupset" href="../backupset.html#cvpysdk.backupset.Backupset.is_on_demand_backupset">is_on_demand_backupset</a></code></li>
+<li><code><a title="cvpysdk.backupset.Backupset.list_media" href="../backupset.html#cvpysdk.backupset.Backupset.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.name" href="../backupset.html#cvpysdk.backupset.Backupset.name">name</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.plan" href="../backupset.html#cvpysdk.backupset.Backupset.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.properties" href="../backupset.html#cvpysdk.backupset.Backupset.properties">properties</a></code></li>

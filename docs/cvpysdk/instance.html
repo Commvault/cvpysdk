@@ -140,6 +140,8 @@ setter for destination options property in restore</p>
 <p>_restore_fileoption_json()
 &ndash;
 setter for file option property in restore</p>
+<p>_restore_virtual_rst_option_json &ndash;
+setter for the virtualServer restore option in restore JSON</p>
 <p>_restore_destination_json()
 &ndash;
 setter for destination property in restore</p>
@@ -191,7 +193,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1-L2983" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1-L2998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -297,6 +299,8 @@ Instance:
     _restore_destination_json()     --  setter for destination options property in restore
 
     _restore_fileoption_json()      --  setter for file option property in restore
+
+    _restore_virtual_rst_option_json --  setter for the virtualServer restore option in restore JSON
 
     _restore_destination_json()     --  setter for destination property in restore
 
@@ -408,6 +412,7 @@ class Instances(object):
             &#39;sql server&#39;: SQLServerInstance,
             &#39;sap hana&#39;: SAPHANAInstance,
             &#39;oracle&#39;: OracleInstance,
+            &#39;oracle rac&#39;: OracleInstance,
             &#39;sybase&#39;: SybaseInstance,
             &#39;sap for oracle&#39;: SAPOracleInstance,
             &#39;mysql&#39;: MYSQLInstance,
@@ -672,14 +677,14 @@ class Instances(object):
                 Dictionary of informix instance creation options:
                     Example:
                        informix_options = {
-                            &#39;instance_name&#39;: &#39;&#39;,
-                            &#39;onconfig_file&#39;: &#39;&#39;,
-                            &#39;sql_host_file&#39;: &#39;&#39;,
-                            &#39;informix_dir&#39;: &#39;&#39;,
-                            &#39;user_name&#39;:&#39;&#39;,
-                            &#39;domain_name&#39;:&#39;&#39;,
-                            &#39;password&#39;:&#39;&#39;,
-                            &#39;storage_policy&#39;:&#39;&#39;,
+                            &#39;instance_name&#39;: &#34;&#34;,
+                            &#39;onconfig_file&#39;: &#34;&#34;,
+                            &#39;sql_host_file&#39;: &#34;&#34;,
+                            &#39;informix_dir&#39;: &#34;&#34;,
+                            &#39;user_name&#39;: &#34;&#34;,
+                            &#39;domain_name&#39;: &#34;&#34;,
+                            &#39;password&#39;: &#34;&#34;,
+                            &#39;storage_policy&#39;: &#34;&#34;,
                             &#39;description&#39;:&#39;created from automation&#39;
                         }
 
@@ -862,15 +867,15 @@ class Instances(object):
                             &#39;sybase_ocs&#39;: &#39;&#39;,
                             &#39;sybase_ase&#39;: &#39;&#39;,
                             &#39;backup_server&#39;: &#39;&#39;,
-                            &#39;sybase_home&#39;:&#39;&#39;,
-                            &#39;config_file&#39;:&#39;&#39;,
-                            &#39;enable_auto_discovery&#39;:True,
-                            &#39;shared_memory_directory&#39;:&#39;&#39;,
-                            &#39;storage_policy&#39;:&#39;&#39;,
-                            &#39;sa_username&#39;:&#39;&#39;,
-                            &#39;sa_password&#39;:&#39;&#39;,
-                            &#39;localadmin_username&#39;:&#39;&#39;,
-                            &#39;localadmin_password&#39;:&#39;&#39;
+                            &#39;sybase_home&#39;: &#39;&#39;,
+                            &#39;config_file&#39;: &#39;&#39;,
+                            &#39;enable_auto_discovery&#39;: True,
+                            &#39;shared_memory_directory&#39;: &#39;&#39;,
+                            &#39;storage_policy&#39;: &#39;&#39;,
+                            &#39;sa_username&#39;: &#39;&#39;,
+                            &#39;sa_password&#39;: &#39;&#39;,
+                            &#39;localadmin_username&#39;: &#39;&#39;,
+                            &#39;localadmin_password&#39;: &#39;&#39;
                         }
             Raises:
                 SDKException:
@@ -2256,6 +2261,11 @@ class Instance(object):
             restore_option[&#39;liveBrowse&#39;] = True
         else:
             restore_option[&#39;liveBrowse&#39;] = False
+        
+        if restore_option.get(&#39;file_browse&#39;):
+            restore_option[&#39;fileBrowse&#39;] = True
+        else:
+            restore_option[&#39;fileBrowse&#39;] = False
 
         # restore_option should use client key for destination client info
         client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
@@ -2296,6 +2306,7 @@ class Instance(object):
         self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._restore_virtual_rst_option_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
         self._restore_common_opts_json(restore_option)
@@ -2317,6 +2328,7 @@ class Instance(object):
                             &#34;commonOptions&#34;: self._commonoption_restore_json,
                             &#34;destination&#34;: self._destination_restore_json,
                             &#34;fileOption&#34;: self._fileoption_restore_json,
+                            &#34;virtualServerRstOption&#34;: self._virtualserver_restore_json,
                             &#34;sharePointRstOption&#34;: self._restore_sharepoint_json,
                             &#34;volumeRstOption&#34;: self._volume_restore_json
                         },
@@ -3089,6 +3101,11 @@ class Instance(object):
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
 
+    def _restore_virtual_rst_option_json(self, value):
+        &#34;&#34;&#34;setter for the virtualServer restore option in restore JSON&#34;&#34;&#34;
+        self._virtualserver_restore_json = {
+            &#34;isFileBrowse&#34;: value.get(&#34;fileBrowse&#34;)
+        }
 
     def _restore_volume_rst_option_json(self, value):
         &#34;&#34;&#34;setter for the volumeRst restore option in restore JSON&#34;&#34;&#34;
@@ -3213,7 +3230,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1719-L2983" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1722-L2998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3560,6 +3577,11 @@ default: None</p>
             restore_option[&#39;liveBrowse&#39;] = True
         else:
             restore_option[&#39;liveBrowse&#39;] = False
+        
+        if restore_option.get(&#39;file_browse&#39;):
+            restore_option[&#39;fileBrowse&#39;] = True
+        else:
+            restore_option[&#39;fileBrowse&#39;] = False
 
         # restore_option should use client key for destination client info
         client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
@@ -3600,6 +3622,7 @@ default: None</p>
         self._impersonation_json(restore_option)
         self._restore_destination_json(restore_option)
         self._restore_fileoption_json(restore_option)
+        self._restore_virtual_rst_option_json(restore_option)
         self._restore_volume_rst_option_json(restore_option)
         self._sync_restore_option_json(restore_option)
         self._restore_common_opts_json(restore_option)
@@ -3621,6 +3644,7 @@ default: None</p>
                             &#34;commonOptions&#34;: self._commonoption_restore_json,
                             &#34;destination&#34;: self._destination_restore_json,
                             &#34;fileOption&#34;: self._fileoption_restore_json,
+                            &#34;virtualServerRstOption&#34;: self._virtualserver_restore_json,
                             &#34;sharePointRstOption&#34;: self._restore_sharepoint_json,
                             &#34;volumeRstOption&#34;: self._volume_restore_json
                         },
@@ -4393,6 +4417,11 @@ default: None</p>
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
 
+    def _restore_virtual_rst_option_json(self, value):
+        &#34;&#34;&#34;setter for the virtualServer restore option in restore JSON&#34;&#34;&#34;
+        self._virtualserver_restore_json = {
+            &#34;isFileBrowse&#34;: value.get(&#34;fileBrowse&#34;)
+        }
 
     def _restore_volume_rst_option_json(self, value):
         &#34;&#34;&#34;setter for the volumeRst restore option in restore JSON&#34;&#34;&#34;
@@ -4508,7 +4537,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2550-L2553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2560-L2563" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4522,7 +4551,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2555-L2558" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2565-L2568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4536,7 +4565,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2521-L2524" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2531-L2534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4550,7 +4579,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2516-L2519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2526-L2529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4608,7 +4637,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2560-L2616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2570-L2626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4728,7 +4757,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2618-L2684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2628-L2694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -4807,7 +4836,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2977-L2983" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2992-L2998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -4842,7 +4871,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L2486-L2514" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2496-L2524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -4893,7 +4922,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L157-L1716" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L159-L1719" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -4954,6 +4983,7 @@ instance of the Agent class</p>
             &#39;sql server&#39;: SQLServerInstance,
             &#39;sap hana&#39;: SAPHANAInstance,
             &#39;oracle&#39;: OracleInstance,
+            &#39;oracle rac&#39;: OracleInstance,
             &#39;sybase&#39;: SybaseInstance,
             &#39;sap for oracle&#39;: SAPOracleInstance,
             &#39;mysql&#39;: MYSQLInstance,
@@ -5218,14 +5248,14 @@ instance of the Agent class</p>
                 Dictionary of informix instance creation options:
                     Example:
                        informix_options = {
-                            &#39;instance_name&#39;: &#39;&#39;,
-                            &#39;onconfig_file&#39;: &#39;&#39;,
-                            &#39;sql_host_file&#39;: &#39;&#39;,
-                            &#39;informix_dir&#39;: &#39;&#39;,
-                            &#39;user_name&#39;:&#39;&#39;,
-                            &#39;domain_name&#39;:&#39;&#39;,
-                            &#39;password&#39;:&#39;&#39;,
-                            &#39;storage_policy&#39;:&#39;&#39;,
+                            &#39;instance_name&#39;: &#34;&#34;,
+                            &#39;onconfig_file&#39;: &#34;&#34;,
+                            &#39;sql_host_file&#39;: &#34;&#34;,
+                            &#39;informix_dir&#39;: &#34;&#34;,
+                            &#39;user_name&#39;: &#34;&#34;,
+                            &#39;domain_name&#39;: &#34;&#34;,
+                            &#39;password&#39;: &#34;&#34;,
+                            &#39;storage_policy&#39;: &#34;&#34;,
                             &#39;description&#39;:&#39;created from automation&#39;
                         }
 
@@ -5408,15 +5438,15 @@ instance of the Agent class</p>
                             &#39;sybase_ocs&#39;: &#39;&#39;,
                             &#39;sybase_ase&#39;: &#39;&#39;,
                             &#39;backup_server&#39;: &#39;&#39;,
-                            &#39;sybase_home&#39;:&#39;&#39;,
-                            &#39;config_file&#39;:&#39;&#39;,
-                            &#39;enable_auto_discovery&#39;:True,
-                            &#39;shared_memory_directory&#39;:&#39;&#39;,
-                            &#39;storage_policy&#39;:&#39;&#39;,
-                            &#39;sa_username&#39;:&#39;&#39;,
-                            &#39;sa_password&#39;:&#39;&#39;,
-                            &#39;localadmin_username&#39;:&#39;&#39;,
-                            &#39;localadmin_password&#39;:&#39;&#39;
+                            &#39;sybase_home&#39;: &#39;&#39;,
+                            &#39;config_file&#39;: &#39;&#39;,
+                            &#39;enable_auto_discovery&#39;: True,
+                            &#39;shared_memory_directory&#39;: &#39;&#39;,
+                            &#39;storage_policy&#39;: &#39;&#39;,
+                            &#39;sa_username&#39;: &#39;&#39;,
+                            &#39;sa_password&#39;: &#39;&#39;,
+                            &#39;localadmin_username&#39;: &#39;&#39;,
+                            &#39;localadmin_password&#39;: &#39;&#39;
                         }
             Raises:
                 SDKException:
@@ -6469,7 +6499,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L344-L355" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L347-L358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6510,7 +6540,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L897-L1004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L900-L1007" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6733,7 +6763,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1006-L1183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1009-L1186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -6942,7 +6972,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L775-L895" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L778-L898" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7076,14 +7106,14 @@ if None value in db2 options</p>
 <p>Dictionary of informix instance creation options:
 Example:
 informix_options = {
-'instance_name': '',
-'onconfig_file': '',
-'sql_host_file': '',
-'informix_dir': '',
-'user_name':'',
-'domain_name':'',
-'password':'',
-'storage_policy':'',
+'instance_name': "",
+'onconfig_file': "",
+'sql_host_file': "",
+'informix_dir': "",
+'user_name': "",
+'domain_name': "",
+'password': "",
+'storage_policy': "",
 'description':'created from automation'
 }</p>
 <h2 id="returns">Returns</h2>
@@ -7098,7 +7128,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L474-L592" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L477-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7106,14 +7136,14 @@ if given storage policy does not exists in commcell
             Dictionary of informix instance creation options:
                 Example:
                    informix_options = {
-                        &#39;instance_name&#39;: &#39;&#39;,
-                        &#39;onconfig_file&#39;: &#39;&#39;,
-                        &#39;sql_host_file&#39;: &#39;&#39;,
-                        &#39;informix_dir&#39;: &#39;&#39;,
-                        &#39;user_name&#39;:&#39;&#39;,
-                        &#39;domain_name&#39;:&#39;&#39;,
-                        &#39;password&#39;:&#39;&#39;,
-                        &#39;storage_policy&#39;:&#39;&#39;,
+                        &#39;instance_name&#39;: &#34;&#34;,
+                        &#39;onconfig_file&#39;: &#34;&#34;,
+                        &#39;sql_host_file&#39;: &#34;&#34;,
+                        &#39;informix_dir&#39;: &#34;&#34;,
+                        &#39;user_name&#39;: &#34;&#34;,
+                        &#39;domain_name&#39;: &#34;&#34;,
+                        &#39;password&#39;: &#34;&#34;,
+                        &#39;storage_policy&#39;: &#34;&#34;,
                         &#39;description&#39;:&#39;created from automation&#39;
                     }
 
@@ -7259,7 +7289,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1533-L1622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1536-L1625" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7421,7 +7451,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1624-L1712" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1627-L1715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7566,7 +7596,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1305-L1362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1308-L1365" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7688,7 +7718,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1185-L1303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1188-L1306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -7824,15 +7854,15 @@ sybase_options = {
 'sybase_ocs': '',
 'sybase_ase': '',
 'backup_server': '',
-'sybase_home':'',
-'config_file':'',
-'enable_auto_discovery':True,
-'shared_memory_directory':'',
-'storage_policy':'',
-'sa_username':'',
-'sa_password':'',
-'localadmin_username':'',
-'localadmin_password':''
+'sybase_home': '',
+'config_file': '',
+'enable_auto_discovery': True,
+'shared_memory_directory': '',
+'storage_policy': '',
+'sa_username': '',
+'sa_password': '',
+'localadmin_username': '',
+'localadmin_password': ''
 }</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
@@ -7844,7 +7874,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L659-L773" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L662-L776" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -7857,15 +7887,15 @@ if given storage policy does not exists in commcell
                         &#39;sybase_ocs&#39;: &#39;&#39;,
                         &#39;sybase_ase&#39;: &#39;&#39;,
                         &#39;backup_server&#39;: &#39;&#39;,
-                        &#39;sybase_home&#39;:&#39;&#39;,
-                        &#39;config_file&#39;:&#39;&#39;,
-                        &#39;enable_auto_discovery&#39;:True,
-                        &#39;shared_memory_directory&#39;:&#39;&#39;,
-                        &#39;storage_policy&#39;:&#39;&#39;,
-                        &#39;sa_username&#39;:&#39;&#39;,
-                        &#39;sa_password&#39;:&#39;&#39;,
-                        &#39;localadmin_username&#39;:&#39;&#39;,
-                        &#39;localadmin_password&#39;:&#39;&#39;
+                        &#39;sybase_home&#39;: &#39;&#39;,
+                        &#39;config_file&#39;: &#39;&#39;,
+                        &#39;enable_auto_discovery&#39;: True,
+                        &#39;shared_memory_directory&#39;: &#39;&#39;,
+                        &#39;storage_policy&#39;: &#39;&#39;,
+                        &#39;sa_username&#39;: &#39;&#39;,
+                        &#39;sa_password&#39;: &#39;&#39;,
+                        &#39;localadmin_username&#39;: &#39;&#39;,
+                        &#39;localadmin_password&#39;: &#39;&#39;
                     }
         Raises:
             SDKException:
@@ -7986,7 +8016,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L594-L657" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L597-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8073,7 +8103,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L375-L423" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L378-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8143,7 +8173,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L357-L373" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L360-L376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8172,7 +8202,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/instance.py#L1714-L1716" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1717-L1719" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

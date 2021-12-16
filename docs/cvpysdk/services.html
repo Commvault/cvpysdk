@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/services.py#L1-L451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/services.py#L1-L479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -99,6 +99,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ALL_CLIENTS&#39;: &#39;{0}Client&#39;,
     &#39;GET_VIRTUAL_CLIENTS&#39;: &#39;{0}Client?PseudoClientType=VSPseudo&#39;,
+    &#39;CLIENTFORCEDELETE&#39;:&#39;{0}Client/%s?forceDelete=1&#39;,
     &#39;CLIENT&#39;: &#39;{0}Client/%s&#39;,
     &#39;FILTER_CLIENTS&#39;:&#39;{0}Client?%s&#39;,
     &#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;: &#39;{0}Client?hiddenclients=true&#39;,
@@ -116,11 +117,15 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ALL_INSTANCES&#39;: &#39;{0}Instance?clientId=%s&#39;,
     &#39;INSTANCE&#39;: &#39;{0}Instance/%s&#39;,
+    &#39;APPLICATION_INSTANCE&#39;: &#39;{0}Application/%s&#39;,
+    &#39;APPLICATION&#39;: &#39;{0}Application&#39;,
 
     &#39;GET_ALL_SUBCLIENTS&#39;: &#39;{0}Subclient?clientId=%s&amp;applicationId=%s&amp;propertyLevel=20&#39;,
     &#39;ADD_SUBCLIENT&#39;: &#39;{0}Subclient&#39;,
     &#39;SUBCLIENT&#39;: &#39;{0}Subclient/%s&#39;,
     &#39;SUBCLIENT_BACKUP&#39;: &#39;{0}Subclient/%s/action/backup?backupLevel=%s&#39;,
+    &#39;VM_BACKUP&#39;: &#39;{0}v2/vsa/vm/%s/backup?backupLevel=%s&#39;,
+    &#39;PREVIEW&#39;: &#39;{0}Subclient/Content/Preview&#39;,
 
     &#39;GET_JOBS&#39;: &#39;{0}Job?clientId=%s&amp;jobFilter=%s&#39;,
     &#39;JOB&#39;: &#39;{0}Job/%s&#39;,
@@ -154,6 +159,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CLOUD_MEDIA_AGENT&#39;: &#39;{0}MediaAgent/%s/CloudVMPowerManagement&#39;,
     &#39;STORAGE_POLICY_COPY&#39;: &#39;{0}V2/StoragePolicy/%s/Copy/%s&#39;,
     &#39;STORAGE_POLICY_INFRASTRUCTUREPOOL&#39;: &#39;{0}/StoragePolicy/Infrastructurepool?planId=%s&#39;,
+    &#39;RECOVERY_ENABLERS&#39;: &#39;{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX &#39;,
 
     &#39;GET_ALL_ALERTS&#39;: &#39;{0}AlertRule&#39;,
     &#39;ALERT&#39;: &#39;{0}AlertRule/%s&#39;,
@@ -177,6 +183,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DISABLE_ALERT&#39;: &#39;{0}AlertRule/%s/Action/Disable&#39;,
     &#39;EMAIL_SERVER&#39;: &#39;{0}EmailServer&#39;,
 
+    &#39;INVENTORY_SCHEDULES&#39;: &#39;{0}Schedules?seaDataSourceId=%s&amp;appType=132&#39;,
     &#39;CLIENT_SCHEDULES&#39;: &#39;{0}Schedules?clientId=%s&#39;,
     &#39;AGENT_SCHEDULES&#39;: &#39;{0}Schedules?clientId=%s&amp;apptypeId=%s&#39;,
     &#39;BACKUPSET_SCHEDULES&#39;: &#39;{0}Schedules?clientId=%s&amp;apptypeId=%s&amp;backupsetId=%s&#39;,
@@ -192,6 +199,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DISABLE_SCHEDULE&#39;: &#39;{0}Schedules/task/Action/Disable&#39;,
 
     &#39;LIVE_SYNC&#39;: &#39;{0}Task&#39;,
+    &#39;LIVE_SYNC_DETAILS&#39;: &#39;{0}/Task/%s/Details&#39;,
 
     &#39;CLIENTGROUPS&#39;: &#39;{0}ClientGroup&#39;,
     &#39;CLIENTGROUP&#39;: &#39;{0}ClientGroup/%s&#39;,
@@ -259,6 +267,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_CONTENT_ANALYZER_CLOUD&#39;: &#39;{0}getContentAnalyzerCloud&#39;,
     &#39;ACTIVATE_ENTITIES&#39;: &#39;{0}dcube/entity&#39;,
     &#39;ACTIVATE_ENTITY&#39;: &#39;{0}dcube/entity/%s&#39;,
+    &#39;ACTIVATE_ENTITY_CONTAINER&#39;: &#39;{0}EntityExtractionRules?getDisabled=true&#39;,
     &#39;GET_TAGS&#39;: &#39;{0}EDiscovery/Tags&#39;,
     &#39;ADD_CONTAINER&#39;: &#39;{0}PerformContainerOperation&#39;,
     &#39;DELETE_CONTAINER&#39;: &#39;{0}Containers/Action/Delete&#39;,
@@ -267,6 +276,13 @@ SERVICES_DICT_TEMPLATE = {
     &#39;START_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/ml/action/train&#39;,
     &#39;CANCEL_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/training/cancel&#39;,
 
+    &#39;EDISCOVERY_INVENTORIES&#39;: &#39;{0}EDiscoveryClients/Inventories&#39;,
+    &#39;EDISCOVERY_INVENTORY&#39;: &#39;{0}EDiscoveryClients/Inventories/%s&#39;,
+    &#39;EDISCOVERY_ASSETS&#39;: &#39;{0}EDiscoveryClients/Inventories/%s/Assets&#39;,
+    &#39;EDISCOVERY_CRAWL&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs?datasourceId=%s&amp;type=%s&amp;operation=%s&#39;,
+    &#39;EDISCOVERY_JOBS_HISTORY&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&amp;datasourceId=%s&#39;,
+    &#39;EDISCOVERY_JOB_STATUS&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&amp;datasourceId=%s&#39;,
+    &#39;EDISCOVERY_GET_DEFAULT_HANDLER&#39;: &#39;{0}dcube/getdefaulthandler/%s&#39;,
 
     &#39;GLOBAL_FILTER&#39;: &#39;{0}GlobalFilter&#39;,
     &#39;RESTORE_OPTIONS&#39;: &#39;{0}Restore/GetDestinationsToRestore?clientId=0&amp;appId=%s&amp;flag=8&#39;,
@@ -322,7 +338,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_SECURITY_ROLES&#39;: &#39;{0}Security/Roles&#39;,
     &#39;SECURITY_ASSOCIATION&#39;: &#39;{0}Security&#39;,
-
+    &#39;ENTITY_SECURITY_ASSOCIATION&#39;: &#39;{0}Security/%s/%s&#39;,
     &#39;GET_DATASTORE_BROWSE&#39;: &#39;{0}VSBrowse/%s/%s?requestType=%s&#39;,
 
     &#39;GET_DC_DATA&#39;: &#39;{0}getDownloadCenterLookupData&#39;,
@@ -340,6 +356,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GENERATE_AUTH_CODE&#39;: &#39;{0}Organization/%s/Authtoken&#39;,
     &#39;ACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/activate&#39;,
     &#39;DEACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/deactivate&#39;,
+    &#39;ORGANIZATION_ASSOCIATION&#39;: &#39;{0}company/%s/company-association&#39;,
+    &#39;ORGANIZATION_TAGS&#39; : &#39;{0}Tags&#39;,
+    &#39;GET_ORGANIZATION_TAGS&#39; : &#39;{0}Tags/PROVIDER_ENTITY/%s&#39;,
+    &#39;COMPANY_PASSKEY&#39; : &#39;{0}Company/%s/Passkey&#39;,
+    &#39;COMPANY_AUTH_RESTORE&#39; : &#39;{0}Company/%s/AuthRestore&#39;,
 
     &#39;STORAGE_POOL&#39;: &#39;{0}StoragePool&#39;,
     &#39;GET_STORAGE_POOL&#39;: &#39;{0}StoragePool/%s&#39;,
@@ -347,6 +368,9 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DELETE_STORAGE_POOL&#39;: &#39;{0}StoragePool/%s&#39;,
     &#39;EDIT_STORAGE_POOL&#39;: &#39;{0}StoragePool?Action=edit&#39;,
     &#39;REPLACE_DISK_STORAGE_POOL&#39;: &#39;{0}StoragePool?action=diskOperation&#39;,
+
+    &#39;KEY_MANAGEMENT_SERVER_ADD_GET&#39;: &#39;{0}CommCell/KeyManagementServers&#39;,
+    &#39;KEY_MANAGEMENT_SERVER_DELETE&#39;: &#39;{0}CommCell/KeyManagementServers/%s&#39;,
 
     &#39;GET_ALL_MONITORING_POLICIES&#39;: &#39;{0}logmonitoring/monitoringpolicy&#39;,
     &#39;GET_ALL_ANALYTICS_SERVERS&#39;: &#39;{0}AnalyticsServers&#39;,
@@ -356,6 +380,10 @@ SERVICES_DICT_TEMPLATE = {
     &#39;RUN_MONITORING_POLICY&#39;: &#39;{0}logmonitoring/Policy/%s/Action/Run&#39;,
 
     &#39;LICENSE&#39;: &#39;{0}CommcellRegistrationInformation&#39;,
+
+    &#39;REPLICATION_GROUPS&#39;: &#39;{0}ReplicationGroups&#39;,
+    &#39;DELETE_REPLICATION_GROUPS&#39;: &#39;{0}ReplicationGroups/Action/Delete&#39;,
+    &#39;REPLICATION_GROUP_DETAILS&#39;: &#39;{0}Vsa/ReplicationGroup/%s&#39;,
 
     &#39;DR_GROUPS&#39;: &#39;{0}DRGroups&#39;,
     &#39;GET_DR_GROUP&#39;: &#39;{0}DRGroups/%s&#39;,
@@ -370,6 +398,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CREATE_PSEUDO_CLIENT&#39;: &#39;{0}pseudoClient&#39;,
     &#39;CREATE_NAS_CLIENT&#39;: &#39;{0}NASClient&#39;,
     &#39;GET_OFFICE_365_ENTITIES&#39;: &#39;{0}Office365/entities&#39;,
+    &#39;GET_DYNAMICS_365_CLIENTS&#39;: &#39;{0}Office365/entities?agentType=5&#39;,
     &#39;CLOUD_DISCOVERY&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;appType=%s&#39;,
     &#39;SET_USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/SetUserPolicyAssociation&#39;,
     &#39;USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/UserPolicyAssociation&#39;,
@@ -404,7 +433,6 @@ SERVICES_DICT_TEMPLATE = {
     &#39;LIST_LICENSES&#39;: &#39;{0}Client/%s/License&#39;,
     &#39;GET_CLOUDAPPS_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&#39;,
     &#39;GET_CLOUDAPPS_ONEDRIVE_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&amp;subclientId=%s&#39;,
-
 
     &#39;IDENTITY_APPS&#39;: &#39;{0}ThirdParty/App&#39;,
 
@@ -516,7 +544,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/services.py#L437-L451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/services.py#L465-L479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

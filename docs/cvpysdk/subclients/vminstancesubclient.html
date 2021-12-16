@@ -36,10 +36,13 @@ subclient_id)
 &ndash;
 initialize object of vminstance subclient class,
 associated with the VirtualServer subclient</p>
+<p>backup()
+&ndash;
+run a backup job for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vminstancesubclient.py#L1-L56" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L1-L199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -73,9 +76,13 @@ VMInstanceSubclient:
         subclient_name,
         subclient_id)           --  initialize object of vminstance subclient class,
                                     associated with the VirtualServer subclient
+
+    backup()                    --  run a backup job for the subclient
 &#34;&#34;&#34;
 
 from ..subclient import Subclient
+from ..exception import SDKException
+import copy
 
 
 class VMInstanceSubclient(Subclient):
@@ -93,10 +100,149 @@ class VMInstanceSubclient(Subclient):
 
                subclient_name   (str)        --  subclient name
 
-               subclient     (int)           --  subclient id
+               subclient_id     (int)           --  subclient id
 
         &#34;&#34;&#34;
-        super(VMInstanceSubclient, self).__init__(backupset_object, subclient_name, subclient_id)</code></pre>
+        super(VMInstanceSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+
+        self._client_vm_status = copy.deepcopy(self._client_object.properties[&#39;vmStatusInfo&#39;])
+        self._parent_client = None
+        self._parent_instance = None
+        self._parent_agent = None
+        self._parent_backupset = None
+        self._parent_subclient = None
+        self._vm_guid = None
+
+    @property
+    def parent_client(self):
+        &#34;&#34;&#34;Returns parent client object
+        Returns:
+            object          -   Parent client object&#34;&#34;&#34;
+        if not self._parent_client:
+            _parent_client = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;clientName&#39;)
+            if _parent_client:
+                self._parent_client = self._commcell_object.clients.get(_parent_client)
+        return self._parent_client
+
+    @property
+    def parent_agent(self):
+        &#34;&#34;&#34;Returns parent agent object
+        Returns:
+            object          -   Parent agent object&#34;&#34;&#34;
+        if self.parent_client and not self._parent_agent:
+            _parent_agent = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;appName&#39;)
+            if _parent_agent:
+                self._parent_agent = self.parent_client.agents.get(_parent_agent)
+        return self._parent_agent
+
+    @property
+    def parent_instance(self):
+        &#34;&#34;&#34;Returns parent instance object
+        Returns:
+            object          -   Parent instance object&#34;&#34;&#34;
+        if self.parent_agent and not self._parent_instance:
+            _parent_instance = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;instanceName&#39;)
+            if _parent_instance:
+                self._parent_instance = self.parent_agent.instances.get(_parent_instance)
+        return self._parent_instance
+
+    @property
+    def parent_backupset(self):
+        &#34;&#34;&#34;Returns parent backupset object
+        Returns:
+            object          -   Parent backupset object&#34;&#34;&#34;
+        if self.parent_instance and not self._parent_backupset:
+            _parent_backupset = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;backupsetName&#39;)
+            if _parent_backupset:
+                self._parent_backupset = self.parent_instance.backupsets.get(_parent_backupset)
+        return self._parent_backupset
+
+    @property
+    def parent_subclient(self):
+        &#34;&#34;&#34;Returns parent subclient object
+        Returns:
+            object          -   Parent subclient object&#34;&#34;&#34;
+        if self.parent_backupset and not self._parent_subclient:
+            _parent_subclient = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;subclientName&#39;)
+            if _parent_subclient:
+                self._parent_subclient = self.parent_backupset.subclients.get(_parent_subclient)
+        return self._parent_subclient
+
+    @property
+    def vm_guid(self):
+        &#34;&#34;&#34;Returns vm guid
+        Returns:
+            str          -   vm guid of the client&#34;&#34;&#34;
+        if not self._vm_guid:
+            self._vm_guid = self._client_vm_status.get(&#39;strGUID&#39;)
+        return self._vm_guid
+
+    def backup(self,
+               backup_level=&#34;Incremental&#34;,
+               incremental_backup=False,
+               incremental_level=&#39;BEFORE_SYNTH&#39;,
+               schedule_pattern=None):
+        &#34;&#34;&#34;Runs a backup job for the vm subclient of the level specified.
+
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental / Differential /
+                                                    Synthetic_full
+
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;,
+                                &#39;differential&#39;, &#39;synthetic_full&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+        if schedule_pattern or len(self._instance_object.backupsets) &gt; 1:
+            advanced_options = {&#39;vsaBackupOptions&#39;: {}}
+            advanced_options[&#39;vsaBackupOptions&#39;][&#39;selectiveVMInfo&#39;] = [{&#39;vmGuid&#39;: self.vm_guid}]
+            if self.parent_subclient:
+                request_json = self.parent_subclient._backup_json(
+                    backup_level=backup_level,
+                    incremental_backup=incremental_backup,
+                    incremental_level=incremental_level,
+                    schedule_pattern=schedule_pattern,
+                    advanced_options=advanced_options
+                )
+                backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    &#39;POST&#39;, backup_service, request_json
+                )
+            else:
+                raise SDKException(&#39;Subclient&#39;, 102, &#39;Not able to get Parent Subclient&#39;)
+        else:
+            vm_backup_service = self._commcell_object._services[&#39;VM_BACKUP&#39;] % (self.vm_guid, backup_level)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#39;POST&#39;, vm_backup_service
+            )
+        return self._process_backup_response(flag, response)</code></pre>
 </details>
 </section>
 <section>
@@ -123,12 +269,12 @@ backupset_object
 instance of the Backupset class</p>
 <pre><code>   subclient_name   (str)        --  subclient name
 
-   subclient     (int)           --  subclient id
+   subclient_id     (int)           --  subclient id
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f112a035f345a69fefa945f311c8ae358f826a7b/cvpysdk/subclients/vminstancesubclient.py#L38-L56" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L42-L199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMInstanceSubclient(Subclient):
     &#34;&#34;&#34;
@@ -145,21 +291,418 @@ instance of the Backupset class</p>
 
                subclient_name   (str)        --  subclient name
 
-               subclient     (int)           --  subclient id
+               subclient_id     (int)           --  subclient id
 
         &#34;&#34;&#34;
-        super(VMInstanceSubclient, self).__init__(backupset_object, subclient_name, subclient_id)</code></pre>
+        super(VMInstanceSubclient, self).__init__(backupset_object, subclient_name, subclient_id)
+
+        self._client_vm_status = copy.deepcopy(self._client_object.properties[&#39;vmStatusInfo&#39;])
+        self._parent_client = None
+        self._parent_instance = None
+        self._parent_agent = None
+        self._parent_backupset = None
+        self._parent_subclient = None
+        self._vm_guid = None
+
+    @property
+    def parent_client(self):
+        &#34;&#34;&#34;Returns parent client object
+        Returns:
+            object          -   Parent client object&#34;&#34;&#34;
+        if not self._parent_client:
+            _parent_client = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;clientName&#39;)
+            if _parent_client:
+                self._parent_client = self._commcell_object.clients.get(_parent_client)
+        return self._parent_client
+
+    @property
+    def parent_agent(self):
+        &#34;&#34;&#34;Returns parent agent object
+        Returns:
+            object          -   Parent agent object&#34;&#34;&#34;
+        if self.parent_client and not self._parent_agent:
+            _parent_agent = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;appName&#39;)
+            if _parent_agent:
+                self._parent_agent = self.parent_client.agents.get(_parent_agent)
+        return self._parent_agent
+
+    @property
+    def parent_instance(self):
+        &#34;&#34;&#34;Returns parent instance object
+        Returns:
+            object          -   Parent instance object&#34;&#34;&#34;
+        if self.parent_agent and not self._parent_instance:
+            _parent_instance = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;instanceName&#39;)
+            if _parent_instance:
+                self._parent_instance = self.parent_agent.instances.get(_parent_instance)
+        return self._parent_instance
+
+    @property
+    def parent_backupset(self):
+        &#34;&#34;&#34;Returns parent backupset object
+        Returns:
+            object          -   Parent backupset object&#34;&#34;&#34;
+        if self.parent_instance and not self._parent_backupset:
+            _parent_backupset = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;backupsetName&#39;)
+            if _parent_backupset:
+                self._parent_backupset = self.parent_instance.backupsets.get(_parent_backupset)
+        return self._parent_backupset
+
+    @property
+    def parent_subclient(self):
+        &#34;&#34;&#34;Returns parent subclient object
+        Returns:
+            object          -   Parent subclient object&#34;&#34;&#34;
+        if self.parent_backupset and not self._parent_subclient:
+            _parent_subclient = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;subclientName&#39;)
+            if _parent_subclient:
+                self._parent_subclient = self.parent_backupset.subclients.get(_parent_subclient)
+        return self._parent_subclient
+
+    @property
+    def vm_guid(self):
+        &#34;&#34;&#34;Returns vm guid
+        Returns:
+            str          -   vm guid of the client&#34;&#34;&#34;
+        if not self._vm_guid:
+            self._vm_guid = self._client_vm_status.get(&#39;strGUID&#39;)
+        return self._vm_guid
+
+    def backup(self,
+               backup_level=&#34;Incremental&#34;,
+               incremental_backup=False,
+               incremental_level=&#39;BEFORE_SYNTH&#39;,
+               schedule_pattern=None):
+        &#34;&#34;&#34;Runs a backup job for the vm subclient of the level specified.
+
+            Args:
+                backup_level            (str)   --  level of backup the user wish to run
+                                                    Full / Incremental / Differential /
+                                                    Synthetic_full
+
+                incremental_backup      (bool)  --  run incremental backup
+                                                    only applicable in case of Synthetic_full backup
+
+                incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                    BEFORE_SYNTH / AFTER_SYNTH
+                                                    only applicable in case of Synthetic_full backup
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+            Returns:
+                object - instance of the Job class for this backup job if its an immediate Job
+
+                         instance of the Schedule class for the backup job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if backup level specified is not correct
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        backup_level = backup_level.lower()
+        if backup_level not in [&#39;full&#39;, &#39;incremental&#39;,
+                                &#39;differential&#39;, &#39;synthetic_full&#39;]:
+            raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+        if schedule_pattern or len(self._instance_object.backupsets) &gt; 1:
+            advanced_options = {&#39;vsaBackupOptions&#39;: {}}
+            advanced_options[&#39;vsaBackupOptions&#39;][&#39;selectiveVMInfo&#39;] = [{&#39;vmGuid&#39;: self.vm_guid}]
+            if self.parent_subclient:
+                request_json = self.parent_subclient._backup_json(
+                    backup_level=backup_level,
+                    incremental_backup=incremental_backup,
+                    incremental_level=incremental_level,
+                    schedule_pattern=schedule_pattern,
+                    advanced_options=advanced_options
+                )
+                backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+
+                flag, response = self._commcell_object._cvpysdk_object.make_request(
+                    &#39;POST&#39;, backup_service, request_json
+                )
+            else:
+                raise SDKException(&#39;Subclient&#39;, 102, &#39;Not able to get Parent Subclient&#39;)
+        else:
+            vm_backup_service = self._commcell_object._services[&#39;VM_BACKUP&#39;] % (self.vm_guid, backup_level)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#39;POST&#39;, vm_backup_service
+            )
+        return self._process_backup_response(flag, response)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent"><code class="name">var <span class="ident">parent_agent</span></code></dt>
+<dd>
+<div class="desc"><p>Returns parent agent object</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Parent agent object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L81-L90" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def parent_agent(self):
+    &#34;&#34;&#34;Returns parent agent object
+    Returns:
+        object          -   Parent agent object&#34;&#34;&#34;
+    if self.parent_client and not self._parent_agent:
+        _parent_agent = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;appName&#39;)
+        if _parent_agent:
+            self._parent_agent = self.parent_client.agents.get(_parent_agent)
+    return self._parent_agent</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_backupset"><code class="name">var <span class="ident">parent_backupset</span></code></dt>
+<dd>
+<div class="desc"><p>Returns parent backupset object</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Parent backupset object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L103-L112" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def parent_backupset(self):
+    &#34;&#34;&#34;Returns parent backupset object
+    Returns:
+        object          -   Parent backupset object&#34;&#34;&#34;
+    if self.parent_instance and not self._parent_backupset:
+        _parent_backupset = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;backupsetName&#39;)
+        if _parent_backupset:
+            self._parent_backupset = self.parent_instance.backupsets.get(_parent_backupset)
+    return self._parent_backupset</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_client"><code class="name">var <span class="ident">parent_client</span></code></dt>
+<dd>
+<div class="desc"><p>Returns parent client object</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Parent client object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L70-L79" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def parent_client(self):
+    &#34;&#34;&#34;Returns parent client object
+    Returns:
+        object          -   Parent client object&#34;&#34;&#34;
+    if not self._parent_client:
+        _parent_client = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;clientName&#39;)
+        if _parent_client:
+            self._parent_client = self._commcell_object.clients.get(_parent_client)
+    return self._parent_client</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_instance"><code class="name">var <span class="ident">parent_instance</span></code></dt>
+<dd>
+<div class="desc"><p>Returns parent instance object</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Parent instance object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L92-L101" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def parent_instance(self):
+    &#34;&#34;&#34;Returns parent instance object
+    Returns:
+        object          -   Parent instance object&#34;&#34;&#34;
+    if self.parent_agent and not self._parent_instance:
+        _parent_instance = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;instanceName&#39;)
+        if _parent_instance:
+            self._parent_instance = self.parent_agent.instances.get(_parent_instance)
+    return self._parent_instance</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_subclient"><code class="name">var <span class="ident">parent_subclient</span></code></dt>
+<dd>
+<div class="desc"><p>Returns parent subclient object</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+Parent subclient object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L114-L123" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def parent_subclient(self):
+    &#34;&#34;&#34;Returns parent subclient object
+    Returns:
+        object          -   Parent subclient object&#34;&#34;&#34;
+    if self.parent_backupset and not self._parent_subclient:
+        _parent_subclient = self._client_vm_status.get(&#39;vsaSubClientEntity&#39;, {}).get(&#39;subclientName&#39;)
+        if _parent_subclient:
+            self._parent_subclient = self.parent_backupset.subclients.get(_parent_subclient)
+    return self._parent_subclient</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid"><code class="name">var <span class="ident">vm_guid</span></code></dt>
+<dd>
+<div class="desc"><p>Returns vm guid</p>
+<h2 id="returns">Returns</h2>
+<p>str
+-
+vm guid of the client</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L125-L132" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_guid(self):
+    &#34;&#34;&#34;Returns vm guid
+    Returns:
+        str          -   vm guid of the client&#34;&#34;&#34;
+    if not self._vm_guid:
+        self._vm_guid = self._client_vm_status.get(&#39;strGUID&#39;)
+    return self._vm_guid</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.backup"><code class="name flex">
+<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', schedule_pattern=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs a backup job for the vm subclient of the level specified.</p>
+<h2 id="args">Args</h2>
+<p>backup_level
+(str)
+&ndash;
+level of backup the user wish to run
+Full / Incremental / Differential /
+Synthetic_full</p>
+<p>incremental_backup
+(bool)
+&ndash;
+run incremental backup
+only applicable in case of Synthetic_full backup</p>
+<p>incremental_level
+(str)
+&ndash;
+run incremental backup before/after synthetic full
+BEFORE_SYNTH / AFTER_SYNTH
+only applicable in case of Synthetic_full backup</p>
+<p>schedule_pattern (dict) &ndash; scheduling options to be included for the task</p>
+<pre><code>    Please refer schedules.schedulePattern.createSchedule()
+                                                doc for the types of Jsons
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this backup job if its an immediate Job</p>
+<pre><code>     instance of the Schedule class for the backup job if its a scheduled Job
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if backup level specified is not correct</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vminstancesubclient.py#L134-L199" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def backup(self,
+           backup_level=&#34;Incremental&#34;,
+           incremental_backup=False,
+           incremental_level=&#39;BEFORE_SYNTH&#39;,
+           schedule_pattern=None):
+    &#34;&#34;&#34;Runs a backup job for the vm subclient of the level specified.
+
+        Args:
+            backup_level            (str)   --  level of backup the user wish to run
+                                                Full / Incremental / Differential /
+                                                Synthetic_full
+
+            incremental_backup      (bool)  --  run incremental backup
+                                                only applicable in case of Synthetic_full backup
+
+            incremental_level       (str)   --  run incremental backup before/after synthetic full
+                                                BEFORE_SYNTH / AFTER_SYNTH
+                                                only applicable in case of Synthetic_full backup
+
+            schedule_pattern (dict) -- scheduling options to be included for the task
+
+                    Please refer schedules.schedulePattern.createSchedule()
+                                                                doc for the types of Jsons
+
+        Returns:
+            object - instance of the Job class for this backup job if its an immediate Job
+
+                     instance of the Schedule class for the backup job if its a scheduled Job
+
+        Raises:
+            SDKException:
+                if backup level specified is not correct
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    backup_level = backup_level.lower()
+    if backup_level not in [&#39;full&#39;, &#39;incremental&#39;,
+                            &#39;differential&#39;, &#39;synthetic_full&#39;]:
+        raise SDKException(&#39;Subclient&#39;, &#39;103&#39;)
+
+    if schedule_pattern or len(self._instance_object.backupsets) &gt; 1:
+        advanced_options = {&#39;vsaBackupOptions&#39;: {}}
+        advanced_options[&#39;vsaBackupOptions&#39;][&#39;selectiveVMInfo&#39;] = [{&#39;vmGuid&#39;: self.vm_guid}]
+        if self.parent_subclient:
+            request_json = self.parent_subclient._backup_json(
+                backup_level=backup_level,
+                incremental_backup=incremental_backup,
+                incremental_level=incremental_level,
+                schedule_pattern=schedule_pattern,
+                advanced_options=advanced_options
+            )
+            backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#39;POST&#39;, backup_service, request_json
+            )
+        else:
+            raise SDKException(&#39;Subclient&#39;, 102, &#39;Not able to get Parent Subclient&#39;)
+    else:
+        vm_backup_service = self._commcell_object._services[&#39;VM_BACKUP&#39;] % (self.vm_guid, backup_level)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, vm_backup_service
+        )
+    return self._process_backup_response(flag, response)</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.subclient.Subclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
-<li><code><a title="cvpysdk.subclient.Subclient.backup" href="../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
@@ -184,6 +727,7 @@ instance of the Backupset class</p>
 <li><code><a title="cvpysdk.subclient.Subclient.is_on_demand_subclient" href="../subclient.html#cvpysdk.subclient.Subclient.is_on_demand_subclient">is_on_demand_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.is_trueup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.last_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.list_media" href="../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.name" href="../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.network_agent" href="../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.next_backup_time" href="../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
@@ -279,6 +823,15 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient">VMInstanceSubclient</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.backup" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent">parent_agent</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_backupset" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_backupset">parent_backupset</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_client" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_client">parent_client</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_instance" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_instance">parent_instance</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_subclient" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_subclient">parent_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid">vm_guid</a></code></li>
+</ul>
 </li>
 </ul>
 </li>
