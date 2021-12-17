@@ -118,11 +118,14 @@ VirtualServerSubclient:
     full_vm_restore_in_place()              -- restores the VM specified by the
                                                user to the same location
 
+    _full_vm_restore_update_json_for_v2     -- modifies the restore json as per v2
+                                                subclient details and returns it
+
     backup()                               --  run a backup job for the subclient
 
     _advanced_backup_options()              --  sets the advanced backup options
 
-    update_properties()                       --  child method to add vsa specific properties to update
+    update_properties()                       --  child method to add vsa specific properties to update properties
 
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
@@ -2520,8 +2523,51 @@ class VirtualServerSubclient(Subclient):
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "volumeRstOption"] = self._json_restore_volumeRstOption(
             restore_option)
+        if restore_option.get('v2_details') and len(restore_option.get('vm_to_restore', '')) <= 1:
+            request_json = self._full_vm_restore_update_json_for_v2(request_json, restore_option.get('v2_details'))
 
         return request_json
+
+    @staticmethod
+    def _full_vm_restore_update_json_for_v2(json_to_be_edited, v2_details):
+        """
+        Update the final request JSON to match wth the v2 vm
+        Args:
+            json_to_be_edited               (dict): Final restore JSON for the restore without v2 subclient details
+
+            v2_details                      (dict): v2 vm subclient details
+                                   eg: {
+                                            'clientName': 'vm_client1',
+                                            'instanceName': 'VMInstance',
+                                            'displayName': 'vm_client1',
+                                            'backupsetId': 12,
+                                            'instanceId': 2,
+                                            'subclientId': 123,
+                                            'clientId': 1234,
+                                            'appName': 'Virtual Server',
+                                            'backupsetName': 'defaultBackupSet',
+                                            'applicationId': 106,
+                                            'subclientName': 'default'
+                                        }
+
+        Returns:
+            json_to_be_edited        -complete json for performing Full VM Restore
+                                        options with v2 subclient details
+
+        """
+        json_to_be_edited['taskInfo']['associations'][0]['clientName'] = v2_details.get('clientName')
+        json_to_be_edited['taskInfo']['associations'][0]['clientId'] = v2_details.get('clientId')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceName'] = v2_details.get('instanceName')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceId'] = v2_details.get('instanceId')
+        json_to_be_edited['taskInfo']['associations'][0]['displayName'] = v2_details.get('displayName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetName'] = v2_details.get('backupsetName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetId'] = v2_details.get('backupsetId')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientName'] = v2_details.get('subclientName')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientId'] = v2_details.get('subclientId')
+        json_to_be_edited['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption']['backupset'][
+            'clientName'] = v2_details.get('clientName')
+        del json_to_be_edited['taskInfo']['associations'][0]['subclientGUID']
+        return json_to_be_edited
 
     def backup(self,
                backup_level="Incremental",

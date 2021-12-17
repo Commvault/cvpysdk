@@ -78,6 +78,9 @@ ReplicationGroup:
 
     restore_options()                               -- Returns a hypervisor specific set of restore options
 
+    is_dvdf_enabled()                               -- Returns whether 'Deploy VM during failover' enabled
+    is_warm_sync_enabled()                          -- Returns whether 'Warm site recovery' is enabled
+
     source_client()                                 -- Returns a client object of the source hypervisor
     destination_client()                            -- Returns a client object of the destination hypervisor
 
@@ -89,6 +92,9 @@ ReplicationGroup:
 
     subclient()                                     -- Returns the subclient object of the VM group associated
                                                         with the replication group
+
+    live_sync_pairs()                               -- Returns the list of source VM names that are already present in
+                                                        replication monitor
     vm_pairs()                                      -- Returns a dictionary of source VM names
                                                         and LiveSyncVMPairs object mapping
 
@@ -546,6 +552,25 @@ class ReplicationGroup:
         return self._subclient
 
     @property
+    def live_sync_pairs(self):
+        """
+        Returns: A list of all source VM names for which live sync pair exists for a periodic replication group
+            eg: ["vm1", "vm2"]
+        """
+        _live_sync_pairs = []
+        if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
+            live_sync_name = self.group_name.replace('_ReplicationPlan__ReplicationGroup', '')
+            live_sync = self.subclient.live_sync.get(live_sync_name)
+            _live_sync_pairs = list(live_sync.vm_pairs)
+        elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
+            blr_pairs = BLRPairs(self._commcell_object, self.group_name)
+            _live_sync_pairs = list(blr_pairs.blr_pairs)
+        else:
+            raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'
+                                                          ' of virtual server periodic')
+        return _live_sync_pairs
+
+    @property
     def vm_pairs(self):
         """Returns: A dictionary of livesyncVM pairs/BLR pairs object
             eg: {"src_vm1": LiveSyncVMPair, "src_vm2": LiveSyncVMPair}
@@ -594,4 +619,3 @@ class ReplicationGroup:
         """Returns: (str) The recovery target used for the replication"""
         return (self.restore_options.get('virtualServerRstOption', {}).get('allocationPolicy', {})
                 .get('vmAllocPolicyName'))
-

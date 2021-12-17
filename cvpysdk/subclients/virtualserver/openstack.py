@@ -81,7 +81,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             source_ip=None,
             destination_ip=None,
             datacenter = None,
-            cluster = None):
+            cluster = None,
+            **kwargs):
             # vm_to_restore=None,
             # overwrite=True,
             # power_on=True,
@@ -109,6 +110,12 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -124,8 +131,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
-
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')
@@ -176,7 +182,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             destination_ip=None,
             datacenter = None,
             cluster = None,
-            securityGroups = None
+            securityGroups = None,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -214,7 +221,11 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
                 destination_ip      (basestring)    --  IP of the destination VM
 
-
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -231,7 +242,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:

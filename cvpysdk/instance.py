@@ -187,48 +187,6 @@ class Instances(object):
         self._vs_instance_type_dict = {}
         self.refresh()
 
-        from .instances.vsinstance import VirtualServerInstance
-        from .instances.cainstance import CloudAppsInstance
-        from .instances.bigdataappsinstance import BigDataAppsInstance
-        from .instances.sqlinstance import SQLServerInstance
-        from .instances.hanainstance import SAPHANAInstance
-        from .instances.oracleinstance import OracleInstance
-        from .instances.sybaseinstance import SybaseInstance
-        from .instances.saporacleinstance import SAPOracleInstance
-        from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lotusnotes.lndbinstance import LNDBInstance
-        from .instances.lotusnotes.lndocinstance import LNDOCInstance
-        from .instances.lotusnotes.lndminstance import LNDMInstance
-        from .instances.postgresinstance import PostgreSQLInstance
-        from .instances.informixinstance import InformixInstance
-        from .instances.vminstance import VMInstance
-        from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance
-        from .instances.sharepointinstance import SharepointInstance
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._instances_dict = {
-            'virtual server': [VirtualServerInstance, VMInstance],
-            'big data apps': BigDataAppsInstance,
-            'cloud apps': CloudAppsInstance,
-            'sql server': SQLServerInstance,
-            'sap hana': SAPHANAInstance,
-            'oracle': OracleInstance,
-            'oracle rac': OracleInstance,
-            'sybase': SybaseInstance,
-            'sap for oracle': SAPOracleInstance,
-            'mysql': MYSQLInstance,
-            'notes database': LNDBInstance,
-            'notes document': LNDOCInstance,
-            'domino mailbox archiver': LNDMInstance,
-            'postgresql': PostgreSQLInstance,
-            'informix': InformixInstance,
-            'db2': DB2Instance,
-            'azure ad': AzureAdInstance,
-            'sharepoint server': SharepointInstance
-        }
-
     def __str__(self):
         """Representation string consisting of all instances of the agent of a client.
 
@@ -340,7 +298,7 @@ class Instances(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -393,24 +351,8 @@ class Instances(object):
         if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_instance(instance_name):
-                if agent_name in self._instances_dict:
-                    if isinstance(self._instances_dict[agent_name], list):
-                        if instance_name == "vminstance":
-                            instance = self._instances_dict[agent_name][-1]
-                        else:
-                            instance = self._instances_dict[agent_name][0]
-                    else:
-                        instance = self._instances_dict[agent_name]
-                    return instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
-                else:
-                    return Instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
@@ -817,7 +759,7 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'Instance "{0}" already exists.')
 
-        storage_policy = db2_options.get('storage_policy')
+        storage_policy = db2_options.get('storage_policy',db2_options.get('data_storage_policy'))
 
         if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
@@ -1721,6 +1663,64 @@ class Instances(object):
 
 class Instance(object):
     """Class for performing instance operations for a specific instance."""
+
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
+        from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
+        from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
+        from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _instances_dict = {
+            'virtual server': [VirtualServerInstance, VMInstance],
+            'big data apps': BigDataAppsInstance,
+            'cloud apps': CloudAppsInstance,
+            'sql server': SQLServerInstance,
+            'sap hana': SAPHANAInstance,
+            'oracle': OracleInstance,
+            'oracle rac': OracleInstance,
+            'sybase': SybaseInstance,
+            'sap for oracle': SAPOracleInstance,
+            'mysql': MYSQLInstance,
+            'notes database': LNDBInstance,
+            'notes document': LNDOCInstance,
+            'domino mailbox archiver': LNDMInstance,
+            'postgresql': PostgreSQLInstance,
+            'informix': InformixInstance,
+            'db2': DB2Instance,
+            'azure ad': AzureAdInstance,
+            'sharepoint server': SharepointInstance
+        }
+        agent_name = agent_object.agent_name
+
+        if agent_name in _instances_dict:
+            if isinstance(_instances_dict[agent_name], list):
+                if instance_name == "vminstance":
+                    _class = _instances_dict[agent_name][-1]
+                else:
+                    _class = _instances_dict[agent_name][0]
+            else:
+                _class = _instances_dict[agent_name]
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, agent_object, instance_name, instance_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, agent_object, instance_name, instance_id=None):
         """Initialise the instance object.

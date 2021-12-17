@@ -105,6 +105,7 @@ from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
+from .constants import AppIDAType
 
 
 class DisasterRecovery(object):
@@ -288,12 +289,13 @@ class DisasterRecovery(object):
             client = Client(self.commcell, client)
         else:
             raise SDKException('Response', '105')
+
+        agent_obj = client.agents.get("File System")
         drpath = self.path + "\\CommserveDR"
-        destination_path = self._filter_paths([destination_path], True)
-        drpath = [self._filter_paths([drpath], True)]
+        destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+        drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
         if not drpath:
             raise SDKException('Response', '104')
-        agent_obj = client.agents.get("File System")
         instance_obj = agent_obj.instances.get("DefaultInstanceName")
 
         instance_obj._restore_association = {
@@ -470,7 +472,7 @@ class DisasterRecovery(object):
         response_string = self.commcell._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def _filter_paths(self, paths, is_single_path=False):
+    def _filter_paths(self, paths, is_single_path=False, agent_id=None):
         """Filters the paths based on the Operating System, and Agent.
 
             Args:
@@ -478,20 +480,27 @@ class DisasterRecovery(object):
 
                 is_single_path  (bool)  --  boolean specifying whether to return a single path
                                                 or the entire list
-
+                agent_id        (str)   --   File system agent id
             Returns:
                 list    -   if the boolean is_single_path is set to False
 
                 str     -   if the boolean is_single_path is set to True
         """
         for index, path in enumerate(paths):
-
-            path = path.strip('\\').strip('/')
-            if path:
-                path = path.replace('/', '\\')
-            else:
-                path = '\\'
-
+            # "if" condition is default i.e. if client is not provided
+            if agent_id is None or int(agent_id) == AppIDAType.WINDOWS_FILE_SYSTEM.value:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('/', '\\')
+                else:
+                    path = '\\'
+            elif int(agent_id) == AppIDAType.LINUX_FILE_SYSTEM.value:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('\\', '/')
+                else:
+                    path = '\\'
+                path = '/' + path
             paths[index] = path
 
         if is_single_path:

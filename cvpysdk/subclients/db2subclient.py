@@ -146,7 +146,7 @@ class DB2Subclient(Subclient):
 
     def enable_backupdata(self):
         """
-        To enable or disable data backup
+        To enable data backup
 
         """
 
@@ -154,11 +154,18 @@ class DB2Subclient(Subclient):
 
     def disable_backupdata(self):
         """
-        To enable or disable data backup
+        To disable data backup
 
         """
-
-        self._set_subclient_properties("_db2_subclient_properties['db2BackupData']", False)
+        properties = self.properties
+        properties['db2SubclientProp']["db2BackupData"] = False
+        properties['db2SubclientProp']["skipLogsInBackupImage"] = 0
+        properties['db2SubclientProp']["db2BackupMode"] = 0
+        properties['db2SubclientProp']["db2UseDedupeDevice"] = True
+        properties['db2SubclientProp']["db2DeleteLogFilesAfter"] = False
+        properties['db2SubclientProp']["db2BackupLogFiles"] = True
+        del properties["db2SubclientProp"]["db2BackupType"]
+        self.update_properties(properties_dict=properties)
 
     @property
     def backup_mode_online(self):

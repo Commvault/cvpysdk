@@ -120,6 +120,16 @@ Commcell:
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
+    enable_privacy()                    --  Enables users to enable data privacy on commcell
+
+    disable_privacy()                   --  Enables users to disable data privacy on commcell
+
+    switch_to_company()         --  Login to company as an operator, just like using switcher on Command Center
+
+    reset_company()             --  Switch back to Commcell
+    
+    allow_users_to_enable_passkey()     --      Enable or Disable passkey authorization for company administrators and client owners
+
 Commcell instance Attributes
 ============================
 
@@ -364,6 +374,7 @@ from .metallic import Metallic
 from .key_management_server import KeyManagementServers
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
+USER_DOES_NOT_HAVE_PERMISSION = "User does not have permission on commcell properties"
 """str:     Message to be returned to the user, when trying the get the value of an attribute
 of the Commcell class, after the user was logged out.
 
@@ -598,6 +609,8 @@ class Commcell(object):
         self._tfa = None
         self._metallic = None
         self._kms = None
+        self._privacy = None
+        self._commcell_properties = None
         self.refresh()
 
         del self._password
@@ -941,7 +954,7 @@ class Commcell(object):
         if not isinstance(request_json, dict):
             message = f"Received: {type(request_json)}. Expected: dict, list"
             raise SDKException('Commcell', 107, message)
-        
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['GLOBAL_PARAM'], request_json
         )
@@ -1569,7 +1582,17 @@ class Commcell(object):
             return self._metallic
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-    
+
+    @property
+    def is_privacy_enabled(self):
+        """Method to return if the privacy is enabled at commcell level or not"""
+        if self._commcell_properties is None:
+            self.get_commcell_properties()
+
+        self._privacy = self._commcell_properties.get('enablePrivacy')
+
+        return self._privacy
+
     @property
     def key_management_servers(self):
         """Returns the instance of the KeyManagementServers class."""
@@ -2215,6 +2238,16 @@ class Commcell(object):
 
             Ex : install_flags = {"preferredIPfamily":2, "install32Base":True}
 
+            db2_logs_location (dict) - dictionary of db2 logs location
+
+                default : None
+                
+            Ex: db2_logs_location = {
+                                    "db2ArchivePath": "/opt/Archive/",
+                                    "db2RetrievePath": "/opt/Retrieve/",
+                                    "db2AuditErrorPath": "/opt/Audit/"
+                            }
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -2374,8 +2407,60 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def enable_privacy(self):
+        """Enables users to enable data privacy on commcell"""
+        if self.is_privacy_enabled is True:
+            return
+
+        self.set_privacy(True)
+
+    def disable_privacy(self):
+        """Enables users to disable data privacy on commcell"""
+        if self.is_privacy_enabled is False:
+            return
+
+        self.set_privacy(False)
+
+    def set_privacy(self, value):
+        """
+        Method to enable/disble privacy
+            Args:
+                value (bool): True/False to enable/disable privacy
+
+        Raises:
+                SDKException:
+                    if response is empty
+                    if failed to disable privacy
+                    if response is not success
+        """
+        url = self._services['PRIVACY_DISABLE']
+        if value:
+            url = self._services['PRIVACY_ENABLE']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', url
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json().get('response', [{}])[0]
+                if not response:
+                    raise SDKException('Response', '102')
+                if response.get('errorCode', -1) != 0:
+                    error_string = response.json().get('errorString')
+                    raise SDKException(
+                        'Commcell', '108', error_string)
+                self.get_commcell_properties()
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def get_commcell_properties(self):
         """ Get Commcell properties
+
         Returns: (dict)
             "hostName": String,
             "enableSharedLaptopUsage": Boolean,
@@ -2400,7 +2485,8 @@ class Commcell(object):
         if flag:
             if response.json():
                 response = response.json()
-                return response.get("commCellInfo").get("generalInfo")
+                self._commcell_properties = response.get("commCellInfo").get("generalInfo")
+                return self._commcell_properties
             else:
                 raise SDKException('Response', '102')
         else:
@@ -3036,7 +3122,7 @@ class Commcell(object):
                         continue
                     redirect_cc_list.append(ser_comm['commcellName'])
                 if 'cloudServices' in response.json():
-                    redirect_cc_list.append(response.json['cloudServices'][0]['commcellName'])
+                    redirect_cc_list.append(response.json()['cloudServices'][0]['commcellName'])
                 return redirect_cc_list
             else:
                 raise SDKException('Response', '102')
@@ -3226,7 +3312,7 @@ class Commcell(object):
     @property
     def default_timezone(self):
         """Returns the default timezone used for all the operations performed via cvpysdk"""
-        return '(GMT) Monrovia, Reykjavik' if self.is_linux_commserv else '(UTC) Coordinated Universal Time'
+        return 'UTC' if self.is_linux_commserv else '(UTC) Coordinated Universal Time'
 
     def enable_tfa(self, user_groups=None):
         """
@@ -3278,3 +3364,47 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def switch_to_company(self, company_name):
+        """Switching to Company as Operator"""
+        if self.organizations.has_organization(company_name):
+            self._headers['operatorCompanyId'] = str(self.organizations.get(company_name).organization_id)
+        else:
+            raise SDKException('Organization', 103)
+
+    def reset_company(self):
+        """Resets company to Commcell"""
+        if 'operatorCompanyId' in self._headers:
+            self._headers.pop('operatorCompanyId')
+            
+    def allow_users_to_enable_passkey(self, flag):
+        """Enable or Disable passkey authorization for company administrators and client owners
+        
+        Args:
+            flag (boolean)  --  Enable or Disable Passkey Authorization
+            
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to enable or disable passkey
+        """
+        request_json = {
+            "commCellInfo": {
+                "generalInfo": {
+                    "allowUsersToEnablePasskey": flag
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request('PUT', self._services['SET_COMMCELL_PROPERTIES'], request_json)
+
+        if flag:
+            if response.json() and "response" in response.json():
+                errorCode = response.json()['response'][0].get('errorCode')
+                if errorCode != 0:
+                    raise SDKException('Response', '101', 'Failed to enable passkey')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

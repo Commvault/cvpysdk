@@ -73,7 +73,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -91,13 +92,14 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                destination_client (basestring)  -- proxy client to be used for
-                                                    restore
-                                                    default: proxy added in
-                                                    subclient
-
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -113,7 +115,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -141,7 +143,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             copy_precedence=0,
-            disk_provisioning='original'):
+            disk_provisioning='original',
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -158,7 +161,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 new_name          (basestring) -- new name to be given to the
                                                     restored VM
 
-                Host          (basestring) -- destination cluster or  host
+                host          (basestring) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -178,12 +181,18 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_provisioning       (basestring) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
                 proxy_client     (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -200,7 +209,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]

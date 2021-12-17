@@ -423,6 +423,7 @@ class ClientGroups(object):
             'Clients With Encryption': 80,
             'Client CIDR Address Range': 81,
             'HAC Cluster': 85,
+            'Client Display Name': 116
             }
         ptype_dict = {
             'Name': 2,

@@ -371,9 +371,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
             raise SDKException('IndexServers', '101')
 
         append_str = "%"
-        delimiter = "\\"
-        if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
-            delimiter = "/"
+        delimiter = "/"
         role_content = [f"{delimiter}{append_str}{role}{append_str}" for role in role_content]
         self.content = role_content
         if self.storage_policy is None:

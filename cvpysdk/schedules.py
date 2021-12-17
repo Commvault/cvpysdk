@@ -634,6 +634,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
         """
         automatic_pattern = {
@@ -730,7 +732,23 @@ class SchedulePattern:
                                                ),
             "useStorageSpaceFromMA": pattern_dict.get("use_storage_space_ma",
                                                self._pattern.get("useStorageSpaceFromMA", False)
-                                               )
+                                               ),
+            "diskUsedPercent": {
+                "enabled": True if 'disk_use_threshold' in pattern_dict
+                else (self._pattern.get("diskUsedPercent",
+                                        {'enabled': False})['enabled']),
+                "threshold": pattern_dict.get("disk_use_threshold",
+                                              self._pattern.get("diskUsedPercent",
+                                                                {'threshold': 80})['threshold'])
+            },
+            "logFileNum": {
+                "enabled": True if 'number_of_log_files' in pattern_dict
+                else (self._pattern.get("logFileNum",
+                                        {'enabled': False})['enabled']),
+                "threshold": pattern_dict.get("number_of_log_files",
+                                              self._pattern.get("logFileNum",
+                                                                {'threshold': 50})['threshold'])
+            }
         }
 
         self._pattern = automatic_pattern
@@ -885,6 +903,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
 
         for after_job_completes :   {
@@ -997,9 +1017,12 @@ class Schedules:
         from .subclient import Subclient
         from .instance import Instance
         from .activateapps.inventory_manager import Inventory
+        from .activateapps.file_storage_optimization import FsoServer
+        from .activateapps.sensitive_data_governance import Project
 
         self.class_object = class_object
         self._single_scheduled_entity = False
+        self._task_flags = {}
         self._repr_str = ""
 
         if isinstance(class_object, Commcell):
@@ -1019,6 +1042,21 @@ class Schedules:
                     class_object.commserv_name)
             else:
                 raise SDKException('Schedules', '103')
+        elif isinstance(class_object, FsoServer):
+            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
+                class_object.server_id)
+            self._repr_str = "Fso Server: {0}".format(class_object.server_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags['isEdiscovery'] = True
+
+        elif isinstance(class_object,Project):
+            self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
+                class_object.project_id)
+            self._repr_str = "SDG Project: {0}".format(class_object.project_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags['isEdiscovery'] = True
 
         elif isinstance(class_object, Inventory):
             self._SCHEDULES = class_object._commcell_object._services['INVENTORY_SCHEDULES'] % (
@@ -1131,6 +1169,7 @@ class Schedules:
                 for schedule in response.json()['taskDetail']:
                     task_id = schedule['task']['taskId']
                     description = ''
+                    task_flags = schedule['task'].get('taskFlags',0)
                     if 'subTasks' in schedule:
                         for subtask in schedule['subTasks']:
                             schedule_id = subtask['subTask']['subTaskId']
@@ -1148,7 +1187,8 @@ class Schedules:
                             subtask_dict[schedule_id] = {
                                 'task_id': task_id,
                                 'schedule_name': subtask_name,
-                                'description': description
+                                'description': description,
+                                'task_flags': task_flags
                             }
 
                 return subtask_dict
@@ -1189,8 +1229,22 @@ class Schedules:
 
         if self._single_scheduled_entity:
             # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            # if flag set along with task flags, then find schedule with that flags set and return that from dict
             for subtask_id, subtask_dict in self.schedules.items():
-                return subtask_id
+                if len(self._task_flags) == 0:
+                    return subtask_id
+                else:
+                    task_flags = subtask_dict['task_flags']
+                    match = True
+                    for flag, value in self._task_flags.items():
+                        if flag in task_flags:
+                            if task_flags[flag] != value:
+                                match = False
+                        else:
+                            match = False
+                    if match:
+                        return subtask_id
+            return None
 
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(

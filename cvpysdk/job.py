@@ -214,6 +214,8 @@ Job
 
     get_events()                --  returns the commserv events for the job
 
+    get_child_jobs()            --  Returns the child jobs
+
 
 Job instance Attributes
 -----------------------
@@ -383,6 +385,15 @@ class JobController(object):
 
                             default: []
 
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                            Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
+
+
             Returns:
                 dict    -   request json that is to be sent to server
 
@@ -423,6 +434,9 @@ class JobController(object):
                 ]
             }
         }
+
+        if "entity" in options:
+            request_json['jobFilter']['entity'] = options.get("entity")
 
         return request_json
 
@@ -474,6 +488,14 @@ class JobController(object):
                                     job_type = ''
                                     pending_reason = ''
                                     subclient_id = ''
+                                    job_elapsed_time = 0
+                                    job_start_time = 0
+
+                                    if 'jobElapsedTime' in job_summary:
+                                        job_elapsed_time = job_summary['jobElapsedTime']
+
+                                    if 'jobStartTime' in job_summary:
+                                        job_start_time = job_summary['jobStartTime']
 
                                     if 'appTypeName' in job_summary:
                                         app_type = job_summary['appTypeName']
@@ -497,7 +519,10 @@ class JobController(object):
                                         'percent_complete': percent_complete,
                                         'pending_reason': pending_reason,
                                         'subclient_id': subclient_id,
-                                        'backup_level': backup_level
+                                        'backup_level': backup_level,
+                                        'job_start_time': job_start_time,
+                                        'job_elapsed_time': job_elapsed_time
+
                                     }
 
                     return jobs_dict
@@ -718,6 +743,14 @@ class JobController(object):
 
                         accepted values: ['basic', 'full']
 
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                        Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
+
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
                 as the key, and their details as its value
@@ -801,6 +834,14 @@ class JobController(object):
                         default: basic
 
                         accepted values: ['basic', 'full']
+
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                        Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
 
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
@@ -2297,7 +2338,6 @@ class Job(object):
         """Treats the userid as a read-only attribute."""
         return self._summary['userName']['userId']
 
-
     @property
     def details(self):
         """Treats the job full details as a read-only attribute."""
@@ -2309,6 +2349,15 @@ class Job(object):
         """Treats the size of application as a read-only attribute."""
         if 'sizeOfApplication' in self._summary:
             return self._summary['sizeOfApplication']
+
+    @property
+    def media_size(self):
+        """
+        Treats the size of media as a read-only attribute
+        Returns:
+            integer - size of media or data written
+        """
+        return self._summary.get('sizeOfMediaOnDisk', 0)
 
     @property
     def num_of_files_transferred(self):
@@ -2603,6 +2652,20 @@ class Job(object):
             }
         """
         return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
+
+    def get_child_jobs(self):
+        """ Get the child jobs details for the current job
+        Returns:
+                _jobs_list          (list):     List of child jobs
+
+        """
+        _jobs_list = []
+        if self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus'):
+            for _job in self.details['jobDetail']['clientStatusInfo']['vmStatus']:
+                _jobs_list.append(_job)
+            return _jobs_list
+        else:
+            return None
 
 
 class _ErrorRule:

@@ -130,6 +130,14 @@ Organization
 
     remove_client_association()     --  Removes the client from an organization
 
+    enable_company_data_privacy()   -- enable company privacy to prevent admin access to company data
+
+    disable_company_data_privacy()  -- To disable company privacy to prevent admin access to company data
+
+    enable_owner_data_privacy()     -- To enable company privacy to allow owner to enable data privacy
+
+    disable_owner_data_privacy()    -- To disable company privacy to allow owner to enable data privacy
+
     update_security_associations()     -- Updates Security Associations for user or usergroup on Organisation
 
     update_email_settings()            -- Updates Email settings for the organisation
@@ -138,7 +146,7 @@ Organization
 
     passkey()                          -- Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation
 
-    allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey 
+    allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey
 
 Organization Attributes
 -----------------------
@@ -182,6 +190,12 @@ Organization Attributes
 
          **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+        **is_backup_disabled**       -- returns the backup activity status for the Organization
+
+        **is_restore_disabled**      -- returns the restore activity status for the Organization
+
+        **is_login_disabled**        -- returns the Login activity status for the Organization
+
          **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
          **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
@@ -213,6 +227,11 @@ Organization Attributes
         **isAuthrestoreEnabled**    -- Returns True - If Authrestore is enabled at Organisation level
 
         **isAllowUserstoEnablePasskeyEnabled** -- Returns True - If users have rights to enable passkey
+
+        **is_company_privacy_enabled**         -- Returns True if the privacy is enabled for organization
+
+        **is_owner_data_privacy_enabled**      -- Returns True if the privacy is enabled for owner of client in
+        organization
 
 """
 
@@ -340,9 +359,50 @@ class Organizations:
                         'GUID': organization_guid
                     }
 
+            self._get_associated_entities_count()
+
             return organizations
         response_string = self._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
+
+    def _get_associated_entities_count(self):
+        """Gets all the organizations associated with the Commcell environment.
+
+            Returns:
+                dict    -   consists of all organizations added to the commcell
+
+                    {
+                        "organization1_name": organization1_id,
+
+                        "organization2_name": organization2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._organizations_api+"?Fl=providers.associatedEntitiesCount,providers.shortName,providers.connectName")
+
+        if flag:
+            if response.json() and 'providers' in response.json():
+                for provider in response.json().get('providers'):
+                    name = provider.get('connectName').lower()
+                    organization_entites_count = provider.get('associatedEntitiesCount')
+                    if name:
+                        self._adv_config[name] = {
+                            'count': organization_entites_count
+                        }
+
+                return
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def all_organizations(self):
@@ -526,8 +586,8 @@ class Organizations:
                             'email': email
                         }
                     ],
-                    'defaultPlans': plans_list
-                }
+                },
+                'planDetails': plans_list
             }
         }
 
@@ -703,11 +763,18 @@ class Organization:
         self._global_file_exceptions_enabled = False
         self._job_start_time = None
         self._client_groups = None
+        self._update_props = {}
         self._primary_domain = None
         self._additional_domain = None
         self._is_passkey_enabled = None
         self._is_authorise_for_restore_enabled = None
         self._is_allow_users_to_enable_passkey_enabled = None
+        self._company_privacy = None
+        self._owner_privacy = None
+        self._backup_disabled = None
+        self._restore_disabled = None
+        self._login_disabled = None
+        self._retire_laptops = None
 
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
         self.refresh()
@@ -856,7 +923,9 @@ class Organization:
                 self._description = organization['description']
                 self._email_domain_names = organization.get('emailDomainNames')
                 self._domain_name = organization['shortName']['domainName']
-
+                self._backup_disabled = organization['deactivateOptions']['disableBackup']
+                self._restore_disabled = organization['deactivateOptions']['disableRestore']
+                self._login_disabled = organization['deactivateOptions']['disableLogin']
                 self._is_auth_code_enabled = organization_properties['enableAuthCodeGen']
                 self._auth_code = organization_properties.get('authCode')
                 self._use_upn = organization_properties.get('useUPNForEmail')
@@ -871,7 +940,14 @@ class Organization:
                 self._is_passkey_enabled = True if organization_properties['advancedPrivacySettings']['authType'] == 2 else False
                 self._is_authorise_for_restore_enabled = organization_properties['advancedPrivacySettings']['passkeySettings']['enableAuthorizeForRestore']
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties['allowUsersToEnablePasskey']
+                self._owner_privacy = organization_properties.get("allowUsersToEnablePrivacy")
 
+                privacy = organization_properties.get('privacy')
+                if privacy:
+                    self._company_privacy = privacy.get("enableDataSecurity")
+
+                self._retire_laptops = organization_properties.get('autoRetireDevices', {})
+                
                 job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
                 if job_time_enabled:
                     job_time_epoch = organization_properties.get('jobStartTime', None)
@@ -965,7 +1041,7 @@ class Organization:
         if flag:
             if response.json():
                 response = response.json()
-                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations')
+                security_list = response.get('securityAssociations')[0].get('securityAssociations').get('associations', [])
                 for list_item in security_list:
                     name = list_item.get('userOrGroup')[0].get('userGroupName') or \
                            list_item.get('userOrGroup')[0].get('userName') or \
@@ -1084,9 +1160,17 @@ class Organization:
         request_json = {
             'organizationInfo': {
                 'organization': self._properties.get('organization'),
-                'organizationProperties': self._properties.get('organizationProperties')
+                'organizationProperties': self._update_props.get('organizationProperties', {})
             }
         }
+
+        domain_name = self._update_props.get('newAliasName')
+        if domain_name:
+            request_json['newAliasName'] = domain_name
+
+        company_name = self._update_props.get('newCompanyName')
+        if company_name:
+            request_json['newCompanyName'] = company_name
 
         if update_plan_details:
             request_json['organizationInfo']['planDetailsOperationType'] = self._properties.get(
@@ -1102,10 +1186,10 @@ class Organization:
         if response.json():
             if 'error' in response.json():
                 error_code = response.json()['error']['errorCode']
-                error_message = response.json()['error']['errorMessage']
+                error_message = response.json()['error'].get('errorMessage', '')
             else:
                 error_code = response.json()['errorCode']
-                error_message = response.json()['errorMessage']
+                error_message = response.json().get('errorMessage', '')
 
             if error_code != 0:
                 raise SDKException(
@@ -1126,7 +1210,7 @@ class Organization:
 
         """
         for key in properties_dict:
-            self._properties['organizationProperties'][key] = properties_dict[key]
+            self._update_props['organizationProperties'][key] = properties_dict[key]
 
     @property
     def name(self):
@@ -1143,6 +1227,22 @@ class Organization:
         """Returns the value of the name for this Organization."""
         return self._organization_name.lower()
 
+    @organization_name.setter
+    def organization_name(self, value):
+        """Method to set organization name
+
+        Args:
+
+            value (string): company name to be set
+        """
+        req_json = {
+            "newCompanyName": value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
+
     @property
     def description(self):
         """Returns the description for this Organization."""
@@ -1153,10 +1253,37 @@ class Organization:
         """Returns the value of the email domain names for this Organization."""
         return self._email_domain_names
 
+    @email_domain_names.setter
+    def email_domain_names(self, value):
+        """Method to set supported smtp for this organization
+
+        Args:
+
+            value (list): list of supported smtp to be set
+        """
+        self._properties['organization']['emailDomainNames'] = value
+        self._update_properties()
+
     @property
     def domain_name(self):
         """Returns the value of the domain name for this Organization."""
         return self._domain_name
+
+    @domain_name.setter
+    def domain_name(self, value):
+        """Method to set domain name for this organization
+
+        Args:
+
+            value (basestring): company alias to be set
+        """
+        req_json = {
+            "newAliasName": value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
 
     @property
     def auth_code(self):
@@ -1172,6 +1299,21 @@ class Organization:
     def is_auto_discover_enabled(self):
         """Returns boolen whether organization autodiscover attribute enabled for this organization."""
         return self._properties['organizationProperties'].get('enableAutoDiscovery', False)
+
+    @property
+    def is_backup_disabled(self):
+        """Returns boolean whether backup is disabled for this organisation"""
+        return self._backup_disabled
+
+    @property
+    def is_restore_disabled(self):
+        """Returns boolean whether restore is disabled for this organisation"""
+        return self._restore_disabled
+
+    @property
+    def is_login_disabled(self):
+        """Returns boolean whether login is disabled for this organisation"""
+        return self._login_disabled
 
     @property
     def shared_laptop(self):
@@ -1505,6 +1647,16 @@ class Organization:
         self._properties['planDetailsOperationType'] = 1
         self._update_properties(update_plan_details=True)
 
+    @property
+    def is_company_privacy_enabled(self):
+        """Returns true if company privacy is enabled"""
+        return self._company_privacy
+
+    @property
+    def is_owner_data_privacy_enabled(self):
+        """Returns true if owner data privacy is enabled"""
+        return self._owner_privacy
+
     def dissociate_plans(self, value):
         """disassociates plans from the organization
 
@@ -1546,6 +1698,7 @@ class Organization:
         self._default_plan = []
         self._contacts = {}
         self._plans = {}
+        self._update_props['organizationProperties'] = {}
         self._properties = self._get_properties()
         self._user_groups = self._get_company_usergroup()
         self._tfa_obj.refresh()
@@ -1818,6 +1971,7 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+        self.refresh()
 
     def enable_auto_discover(self):
         """Enables autodiscover at company level..
@@ -2150,6 +2304,66 @@ class Organization:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def enable_company_data_privacy(self):
+        """ To enable company privacy to prevent admin access to company data
+        """
+        if self._company_privacy:
+            return
+
+        self.set_company_data_privacy(True)
+
+    def disable_company_data_privacy(self):
+        """ To disable company privacy to prevent admin access to company data
+        """
+        if not self._company_privacy:
+            return
+
+        self.set_company_data_privacy(False)
+
+    def set_company_data_privacy(self, value):
+        """Method to set company data privacy
+
+        Args:
+            value (bool): True/False to enable/disable privacy
+        Raises:
+            SDKException:
+                if disable company data privacy to service commcell fails
+                if response is empty
+                if response is not success
+        """
+        url = self._services['DISABLE_PRIVACY_COMPANY_DATA'] % self.organization_id
+        if value:
+            url = self._services['ENABLE_PRIVACY_COMPANY_DATA'] % self.organization_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', url, {}
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get('errorMessage')
+                if response.json().get('errorCode', -1) != 0:
+                    raise SDKException('Organization', '102', error_message)
+
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def get_retire_laptop_properties(self):
+        """
+        Returns:
+            dict -- Retire Laptop Properties of Organization
+
+            example: {
+                    "retireDevicesAfterDays": 183,
+                    "forceDeleteDevicesAfterDays": -1
+            }
+        """
+        return self._retire_laptops
 
     def retire_offline_laptops(self, retire_days, delete_days = None):
         """
@@ -2198,7 +2412,7 @@ class Organization:
         Updates Sites information for an Organisation
 
         Args:
-            sites (dict)   --  Consisting Of Primary and Additional sites information
+            sites (dict)   --  Consisting Of Primary and Additional sites information, Pass Empty dictionary to remove site information
 
             example:
             sites = {
@@ -2216,9 +2430,7 @@ class Organization:
         """
 
         if isinstance(sites, dict):
-            primary_site = sites.get('primary_site', None)
-            if primary_site is None:
-                raise SDKException('Organization', 101, 'Primary Site name is missing.')
+            primary_site = sites.get('primary_site', "")
 
             additional_sites = sites.get('additional_sites', [])
 
@@ -2351,7 +2563,7 @@ class Organization:
 
         if action.lower() == 'enable':
             req_json = {
-            "currentPasskey": current_password,
+            "newPasskey": current_password,
             "confirmPasskey": current_password,
             "passkeyOpType": "CREATE"
             }
@@ -2407,6 +2619,22 @@ class Organization:
 
         self.refresh()
 
+    def enable_owner_data_privacy(self):
+        """ To enable company privacy to allow owner to enable data privacy """
+        if self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({'allowUsersToEnablePrivacy': True})
+        self._update_properties()
+
+    def disable_owner_data_privacy(self):
+        """ To disable company privacy to allow owner to enable data privacy """
+        if not self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({'allowUsersToEnablePrivacy': False})
+        self._update_properties()
+
     def allow_owners_to_enable_passkey(self, flag):
         """
         Enable or Disable option to allow owners to enable privacy
@@ -2416,3 +2644,62 @@ class Organization:
         """
         self._update_properties_json({"allowUsersToEnablePasskey": flag})
         self._update_properties()
+
+    def update_general_settings(self, general_settings_dict):
+        """Method to update properties of general settings in an organization
+
+        Args:
+                general_settings_dict (dict): general settings properties to be modified
+                Eg.
+                    properties_dict = {
+                        "newName": "string",
+                        "general": {
+                            "newAlias": "string",
+                            "emailSuffix": "string",
+                            "authcodeForInstallation": true,
+                            "twoFactorAuth": {
+                                "enable": true,
+                                "all": true,
+                                "userGroups": [
+                                    {
+                                        "id": 0,
+                                        "name": "string"
+                                    }
+                                ]
+                            },
+                            "resellerMode": true,
+                            "enableDataEncryption": true,
+                            "autoDiscoverApp": true,
+                            "infrastructureType": "RENTED_STORAGE",
+                            "supportedSolutions": [
+                                "FILE_SERVER"
+                            ],
+                            "assignLaptopOwners": "LOGGED_IN_ACTIVE_DIRECTORY_USERS",
+                        }
+                    }
+
+         Raises:
+                SDKException:
+
+                    if unable to update general settings
+
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['EDIT_COMPANY_DETAILS'] % self.organization_id, general_settings_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get('errorMessage')
+                if response.json().get('errorCode', -1) != 0:
+                    raise SDKException('Organization', '102', error_message)
+
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

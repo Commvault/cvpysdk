@@ -49,7 +49,11 @@ from ...exception import SDKException
 
 
 class CloudDatabaseInstance(CloudAppsInstance):
-    """Class for representing an Instance of the Cloud Database such as Amazon RDS/Redshift/DocumentDB/DynamoDB"""
+    """
+    Class for representing an Instance of the Cloud Database such as
+    Amazon RDS/Redshift/DocumentDB/DynamoDB/Cloud Spanner
+
+    """
 
     def __init__(self, agent_object, instance_name, instance_id=None):
         """Initializes the object of the CloudDatabaseInstance class

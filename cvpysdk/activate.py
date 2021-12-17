@@ -28,14 +28,27 @@ Activate : Base class for all activate apps
 Activate instance Attributes
 ============================
 
-    **entity_manager**           --  returns object of entity_manager class based on entity type specified
+    **entity_manager**              --  returns object of entity_manager class based on entity type specified
 
-    **inventory_manager**        --  returns object of Inventories class
+    **inventory_manager**           --  returns object of Inventories class
+
+    **file_storage_optimization**   --  returns object of file_storage_optimization based on FSO type
+
+    **sensitive_data_governance**   --  returns object of sensitive data governance app
+
+    **request_manager**             --  returns object of Requests class
 
 """
-from .activateapps.inventory_manager import Inventories
 
 from .exception import SDKException
+
+from .activateapps.file_storage_optimization import FsoTypes, FsoServers, FsoServerGroups
+
+from .activateapps.sensitive_data_governance import Projects
+
+from .activateapps.inventory_manager import Inventories
+
+from .activateapps.request_manager import Requests
 
 from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
 
@@ -58,6 +71,10 @@ class Activate(object):
         self._tags = None
         self._classifiers = None
         self._inventories = None
+        self._fso_servers = None
+        self._fso_server_groups = None
+        self._sdg_projects = None
+        self._req_mgr = None
 
     def __del__(self):
         """Destructor method to delete all instances of apps referenced by this class"""
@@ -65,12 +82,74 @@ class Activate(object):
         del self._tags
         del self._classifiers
         del self._inventories
+        del self._fso_servers
+        del self._fso_server_groups
+        del self._sdg_projects
+        del self._req_mgr
 
     def inventory_manager(self):
         """Returns the Inventories class object from inventory manager app from activate apps"""
         if self._inventories is None:
             self._inventories = Inventories(self._commcell_object)
         return self._inventories
+
+    def request_manager(self):
+        """Returns the Requests class object from request manager app from activate apps"""
+        if self._req_mgr is None:
+            self._req_mgr = Requests(self._commcell_object)
+        return self._req_mgr
+
+    def file_storage_optimization(self, fso_type=FsoTypes.SERVERS):
+        """returns object of FsoServers/FsoServerGroups/Projects based on FSO type
+
+                Args:
+
+                    fso_type        (enum)      --  FsoTypes enum (Default : FsoServers)
+
+                Returns:
+
+                    obj --  Instance of FsoServers/FsoServerGroups/Projects based on type
+
+                Raises:
+
+                SDKException:
+
+                        if input data is not valid
+
+                        if entity type is not supported
+
+        """
+        if not isinstance(fso_type, FsoTypes):
+            raise SDKException('FileStorageOptimization', '101')
+        if fso_type.value == FsoTypes.SERVERS.value:
+            if self._fso_servers is None:
+                self._fso_servers = FsoServers(self._commcell_object)
+            return self._fso_servers
+        elif fso_type.value == FsoTypes.SERVER_GROUPS.value:
+            if self._fso_server_groups is None:
+                self._fso_server_groups = FsoServerGroups(self._commcell_object)
+            return self._fso_server_groups
+        raise SDKException('FileStorageOptimization', '102', 'Unsupported FSO type specified')
+
+    def sensitive_data_governance(self):
+        """returns object of Sensitive data governance - Projects class
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    obj --  Instance of Projects class from sensitive data governance
+
+                Raises:
+
+                    None
+
+        """
+        if self._sdg_projects is None:
+            self._sdg_projects = Projects(self._commcell_object)
+        return self._sdg_projects
 
     def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
         """Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
