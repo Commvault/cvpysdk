@@ -167,7 +167,8 @@ EXCEPTION_DICT = {
         '118': 'Failed to run the backup copy job',
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '120': 'Invalid days/cycles value. Please provide an integer value >= 2.',
-        '121': 'IndexServer value should be a client object'
+        '121': 'IndexServer value should be a client object',
+        '122': 'In-Place restore is not supported with multiple source paths'
     },
     'Job': {
         '101': 'Incorrect JobId',

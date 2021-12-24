@@ -2142,7 +2142,7 @@ class Job(object):
 
             time.sleep(3)
 
-    def wait_for_completion(self, timeout=30):
+    def wait_for_completion(self, timeout=30, **kwargs):
         """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
             Kills the job and exits, if the job has been in Pending / Waiting state for more than
             the timeout value.
@@ -2155,6 +2155,10 @@ class Job(object):
                         if the job has been in Pending / Waiting state
                     default: 30
 
+                **kwargs    (str)   --  accepted optional arguments
+
+                    return_timeout  (int)   -- minutes after which the method will return False.
+
             Returns:
                 bool    -   boolean specifying whether the job had finished or not
                     True    -   if the job had finished successfully
@@ -2162,15 +2166,19 @@ class Job(object):
                     False   -   if the job was killed/failed
 
         """
-        start_time = time.time()
+        start_time = actual_start_time = time.time()
         pending_time = 0
         waiting_time = 0
         previous_status = None
+        return_timeout = kwargs.get('return_timeout')
 
         status_list = ['pending', 'waiting']
 
         while not self.is_finished:
             time.sleep(30)
+
+            if return_timeout and ((time.time() - actual_start_time) / 60) > return_timeout:
+                return False
 
             # get the current status of the job
             status = self.status.lower()

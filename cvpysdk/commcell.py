@@ -48,6 +48,9 @@ Commcell:
 
     _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
 
+    verify_owner_assignment_config()    -- verifies that the ownership assignments settings are configured
+    and set properly
+
     logout()                    --  logs out the user associated with the current instance
 
     request()                   --  runs an input HTTP request on the API specified,
@@ -964,6 +967,34 @@ class Commcell(object):
                 return response.json()
             else:
                 raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def verify_owner_assignment_config(self):
+
+        """ Verifies that the ownership assignments settings are configured and set properly
+
+        Returns:
+                dict    -   json response received from the server
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if ownership assignment is not correct
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            "GET", self._services["SET_COMMCELL_PROPERTIES"]
+        )
+
+        if flag:
+            try:
+                return response.json()
+            except ValueError:
+                return {'output': response}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 

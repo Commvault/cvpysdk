@@ -518,11 +518,7 @@ class Instances(object):
                 else:
                     if 'entity' in response.json()['response']:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()['response']['entity'].get('instanceName'),
-                            response.json()['response']['entity'].get('instanceId')
-                        )
+                        return self.get(response.json()['response']['entity'].get('instanceName'))
                     else:
                         raise SDKException(
                             'Instance',
@@ -708,10 +704,7 @@ class Instances(object):
                     instance_id = response.json(
                     )['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
-
+                    return self.get(instance_name)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -827,11 +820,7 @@ class Instances(object):
                 else:
                     if 'entity' in response.json()['response']:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()['response']['entity'].get('instanceName'),
-                            response.json()['response']['entity'].get('instanceId')
-                        )
+                        return self.get(response.json()['response']['entity'].get('instanceName'))
                     else:
                         raise SDKException('Instance', '102', 'Unable to get instance name and id'
                                            )
@@ -1116,9 +1105,7 @@ class Instances(object):
                     instance_name = response.json()['response']['entity']['instanceName']
                     instance_id = response.json()['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
+                    return self.get(instance_name)
 
             else:
                 raise SDKException('Response', '102')
@@ -2861,6 +2848,24 @@ class Instance(object):
                 "inPlace": value.get("in_place", True),
                 "destClient": {
                     "clientName": value.get("proxy_client", "")
+                }
+            }
+        elif value.get("in_place", True) and (self._agent_object.agent_name).upper() == "VIRTUAL SERVER":
+            restore_paths = value.get("paths", [])
+            if len(restore_paths) > 1:
+                raise SDKException('Subclient', '122')
+            dest_path_from_source = restore_paths[0]
+            dest_path_from_source = dest_path_from_source.strip('\\').split('\\', 1)[-1].replace('\\', '/').rsplit('/',1)
+            if len(dest_path_from_source) == 1:
+                dest_path_from_source1 = '/'
+            else:
+                dest_path_from_source1 = f"/{dest_path_from_source[0]}"
+            self._destination_restore_json = {
+                "isLegalHold": False,
+                "inPlace": False,
+                "destPath": [dest_path_from_source1],
+                "destClient": {
+                    "clientName": value.get("client_name", ""),
                 }
             }
         else:

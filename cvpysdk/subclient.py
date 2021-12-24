@@ -533,32 +533,13 @@ class Subclients(object):
                         'Failed to create subclient\nError: "{0}"'.format(error_string)
                     )
                 else:
-                    subclient_id = response.json()['response']['entity']['subclientId']
-
                     # initialize the subclients again so the subclient object has all the subclients
                     self.refresh()
 
-                    agent_name = self._agent_object.agent_name
+                    subclient_name = request_json['subClientProperties']['subClientEntity']['subclientName']
 
-                    if isinstance(self._subclients_dict[agent_name], list):
-                        if self._instance_object.instance_name == "vminstance":
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                            # client type 36 is case manager client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                            # agent id 78 is sharepoint client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        else:
-                            subclient = self._subclients_dict[agent_name][0]
-                    else:
-                        subclient = self._subclients_dict[agent_name]
+                    return self.get(subclient_name)
 
-                    return subclient(
-                        self._backupset_object,
-                        request_json['subClientProperties']['subClientEntity']['subclientName'],
-                        subclient_id
-                    )
             else:
                 raise SDKException('Response', '102')
         else:

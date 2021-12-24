@@ -146,6 +146,7 @@ class VMClient(Client):
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop('vm_to_restore', None)
             if self.properties.get('clientProps', {}).get('isIndexingV2VSA'):
                 _child_details = self._child_job_subclient_details(self.properties['vmStatusInfo']['vmBackupJob'])
                 vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
@@ -190,6 +191,7 @@ class VMClient(Client):
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop('vm_to_restore', None)
             if self.properties.get('clientProps', {}).get('isIndexingV2VSA'):
                 _child_details = self._child_job_subclient_details(self.properties['vmStatusInfo']['vmBackupJob'])
                 vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
