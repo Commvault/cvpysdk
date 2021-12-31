@@ -69,6 +69,8 @@ Request:
 
      request_approval()                 --  Request approval for this review request
 
+     give_approval()                    --  Approves the review request
+
 Request Attributes:
 --------------------
 
@@ -755,6 +757,38 @@ class Request:
         """
         return self._ediscovery_client_ops.do_document_task(doc_id=doc_id, comment=comment,
                                                             consent=consent, redact=redact, ds_id=ds_id)
+
+    def give_approval(self, workflow_job_id, action="Approve"):
+        """Gives approval for the review request
+
+                Args:
+
+                    action              (str)       --  Approval action status
+                                                            Default : Approve
+                                                            Supported Values : [Approve,Deny]
+
+
+                    workflow_job_id     (int)       --  Workflow job id
+
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if failed to give approval
+
+                                if failed to find workflow job
+
+        """
+        if not isinstance(workflow_job_id, int):
+            raise SDKException('RequestManager', '101')
+        interaction_props = self._commcell_object.workflows.get_interaction_properties(
+            interaction_id=None, workflow_job_id=workflow_job_id)
+        self._commcell_object.workflows.submit_interaction(interaction=interaction_props, input_xml="", action=action)
 
     @property
     def request_id(self):

@@ -120,6 +120,8 @@ EdiscoveryDataSources:
 
     refresh()                               --  refresh the data sources details associated with client
 
+    get_datasource_document_count()         --  returns the document count for specified data source
+
 EdiscoveryDataSources Attributes:
 ----------------------------------
 
@@ -1850,7 +1852,7 @@ class EdiscoveryDataSources():
                     raise SDKException('EdiscoveryClients', '102', "Access node client is not present")
             inventory_resp = inv_obj.data_source.ds_handlers.get(
                 EdiscoveryConstants.FS_SERVER_HANDLER_NAME).get_handler_data(
-                handler_filter=f"q=(name_idx:{server_name}&rows=1")
+                handler_filter=f"q=(name_idx:{server_name})&rows=1")
             if inventory_resp['numFound'] != 1:
                 raise SDKException(
                     'EdiscoveryClients',
@@ -2193,6 +2195,45 @@ class EdiscoveryDataSources():
         server_details = self._ediscovery_client_ops.get_ediscovery_client_details()
         return server_details
 
+    def get_datasource_document_count(self, data_source):
+        """Returns the document count for given data source
+
+                Args:
+
+                    data_source         (str)       --  Name of the data source
+
+                Returns:
+
+                    int --  Document count
+
+                Raises:
+
+                    SDKException:
+
+                            if data source doesn't exists
+
+                            if failed to get document count
+
+        """
+        if not isinstance(data_source, str):
+            raise SDKException('EdiscoveryClients', '101')
+        if not self.has_data_source(data_source_name=data_source):
+            raise SDKException('EdiscoveryClients', '102', "Data Source not exists")
+
+        if self._app_source and self._app_source == TargetApps.SDG:
+            for key, value in self._data_sources[data_source.lower()].items():
+                if key == EdiscoveryConstants.FIELD_DOCUMENT_COUNT:
+                    return int(value)
+        else:
+            ds_names = self._parse_client_response_for_data_source(
+                client_details=self.ediscovery_client_props,
+                field_name=EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME)
+            docs = self._parse_client_response_for_data_source(
+                client_details=self.ediscovery_client_props,
+                field_name=EdiscoveryConstants.FIELD_DOCUMENT_COUNT,
+                field_type="int")
+            return docs[ds_names.index(data_source.lower())]
+
     @property
     def data_sources(self):
         """returns the list of data sources display name associated with this client
@@ -2414,7 +2455,7 @@ class EdiscoveryDatasource():
 
             Returns:
 
-                None if it is few items tagging or tagging with review request
+                None if it is tagging with review request
 
                 jobid (str) -- if it is bulk operation of tagging all items without review request
 
@@ -2542,6 +2583,11 @@ class EdiscoveryDatasource():
                     hours older
 
                             default: 2160 hours (last 90 days)
+
+            Returns:
+
+                    dict    -   dictionary consisting of the job IDs matching the given criteria
+                                as the key, and their details as its value
 
         """
         return self._jobs.active_jobs(lookup_time=lookup_time,

@@ -2797,6 +2797,7 @@ class Instance(object):
             "preserveLevel": value.get("preserve_level", 1),
             "restoreToExchange": False,
             "stripLevel": 0,
+            "skipErrorsAndContinue": value.get("skipErrorsAndContinue", False),
             "restoreACLs": value.get("restore_ACL", value.get("restore_data_and_acl", True)),
             "stripLevelType": value.get("striplevel_type", 0),
             "allVersion": value.get("all_versions", False),

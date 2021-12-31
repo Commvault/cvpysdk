@@ -91,6 +91,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
     'JOB_DETAILS': '{0}JobDetails',
+    'JOB_TASK_DETAILS': '{0}Job/%s/TaskDetails',
     'SUSPEND_JOB': '{0}Job/%s/action/pause',
     'RESUME_JOB': '{0}Job/%s/action/resume',
     'KILL_JOB': '{0}Job/%s/action/kill',

@@ -1966,6 +1966,7 @@ class Job(object):
         self._KILL = self._services['KILL_JOB'] % self.job_id
         self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
         self._JOB_EVENTS = self._services['JOB_EVENTS'] % self.job_id
+        self._JOB_TASK_DETAILS = self._services['JOB_TASK_DETAILS']
 
         self._client_name = None
         self._agent_name = None
@@ -1982,6 +1983,7 @@ class Job(object):
         self._phase = None
         self._summary = None
         self._details = None
+        self._task_details = None
 
         self.refresh()
 
@@ -2089,6 +2091,54 @@ class Job(object):
                     elif 'error' in response.json():
                         error_code = response.json()['error']['errList'][0]['errorCode']
                         error_message = response.json()['error']['errList'][0]['errLogMessage']
+
+                        raise SDKException(
+                            'Job',
+                            '105',
+                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                    else:
+                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                else:
+                    if retry_count > 4:
+                        raise SDKException('Response', '102')
+                    time.sleep(20)
+            else:
+                if retry_count > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
+
+        raise SDKException('Response', '102')
+
+    def _get_job_task_details(self):
+        """Gets the task details of this job.
+
+            Returns:
+                dict    -   dict consisting of the task details of the job
+
+            Raises:
+                SDKException:
+                    if failed to get the job task details
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        retry_count = 0
+
+        while retry_count < 5:  # Retrying to ignore the transient case when job task details are not found
+            flag, response = self._cvpysdk_object.make_request('GET', self._JOB_TASK_DETAILS % self.job_id)
+            retry_count += 1
+
+            if flag:
+                if response.json():
+                    if 'taskInfo' in response.json():
+                        return response.json()['taskInfo']
+                    elif 'error' in response.json():
+                        error_code = response.json()['error']['errList'][0]['errorCode']
+                        error_message = response.json()['error']['errList'][0]['errorMessage']
 
                         raise SDKException(
                             'Job',
@@ -2378,6 +2428,13 @@ class Job(object):
         """Treats the job state as a read-only attribute."""
         self.is_finished
         return self._details['jobDetail']['progressInfo']['state']
+
+    @property
+    def task_details(self):
+        """Returns: (dict) A dictionary of job task details"""
+        if not self._task_details:
+            self._task_details = self._get_job_task_details()
+        return self._task_details
 
     def pause(self, wait_for_job_to_pause=False):
         """Suspends the job.
