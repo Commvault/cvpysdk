@@ -2059,6 +2059,7 @@ class Commcell(object):
                           service_pack=None,
                           cu_number=0,
                           sync_cache=True,
+                          sync_cache_list=None,
                           schedule_pattern=None):
         """Downloads the os packages on the commcell
 
@@ -2074,6 +2075,9 @@ class Commcell(object):
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
 
             Returns:
                 object - instance of the Job class for this download job
@@ -2134,6 +2138,7 @@ class Commcell(object):
             service_pack=service_pack,
             cu_number=cu_number,
             sync_cache=sync_cache,
+            sync_cache_list=sync_cache_list,
             schedule_pattern=schedule_pattern
         )
 
