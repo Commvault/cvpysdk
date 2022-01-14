@@ -300,7 +300,7 @@ class FsoServers():
         if not is_commvault_client:
             all_clients = self._commcell_object.clients.all_clients
             for client_name, client_details in all_clients.items():
-                if client_name.startswith(f"{data_source_name}_"):
+                if client_name.lower().startswith(f"{data_source_name.lower()}_"):
                     server_id = client_details['id']
                     break
         else:
@@ -473,7 +473,7 @@ class FsoServer():
 
             Returns:
 
-                list(dict),dict    --  Containing document details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
 
             Raises:
 
@@ -491,7 +491,8 @@ class FsoServer():
 
                             schedule_name       (str)       --  Schedule name
 
-                            pattern_json        (dict)      --  Schedule pattern dict (Refer to Create_schedule_pattern in schedule.py)
+                            pattern_json        (dict)      --  Schedule pattern dict
+                                                                (Refer to Create_schedule_pattern in schedule.py)
 
                         Raises:
 
@@ -951,7 +952,7 @@ class FsoServerGroup():
 
             Returns:
 
-                list(dict),dict    --  Containing document details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
 
             Raises:
 

@@ -479,6 +479,8 @@ class EdiscoveryConstants:
     FIELD_SUBCLIENT_ID = 'subclientid'
     FIELD_CRAWL_TYPE = 'crawltype'
     FIELD_DATA_SOURCE_NAME_SEA = 'seaDataSourceName'
+    FIELD_CONTENT_ID = 'contentid'
+    FIELD_IS_FILE = 'IsFile:1'
     DYNAMIC_FEDERATED_SEARCH_PARAMS = {"searchParams": []}
 
     CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"

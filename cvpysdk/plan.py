@@ -2063,18 +2063,18 @@ class Plan(object):
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "13"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 13
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
         elif external_user:
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "62"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 62
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'externalGroupName'] = user_or_group_name
         else:
             grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
             grp_id = grp_obj.user_group_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "15"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 15
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'userGroupName'] = user_or_group_name
 

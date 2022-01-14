@@ -165,6 +165,8 @@ EdiscoveryDataSource:
 
     review_action()                         --  do review action for documents
 
+    start_collection()                      --  starts collection job on this data source
+
 EdiscoveryDataSource Attributes:
 ---------------------------------
 
@@ -191,6 +193,12 @@ EdiscoveryDataSource Attributes:
     **plan_id**                 --  returns the associated DC plan id
 
     **data_source_type_id**     --  returns the data source type id value
+
+    **client_id**               --  returns the client id to which data source belongs too
+
+    **total_documents**         --  returns the total document count on this data source
+
+    **sensitive_files_count**   --  returns the total sensitive files count
 
 """
 import copy
@@ -562,6 +570,9 @@ class EdiscoveryClientOperations():
             self._search_entity_type = 132
             self._search_entity_id = class_object.data_source_id
             self._data_source_id = class_object.data_source_id
+            self._type = 1  # Client
+            self._operation = 2  # incremental job by default
+            self._client_id = class_object.client_id
         elif isinstance(class_object, EdiscoveryDataSources):
             self._client_id = class_object.client_id
             self._include_doc_count = 1
@@ -624,7 +635,7 @@ class EdiscoveryClientOperations():
         request_json = copy.deepcopy(EdiscoveryConstants.SERVER_LEVEL_SCHEDULE_JSON)
         request_json['taskInfo']['associations'][0]['clientId'] = int(self._client_id)
         request_json['taskInfo']['task'][
-            'taskName'] = f"Cvpysdk created Schedule for Server id - {self._client_id}"
+            'taskName'] = f"Cvpysdk created Schedule -{schedule_name} for Server id - {self._client_id}"
         request_json['taskInfo']['subTasks'][0]['subTask'][
             'subTaskName'] = schedule_name
         request_json['taskInfo']['subTasks'][0]['pattern'] = pattern_json
@@ -947,7 +958,7 @@ class EdiscoveryClientOperations():
 
             Returns:
 
-                list(dict),dict    --  Containing document details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document  details & facet details(if any)
 
 
             Raises:
@@ -973,8 +984,9 @@ class EdiscoveryClientOperations():
                         f"Failed to perform search - {response.json().get('errLogMessage','')}")
                 if 'response' in response.json() and 'docs' in response.json()['response']:
                     if 'facets' not in response.json():
-                        return response.json()['response']['docs'], {}
-                    return response.json()['response']['docs'], response.json()['facets']
+                        return response.json()['response']['numFound'], response.json()['response']['docs'], {}
+                    return response.json()['response']['numFound'], response.json()[
+                        'response']['docs'], response.json()['facets']
                 raise SDKException('EdiscoveryClients', '102', f"Failed to search with response - {response.json()}")
             raise SDKException('EdiscoveryClients', '112')
         self._response_not_success(response)
@@ -1070,22 +1082,22 @@ class EdiscoveryClientOperations():
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "13"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 13
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
         elif external_user:
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "62"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 62
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'externalGroupName'] = user_or_group_name
         else:
             grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
             grp_id = grp_obj.user_group_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "15"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 15
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'userGroupName'] = user_or_group_name
 
-        request_json['entityAssociated']['entity'][0]['clientId'] = self._client_id
+        request_json['entityAssociated']['entity'][0]['clientId'] = int(self._client_id)
         request_json['securityAssociations']['associationsOperationType'] = ops_type
 
         if allow_edit_permission:
@@ -1180,11 +1192,11 @@ class EdiscoveryClientOperations():
             self._sort_by, self._sort_dir, self._ds_type_names))
         if flag:
             if response.json() and 'nodeList' in response.json():
-                return response.json()['nodeList'][0]
+                return response.json()['nodeList'][0] if len(response.json()['nodeList']) > 0 else {}
             raise SDKException('EdiscoveryClients', '106')
         self._response_not_success(response)
 
-    def start_job(self, wait_for_job=False, wait_time=60):
+    def start_job(self, wait_for_job=False, wait_time=60, is_incr=True):
         """Starts job on ediscovery client
 
             Args:
@@ -1193,6 +1205,8 @@ class EdiscoveryClientOperations():
 
                     wait_time           (int)        --  time interval to wait for job completion in Mins
                                                             Default : 60Mins
+
+                    is_incr             (bool)       -- Specifies whether this is incremental or full crawl job
 
              Return:
 
@@ -1205,6 +1219,8 @@ class EdiscoveryClientOperations():
                             if failed to start collection job
 
         """
+        if not is_incr:
+            self._operation = 3  # full crawl job
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._API_CRAWL % (self._client_id, self._data_source_id, self._type, self._operation)
         )
@@ -1218,6 +1234,7 @@ class EdiscoveryClientOperations():
                         raise SDKException(
                             'EdiscoveryClients',
                             '102', error_message)
+                    return
                 raise SDKException('EdiscoveryClients', '103')
             if not wait_for_job:
                 return
@@ -1281,7 +1298,7 @@ class EdiscoveryClientOperations():
                                 return value_json['response'].get('downloadGuid', '')
                             else:
                                 return self._do_stream_download(guid=value_json['response'].get('downloadGuid', ''),
-                                                                file_name=f"Cvpysdk_Activate_export_{time.time()}",
+                                                                file_name=f"Cvpysdk_Activate_export_{int(time.time())}",
                                                                 download_location=download_location)
                     else:
                         raise SDKException('EdiscoveryClients', '102',
@@ -1685,6 +1702,8 @@ class EdiscoveryDataSources():
             client_details, field_name=EdiscoveryConstants.FIELD_SUBCLIENT_ID, field_type="int")
         crawl_type = self._parse_client_response_for_data_source(
             client_details, field_name=EdiscoveryConstants.FIELD_CRAWL_TYPE, field_type="int")
+        if 'childs' not in client_details:
+            return output
         for data_source in client_details['childs']:
             ds_id = 0
             if 'dsEntity' in data_source:
@@ -1979,7 +1998,7 @@ class EdiscoveryDataSources():
                             self._commcell_object.clients.refresh()
                             all_clients = self._commcell_object.clients.all_clients
                             for client_name, _ in all_clients.items():
-                                if client_name.startswith(f"{data_source_name}_"):
+                                if client_name.lower().startswith(f"{data_source_name.lower()}_"):
                                     self._client_id = self._commcell_object.clients.get(client_name).client_id
                                     break
                         self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
@@ -2115,6 +2134,8 @@ class EdiscoveryDataSources():
         old_len = len(output)
         if not isinstance(client_details, dict):
             raise SDKException('EdiscoveryClients', '107')
+        if 'childs' not in client_details:
+            return output
         for data_source in client_details['childs']:
             if 'customProperties' in data_source:
                 name_value_dict = data_source['customProperties']['nameValues']
@@ -2738,7 +2759,7 @@ class EdiscoveryDatasource():
                 query = query + f"(contentid:{doc}) OR "
             last_char_index = query.rfind(" OR ")
             query = query[:last_char_index]
-            docs, _ = self.search(
+            count, docs, _ = self.search(
                 criteria=query, attr_list=EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET[self.data_source_type_id])
             if len(docs) != len(document_ids):
                 raise SDKException(
@@ -2802,7 +2823,7 @@ class EdiscoveryDatasource():
             query = query + f"(contentid:{doc}) OR "
         last_char_index = query.rfind(" OR ")
         query = query[:last_char_index]
-        docs, _ = self.search(criteria=query, attr_list=attr_list)
+        count, docs, _ = self.search(criteria=query, attr_list=attr_list)
         if len(docs) != len(document_ids):
             raise SDKException(
                 'EdiscoveryClients',
@@ -2956,7 +2977,7 @@ class EdiscoveryDatasource():
             # for non-review request, doc id need to set at search request inside remaction
             if not create_review:
                 # make sure whether passed document ids are correct
-                docs, _ = self.search(
+                count, docs, _ = self.search(
                     criteria=f"{EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS} AND {query}",
                     attr_list=EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET)
                 if len(docs) != len(document_ids):
@@ -3017,6 +3038,26 @@ class EdiscoveryDatasource():
                 return
             raise SDKException('EdiscoveryClients', '116')
         self._response_not_success(response)
+
+    def start_collection(self, is_incr=True):
+        """Starts collection job on this data source
+                Args:
+
+                    is_incr         (bool)      --  Specifies whether to invoke incremental or full crawl job
+                                                        Default:True (Incremental job)
+
+                Return:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                            if failed to start collection job
+
+        """
+        return self._ediscovery_client_ops.start_job(is_incr=is_incr)
 
     @property
     def data_source_name(self):
@@ -3150,3 +3191,39 @@ class EdiscoveryDatasource():
 
         """
         return self._dc_plan_id
+
+    @property
+    def client_id(self):
+        """returns the client id associated
+
+            Returns:
+
+                int -- client id
+
+        """
+        return self._client_id
+
+    @property
+    def total_documents(self):
+        """returns the total document from this data source
+
+            Returns:
+
+                int --  Total document count
+
+        """
+        count, _, _ = self.search(criteria=EdiscoveryConstants.FIELD_IS_FILE, params={"rows": "0"})
+        return count
+
+    @property
+    def sensitive_files_count(self):
+        """returns the total sensitive files count on this data source
+
+            Returns:
+
+                int --  Sensitive files count
+
+        """
+        count, _, _ = self.search(criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS,
+                                  params={"rows": "0"})
+        return count

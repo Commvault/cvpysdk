@@ -459,6 +459,8 @@ EXCEPTION_DICT = {
         '101': 'Failed to retreive apps',
         '102': 'App not found',
         '103': 'Failed to configure identity app',
+        '104': 'Failed to delete identity app',
+        '105': 'Failed to modify identity app'
     },
     'CommCellMigration': {
         '101': 'Data type of the input(s) is not valid',

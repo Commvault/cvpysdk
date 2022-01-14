@@ -499,7 +499,9 @@ SERVICES_DICT_TEMPLATE = {
     'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
     'USER_MAPPINGS': '{0}GetUserMappings',
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
-    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
+    'ADD_OR_GET_SAML': '{0}/v4/SAML',
+    'EDIT_SAML': '{0}/v4/SAML/%s'
 }
 
 
