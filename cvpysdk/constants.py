@@ -480,6 +480,10 @@ class AppIDAType(Enum):
     LINUX_FILE_SYSTEM = 29
 
 
+class AppIDAName(Enum):
+    """Class to maintain the app IDA names"""
+    FILE_SYSTEM = 'File System'
+
 class VSAObjects(Enum):
     """Mapping for VSA Objects."""
     SERVER = 1

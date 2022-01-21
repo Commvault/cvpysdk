@@ -2851,24 +2851,6 @@ class Instance(object):
                     "clientName": value.get("proxy_client", "")
                 }
             }
-        elif value.get("in_place", True) and (self._agent_object.agent_name).upper() == "VIRTUAL SERVER":
-            restore_paths = value.get("paths", [])
-            if len(restore_paths) > 1:
-                raise SDKException('Subclient', '122')
-            dest_path_from_source = restore_paths[0]
-            dest_path_from_source = dest_path_from_source.strip('\\').split('\\', 1)[-1].replace('\\', '/').rsplit('/',1)
-            if len(dest_path_from_source) == 1:
-                dest_path_from_source1 = '/'
-            else:
-                dest_path_from_source1 = f"/{dest_path_from_source[0]}"
-            self._destination_restore_json = {
-                "isLegalHold": False,
-                "inPlace": False,
-                "destPath": [dest_path_from_source1],
-                "destClient": {
-                    "clientName": value.get("client_name", ""),
-                }
-            }
         else:
             # removed clientId from destClient as VSA Restores fail with it
             self._destination_restore_json = {

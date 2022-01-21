@@ -1465,7 +1465,7 @@ class Backupset(object):
                 "toTime": self._get_epoch_time(options['to_time'])
             },
             "advOptions": {
-                "copyPrecedence": options['copy_precedence']
+                "copyPrecedence": int(options['copy_precedence'])
             },
             "ma": {
                 "clientName": options['media_agent']

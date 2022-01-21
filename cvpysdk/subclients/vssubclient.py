@@ -803,14 +803,13 @@ class VirtualServerSubclient(Subclient):
         nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get('copy_precedence', 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for network_card_dict in vm_nics_list:
             if self._instance_object.instance_name == 'google cloud platform':
                 current_project = network_card_dict.get('subnetId').split('/')[6]
-                network_card_dict['subnetId'] = network_card_dict.get('subnetId').replace(
-                    current_project, value.get('project_id'))
-                network_card_dict['label'] = network_card_dict.get('sourceNetwork').replace(
-                    current_project, value.get('project_id'))
+                if value.get('project_id') is not None:
+                    network_card_dict['subnetId'] = value.get('subnetwork_nic')
+                    network_card_dict['sourceNetwork'] = value.get('networks_nic')
+
             _destnetwork = value.get("destination_network",
                                      value.get('network',
                                                network_card_dict['name']))
@@ -1640,6 +1639,7 @@ class VirtualServerSubclient(Subclient):
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
+        _verify_path = options.get('verify_path', True)
 
         # check if inputs are correct
         if not(isinstance(destination_path, basestring) and
@@ -1671,17 +1671,35 @@ class VirtualServerSubclient(Subclient):
 
         _file_restore_option["paths"] = []
         for _each_folder in _folder_to_restore_list:
-            _file_restore_option["paths"].append(
-                self._check_folder_in_browse(_vm_ids[vm_name],
-                                             "%s" % _each_folder,
-                                             from_date,
-                                             to_date,
-                                             copy_precedence,
-                                             media_agent=browse_ma))
+            # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+            # The modified path does not work for windows VM when file indexing is enabled
+            # Set `verify_path` to False to skip this verification and use the restore path as is
+
+            if _verify_path:
+                _restore_item_path = self._check_folder_in_browse(
+                    _vm_ids[vm_name],
+                    "%s" % _each_folder,
+                    from_date,
+                    to_date,
+                    copy_precedence,
+                    media_agent=browse_ma
+                )
+            else:
+                # Converting native path to VM path
+                # C:\folder1 => \<vm_guid>\C:\folder1
+                # /folder1/folder2 => \<vm_guid>\folder1\folder2
+
+                _item_path = _each_folder.replace('/', '\\')
+                _item_path = _item_path[1:] if _item_path[0] == '\\' else _item_path
+                _restore_item_path = '\\'.join(['', _vm_ids[vm_name], _item_path])
+
+            _file_restore_option["paths"].append(_restore_item_path)
 
         # set the browse options
         _file_restore_option["disk_browse"] = False
         _file_restore_option["file_browse"] = True
+        _file_restore_option["from_time"] = from_date
+        _file_restore_option["to_time"] = to_date
 
         # set the common file level restore options
         _file_restore_option["striplevel_type"] = "PRESERVE_LEVEL"

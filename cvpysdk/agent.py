@@ -98,6 +98,7 @@ import copy
 
 from past.builtins import basestring
 
+from .constants import AppIDAName
 from .instance import Instances
 from .backupset import Backupsets
 from .schedules import Schedules
@@ -409,8 +410,7 @@ class Agent(object):
         _agents_dict = {
             'exchange database': ExchangeDatabaseAgent
         }
-        if 'file system' in agent_name:
-            agent_name = 'file system'
+
         if agent_name in _agents_dict:
             _class = _agents_dict.get(agent_name, cls)
             if _class.__new__ == cls.__new__:
@@ -439,7 +439,8 @@ class Agent(object):
         """
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
-        self._agent_name = agent_name.lower()
+        self._agent_name = (AppIDAName.FILE_SYSTEM.value.lower()
+                            if AppIDAName.FILE_SYSTEM.value.lower() in agent_name.lower() else agent_name.lower())
 
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
