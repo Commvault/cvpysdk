@@ -2806,6 +2806,41 @@ class Instance(object):
             "validateOnly": value.get("validate_only", False)
         }
 
+        if value.get('advanced_options'):
+            if value['advanced_options'].get("iSeriesObject"):
+                ibmi_value = value['advanced_options']["iSeriesObject"]
+                ibmi_opts = {}
+                if ibmi_value.get("restorePrivateAuthority"):
+                    ibmi_opts.update({'restorePrivateAuthority': ibmi_value.get('restorePrivateAuthority')})
+                if ibmi_value.get("restoreSpooledFileData"):
+                    ibmi_opts.update({'restoreSpooledFileData': ibmi_value.get('restoreSpooledFileData')})
+                if ibmi_value.get("iseriesDifferentObjectType"):
+                    if ibmi_value.get("iseriesDifferentObjectType") == "None":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "0"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "*ALL":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "1"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "*COMPATIBLE":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "2"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "OTHER":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "3"})
+                        if ibmi_value.get("autl"):
+                            ibmi_opts.update({'autl': ibmi_value.get('autl')})
+                        if ibmi_value.get("fileLevel"):
+                            ibmi_opts.update({'fileLevel': ibmi_value.get('fileLevel')})
+                        if ibmi_value.get("owner"):
+                            ibmi_opts.update({'owner': ibmi_value.get('owner')})
+                        if ibmi_value.get("pgp"):
+                            ibmi_opts.update({'pgp': ibmi_value.get('pgp')})
+                if ibmi_value.get("forceObjectConversionSelction"):
+                    ibmi_opts.update({'forceObjectConversionSelction': ibmi_value.get(
+                        'forceObjectConversionSelction')})
+                if ibmi_value.get("securityDataParameter"):
+                    ibmi_opts.update({'securityDataParameter': ibmi_value.get('securityDataParameter')})
+                if ibmi_value.get("deferId"):
+                    ibmi_opts.update({'deferId': ibmi_value.get('deferId')})
+
+                self._commonoption_restore_json['iSeriesObject'] = ibmi_opts
+
         if value.get("instant_clone_options", {}).get("post_clone_script", None):
             self._commonoption_restore_json['prePostCloneOption'] = {
                 'postCloneCmd': value.get("instant_clone_options").get("post_clone_script")
