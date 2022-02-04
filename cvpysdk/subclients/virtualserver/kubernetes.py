@@ -64,13 +64,9 @@ Class: ApplicationGroups:                Derived class from Subclients Base
 
         __init__(class_object)           --  initialize object of Kubernetes subclient class,
                                             associated with the VirtualServer subclient
-        _browse_namespaces()             -- Browse namespaces in cluster
+        browse()                         -- Browse cluster for namespace, applications, volumes, or labels
 
-        _browse_apps()                   -- Browse applications in a namespace
-
-        _browse_volumes()                -- Browse volumes in a namespace
-
-        _browse_labels()                 -- Browse labels in a namespace
+        get_children_node()              -- Construct the json object for content and filter
 
         create_application_group()       --       creates application group
 
@@ -1206,6 +1202,128 @@ class ApplicationGroups(Subclients):
                 f'Failed to browse cluster content\nError Code: "{get_browse.json()["errorCode"]}"'
             )
 
+    def __get_children_json(self, app_name, app_type, browse_type, browse_response=None, selector=False):
+        """Private method to return the json object for the application
+            Args:
+                app_name    (str)   --  Name of the application
+                app_type    (str)   --  Application type (FOLDER/VM/Selector)
+                browse_type (str)   --  Browse type of application
+                browse_response (str)   --  Browse response from discovery
+                selector    (str)   --  If content is a label selector
+        """
+
+        # JSON format is different in case of applications and selectors
+        if selector:
+            if browse_type == "Applications":
+                # Casting Applications to Application since `Applications` is not recognized for selectors
+                browse_type = "Application"
+            if browse_type not in ['Application', 'Namespaces', 'Volumes']:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Invalid browse type for Selector.'
+                )
+
+            return {
+                "equalsOrNotEquals": True,
+                "displayName": f"{browse_type}:{app_name}",
+                "value": f"{browse_type}:{app_name}",
+                "allOrAnyChildren": True,
+                "type": app_type,
+                "name": app_type
+            }
+
+        else:
+            for app_item in browse_response:
+                # Iterate over each application in browse response to get strGUID of selected app
+                if app_item['name'] == app_name:
+                    if browse_type == "Volumes" and app_type == "FOLDER":
+                        app_item['strGUID'].replace('Namespace', 'Volumes')
+                    return {
+                            "equalsOrNotEquals": True,
+                            "displayName": app_item['name'],
+                            "allOrAnyChildren": True,
+                            "type": app_type,
+                            "name": app_item['strGUID']
+                    }
+            else:
+                # If for loop completes without returning, then app does not exist in browse
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    f'Searched element [{app_name}] not found in browse.'
+                )
+
+    def get_children_node(self, content):
+        """Construct and return the json object for content
+            Args:
+                content     (list)      --  Content to parse and construct json object
+                                            Check create_application_group for usage.
+        """
+
+        # List of accepted browse types for application and selector
+        app_browse_list = ['Applications', 'Labels', 'Volumes']
+        selector_browse_list = ['Applications', 'Application', 'Namespaces', 'Volumes']
+
+        if not type(content) is list:
+            raise SDKException('Subclient', '101', 'Invalid data type for content.')
+
+        children = []
+        for item in content:
+            if not type(item) is str:
+                raise SDKException('Subclient', '101', 'Invalid data type for content.')
+
+            # Split first `:` to get content type (Application or Selector).
+            if item.find(':') < 0:
+                item = 'Application:' + item
+            content_type, content_item = item.split(':', 1)
+
+            # Split second `:` to get Browse type and app value
+            if content_item.find(':') < 0:
+                content_item = 'Applications:' + content_item
+            browse_type, app = content_item.split(':')
+
+            # Format check
+            if (content_type == 'Selector' and browse_type not in selector_browse_list) or \
+                (content_type == 'Application' and browse_type not in app_browse_list):
+                raise SDKException('Subclient', '101', 'Invalid string format for content.')
+
+            browse_response = ""
+            app_type = ""
+            selector = False
+
+            if content_type == 'Selector':
+                app_type = "Selector"
+                browse_response=None
+                app_name = app
+                selector = True
+
+            elif content_type == 'Application':
+                app_split = app.split('/')
+                app_name = app_split[-1]
+                if len(app_split) > 1:
+
+                    # If split length is > 1, then fetch browse response of application
+                    browse_response = self.browse(browse_type=browse_type, namespace=app_split[0])
+                    app_type = "VM"
+                else:
+
+                    # If split length = 1, then fetch browse response of namespace
+                    browse_response = self.browse(browse_type="Namespaces")
+                    app_type = "FOLDER"
+            else:
+                raise SDKException('Subclient', '101', 'Invalid content type.')
+
+            children.append(self.__get_children_json(
+                    app_name=app_name,
+                    app_type=app_type,
+                    browse_type=browse_type,
+                    browse_response=browse_response,
+                    selector=selector
+                )
+            )
+
+        return children
 
     def browse(self, browse_type='Namespaces', namespace=None):
         """Browse cluster content
@@ -1247,46 +1365,60 @@ class ApplicationGroups(Subclients):
 
     def create_application_group(self,
                                  content,
-                                 plan_name,
+                                 plan_name=None,
+                                 filter=None,
                                  subclient_name="automation"):
 
         """Create application / Kubernetes Subclient.
 
             Args:
-                client_id               (str)    --  Client id
+                client_id               (str)       --  Client id
 
-                content                 (str)    --  Subclient content
+                content                 (list)      --  Subclient content. Format 'ContentType:BrowseType:namespace/app'
+                                                        Should be a list of strings with above format.
 
-                plan_name                 (str)    --  Plan name
+                                                        Valid ContentType -
+                                                            Application, Selector.
+                                                            If not specified, default is 'Application'
+                                                        Valid BrowseType for Application ContentType -
+                                                            Applications, Volumes, Labels
+                                                            If not specified, default is 'Applications'
+                                                        Valid BrowseType for Selector ContentType -
+                                                            Application, Applications, Volumes, Namespaces
+                                                            If not specified, default is 'Namespaces'
 
-                subclient_name          (str)    --  Subclient name you want to create Subclient
+                                                        Examples -
+                                                            1. ns001 --  Format : namespace
+                                                            2. ns001/app001 --  Format : namespace/app
+                                                            3. Volumes:ns001/pvc001 --  Format : BrowseType:namespace/app
+                                                            4. Selector:Namespaces:app=demo -n ns004 --  Format : ContentType:BrowseType:namespace
+                                                            5. ['Application:Volumes:nsvol/vol001', 'nsvol02/app1']
+                                                            ...
+
+                plan_name               (str)       --  Plan name
+
+                filter                  (list)      --  filter for subclient content.
+                                                        See 'content' for format and examples
+
+                subclient_name          (str)       --  Subclient name you want to create Subclient
 
         """
 
-        namespace = {}
+        content_children = []
+        filter_children = []
 
-        # Fetching namespace metadata
-        browse_response = self.browse(browse_type="Namespaces")
-        for ns in browse_response:
-            if ns['name'] == content:
-                namespace.update(ns)
-                break
+        # Get the json objects for content and filters
+        content_children.extend(self.get_children_node(content))
+        if filter:
+            filter_children.extend(self.get_children_node(filter))
 
         plan_id = int(self._commcell_object.plans[str(plan_name.lower())])
 
         app_create_json = {
             "subClientProperties": {
-                "vmContentOperationType": 2,
+                "vmContentOperationType": 'ADD',
                 "vmContent": {
-                    "children": [
-                        {
-                            "equalsOrNotEquals": True,
-                            "displayName": namespace['name'],
-                            "allOrAnyChildren": True,
-                            "type": 5,
-                            "name": namespace['strGUID']
-                        }
-                    ]
+                    "children": content_children
                 },
                 "subClientEntity": {
                     "clientId": int(self._client_object.client_id),
@@ -1312,6 +1444,13 @@ class ApplicationGroups(Subclients):
                 }
             }
         }
+
+        if filter:
+            # If filter is passed for subclient, additional flags are added to create subclient json
+            app_create_json['subClientProperties']['vmFilterOperationType'] = 'ADD'
+            app_create_json['subClientProperties']['vmDiskFilterOperationType'] = 'ADD'
+            app_create_json['subClientProperties']['vmFilter'] = { 'children' : filter_children}
+
         flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_SUBCLIENT'],
                                                            app_create_json)
         if flag == False:

@@ -3185,6 +3185,7 @@ class Client(object):
         self._is_restore_enabled = None
         self._client_hostname = None
         self._job_results_directory = None
+        self._block_level_cache_dir = None
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
@@ -3297,6 +3298,9 @@ class Client(object):
 
                 if 'jobStartTime' in client_props:
                     self._job_start_time = client_props['jobStartTime']
+
+                if 'BlockLevelCacheDir' in client_props:
+                    self._block_level_cache_dir = client_props['BlockLevelCacheDir']
 
             else:
                 raise SDKException('Response', '102')
@@ -3922,6 +3926,11 @@ class Client(object):
     def job_results_directory(self):
         """Treats the job_results_directory pack as a read-only attribute."""
         return self._job_results_directory
+
+    @property
+    def block_level_cache_dir(self):
+        """Returns the Block level cache directory"""
+        return self._block_level_cache_dir
 
     @property
     def instance(self):

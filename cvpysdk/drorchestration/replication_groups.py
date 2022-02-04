@@ -442,6 +442,7 @@ class ReplicationGroup:
     def refresh(self):
         """ Refresh the replication group properties """
         self._replication_group_properties = self._get_replication_group_properties()
+        self._vm_pairs = None
 
     @property
     def group_name(self):

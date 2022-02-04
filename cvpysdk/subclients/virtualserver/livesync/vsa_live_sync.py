@@ -126,6 +126,8 @@ LiveSyncVMPair Attributes:
 
     **reverse_replication_schedule_id -- Returns the ID of the reverse replication schedule
 
+    **replication_group_name** -- Returns the name of the replication group associated
+
 """
 
 import uuid
@@ -784,6 +786,15 @@ class LiveSyncVMPair:
             if prop.get('propertyId', 0) == 2212 and prop.get('propertyValue'):
                 return int(prop.get('propertyValue'))
         return None
+
+    @property
+    def replication_group_name(self):
+        """Returns (str): The name of the replication group associated to the VM pair
+        Note: This also removes the CV prefix for new replication groups
+        """
+        group_name = (self._properties.get('replicationGroup', {}).get('replicationGroupName')
+                      or self._properties.get('subTask', {}).get('subTaskName'))
+        return group_name.replace('_ReplicationPlan__ReplicationGroup', '')
 
     def refresh(self):
         """Refreshes the properties of the live sync"""

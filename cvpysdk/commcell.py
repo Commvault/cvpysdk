@@ -367,6 +367,7 @@ from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
 from .drorchestration.replication_groups import ReplicationGroups
+from .drorchestration.failovergroups import FailoverGroups
 from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
@@ -601,6 +602,7 @@ class Commcell(object):
         self._backup_network_pairs = None
         self._reports = None
         self._replication_groups = None
+        self._failover_groups = None
         self._recovery_targets = None
         self._blr_pairs = None
         self._job_management = None
@@ -1525,6 +1527,17 @@ class Commcell(object):
             if self._replication_groups is None:
                 self._replication_groups = ReplicationGroups(self)
             return self._replication_groups
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def failover_groups(self):
+        """Returns the instance of FailoverGroups class"""
+        try:
+            if self._failover_groups is None:
+                self._failover_groups = FailoverGroups(self)
+            return self._failover_groups
 
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
