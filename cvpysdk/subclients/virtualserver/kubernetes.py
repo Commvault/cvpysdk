@@ -1196,11 +1196,15 @@ class ApplicationGroups(Subclients):
                     'Failed to browse cluster content\nInvalid response'
                 )
         else:
-            raise SDKException(
-                'Subclient',
-                '102',
-                f'Failed to browse cluster content\nError Code: "{get_browse.json()["errorCode"]}"'
-            )
+            try:
+                # If browse fails then append raise HTTP exception to get error reason
+                get_browse.raise_for_status()
+            except Exception as exp:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    f'Failed to browse cluster content\nError: "{exp}"'
+                )
 
     def __get_children_json(self, app_name, app_type, browse_type, browse_response=None, selector=False):
         """Private method to return the json object for the application
