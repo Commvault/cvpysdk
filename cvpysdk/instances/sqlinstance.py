@@ -71,14 +71,6 @@ SQLServerInstance:
 
 SQLServerInstance Attributes:
 
-    ag_group_name           --  returns the Availability Group name for an AG instance
-
-    ag_primary_replica      --  returns the Availability Group primary replica for an AG instance
-
-    ag_replicas_list        --  returns the Availability Group replicas list for an AG instance
-
-    ag_listener_list        --  returns the Availability Group listener list for an AG instance
-
     mssql_instance_prop     --  returns the mssql instance properties
 
 """
@@ -112,8 +104,8 @@ class SQLServerInstance(Instance):
         super(SQLServerInstance, self)._get_instance_properties()
 
         self._ag_group_name = None
-        self._primary_replica = None
-        self._replica_list = []
+        self._ag_primary_replica = None
+        self._ag_replicas_list = []
         self._ag_group_listener_list = []
 
         self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
@@ -127,19 +119,21 @@ class SQLServerInstance(Instance):
                 self._mssql_instance_prop = response.json()['instanceProperties'][0]['mssqlInstance']
 
         if 'agProperties' in self._mssql_instance_prop:
-            self.ag_group_name = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('name')
-            self.ag_primary_replica = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('primaryReplicaServerName')
+            self._ag_group_name = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', {}).get('name')
+            self._ag_primary_replica = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', {}).get('primaryReplicaServerName')
 
             listener_list_tmp = []
             listener_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('SQLAvailabilityGroupListenerList', {})
+                'agProperties', {}).get('availabilityGroup', {}).get('SQLAvailabilityGroupListenerList', {})
             for listener in listener_list:
-                self.ag_listener_list.append(listener['availabilityGroupListenerName'])
+                listener_list_tmp.append(listener['availabilityGroupListenerName'])
+            self._ag_listener_list = listener_list_tmp
 
+            replica_list_tmp = []
             replica_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('SQLAvailabilityReplicasList', [{}])
+                'agProperties', {}).get('SQLAvailabilityReplicasList', {})
             if replica_list:
                 for replica in replica_list['SQLAvailabilityReplicasList']:
                     replica_dict = {
@@ -147,7 +141,8 @@ class SQLServerInstance(Instance):
                         "clientId" : replica['replicaClient']['clientId'],
                         "clientName": replica['replicaClient']['clientName']
                     }
-                    self.ag_replicas_list.append(replica_dict)
+                    replica_list_tmp.append(replica_dict)
+                self._ag_replicas_list = replica_list_tmp
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this instance.
@@ -175,37 +170,17 @@ class SQLServerInstance(Instance):
     @property
     def ag_primary_replica(self):
         """Returns the Availability Group Primary Replica"""
-        return self._primary_replica
+        return self._ag_primary_replica
 
     @property
     def ag_replicas_list(self):
         """Returns the Availability Group Replicas List"""
-        return self._replica_list
+        return self._ag_replicas_list
 
     @property
     def ag_listener_list(self):
         """Returns the Availability Group Listener List"""
-        return self._ag_group_listener_list
-
-    @ag_group_name.setter
-    def ag_group_name(self, value):
-        """Sets the Availability Group Name"""
-        self._ag_group_name = value
-
-    @ag_primary_replica.setter
-    def ag_primary_replica(self, value):
-        """Sets the Availability Group Primary Replica"""
-        self._primary_replica = value
-
-    @ag_replicas_list.setter
-    def ag_replicas_list(self, value):
-        """Sets the Availability Group Replicas List"""
-        self._replica_list = value
-
-    @ag_listener_list.setter
-    def ag_listener_list(self, value):
-        """Sets the Availability Group Listener List"""
-        self._ag_group_listener_list = value
+        return self._ag_listener_list
 
     def _restore_request_json(
             self,

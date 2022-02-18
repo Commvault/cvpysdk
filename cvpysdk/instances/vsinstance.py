@@ -67,7 +67,7 @@ from ..exception import SDKException
 VSINSTANCE_TYPE = {
     101: "vmware",
     102: "hyperv",
-    301: "amazon",
+    301: "amazon_web_services",
     401: "azure",
     402: "azure_resource_manager",
     403: "azure_stack",

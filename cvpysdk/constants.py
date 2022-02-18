@@ -467,7 +467,7 @@ class HypervisorType(Enum):
     GOOGLE_CLOUD = "Google Cloud Platform"
     Azure_Stack = "Azure Stack"
     Rhev = "Red Hat Virtualization"
-    AMAZON_AWS = "Amazon"
+    AMAZON_AWS = "Amazon Web Services"
     VCLOUD = "vCloud Director"
     Nutanix = "Nutanix AHV"
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
