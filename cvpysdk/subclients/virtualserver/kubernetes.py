@@ -850,7 +850,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
-                each_disk_path = "\\" + str(vm_ids[vm_name]) + "\\" + each_disk.split("\\")[-1]
+                # disk path has GUID in case of files, and vm name in case of manifests
+                each_disk_path = "\\" + \
+                                 (vm_ids[vm_name] if volume_level_restore != 4 else vm_name) + \
+                                 "\\" + each_disk.split("\\")[-1]
                 if each_disk_path not in disk_list:
                     raise SDKException('Subclient', '111')
 
@@ -1161,10 +1164,10 @@ class ApplicationGroups(Subclients):
         """
 
         browse_type_dict = {
-            "Namespaces": "GET_VM_BROWSE",
-            "Applications": "GET_APP_BROWSE",
-            "Volumes": "GET_VOLUME_BROWSE",
-            "Labels": "GET_LABEL_BROWSE"
+            "Namespaces": "GET_K8S_NS_BROWSE",
+            "Applications": "GET_K8S_APP_BROWSE",
+            "Volumes": "GET_K8S_VOLUME_BROWSE",
+            "Labels": "GET_K8S_LABEL_BROWSE"
         }
 
         if not (namespace and ns_guid):

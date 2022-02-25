@@ -2522,8 +2522,11 @@ class VirtualServerSubclient(Subclient):
                         _each_vm_to_restore]
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
-                    restore_option["new_name"] = restore_option[
-                                                     "restore_new_name"] + _each_vm_to_restore
+                    if len(restore_option['vm_to_restore']) == 1:
+                        restore_option["new_name"] = restore_option["restore_new_name"]
+                    else:
+                        restore_option["new_name"] = restore_option[
+                                                         "restore_new_name"] + _each_vm_to_restore
                 else:
                     restore_option["new_name"] = "del" + _each_vm_to_restore
             else:

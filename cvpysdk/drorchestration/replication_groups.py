@@ -539,6 +539,10 @@ class ReplicationGroup:
         if not self._destination_instance:
             instance_name = (self.restore_options.get('virtualServerRstOption', {})
                              .get('vCenterInstance', {}).get('instanceName'))
+            
+            # TODO : Depends on DR Layer changes : Workaround used
+            instance_name = 'Amazon Web Services' if instance_name == 'Amazon' else instance_name
+            
             self._destination_instance = self.destination_agent.instances.get(instance_name)
         return self._destination_instance
 

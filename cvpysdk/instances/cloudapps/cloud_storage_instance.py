@@ -338,7 +338,8 @@ class CloudStorageInstance(CloudAppsInstance):
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -362,6 +363,19 @@ class CloudStorageInstance(CloudAppsInstance):
 
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
+
+               kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -399,7 +413,8 @@ class CloudStorageInstance(CloudAppsInstance):
             in_place=False,
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+            **kwargs)
 
         return self._process_restore_response(request_json)
 
