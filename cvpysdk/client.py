@@ -3703,6 +3703,10 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+        success_alerts = [f"cluster group [{request_json['association']['entity'][0]['clientName'].lower()}] "
+                          f"configuration was saved on commserve successfully."]
+        success = False
+
         if flag:
             if response.json():
                 if 'response' in response.json():
@@ -3710,9 +3714,12 @@ class Client(object):
                         error_message = response.json()['response'][0].get('errorMessage')
                         if not error_message:
                             error_message = response.json()['response'][0].get('errorString', '')
-
-                        o_str = 'Failed to set property\nError: "{0}"'.format(error_message)
-                        raise SDKException('Client', '102', o_str)
+                        for success_alert in success_alerts:
+                            if success_alert in error_message.lower():
+                                success = True
+                        if not success:
+                            o_str = 'Failed to set property\nError: "{0}"'.format(error_message)
+                            raise SDKException('Client', '102', o_str)
                     self.refresh()
             else:
                 raise SDKException('Response', '102')
