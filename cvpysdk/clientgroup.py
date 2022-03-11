@@ -130,6 +130,31 @@ ClientGroup:
 
     disable_auto_discover()         -- disables  autodiscover option at client group level
 
+ClientGroup Attributes
+-----------------------
+
+    Following attributes are available for an instance of the ClientGroup class:
+
+        **name**                       --      returns the name of client group
+        
+        **clientgroup_id**             --      returns the id of client group
+        
+        **clientgroup_name**           --      returns the name of client group
+        
+        **description**                --      returns the description of client group
+        
+        **associated_clients**         --      returns the associated clients of client group
+        
+        **is_backup_enabled**          --      returns the backup activity status of client group
+        
+        **is_restore_enabled**         --      returns the restore activity status of client group
+        
+        **is_data_aging_enabled**      --      returns the data aging activity status of client group
+        
+        **is_smart_client_group**      --      returns true if client group is a smart client group
+        
+        **is_auto_discover_enabled**   --      returns the auto discover status of client group
+        
 """
 
 from __future__ import absolute_import
@@ -880,6 +905,7 @@ class ClientGroup(object):
         self._is_backup_enabled = None
         self._is_restore_enabled = None
         self._is_data_aging_enabled = None
+        self._is_smart_client_group = None
 
         self.refresh()
 
@@ -950,6 +976,7 @@ class ClientGroup(object):
             for client in clientgroup_props['associatedClients']:
                 self._associated_clients.append(client['clientName'])
 
+        self._is_smart_client_group = self._properties['isSmartClientGroup']
         self._is_backup_enabled = False
         self._is_restore_enabled = False
         self._is_data_aging_enabled = False
@@ -1252,6 +1279,11 @@ class ClientGroup(object):
         """Treats the clientgroup data aging attribute as a property of the ClientGroup class."""
         return self._is_data_aging_enabled
 
+    @property
+    def is_smart_client_group(self):
+        """Returns boolean indicating whether client group is smart client group"""
+        return self._is_smart_client_group
+    
     @property
     def network(self):
         """Returns the object of Network class."""

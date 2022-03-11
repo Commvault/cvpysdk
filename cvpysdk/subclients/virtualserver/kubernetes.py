@@ -138,10 +138,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             Machine to the source client and corresponding ESX and datastore.
 
             Args:
-                vm_to_restore            (str)    --  VM that is to be restored
+                vm_to_restore            (list)   --  VM that is to be restored
 
-                restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      'delete' is appended to the original vm name
+                restored_vm_name         (dict)   --  new name of vms
 
                 vcenter_client           (str)    --  name of the vcenter client where the VM
                                                       should be restored.
@@ -201,7 +200,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, list):
             raise SDKException('Subclient', '101')
 
         # populating proxy client. It assumes the proxy controller added in instance
@@ -210,13 +209,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, list) or
+                   isinstance(restored_vm_name, dict)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
-
-        if vm_to_restore:
-            vm_to_restore = [vm_to_restore]
 
         restore_option_copy = restore_option.copy()
 
@@ -330,8 +326,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         self._json_restore_diskLevelVMRestoreOption(restore_option)
         self._json_vcenter_instance(restore_option)
 
+        _new_name_dict = restore_option['restore_new_name']
         for _each_vm_to_restore in restore_option['vm_to_restore']:
-            restore_option["new_name"] = _each_vm_to_restore
+            restore_option["new_name"] = _new_name_dict[_each_vm_to_restore]
             self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)
         # prepare json
         request_json = self._restore_json(restore_option=restore_option)

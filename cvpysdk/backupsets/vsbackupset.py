@@ -177,6 +177,8 @@ class VSBackupset(Backupset):
                                 result_set = [result_set]
                             break
                 if not browse_result:
+                    if not isinstance(response_json['browseResponses'], list):
+                        response_json['browseResponses'] = [response_json['browseResponses']]
                     if 'messages' in response_json['browseResponses'][0]:
                         if not isinstance(response_json['browseResponses'][0]['messages'],list):
                             response_json['browseResponses'][0]['messages'] = [response_json['browseResponses'][0]['messages']]

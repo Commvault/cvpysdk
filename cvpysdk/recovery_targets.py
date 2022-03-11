@@ -254,6 +254,7 @@ class RecoveryTarget:
         self._destination_hypervisor = None
         self._access_node = None
         self._users = []
+        self._user_groups = []
         self._vm_prefix = ''
         self._vm_suffix = ''
 
@@ -275,6 +276,7 @@ class RecoveryTarget:
         self._vm_size = None
         self._disk_type = None
         self._virtual_network = None
+        self._vm_folder = None
         self._security_group = None
         self._create_public_ip = None
         self._restore_as_managed_vm = None
@@ -318,12 +320,13 @@ class RecoveryTarget:
                 vm_name_edit_string = self._recovery_target_properties.get('vmNameEditString')
                 vm_name_edit_type = self._recovery_target_properties.get('vmNameEditType', 1)
                 if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties['vmNameEditString']
+                    self._vm_suffix = self._recovery_target_properties.get('vmNameEditString')
                 elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties['vmNameEditString']
-                self._access_node = self._recovery_target_properties['proxyClientEntity']['clientName']
-                self._users = self._recovery_target_properties['securityAssociations']['users']
-                self._policy_type = self._recovery_target_properties["entity"]["policyType"]
+                    self._vm_prefix = self._recovery_target_properties.get('vmNameEditString')
+                self._access_node = self._recovery_target_properties.get('proxyClientEntity', {}).get('clientName')
+                self._users = self._recovery_target_properties.get('securityAssociations', {}).get('users')
+                self._user_groups = self._recovery_target_properties.get('securityAssociations', {}).get('userGroups')
+                self._policy_type = self._recovery_target_properties.get("entity", {}).get("policyType")
 
                 if self._policy_type == 1:
                     self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
@@ -342,7 +345,7 @@ class RecoveryTarget:
                     self._test_virtual_network = self._recovery_target_properties.get('networkInfo', [{}])[0].get('label', None)
                     self._test_security_group = self._recovery_target_properties.get('testSecurityGroups', [{}])[0].get('name', '')
                     self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
-                    
+
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties['dataStores'][0]['dataStoreName']
                     self._destination_network = self._recovery_target_properties['networkList'][0]['networkName']
