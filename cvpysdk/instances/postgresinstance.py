@@ -385,14 +385,14 @@ class PostgreSQLInstance(Instance):
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
         if value.get("baseline_jobid"):
             self._commonoption_restore_json = {
-                "clusterDBBackedup":False,
-                "restoreToDisk":False,
-                "baselineBackup":1,
+                "clusterDBBackedup": False,
+                "restoreToDisk": False,
+                "baselineBackup": 1,
                 "baselineRefTime": value.get("baseline_ref_time", ""),
-                "baselineJobId":value.get("baseline_jobid", ""),
-                "copyToObjectStore":False,
-                "onePassRestore":False,
-                "syncRestore":value.get("sync_restore", True)
+                "baselineJobId": value.get("baseline_jobid", ""),
+                "copyToObjectStore": False,
+                "onePassRestore": False,
+                "syncRestore": value.get("sync_restore", True)
             }
 
     def _restore_destination_json(self, value):
@@ -489,7 +489,8 @@ class PostgreSQLInstance(Instance):
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         """Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -587,6 +588,10 @@ class PostgreSQLInstance(Instance):
 
                     default: None
 
+                revert                  (bool)  --  boolean to specify whether to do a
+                                                    hardware revert in restore
+                    default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -647,4 +652,7 @@ class PostgreSQLInstance(Instance):
             request_json['taskInfo']['subTasks'][0]['options'][
                 'restoreOptions']['destination']["destPath"] = [destination_path]
 
+        if revert:
+            request_json['taskInfo']['subTasks'][0]['options'][
+                'restoreOptions']['commonOptions']["revert"] = revert
         return self._process_restore_response(request_json)
