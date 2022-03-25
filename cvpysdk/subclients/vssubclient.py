@@ -816,8 +816,8 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
-                "name": network_card_dict[
-                    'label'] if self._instance_object.instance_name == 'google cloud platform' else '',
+                "name": network_card_dict.get('sourceNetwork', "")+_destnetwork if self._instance_object.instance_name
+                == 'google cloud platform' else '' ,
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }

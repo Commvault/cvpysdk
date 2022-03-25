@@ -131,7 +131,9 @@ Clients Attributes
 
     **dynamics365_clients**     --  Returns the dictionary consisting of all the Dynamics 365 clients
                                     that are associated with the commcell
-
+                                    
+    **file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
+                                    that are associated with the commcell
 
 Client
 ======
@@ -393,6 +395,7 @@ class Clients(object):
         self._DYNAMICS365_CLIENTS = self._services['GET_DYNAMICS_365_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
+        self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -404,6 +407,7 @@ class Clients(object):
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
+        self._file_server_clients = None
         self.refresh()
 
     def __str__(self):
@@ -733,6 +737,48 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _get_fileserver_clients(self):
+        """REST API call to get all file server clients in the commcell
+
+            Returns:
+                dict    -   consists of all file server clients in the commcell
+
+                    {
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "displayName": client1_displayname
+                        },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "displayName": client2_displayname
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._FS_CLIENTS)
+
+        fs_clients = {}
+        if flag and response:
+            if response.json() and 'fileServers' in response.json():
+                for file_server in response.json()['fileServers']:
+                    fs_clients[file_server['name']] = {
+                        'id': file_server['id'],
+                        'displayName': file_server['displayName']
+                    }
+            return fs_clients
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+    
     @staticmethod
     def _get_client_dict(client_object):
         """Returns the client dict for the client object to be appended to member server.
@@ -1021,6 +1067,31 @@ class Clients(object):
 
         """
         return self._virtualization_clients
+
+    @property
+    def file_server_clients(self):
+        """Returns the dictionary consisting of the file server clients and their info.
+
+            dict - consists of all file server clients in the commcell
+                    {
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "displayName": client1_displayname
+                        },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "displayName": client2_displayname
+                        }
+                    }
+        """
+        if self._file_server_clients is None:
+            self._file_server_clients = self._get_fileserver_clients()
+        return self._file_server_clients
 
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the given client name / hostname.
@@ -3094,6 +3165,7 @@ class Clients(object):
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._office_365_clients = None
+        self._file_server_clients = None
 
 
 class Client(object):
