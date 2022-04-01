@@ -566,9 +566,11 @@ class ReplicationGroup:
         if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
             live_sync_name = self.group_name.replace('_ReplicationPlan__ReplicationGroup', '')
             live_sync = self.subclient.live_sync.get(live_sync_name)
+            live_sync.refresh()
             _live_sync_pairs = list(live_sync.vm_pairs)
         elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
             blr_pairs = BLRPairs(self._commcell_object, self.group_name)
+            blr_pairs.refresh()
             _live_sync_pairs = list(blr_pairs.blr_pairs)
         else:
             raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'

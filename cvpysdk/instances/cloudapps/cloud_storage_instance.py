@@ -112,48 +112,54 @@ class CloudStorageInstance(CloudAppsInstance):
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if 'cloudAppsInstance' in self._properties:
-            cloud_apps_instance = self._properties['cloudAppsInstance']
+            cloud_apps_instance = self._properties.get('cloudAppsInstance', {})
             self._ca_instance_type = cloud_apps_instance['instanceType']
 
             if 's3Instance' in cloud_apps_instance:
-                s3instance = cloud_apps_instance['s3Instance']
+                s3instance = cloud_apps_instance.get('s3Instance', {})
 
-                self._host_url = s3instance['hostURL']
-                self._access_keyid = s3instance['accessKeyId']
+                self._host_url = s3instance.get('hostURL', '')
+                self._access_keyid = s3instance.get('accessKeyId', '')
 
             if 'azureInstance' in cloud_apps_instance:
-                azureinstance = cloud_apps_instance['azureInstance']
+                azureinstance = cloud_apps_instance.get('azureInstance', {})
 
-                self._host_url = azureinstance['hostURL']
-                self._account_name = azureinstance['accountName']
-                self._access_key = azureinstance['accessKey']
+                self._host_url = azureinstance.get('hostURL', '')
+                self._account_name = azureinstance.get('accountName', '')
+                self._access_key = azureinstance.get('accessKey', '')
 
             if 'openStackInstance' in cloud_apps_instance:
-                self._server_name = cloud_apps_instance['openStackInstance']['serverName']
-                self._username = cloud_apps_instance['openStackInstance']['credentials'][
-                    'userName']
+                openstackinstance = cloud_apps_instance.get('openStackInstance', {})
+
+                self._server_name = openstackinstance.get('serverName', '')
+                self._username = openstackinstance.get('credentials', {}).get('userName', '')
 
             if 'oraCloudInstance' in cloud_apps_instance:
-                oraclecloudinstance = cloud_apps_instance['oraCloudInstance']
+                oraclecloudinstance = cloud_apps_instance.get('oraCloudInstance')
 
-                self._endpointurl = oraclecloudinstance['endpointURL']
-                self._username = oraclecloudinstance['user']['userName']
+                self._endpointurl = oraclecloudinstance.get('endpointURL', '')
+                self._username = oraclecloudinstance.get('user', {}).get('userName', '')
 
             # Google Cloud Instance porperties
             if 'googleCloudInstance' in cloud_apps_instance:
-                self._google_host_url = cloud_apps_instance['googleCloudInstance']['serverName']
-                self._google_access_key = cloud_apps_instance[
-                    'googleCloudInstance']['credentials']['userName']
+                googlecloudinstance = cloud_apps_instance.get('googleCloudInstance', {})
+
+                self._google_host_url = googlecloudinstance.get('serverName', '')
+                self._google_access_key = googlecloudinstance.get('credentials', {}).get('userName', '')
 
             # Ali Cloud
             if 'alibabaInstance' in cloud_apps_instance:
-                self._host_url = cloud_apps_instance['alibabaInstance']['hostURL']
-                self._access_key = cloud_apps_instance['alibabaInstance']['accessKey']
+                alibabainstance = cloud_apps_instance.get('alibabaInstance', {})
+
+                self._host_url = alibabainstance.get('hostURL', '')
+                self._access_key = alibabainstance.get('accessKey', '')
 
             # IBM Cloud
             if 'ibmCosInstance' in cloud_apps_instance:
-                self._host_url = cloud_apps_instance['ibmCosInstance']['hostURL']
-                self._access_key = cloud_apps_instance['ibmCosInstance']['credentials']['username']
+                ibminstance = cloud_apps_instance.get('ibmCosInstance', {})
+
+                self._host_url = ibminstance.get('hostURL', '')
+                self._access_key = ibminstance.get('credentials', {}).get('username', '')
 
             if 'generalCloudProperties' in cloud_apps_instance:
                 self._access_node = cloud_apps_instance.get(
