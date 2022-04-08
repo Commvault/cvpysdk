@@ -79,7 +79,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option='Original',
-            proxy_client=None):
+            proxy_client=None,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -105,6 +106,12 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -120,7 +127,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -161,7 +168,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option='Original',
-            proxy_client=None
+            proxy_client=None,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -180,7 +188,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 cluster           (basestring)    --  destination cluster host. Restores to the source
                                                       VM cluster if this value is not specified
 
-                repository         (basestring)   --  datastore where the restored VM should be
+                storage         (basestring)   --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -200,9 +208,11 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -221,7 +231,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):

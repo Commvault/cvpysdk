@@ -167,7 +167,8 @@ class PostgresBackupset(Backupset):
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         """
         Method to restore the Postgres server
 
@@ -256,6 +257,10 @@ class PostgresBackupset(Backupset):
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -297,4 +302,5 @@ class PostgresBackupset(Backupset):
             redirect_path=redirect_path,
             restore_to_disk=restore_to_disk,
             restore_to_disk_job=restore_to_disk_job,
-            destination_path=destination_path)
+            destination_path=destination_path,
+            revert=revert)

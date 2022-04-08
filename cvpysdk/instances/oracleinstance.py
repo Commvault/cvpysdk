@@ -271,7 +271,7 @@ class OracleInstance(DatabaseInstance):
                 "destinationInstance": {
                     "clientName": value.get("destination_client", ""),
                     "instanceName": value.get("destination_instance", ""),
-                    "appName": "Oracle"
+                    "appName": value.get("app_name", "Oracle")
                                        }
 
             })
@@ -676,7 +676,7 @@ class OracleInstance(DatabaseInstance):
     def _get_oracle_restore_json(self, destination_client,
                                  instance_name, tablespaces,
                                  files, browse_option,
-                                 common_options, oracle_options):
+                                 common_options, oracle_options, destination=None):
         """
         Gets the basic restore JSON from base class and modifies it for oracle
 
@@ -695,20 +695,27 @@ class OracleInstance(DatabaseInstance):
 
             oracle_options  (dict)  --  dict containing other oracle options
 
+            destination     (dict)  --  dictionary with destination client and instance names
+                default" None
+
         Returns:
             (dict) -- JSON formatted options to restore the oracle database
 
         Raises:
-            TypeError:
+            SDKException:
                 if tablespace is passed as a list
                 if files is not passed as a dictionary
 
         """
         if not isinstance(tablespaces, list):
-            raise TypeError('Expecting a list for tablespaces')
+            raise SDKException(
+                'Instance',
+                '101', 'Expecting a list for tablespaces')
         if files is not None:
             if not isinstance(files, dict):
-                raise TypeError('Expecting a dict for files')
+                raise SDKException(
+                    'Instance',
+                    '101', 'Expecting a dict for files')
 
         destination_id = int(self._commcell_object.clients.get(
             destination_client).client_id)
@@ -720,6 +727,12 @@ class OracleInstance(DatabaseInstance):
                 "commonOptions"] = common_options
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "oracleOpt"] = oracle_options
+        if destination:
+            if not isinstance(destination, dict):
+                raise SDKException(
+                    'Instance',
+                    '101', 'Expecting a dict for destination details')
+            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = destination
         if files is None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
                 "sourceItem": tslist
@@ -1005,8 +1018,10 @@ class OracleInstance(DatabaseInstance):
             destination_client=None,
             common_options=None,
             browse_option=None,
-            oracle_options=None,
-            tag=None):
+            oracle_options={},
+            tag=None,
+            destination_instance=None,
+            streams=2):
         """
         Perform restore full/partial database using latest backup or backup copy
 
@@ -1023,40 +1038,50 @@ class OracleInstance(DatabaseInstance):
             oracle_options      (dict)      --  dictionary containing other oracle options
                 default:    By default it restores the controlfile and datafiles from latest backup
 
+                Example:{
+                            "resetLogs": 1,
+                            "switchDatabaseMode": True,
+                            "noCatalog": True,
+                            "restoreControlFile": True,
+                            "recover": True,
+                            "recoverFrom": 3,
+                            "restoreData": True,
+                            "restoreFrom": 3
+                        }
+
             tag                 (str)       --  Type of the restore to be performed
                 default:    None
 
-            Example: {
-            "resetLogs": 1,
-            "switchDatabaseMode": True,
-            "noCatalog": True,
-            "restoreControlFile": True,
-            "recover": True,
-            "recoverFrom": 3,
-            "restoreData": True,
-            "restoreFrom": 3
-            }
+            destination_instance(str)       --  destination instance name
+                default:    None (in place restore)
+
+            streams             (int)       --  number of streams for restore
+                default: 2
+
 
         Returns:
             object  --  Job containing restore details
 
         Raises:
-            TypeError   --  If the oracle options is not a dict
-            SDKException    --  If destination_client can't be set
+            SDKException:
+                If oracle options can't be set
+
+                If destination_client can't be set
 
         """
-        if oracle_options is None:
-            oracle_options = {
-                "resetLogs": 1,
-                "switchDatabaseMode": True,
-                "noCatalog": True,
-                "recover": True,
-                "recoverFrom": 3,
-                "restoreData": True,
-                "restoreFrom": 3
-            }
+        options = {
+            "resetLogs": 1,
+            "switchDatabaseMode": True,
+            "noCatalog": True,
+            "recover": True,
+            "recoverFrom": 3,
+            "restoreData": True,
+            "restoreFrom": 3
+        }
+        options.update(oracle_options)
+        oracle_options = options.copy()
 
-        if tag.lower() == 'snap':
+        if tag and tag.lower() == 'snap':
             opt = {
                 "useSnapRestore": True,
                 "cleanupAuxiliary": True,
@@ -1065,22 +1090,55 @@ class OracleInstance(DatabaseInstance):
             oracle_options.update(opt)
 
         try:
-            if destination_client is None:
+            if destination_client is None or destination_instance is None:
                 destination_client = self._properties['instance']['clientName']
+                destination_instance = self._properties['instance']['instanceName']
+            destination = {
+                "destination_client": destination_client,
+                "destination_instance": destination_instance
+            }
+            if tag and tag.lower()=="rac":
+                stream_allocation = self._get_rac_stream_allocation(
+                    destination_client, destination_instance, streams)
+                oracle_options.update(stream_allocation)
+                destination["app_name"] = "Oracle RAC"
+            self._restore_destination_json(destination)
         except SDKException:
             raise SDKException("Instance", "105")
         else:
             # subclient = self.subclients.get(subclient_name)
-            options = self._get_oracle_restore_json(destination_client=destination_client,
-                                                    instance_name=self.instance_name,
-                                                    tablespaces=self.tablespaces,
-                                                    files=files,
-                                                    browse_option=browse_option,
-                                                    common_options=common_options,
-                                                    oracle_options=oracle_options)
+            if destination_client and destination_instance:
+                options = self._get_oracle_restore_json(destination_client=destination_client,
+                                                        destination=self._destination_restore_json,
+                                                        instance_name=self.instance_name,
+                                                        tablespaces=self.tablespaces,
+                                                        files=files,
+                                                        browse_option=browse_option,
+                                                        common_options=common_options,
+                                                        oracle_options=oracle_options)
+            else:
+                options = self._get_oracle_restore_json(destination_client=destination_client,
+                                                        instance_name=self.instance_name,
+                                                        tablespaces=self.tablespaces,
+                                                        files=files,
+                                                        browse_option=browse_option,
+                                                        common_options=common_options,
+                                                        oracle_options=oracle_options)
             return self._process_restore_response(options)
             
-    
+    def _get_rac_stream_allocation(self, destination_client, destination_instance, streams):
+        """setter for RAC stream allocation on nodes data population in oracle options for restore
+            Args:
+                destination_client  (basestring) -- Name of the destination client
+                destination_instance(basestring) -- Name of the destination RAC instance
+                streams             (int)    -- Number of streams for restore
+        """
+        destination_client_obj = self._commcell_object.clients.get(destination_client)
+        destination_instance_obj = destination_client_obj.agents.get("Oracle RAC").instances.get(destination_instance)
+        rac_stream_allocation = {"racDataStreamAllcation": []}
+        for node in destination_instance_obj.properties['oracleRACInstance']['racDBInstance']:
+            rac_stream_allocation["racDataStreamAllcation"].append(f"{node['racDbInstanceId']} {streams}")
+        return rac_stream_allocation
 
     def _restore_db_dump_option_json(self,value):
         """setter for the oracle dbdump Restore option in restore JSON

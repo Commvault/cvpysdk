@@ -50,6 +50,11 @@ Class: KubernetesVirtualServerSubclient:    Derived class from VirtualServerSubC
 
         enable_intelli_snap()           --  Enables Intellisnap on subclient
 
+        guest_file_restore()            --  Restore the files and folders to file system destionation
+                                            or to target PVC
+
+        guest_files_browse()            --  Browse files in a application at any point in time
+
 
 Class: ApplicationGroups:                Derived class from Subclients Base
                                             class,representing a Kubernetes ApplicationGroups,
@@ -59,12 +64,16 @@ Class: ApplicationGroups:                Derived class from Subclients Base
 
         __init__(class_object)           --  initialize object of Kubernetes subclient class,
                                             associated with the VirtualServer subclient
+        browse()                         -- Browse cluster for namespace, applications, volumes, or labels
+
+        get_children_node()              -- Construct the json object for content and filter
 
         create_application_group()       --       creates application group
 
 
 """
 
+import copy
 from cvpysdk.subclients.vssubclient import VirtualServerSubclient
 from cvpysdk.virtualmachinepolicies import VirtualMachinePolicy
 from past.builtins import basestring
@@ -129,10 +138,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             Machine to the source client and corresponding ESX and datastore.
 
             Args:
-                vm_to_restore            (str)    --  VM that is to be restored
+                vm_to_restore            (list)   --  VM that is to be restored
 
-                restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      'delete' is appended to the original vm name
+                restored_vm_name         (dict)   --  new name of vms
 
                 vcenter_client           (str)    --  name of the vcenter client where the VM
                                                       should be restored.
@@ -192,7 +200,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, list):
             raise SDKException('Subclient', '101')
 
         # populating proxy client. It assumes the proxy controller added in instance
@@ -201,13 +209,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, list) or
+                   isinstance(restored_vm_name, dict)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
-
-        if vm_to_restore:
-            vm_to_restore = [vm_to_restore]
 
         restore_option_copy = restore_option.copy()
 
@@ -321,8 +326,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         self._json_restore_diskLevelVMRestoreOption(restore_option)
         self._json_vcenter_instance(restore_option)
 
+        _new_name_dict = restore_option['restore_new_name']
         for _each_vm_to_restore in restore_option['vm_to_restore']:
-            restore_option["new_name"] = _each_vm_to_restore
+            restore_option["new_name"] = _new_name_dict[_each_vm_to_restore]
             self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)
         # prepare json
         request_json = self._restore_json(restore_option=restore_option)
@@ -369,6 +375,82 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
         if value.get('replication_guid'):
             self._virtualserver_option_restore_json['replicationGuid'] = value['replication_guid']
+
+    def _json_restore_advancedRestoreOptions(self, value):
+        """setter for the Virtual server restore  option in restore json"""
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._advanced_option_restore_json = {
+            "disks": value.get("disks", []),
+            "guid": value.get("guid", ""),
+            "newGuid": value.get("new_guid", ""),
+            "newName": value.get("new_name", ""),
+            "esxHost": value.get("esx_host", ""),
+            "projectId": value.get("project_id", ""),
+            "cluster": value.get("cluster", ""),
+            "name": value.get("name", ""),
+            "nics": value.get("nics", []),
+            "vmIPAddressOptions": value.get("vm_ip_address_options", []),
+            "FolderPath": value.get("FolderPath", ""),
+            "resourcePoolPath": value.get("ResourcePool", ""),
+            "volumeType": value.get("volumeType", "Auto"),
+            "endUserVMRestore": value.get("end_user_vm_restore", False)     # Required by Kubernetes Disk Level Restore
+        }
+
+        value_dict = {
+            "createPublicIP": ["createPublicIP", ["createPublicIP", ""]],
+            "restoreAsManagedVM": ["restoreAsManagedVM", ["restoreAsManagedVM", ""]],
+            "destination_os_name": ["osName", ["destination_os_name", "AUTO"]],
+            "resourcePoolPath": ["resourcePoolPath", ["resourcePoolPath", ""]],
+            "datacenter": ["datacenter", ["datacenter", ""]],
+            "terminationProtected": ["terminationProtected", ["terminationProtected", False]],
+            "securityGroups": ["securityGroups", ["securityGroups", ""]],
+            "keyPairList": ["keyPairList", ["keyPairList", ""]]
+        }
+
+        for key in value_dict:
+            if key in value:
+                inner_key = value_dict[key][0]
+                val1, val2 = value_dict[key][1][0], value_dict[key][1][1]
+                self._advanced_option_restore_json[inner_key] = value.get(val1, val2)
+
+        if "vmSize" in value:
+            val1, val2 = ("instanceSize", "") if not value["vmSize"] else ("vmSize", "vmSize")
+            self._advanced_option_restore_json["vmSize"] = value.get(val1, val2)
+        if "ami" in value and value["ami"] is not None:
+            self._advanced_option_restore_json["templateId"] = value["ami"]["templateId"]
+            self._advanced_option_restore_json["templateName"] = value["ami"]["templateName"]
+        if "iamRole" in value and value["iamRole"] is not None:
+            self._advanced_option_restore_json["roleInfo"] = {
+                "name": value["iamRole"]
+            }
+        if self._instance_object.instance_name == 'openstack':
+            if "securityGroups" in value and value["securityGroups"] is not None:
+                self._advanced_option_restore_json["securityGroups"] = [{"groupName": value["securityGroups"]}]
+        if "destComputerName" in value and value["destComputerName"] is not None:
+            self._advanced_option_restore_json["destComputerName"] = value["destComputerName"]
+        if "destComputerUserName" in value and value["destComputerUserName"] is not None:
+            self._advanced_option_restore_json["destComputerUserName"] = value["destComputerUserName"]
+        if "instanceAdminPassword" in value and value["instanceAdminPassword"] is not None:
+            self._advanced_option_restore_json["instanceAdminPassword"] = value["instanceAdminPassword"]
+
+        if self.disk_pattern.datastore.value == "DestinationPath":
+            self._advanced_option_restore_json["DestinationPath"] = value.get("datastore", "")
+
+        else:
+            self._advanced_option_restore_json["Datastore"] = value.get("datastore", "")
+
+        if "datacenter" in value:   # Required for Kubernetes Disk Level Restore
+            self._advanced_option_restore_json['datacenter'] = value["datacenter"]
+
+        if value.get('block_level'):
+            self._advanced_option_restore_json["blrRecoveryOpts"] = \
+                self._json_restore_blrRecoveryOpts(value)
+
+        temp_dict = copy.deepcopy(self._advanced_option_restore_json)
+        return temp_dict
 
     def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
         """
@@ -681,10 +763,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                      destination_path,
                      disk_name=None,
                      proxy_client=None,
-                     copy_precedence=0,
-                     convert_to=None,
-                     media_agent=None,
-                     snap_proxy=None):
+                     **kwargs):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -695,21 +774,17 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
-                                                        (only vmdk files permitted - enter full
+                                                        (only yaml files permitted - enter full
                                                         name of the disk)
                                                         default: None
-
                 proxy_client        (basestring)    --  Destination proxy client to be used
                                                         default: None
 
-                copy_precedence            (int)    --  SP copy precedence from which browse has to
-                                                         be performed
+            Kwargs:
 
-                convert_to          (basestring)    --  disk format for the restored disk
-                                                        (applicable only when the vmdk disk is
-                                                        selected for restore). Allowed values are
-                                                        "VHDX" or "VHD"
-                                                        default: None
+                Allows parameters to modify disk restore --
+
+                copy_precedence            (int)    --  SP copy precedence from which browse has to
 
                 media_agent         (str)   -- MA needs to use for disk browse
                     default :Storage policy MA
@@ -717,6 +792,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 snap_proxy          (str)   -- proxy need to be used for disk
                                                     restores from snap
                     default :proxy in instance or subclient
+
+                disk_extension      (str)   -- Extension of disk file (Default: '.yaml')
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -732,7 +810,15 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _disk_restore_option = {}
 
-        disk_extn = '.vmdk'
+        copy_precedence = kwargs.get("copy_precedence", 0)
+        disk_extn = kwargs.get("disk_extension", '.yaml')
+        unconditional_overwrite = kwargs.get('unconditional_overwrite', False)
+        show_deleted_files = kwargs.get('show_deleted_files', False)
+
+        # Volume level restore values -
+        # 4 - Manifest Restore
+        volume_level_restore = kwargs.get("volume_level_restore", 4)
+
         if not disk_name:
             disk_name = []
         else:
@@ -741,14 +827,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         # check if inputs are correct
         if not (isinstance(vm_name, basestring) and
                 isinstance(destination_path, basestring) and
-                isinstance(disk_name, list) and
-                disk_extn == '.vmdk'):
+                isinstance(disk_name, list)):
             raise SDKException('Subclient', '101')
-
-        if convert_to is not None:
-            convert_to = convert_to.lower()
-            if convert_to not in ['vhdx', 'vhd']:
-                raise SDKException('Subclient', '101')
 
         if copy_precedence:
             _disk_restore_option['copy_precedence_applicable'] = True
@@ -757,27 +837,22 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         disk_list, disk_info_dict = self.disk_level_browse(
             "\\" + vm_ids[vm_name])
 
-        if not disk_name:  # if disk names are not provided, restore all vmdk disks
+        # Filter out disks with specified extension from disk list
+        disk_list = list(filter(lambda name: self._get_disk_extension([name]) == disk_extn, disk_list))
+        disk_info_dict = { disk : disk_info_dict[disk] for disk in disk_list }
+
+        if not disk_name:  # if disk names are not provided, restore all disks
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
-                each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
+                # disk path has GUID in case of files, and vm name in case of manifests
+                each_disk_path = "\\" + \
+                                 (vm_ids[vm_name] if volume_level_restore != 4 else vm_name) + \
+                                 "\\" + each_disk.split("\\")[-1]
                 if each_disk_path not in disk_list:
                     raise SDKException('Subclient', '111')
-
-        # if conversion option is given
-        if convert_to is not None:
-            dest_disk_dict = {
-                'VHD_DYNAMIC': 13,
-                'VHDX_DYNAMIC': 21
-            }
-            vol_restore, dest_disk = self._get_conversion_disk_Type('vmdk', convert_to)
-            _disk_restore_option["destination_disktype"] = dest_disk_dict[dest_disk]
-            _disk_restore_option["volume_level_restore"] = 4
-        else:
-            _disk_restore_option["volume_level_restore"] = 3
 
         _disk_restore_option["destination_vendor"] = \
             self._backupset_object._instance_object._vendor_id
@@ -793,6 +868,11 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             src_item_list.append("\\" + vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
 
         _disk_restore_option['paths'] = src_item_list
+        _disk_restore_option['unconditional_overwrite'] = unconditional_overwrite
+        _disk_restore_option['show_deleted_files'] = show_deleted_files
+
+        # Populate volume level restore options
+        _disk_restore_option['volume_level_restore'] = volume_level_restore
 
         self._set_restore_inputs(
             _disk_restore_option,
@@ -847,6 +927,216 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         self._set_subclient_properties(
             "_commonProperties['snapCopyInfo']", properties_dict)
 
+    def guest_file_restore(self,
+                           vm_name,
+                           destination_path,
+                           volume_level_restore,
+                           disk_name=None,
+                           proxy_client=None,
+                           restore_list=None,
+                           restore_pvc_guid=None,
+                           **kwargs):
+        """perform Guest file restore of the provided path
+
+        Args:
+            vm_name                 (str)   --  Name of the source application
+            destination_path        (str)   --  Path at the destination to restore at
+            volume_level_restore    (str)   --  Flag to denote volume_level_restore
+                                                Accepted values -
+                                                6 for restore to PVC
+                                                7 for FS Destination restore
+            disk_name               (str)   --  Name of the source PVC
+            proxy_client            (str)   --  Access node for restore
+            restore_list            (str)   --  List of files or folders to restore. Contains Full path
+                                                of files or folders relative to PVC mount point.
+                                                Eg. if /tmp is the mount point with files or folder /tmp/folder1/file1,
+                                                restore list should have format 'folder1/file1'
+            restore_pvc_guid        (str)   --  strGUID of the target PVC
+
+        Kwargs:
+            copy_precedence         (int)   --  To set copy precedence for restore
+            disk_extension          (str)   --  Extention of the disk
+            unconditional_overwrite (int)   --  To set unconditional overwrite for restore
+            show_deleted_files      (bool)  --  Whether to show deleted files in browse
+            in_place                (bool)  --  If restore job is inplace
+
+        Raises:
+            SDK Exception if
+                -inputs are not of correct type as per definition
+
+                -invalid volume_level_restore passed
+        """
+        vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
+        _guest_file_rst_options = {}
+        _advanced_restore_options = {}
+
+        copy_precedence = kwargs.get("copy_precedence", 0)
+        disk_extn = kwargs.get("disk_extension", '')
+        overwrite = kwargs.get("unconditional_overwrite", 1)
+        unconditional_overwrite = kwargs.get('unconditional_overwrite', False)
+        show_deleted_files = kwargs.get('show_deleted_files', False)
+        in_place = kwargs.get('in_place', False)
+
+        # check if inputs are correct
+        if not (isinstance(vm_name, basestring) and
+                isinstance(destination_path, basestring) and
+                isinstance(disk_name, str)):
+            raise SDKException('Subclient', '101')
+        if volume_level_restore not in [6, 7]:
+            raise SDKException("Subclient", "102", "Invalid volume level restore type passed")
+
+        if copy_precedence:
+            _guest_file_rst_options['copy_precedence_applicable'] = True
+
+        # fetching all disks from the vm
+        disk_list, disk_info_dict = self.disk_level_browse(
+            "\\" + vm_ids[vm_name])
+
+        # Filter out disks with specified extension from disk list
+        disk_list = list(filter(lambda name: self._get_disk_extension([name]) == disk_extn, disk_list))
+        disk_info_dict = {disk: disk_info_dict[disk] for disk in disk_list}
+
+        _guest_file_rst_options["destination_vendor"] = \
+            self._backupset_object._instance_object._vendor_id
+
+        if proxy_client is not None:
+            _guest_file_rst_options['client'] = proxy_client
+        else:
+            _guest_file_rst_options['client'] = self._backupset_object._instance_object.co_ordinator
+
+        # set Source item List
+        src_item_list = []
+        for each_item in restore_list:
+            item = "\\".join(each_item.split('/'))
+            src_item_list.append( "\\" + vm_ids[vm_name] + "\\" + disk_name + "\\" + item)
+
+        _guest_file_rst_options['paths'] = src_item_list
+
+        if volume_level_restore == 6:
+
+            if in_place:
+                restore_pvc_guid = "{}`PersistentVolumeClaim`{}".format(
+                    vm_ids[vm_name].split('`')[0], disk_name
+                )
+                new_name = disk_name
+
+            else:
+                new_name = restore_pvc_guid.split('`')[-2]
+                _advanced_restore_options['datacenter'] = "none"
+
+            new_guid = restore_pvc_guid
+
+        else:
+
+            new_guid = "{}`PersistentVolumeClaim`{}".format(
+                vm_ids[vm_name].split('`')[0], disk_name
+            )
+            new_name = disk_name
+
+        _guest_file_rst_options['in_place'] = in_place
+        _guest_file_rst_options['volume_level_restore'] = volume_level_restore
+        _guest_file_rst_options['unconditional_overwrite'] = unconditional_overwrite
+        _guest_file_rst_options['show_deleted_files'] = show_deleted_files
+
+        _advanced_restore_options['new_guid'] = new_guid
+        _advanced_restore_options['new_name'] = new_name
+        _advanced_restore_options['name'] = disk_name
+        _advanced_restore_options['guid'] = vm_ids[vm_name]
+        _advanced_restore_options['end_user_vm_restore'] = True
+
+        # set advanced restore options disks
+        _disk_dict = self._disk_dict_pattern(disk_name, "")
+        _advanced_restore_options['disks'] = [_disk_dict]
+
+        advanced_options_dict = self._json_restore_advancedRestoreOptions(_advanced_restore_options)
+        self._advanced_restore_option_list.append(advanced_options_dict)
+
+        self._set_restore_inputs(
+            _guest_file_rst_options,
+            in_place=False,
+            copy_precedence=copy_precedence,
+            destination_path=destination_path,
+            paths=src_item_list
+        )
+
+        request_json = self._prepare_disk_restore_json(_guest_file_rst_options)
+
+        # Populate the advancedRestoreOptions section
+        self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
+            "advancedRestoreOptions"] = self._advanced_restore_option_list
+        self._advanced_restore_option_list = []
+
+        return self._process_restore_response(request_json)
+
+    def guest_files_browse(
+            self,
+            vm_path='\\',
+            show_deleted_files=False,
+            restore_index=True,
+            from_date=0,
+            to_date=0,
+            copy_precedence=0,
+            media_agent=""):
+        """Browses the Files and Folders inside a Virtual Machine in the time
+           range specified.
+
+            Args:
+                vm_path             (str)   --  folder path to get the contents
+                                                of
+                                                default: '\\';
+                                                returns the root of the Backup
+                                                content
+
+                show_deleted_files  (bool)  --  include deleted files in the
+                                                content or not default: False
+
+                restore_index       (bool)  --  restore index if it is not cached
+                                                default: True
+
+                from_date           (int)   --  date to get the contents after
+                                                format: dd/MM/YYYY
+
+                                                gets contents from 01/01/1970
+                                                if not specified
+                                                default: 0
+
+                to_date             (int)  --  date to get the contents before
+                                               format: dd/MM/YYYY
+
+                                               gets contents till current day
+                                               if not specified
+                                               default: 0
+
+                copy_precedence     (int)   --  copy precedence to be used
+                                                    for browsing
+
+                media_agent         (str)   --  Browse MA via with Browse has to happen.
+                                                It can be MA different than Storage Policy MA
+
+            Returns:
+                list - list of all folders or files with their full paths
+                       inside the input path
+
+                dict - path along with the details like name, file/folder,
+                       size, modification time
+
+            Raises:
+                SDKException:
+                    if from date value is incorrect
+
+                    if to date value is incorrect
+
+                    if to date is less than from date
+
+                    if failed to browse content
+
+                    if response is empty
+
+                    if response is not success
+        """
+        return self.browse_in_time(
+            vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
+            vm_files_browse=False, media_agent=media_agent)
 
 class ApplicationGroups(Subclients):
 
@@ -860,49 +1150,279 @@ class ApplicationGroups(Subclients):
 
         super(ApplicationGroups, self).__init__(class_object)
 
+    def __do_browse(self, browse_type="Applications", namespace=None, ns_guid=None):
+        """Do GET browse request based on the browse type
+            Args:
+                browse_type     (str)   --  Type of browse (mandatory if namespace is not None)
+                                            Accepted values - Namespaces, Applications, Volumes, Labels
+                namespace       (str)   --  Namespace to browse
+
+                ns_guid         (str)   --  Namespace GUID of namespace to browse
+        """
+
+        browse_type_dict = {
+            "Namespaces": "GET_K8S_NS_BROWSE",
+            "Applications": "GET_K8S_APP_BROWSE",
+            "Volumes": "GET_K8S_VOLUME_BROWSE",
+            "Labels": "GET_K8S_LABEL_BROWSE"
+        }
+
+        if not (namespace and ns_guid):
+            service = browse_type_dict["Namespaces"]
+            parameters = int(self._client_object.client_id)
+        else:
+            service = browse_type_dict[browse_type]
+            parameters = (namespace, ns_guid, int(self._client_object.client_id))
+
+        flag, get_browse = self._cvpysdk_object.make_request(
+            'GET', self._services[service] % parameters
+        )
+
+        if flag:
+            if get_browse and get_browse.json():
+                browse_json = get_browse.json()
+                if not 'inventoryInfo' in browse_json:
+                    raise SDKException(
+                        'Subclient',
+                        '102',
+                        "Failed to browse cluster content\nContent returned does not have inventoryInfo"
+                    )
+                else:
+                    return browse_json['inventoryInfo']
+            else:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Failed to browse cluster content\nInvalid response'
+                )
+        else:
+            try:
+                # If browse fails then append raise HTTP exception to get error reason
+                get_browse.raise_for_status()
+            except Exception as exp:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    f'Failed to browse cluster content\nError: "{exp}"'
+                )
+
+    def __get_children_json(self, app_name, app_type, browse_type, browse_response=None, selector=False):
+        """Private method to return the json object for the application
+            Args:
+                app_name    (str)   --  Name of the application
+                app_type    (str)   --  Application type (FOLDER/VM/Selector)
+                browse_type (str)   --  Browse type of application
+                browse_response (str)   --  Browse response from discovery
+                selector    (str)   --  If content is a label selector
+        """
+
+        # JSON format is different in case of applications and selectors
+        if selector:
+            if browse_type == "Applications":
+                # Casting Applications to Application since `Applications` is not recognized for selectors
+                browse_type = "Application"
+            if browse_type not in ['Application', 'Namespaces', 'Volumes']:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Invalid browse type for Selector.'
+                )
+
+            return {
+                "equalsOrNotEquals": True,
+                "displayName": f"{browse_type}:{app_name}",
+                "value": f"{browse_type}:{app_name}",
+                "allOrAnyChildren": True,
+                "type": app_type,
+                "name": app_type
+            }
+
+        else:
+            for app_item in browse_response:
+                # Iterate over each application in browse response to get strGUID of selected app
+                if app_item['name'] == app_name:
+                    if browse_type == "Volumes" and app_type == "FOLDER":
+                        app_item['strGUID'].replace('Namespace', 'Volumes')
+                    return {
+                            "equalsOrNotEquals": True,
+                            "displayName": app_item['name'],
+                            "allOrAnyChildren": True,
+                            "type": app_type,
+                            "name": app_item['strGUID']
+                    }
+            else:
+                # If for loop completes without returning, then app does not exist in browse
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    f'Searched element [{app_name}] not found in browse.'
+                )
+
+    def get_children_node(self, content):
+        """Construct and return the json object for content
+            Args:
+                content     (list)      --  Content to parse and construct json object
+                                            Check create_application_group for usage.
+        """
+
+        # List of accepted browse types for application and selector
+        app_browse_list = ['Applications', 'Labels', 'Volumes']
+        selector_browse_list = ['Applications', 'Application', 'Namespaces', 'Volumes']
+
+        if not type(content) is list:
+            raise SDKException('Subclient', '101', 'Invalid data type for content.')
+
+        children = []
+        for item in content:
+            if not type(item) is str:
+                raise SDKException('Subclient', '101', 'Invalid data type for content.')
+
+            # Split first `:` to get content type (Application or Selector).
+            if item.find(':') < 0:
+                item = 'Application:' + item
+            content_type, content_item = item.split(':', 1)
+
+            # Split second `:` to get Browse type and app value
+            if content_item.find(':') < 0:
+                content_item = 'Applications:' + content_item
+            browse_type, app = content_item.split(':')
+
+            # Format check
+            if (content_type == 'Selector' and browse_type not in selector_browse_list) or \
+                (content_type == 'Application' and browse_type not in app_browse_list):
+                raise SDKException('Subclient', '101', 'Invalid string format for content.')
+
+            browse_response = ""
+            app_type = ""
+            selector = False
+
+            if content_type == 'Selector':
+                app_type = "Selector"
+                browse_response=None
+                app_name = app
+                selector = True
+
+            elif content_type == 'Application':
+                app_split = app.split('/')
+                app_name = app_split[-1]
+                if len(app_split) > 1:
+
+                    # If split length is > 1, then fetch browse response of application
+                    browse_response = self.browse(browse_type=browse_type, namespace=app_split[0])
+                    app_type = "VM"
+                else:
+
+                    # If split length = 1, then fetch browse response of namespace
+                    browse_response = self.browse(browse_type="Namespaces")
+                    app_type = "FOLDER"
+            else:
+                raise SDKException('Subclient', '101', 'Invalid content type.')
+
+            children.append(self.__get_children_json(
+                    app_name=app_name,
+                    app_type=app_type,
+                    browse_type=browse_type,
+                    browse_response=browse_response,
+                    selector=selector
+                )
+            )
+
+        return children
+
+    def browse(self, browse_type='Namespaces', namespace=None):
+        """Browse cluster content
+            Args:
+                browse_type     (str)   --  Browse type to perform
+                                            Accepted values - Namespaces, Appilcations, Volumes, Labels
+                namespace       (str)   --  Namespace to browse in
+        """
+
+        if browse_type not in ["Namespaces", "Applications", "Volumes", "Labels"]:
+            raise SDKException(
+                'Subclient',
+                '101',
+                f'Invalid value passed for browse_type [{browse_type}]'
+            )
+
+        all_namespaces = self.__do_browse(browse_type="Namespaces")
+
+        # If namespace is not passed, or browse_type is Namespaces, return browse response from namespaces
+        if browse_type == "Namespaces" or not namespace:
+            return all_namespaces
+
+        ns_guid = ""
+        for ns in all_namespaces:
+            if ns['name'] == namespace:
+                ns_guid = ns['strGUID']
+                break
+        else:
+            raise SDKException(
+                'Subclient',
+                '102',
+                f"Could not fetch namespace GUID for namespace [{namespace}]"
+            )
+
+        # Encoding ` characters for URL
+        ns_guid = ns_guid.replace('`', '%60')
+
+        return self.__do_browse(browse_type=browse_type, namespace=namespace, ns_guid=ns_guid)
+
     def create_application_group(self,
                                  content,
-                                 plan_name,
+                                 plan_name=None,
+                                 filter=None,
                                  subclient_name="automation"):
 
         """Create application / Kubernetes Subclient.
 
             Args:
-                client_id               (str)    --  Client id
+                client_id               (str)       --  Client id
 
-                content                 (str)    --  Subclient content
+                content                 (list)      --  Subclient content. Format 'ContentType:BrowseType:namespace/app'
+                                                        Should be a list of strings with above format.
 
-                plan_name                 (str)    --  Plan name
+                                                        Valid ContentType -
+                                                            Application, Selector.
+                                                            If not specified, default is 'Application'
+                                                        Valid BrowseType for Application ContentType -
+                                                            Applications, Volumes, Labels
+                                                            If not specified, default is 'Applications'
+                                                        Valid BrowseType for Selector ContentType -
+                                                            Application, Applications, Volumes, Namespaces
+                                                            If not specified, default is 'Namespaces'
 
-                subclient_name          (str)    --  Subclient name you want to create Subclient
+                                                        Examples -
+                                                            1. ns001 --  Format : namespace
+                                                            2. ns001/app001 --  Format : namespace/app
+                                                            3. Volumes:ns001/pvc001 --  Format : BrowseType:namespace/app
+                                                            4. Selector:Namespaces:app=demo -n ns004 --  Format : ContentType:BrowseType:namespace
+                                                            5. ['Application:Volumes:nsvol/vol001', 'nsvol02/app1']
+                                                            ...
+
+                plan_name               (str)       --  Plan name
+
+                filter                  (list)      --  filter for subclient content.
+                                                        See 'content' for format and examples
+
+                subclient_name          (str)       --  Subclient name you want to create Subclient
 
         """
-        flag, get_pods = self._cvpysdk_object.make_request('GET', self._services['GET_VM_BROWSE']
-                                                           % (int(self._client_object.client_id)))
-        temp_str = get_pods.content.decode("utf-8")
-        list_temp = temp_str.split(',')
-        plan_id = ''
-        mylist = []
-        for element in list_temp:
-            if content in element:
-                list_strguid = element.split(':')
-                mylist.append((list_strguid[1]).replace('"', ''))
+
+        content_children = []
+        filter_children = []
+
+        # Get the json objects for content and filters
+        content_children.extend(self.get_children_node(content))
+        if filter:
+            filter_children.extend(self.get_children_node(filter))
 
         plan_id = int(self._commcell_object.plans[str(plan_name.lower())])
 
         app_create_json = {
             "subClientProperties": {
-                "vmContentOperationType": 2,
+                "vmContentOperationType": 'ADD',
                 "vmContent": {
-                    "children": [
-                        {
-                            "equalsOrNotEquals": True,
-                            "displayName": mylist[0],
-                            "allOrAnyChildren": True,
-                            "type": 5,
-                            "name": mylist[1]
-                        }
-                    ]
+                    "children": content_children
                 },
                 "subClientEntity": {
                     "clientId": int(self._client_object.client_id),
@@ -911,7 +1431,7 @@ class ApplicationGroups(Subclients):
                     "subclientName": subclient_name
                 },
                 "planEntity": {
-                    "planId": int(plan_id)
+                    "planId": plan_id
                 },
                 "commonProperties": {
                     "enableBackup": True,
@@ -928,6 +1448,13 @@ class ApplicationGroups(Subclients):
                 }
             }
         }
+
+        if filter:
+            # If filter is passed for subclient, additional flags are added to create subclient json
+            app_create_json['subClientProperties']['vmFilterOperationType'] = 'ADD'
+            app_create_json['subClientProperties']['vmDiskFilterOperationType'] = 'ADD'
+            app_create_json['subClientProperties']['vmFilter'] = { 'children' : filter_children}
+
         flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_SUBCLIENT'],
                                                            app_create_json)
         if flag == False:

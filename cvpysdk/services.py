@@ -51,6 +51,8 @@ SERVICES_DICT_TEMPLATE = {
     'TFA': '{0}Commcell/Properties/TwoFactorAuth',
     'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
     'TFA_DISABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Disable',
+    'PRIVACY_ENABLE': '{0}Commcell/Properties/Privacy/Action/Enable',
+    'PRIVACY_DISABLE': '{0}Commcell/Properties/Privacy/Action/Disable',
     'ORG_TFA': '{0}Organization/%s/TwoFactorAuth',
     'ORG_TFA_ENABLE': '{0}Organization/%s/TwoFactorAuth/Action/Enable',
     'ORG_TFA_DISABLE': '{0}Organization/%s/TwoFactorAuth/Action/Disable',
@@ -58,6 +60,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
+    'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
     'FILTER_CLIENTS':'{0}Client?%s',
@@ -89,6 +92,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_JOBS': '{0}Job?clientId=%s&jobFilter=%s',
     'JOB': '{0}Job/%s',
     'JOB_DETAILS': '{0}JobDetails',
+    'JOB_TASK_DETAILS': '{0}Job/%s/TaskDetails',
     'SUSPEND_JOB': '{0}Job/%s/action/pause',
     'RESUME_JOB': '{0}Job/%s/action/resume',
     'KILL_JOB': '{0}Job/%s/action/kill',
@@ -105,6 +109,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
+    
+    'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
@@ -132,6 +138,11 @@ SERVICES_DICT_TEMPLATE = {
     'BROWSE_MOUNT_POINTS': '{0}/Client/%s/Action/BrowseMountPoints',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
+
+    'GET_K8S_NS_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_VOLUME_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_APP_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_LABEL_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
 
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
@@ -173,6 +184,8 @@ SERVICES_DICT_TEMPLATE = {
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
     'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
+    'SQL_AG_GROUPS': '{0}v2/sql/availabilityGroups/client/%s/instance/%s',
+    'SQL_AG_GROUP_REPLICAS': '{0}v2/sql/availabilityGroupReplicas/client/%s/instance/%s/availabilityGroup/%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -242,6 +255,31 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_JOBS_HISTORY': '{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&datasourceId=%s',
     'EDISCOVERY_JOB_STATUS': '{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&datasourceId=%s',
     'EDISCOVERY_GET_DEFAULT_HANDLER': '{0}dcube/getdefaulthandler/%s',
+    'EDISCOVERY_V2_GET_CLIENTS': '{0}V2/EDiscoveryClients/Clients?datasourceType=%s&clientGroup=%s&limit=%s&offset=%s&sortBy=%s&sortDir=%s',
+    'EDISCOVERY_V2_GET_CLIENT_DETAILS': '{0}V2/EDiscoveryClients/Clients/%s?includeDocCount=%s&limit=%s&offset=%s&sortBy=%s&sortDir=%s&datasourceType=%s',
+    'EDISCOVERY_V2_GET_CLIENT_GROUP_DETAILS': '{0}V2/EDiscoveryClients/ClientGroups/%s?includeDocCount=%s',
+    'EDISCOVERY_SECURITY_ASSOCIATION': '{0}EDiscoveryClients/Security?appType=%s',
+    'EDISCOVERY_DATA_SOURCES': '{0}V2/EDiscoveryClients/Datasources?datasourceId=%s&type=%s',
+    'EDISCOVERY_DATA_SOURCE_DELETE': '{0}EDiscoveryClients/Datasources?datasourceId=%s&clientId=%s',
+    'EDISCOVERY_DYNAMIC_FEDERATED': '{0}dcube/dynamicfederated/%s/%s/default',
+    'EDISCOVERY_EXPORT': '{0}dcube/export/%s',
+    'EDISCOVERY_EXPORT_STATUS': '{0}dcube/export/%s/status?token=%s',
+    'EDISCOVERY_CREATE_DATA_SOURCE': '{0}EDiscoveryClients/Datasources',
+    'EDISCOVERY_REVIEW_ACTIONS_WITH_REQUEST': '{0}EDiscoveryClients/Datasources/Actions/Requests',
+    'EDISCOVERY_REVIEW_ACTIONS': '{0}V2/EDiscoveryClients/Datasources/Actions',
+    'EDISCOVERY_CLIENTS': '{0}EDiscoveryClients?eDiscoverySubtype=%s',
+    'EDISCOVERY_CLIENT_DETAILS': '{0}EDiscoveryClients/%s',
+    'EDISCOVERY_DATA_SOURCE_STATS': '{0}EDiscoveryClients/Datasources?id=%s&type=%s&start=0&count=1000',
+    'EDISCOVERY_CREATE_CLIENT': '{0}EDiscoveryClients/Clients',
+    'EDISCOVERY_DELETE_CLIENT': '{0}EDiscoveryClients/Clients/%s',
+    'EDISCOVERY_REQUESTS': '{0}V4/RequestManager/Request',
+    'EDISCOVERY_REQUEST_DETAILS': '{0}V4/RequestManager/Request/%s',
+    'EDISCOVERY_REQUEST_CONFIGURE': '{0}V4/RequestManager/Request/%s/Configure',
+    'EDISCOVERY_REQUEST_PROJECTS': '{0}V4/RequestManager/Request/%s/Projects',
+    'EDISCOVERY_REQUEST_FEDERATED': '{0}dcube/federated/%s/%s',
+    'EDISCOVERY_REQUEST_DOCUMENT_MARKER': '{0}EDiscoveryClients/Tasks/%s/Documents',
+    'EDISCOVERY_CONFIGURE_TASK': '{0}EDiscoveryClient/ConfigureTask',
+    'EDICOVERY_TASK_WORKFLOW': '{0}EDiscoveryClients/Tasks/%s/Workflows',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
@@ -256,6 +294,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
     'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
     'ASSOCIATED_ENTITIES': '{0}V2/Plan/%s/AssociatedEntities',
+    'GET_PLANS': '{0}V2/Plan?type=%s&subType=%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -278,7 +317,7 @@ SERVICES_DICT_TEMPLATE = {
     'PASSWORD_ENCRYPTION_CONFIG': '{0}/Commcell/PasswordEncryptionConfig',
 
     'VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy',
-    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&deep=true&hiddenpolicies=true',
+    'ALL_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy?showResourceGroupPolicy=true&deep=false&hiddenpolicies=true',
     'GET_VM_ALLOCATION_POLICY': '{0}VMAllocationPolicy/%s',
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s&Limit=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
@@ -316,10 +355,15 @@ SERVICES_DICT_TEMPLATE = {
     'ACTIVATE_ORGANIZATION': '{0}Organization/%s/action/activate',
     'DEACTIVATE_ORGANIZATION': '{0}Organization/%s/action/deactivate',
     'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
+    'ENABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Lock',
+    'DISABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Unlock',
     'ORGANIZATION_TAGS' : '{0}Tags',
     'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
     'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
     'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
+    'EDIT_COMPANY_DETAILS': '{0}v4/company/%s',
+    'CHECK_ELIGIBILITY_MIGRATION' : '{0}Company/%s/migration-entities',
+    'MIGRATE_CLIENTS' : '{0}Company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -390,8 +434,18 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE': '{0}Client/License/Release',
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
+    'APPLY_LICENSE': '{0}License',
+    'CAPACITY_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:feabb5ca-b6b7-4572-b0cb-39352c7e1b67/data',
+    'OI_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cd38c52a-e099-4252-d36f-3e2c54540f6f/data',
+    'VIRTUALIZATION_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:0aac5b36-10a4-4970-838a-c41fa2365583/data',
+    'USER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:44cd7de8-ecb2-4ec8-8b2b-162491172eef/data',
+    'ACTIVATE_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:f7c6b473-f99d-44b4-ff5e-466b55656500/data',
+    'METALLIC_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cc2e77ec-9315-4446-cd7e-44ef80a8860e/data',
+    'OTHER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:2654b01f-9bb0-481e-b273-4b4fddc585b1/data',
     'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
     'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
+    'ENABLE_CLIENT_PRIVACY': '{0}/V3/Client/%s/Lock',
+    'DISABLE_CLIENT_PRIVACY': '{0}/V3/Client/%s/Unlock',
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
@@ -432,6 +486,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
     'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
+    'GET_REPLICATION_PAIR': '{0}Replications/Monitors/streaming?replicationPairId=%s',
 
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
@@ -458,7 +513,9 @@ SERVICES_DICT_TEMPLATE = {
     'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
     'USER_MAPPINGS': '{0}GetUserMappings',
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
-    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
+    'ADD_OR_GET_SAML': '{0}/v4/SAML',
+    'EDIT_SAML': '{0}/v4/SAML/%s'
 }
 
 

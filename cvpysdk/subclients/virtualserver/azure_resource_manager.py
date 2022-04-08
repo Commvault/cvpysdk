@@ -76,7 +76,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      restore_as_managed=False,
                                      copy_precedence=0,
                                      disk_type=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -111,6 +112,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -128,6 +135,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -165,7 +173,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                  power_on=True,
                                  public_ip=False,
                                  restore_as_managed=False,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -184,6 +193,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 poweron
                         default:true   (bool)      --  power on the  restored VM
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -197,7 +212,7 @@ class AzureRMSubclient(VirtualServerSubclient):
 
                     if response is not success
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):

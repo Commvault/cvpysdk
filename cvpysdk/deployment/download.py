@@ -62,6 +62,7 @@ class Download(object):
             service_pack=None,
             cu_number=0,
             sync_cache=True,
+            sync_cache_list=None,
             schedule_pattern=None):
         """Downloads the os packages on the commcell
 
@@ -77,6 +78,10 @@ class Download(object):
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
+                                                   
 
             Returns:
                 object - instance of the Job class for this download job
@@ -165,6 +170,13 @@ class Download(object):
         if os_list is None:
             os_list = ['Windows(X64)']
 
+        client_groups = []
+        if sync_cache and sync_cache_list:
+            for cache in sync_cache_list:
+                client_groups.append({"clientName": cache})
+        elif sync_cache and not sync_cache_list:
+            client_groups = [{"_type_": 2}]
+
         request_json = {
             "taskInfo": {
                 "task": {
@@ -222,11 +234,7 @@ class Download(object):
                                         "windowsX64": 'Windows(X64)' in os_list,
                                         "windows32": 'Windows(32)' in os_list
                                     },
-                                    "clientAndClientGroups": [
-                                        {
-                                            "_type_": 2
-                                        }
-                                    ],
+                                    "clientAndClientGroups": client_groups,
                                     "downloadUpdatesJobOptions": {
                                         "downloadSoftware": True
                                     }

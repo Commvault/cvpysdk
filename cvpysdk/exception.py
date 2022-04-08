@@ -94,7 +94,8 @@ EXCEPTION_DICT = {
         '104': 'Failed to send an email to specified user',
         '105': 'Failed to run the Data Aging job',
         '106': 'Failed to get the SAML token',
-        '107': 'Data type of the input(s) is not valid'
+        '107': 'Data type of the input(s) is not valid',
+        '108': ''
     },
     'CVPySDK': {
         '101': 'Failed to Login with the credentials provided',
@@ -166,7 +167,8 @@ EXCEPTION_DICT = {
         '118': 'Failed to run the backup copy job',
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '120': 'Invalid days/cycles value. Please provide an integer value >= 2.',
-        '121': 'IndexServer value should be a client object'
+        '121': 'IndexServer value should be a client object',
+        '122': 'In-Place restore is not supported with multiple source paths'
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -302,6 +304,48 @@ EXCEPTION_DICT = {
         '103': 'Failed to start crawl job',
         '104': 'Failed to get job history',
         '105': 'Failed to get job status',
+        '106': 'Failed to get Ediscovery clients',
+        '107': 'Unable to get display names for associated data sources in this client',
+        '108': 'Data source doesnt exists on this client',
+        '109': 'Failed to share ediscovery client with user/group',
+        '110': 'Failed to fetch data source properties',
+        '111': 'Failed to delete data source',
+        '112': 'Failed to perform search',
+        '113': 'Failed to perform export',
+        '114': 'Failed to perform export status check',
+        '115': 'Failed to create data source',
+        '116': 'Failed to perform review actions on documents',
+        '117': 'Failed to get Ediscovery projects',
+        '118': 'Failed to get Ediscovery project properties',
+        '119': 'Failed to add Ediscovery client',
+        '120': 'Failed to delete Ediscovery client',
+    },
+    'FileStorageOptimization': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to find given Server name in FSO',
+        '104': 'Failed to find data source in FSO Server',
+        '105': 'Failed to start collection job at server level',
+        '106': "Failed to find server group name in FSO",
+        '107': 'Failed to start collection job at server group level',
+
+    },
+    'SensitiveDataGovernance': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to find given project name in SDG',
+    },
+    'RequestManager': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get requests details from commcell',
+        '104': 'Failed to get request properties',
+        '105': 'Unable to find given request',
+        '106': 'Failed to delete request',
+        '107': 'Failed to add request',
+        '108': 'Failed to configure request',
+        '109': 'Failed to mark review as complete as it has non-reviewed documents',
+        '110': 'Failed to request approval as review is not in completed state'
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
@@ -393,7 +437,8 @@ EXCEPTION_DICT = {
     },
     'FailoverGroup': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Failover group does not exist'
     },
     'ConfigurationPolicies': {
         '101': 'Data type of the input(s) is not valid',
@@ -415,12 +460,16 @@ EXCEPTION_DICT = {
         '101': 'Failed to retreive apps',
         '102': 'App not found',
         '103': 'Failed to configure identity app',
+        '104': 'Failed to delete identity app',
+        '105': 'Failed to modify identity app'
     },
     'CommCellMigration': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
         '103': 'Please specify all the required inputs',
-        '104': 'Please give appropriate input(s)'
+        '104': 'Please give appropriate input(s)',
+        '105': 'Both Clients list and Other Entities list cannot be none',
+        '106': 'Incorrect SQL credentials provied'
     },
     'NetworkTopology': {
         '101': 'Data type of the input(s) is not valid',

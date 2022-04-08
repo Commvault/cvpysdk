@@ -97,7 +97,7 @@ class DRJob(Job):
 
         if flag:
             if response.json() and 'job' in response.json():
-                return response.json()['job']
+                return response.json()['job'] or []
             elif response.json() and 'errors' in response.json():
                 errors = response.json().get('errors', [{}])
                 error_list = errors[0].get('errList', [{}])
@@ -135,6 +135,8 @@ class DRJob(Job):
             }
         """
         job_stats = {}
+        if not self._replication_job_stats:
+            return job_stats
         for pair_stats in self._replication_job_stats:
             phases = []
             for phase in pair_stats.get('phase', []):

@@ -187,48 +187,6 @@ class Instances(object):
         self._vs_instance_type_dict = {}
         self.refresh()
 
-        from .instances.vsinstance import VirtualServerInstance
-        from .instances.cainstance import CloudAppsInstance
-        from .instances.bigdataappsinstance import BigDataAppsInstance
-        from .instances.sqlinstance import SQLServerInstance
-        from .instances.hanainstance import SAPHANAInstance
-        from .instances.oracleinstance import OracleInstance
-        from .instances.sybaseinstance import SybaseInstance
-        from .instances.saporacleinstance import SAPOracleInstance
-        from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lotusnotes.lndbinstance import LNDBInstance
-        from .instances.lotusnotes.lndocinstance import LNDOCInstance
-        from .instances.lotusnotes.lndminstance import LNDMInstance
-        from .instances.postgresinstance import PostgreSQLInstance
-        from .instances.informixinstance import InformixInstance
-        from .instances.vminstance import VMInstance
-        from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance
-        from .instances.sharepointinstance import SharepointInstance
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._instances_dict = {
-            'virtual server': [VirtualServerInstance, VMInstance],
-            'big data apps': BigDataAppsInstance,
-            'cloud apps': CloudAppsInstance,
-            'sql server': SQLServerInstance,
-            'sap hana': SAPHANAInstance,
-            'oracle': OracleInstance,
-            'oracle rac': OracleInstance,
-            'sybase': SybaseInstance,
-            'sap for oracle': SAPOracleInstance,
-            'mysql': MYSQLInstance,
-            'notes database': LNDBInstance,
-            'notes document': LNDOCInstance,
-            'domino mailbox archiver': LNDMInstance,
-            'postgresql': PostgreSQLInstance,
-            'informix': InformixInstance,
-            'db2': DB2Instance,
-            'azure ad': AzureAdInstance,
-            'sharepoint server': SharepointInstance
-        }
-
     def __str__(self):
         """Representation string consisting of all instances of the agent of a client.
 
@@ -340,7 +298,7 @@ class Instances(object):
                 else:
                     raise SDKException('Response', '102')
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -393,24 +351,8 @@ class Instances(object):
         if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_instance(instance_name):
-                if agent_name in self._instances_dict:
-                    if isinstance(self._instances_dict[agent_name], list):
-                        if instance_name == "vminstance":
-                            instance = self._instances_dict[agent_name][-1]
-                        else:
-                            instance = self._instances_dict[agent_name][0]
-                    else:
-                        instance = self._instances_dict[agent_name]
-                    return instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
-                else:
-                    return Instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
             raise SDKException(
                 'Instance', '102', 'No instance exists with name: "{0}"'.format(instance_name)
@@ -576,11 +518,7 @@ class Instances(object):
                 else:
                     if 'entity' in response.json()['response']:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()['response']['entity'].get('instanceName'),
-                            response.json()['response']['entity'].get('instanceId')
-                        )
+                        return self.get(response.json()['response']['entity'].get('instanceName'))
                     else:
                         raise SDKException(
                             'Instance',
@@ -766,10 +704,7 @@ class Instances(object):
                     instance_id = response.json(
                     )['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
-
+                    return self.get(instance_name)
             else:
                 raise SDKException('Response', '102')
         else:
@@ -817,7 +752,7 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'Instance "{0}" already exists.')
 
-        storage_policy = db2_options.get('storage_policy')
+        storage_policy = db2_options.get('storage_policy',db2_options.get('data_storage_policy'))
 
         if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
@@ -885,11 +820,7 @@ class Instances(object):
                 else:
                     if 'entity' in response.json()['response']:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()['response']['entity'].get('instanceName'),
-                            response.json()['response']['entity'].get('instanceId')
-                        )
+                        return self.get(response.json()['response']['entity'].get('instanceName'))
                     else:
                         raise SDKException('Instance', '102', 'Unable to get instance name and id'
                                            )
@@ -1174,9 +1105,7 @@ class Instances(object):
                     instance_name = response.json()['response']['entity']['instanceName']
                     instance_id = response.json()['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
+                    return self.get(instance_name)
 
             else:
                 raise SDKException('Response', '102')
@@ -1721,6 +1650,64 @@ class Instances(object):
 
 class Instance(object):
     """Class for performing instance operations for a specific instance."""
+
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
+        from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
+        from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
+        from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _instances_dict = {
+            'virtual server': [VirtualServerInstance, VMInstance],
+            'big data apps': BigDataAppsInstance,
+            'cloud apps': CloudAppsInstance,
+            'sql server': SQLServerInstance,
+            'sap hana': SAPHANAInstance,
+            'oracle': OracleInstance,
+            'oracle rac': OracleInstance,
+            'sybase': SybaseInstance,
+            'sap for oracle': SAPOracleInstance,
+            'mysql': MYSQLInstance,
+            'notes database': LNDBInstance,
+            'notes document': LNDOCInstance,
+            'domino mailbox archiver': LNDMInstance,
+            'postgresql': PostgreSQLInstance,
+            'informix': InformixInstance,
+            'db2': DB2Instance,
+            'azure ad': AzureAdInstance,
+            'sharepoint server': SharepointInstance
+        }
+        agent_name = agent_object.agent_name
+
+        if agent_name in _instances_dict:
+            if isinstance(_instances_dict[agent_name], list):
+                if instance_name == "vminstance":
+                    _class = _instances_dict[agent_name][-1]
+                else:
+                    _class = _instances_dict[agent_name][0]
+            else:
+                _class = _instances_dict[agent_name]
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, agent_object, instance_name, instance_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, agent_object, instance_name, instance_id=None):
         """Initialise the instance object.
@@ -2810,6 +2797,7 @@ class Instance(object):
             "preserveLevel": value.get("preserve_level", 1),
             "restoreToExchange": False,
             "stripLevel": 0,
+            "skipErrorsAndContinue": value.get("skipErrorsAndContinue", False),
             "restoreACLs": value.get("restore_ACL", value.get("restore_data_and_acl", True)),
             "stripLevelType": value.get("striplevel_type", 0),
             "allVersion": value.get("all_versions", False),
@@ -2817,6 +2805,41 @@ class Instance(object):
             "includeAgedData": value.get("include_aged_data", False),
             "validateOnly": value.get("validate_only", False)
         }
+
+        if value.get('advanced_options'):
+            if value['advanced_options'].get("iSeriesObject"):
+                ibmi_value = value['advanced_options']["iSeriesObject"]
+                ibmi_opts = {}
+                if ibmi_value.get("restorePrivateAuthority"):
+                    ibmi_opts.update({'restorePrivateAuthority': ibmi_value.get('restorePrivateAuthority')})
+                if ibmi_value.get("restoreSpooledFileData"):
+                    ibmi_opts.update({'restoreSpooledFileData': ibmi_value.get('restoreSpooledFileData')})
+                if ibmi_value.get("iseriesDifferentObjectType"):
+                    if ibmi_value.get("iseriesDifferentObjectType") == "None":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "0"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "*ALL":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "1"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "*COMPATIBLE":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "2"})
+                    if ibmi_value.get("iseriesDifferentObjectType") == "OTHER":
+                        ibmi_opts.update({'iseriesDifferentObjectType': "3"})
+                        if ibmi_value.get("autl"):
+                            ibmi_opts.update({'autl': ibmi_value.get('autl')})
+                        if ibmi_value.get("fileLevel"):
+                            ibmi_opts.update({'fileLevel': ibmi_value.get('fileLevel')})
+                        if ibmi_value.get("owner"):
+                            ibmi_opts.update({'owner': ibmi_value.get('owner')})
+                        if ibmi_value.get("pgp"):
+                            ibmi_opts.update({'pgp': ibmi_value.get('pgp')})
+                if ibmi_value.get("forceObjectConversionSelction"):
+                    ibmi_opts.update({'forceObjectConversionSelction': ibmi_value.get(
+                        'forceObjectConversionSelction')})
+                if ibmi_value.get("securityDataParameter"):
+                    ibmi_opts.update({'securityDataParameter': ibmi_value.get('securityDataParameter')})
+                if ibmi_value.get("deferId"):
+                    ibmi_opts.update({'deferId': ibmi_value.get('deferId')})
+
+                self._commonoption_restore_json['iSeriesObject'] = ibmi_opts
 
         if value.get("instant_clone_options", {}).get("post_clone_script", None):
             self._commonoption_restore_json['prePostCloneOption'] = {

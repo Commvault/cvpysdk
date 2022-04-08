@@ -681,7 +681,7 @@ class FSBackupset(Backupset):
         vm_option['oneTouchResponse']['clients'][0]['client'][
             'clientName'] = restore_options.get('ClientName', None)
 
-        if instance_name == 'vmware' or 'hyper-v':
+        if instance_name == 'vmware' or instance_name == 'hyper-v':
 
             vm_option['isoPath'] = restore_options.get('IsoPath')
 
@@ -736,8 +736,7 @@ class FSBackupset(Backupset):
 
                 vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VirtualizationClient')
 
-
-        if instance_name == 'azure resource manager' or 'azure stack':
+        if 'azure' in instance_name:
 
             az_advanced_ops_json = self._azure_advancedopts_json()
 

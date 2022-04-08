@@ -203,6 +203,8 @@ Attributes
     **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
 
     ***is_active***                             --  Returns/Sets the 'Active' Property of the Copy
+
+    ***network_throttle_bandwidth***            --  Returns/Sets the value of Network Throttle Bandwidth
 """
 
 from __future__ import absolute_import
@@ -4037,6 +4039,33 @@ class StoragePolicyCopy(object):
 
         self._copy_flags['inlineAuxCopy'] = int(value)
 
+        self._set_copy_properties()
+
+    @property
+    def network_throttle_bandwidth(self):
+        """Treats the Network Throttle Bandwidth as a read-only attribute.
+
+            Returns:
+                (int) : Value of Network Throttle Bandwidth set in MBPH
+        """
+        return int(self._copy_properties.get('throttleNetworkBandWidthMBHR'))
+
+    @network_throttle_bandwidth.setter
+    def network_throttle_bandwidth(self, value):
+        """ Sets the Network Throttle Bandwidth on storage policy copy as the value provided as input.
+            Args:
+                value    (int):  value of Network Throttle Bandwidth in MBPH
+
+            Raises:
+                SDKException:
+                    if failed to update Network Throttle Bandwidth on storage policy copy
+
+                    if the type of value input is not correct
+        """
+        if not isinstance(value, int):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties['throttleNetworkBandWidthMBHR'] = value
         self._set_copy_properties()
 
     def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):

@@ -191,30 +191,6 @@ class Backupsets(object):
         self._BACKUPSETS = self._services['GET_ALL_BACKUPSETS'] % (self._client_object.client_id)
         if self._agent_object:
             self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
-        from .backupsets.fsbackupset import FSBackupset
-        from .backupsets.nasbackupset import NASBackupset
-        from .backupsets.hanabackupset import HANABackupset
-        from .backupsets.cabackupset import CloudAppsBackupset
-        from .backupsets.postgresbackupset import PostgresBackupset
-        from .backupsets.adbackupset import ADBackupset
-        from .backupsets.db2backupset import DB2Backupset
-        from .backupsets.vsbackupset import VSBackupset
-        from .backupsets.aadbackupset import AzureAdBackupset
-        from .backupsets.sharepointbackupset import SharepointBackupset
-
-        self._backupsets_dict = {
-            'file system': FSBackupset,
-            'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
-            'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
-            'sap hana': HANABackupset,
-            'cloud apps': CloudAppsBackupset,
-            'postgresql': PostgresBackupset,
-            "active directory" : ADBackupset,
-            'db2': DB2Backupset,
-            'virtual server': VSBackupset,
-            "azure ad" : AzureAdBackupset,
-            'sharepoint server': SharepointBackupset
-        }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
@@ -350,7 +326,7 @@ class Backupsets(object):
 
                 return return_dict
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -941,19 +917,11 @@ request_json['backupSetInfo'].update({
                     self._instance_object = self._agent_object.instances.get(
                         self._backupsets[backupset_name]['instance']
                     )
-
-                if self._agent_object.agent_name in self._backupsets_dict.keys():
-                    return self._backupsets_dict[self._agent_object.agent_name](
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name]["id"]
-                    )
-                else:
-                    return Backupset(
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name]["id"]
-                    )
+                return Backupset(
+                    self._instance_object,
+                    backupset_name,
+                    self._backupsets[backupset_name]["id"]
+                )
 
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
@@ -1038,6 +1006,41 @@ request_json['backupSetInfo'].update({
 
 class Backupset(object):
     """Class for performing backupset operations for a specific backupset."""
+
+    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+        """Class composition for CV backupsets"""
+        from .backupsets.fsbackupset import FSBackupset
+        from .backupsets.nasbackupset import NASBackupset
+        from .backupsets.hanabackupset import HANABackupset
+        from .backupsets.cabackupset import CloudAppsBackupset
+        from .backupsets.postgresbackupset import PostgresBackupset
+        from .backupsets.adbackupset import ADBackupset
+        from .backupsets.db2backupset import DB2Backupset
+        from .backupsets.vsbackupset import VSBackupset
+        from .backupsets.aadbackupset import AzureAdBackupset
+        from .backupsets.sharepointbackupset import SharepointBackupset
+
+        _backupsets_dict = {
+            'file system': FSBackupset,
+            'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
+            'sap hana': HANABackupset,
+            'cloud apps': CloudAppsBackupset,
+            'postgresql': PostgresBackupset,
+            "active directory": ADBackupset,
+            'db2': DB2Backupset,
+            'virtual server': VSBackupset,
+            "azure ad": AzureAdBackupset,
+            'sharepoint server': SharepointBackupset
+        }
+
+        if instance_object._agent_object.agent_name in _backupsets_dict.keys():
+            _class = _backupsets_dict.get(instance_object._agent_object.agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, instance_object, backupset_name, backupset_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, instance_object, backupset_name, backupset_id=None):
         """Initialise the backupset object.
@@ -1462,7 +1465,7 @@ class Backupset(object):
                 "toTime": self._get_epoch_time(options['to_time'])
             },
             "advOptions": {
-                "copyPrecedence": options['copy_precedence']
+                "copyPrecedence": int(options['copy_precedence'])
             },
             "ma": {
                 "clientName": options['media_agent']

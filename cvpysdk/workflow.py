@@ -691,11 +691,13 @@ class WorkFlows(object):
         """Refresh the list of workflow activities deployed on the Commcell."""
         self._activities = self._get_activities()
 
-    def get_interaction_properties(self, interaction_id):
+    def get_interaction_properties(self, interaction_id, workflow_job_id=None):
         """Returns a workflow interaction properties to the user
 
             Args:
                 interaction_id (int)  --  Workflow interaction id
+
+                workflow_job_id (int) --  Workflow job id
 
             Returns:
                 dictionary - Workflow interaction id properties
@@ -705,6 +707,16 @@ class WorkFlows(object):
                     - if response is empty
 
         """
+        if not interaction_id:
+            if not workflow_job_id:
+                raise SDKException('Workflow', '102', "Please provide either interaction id or workflow job id")
+            all_interactions = self.all_interactions()
+            for interaction in all_interactions:
+                if int(interaction['jobId']) == workflow_job_id:
+                    interaction_id = interaction['interactionId']
+                    break
+            if not interaction_id:
+                raise SDKException('Workflow', '102', "Failed to find workflow job")
         flag, response = self._cvpysdk_object.make_request('GET', self._INTERACTION % interaction_id)
 
         if flag:

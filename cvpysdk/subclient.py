@@ -245,87 +245,6 @@ class Subclients(object):
 
         self._default_subclient = None
 
-        from .subclients.fssubclient import FileSystemSubclient
-        from .subclients.bigdataappssubclient import BigDataAppsSubclient
-        from .subclients.vssubclient import VirtualServerSubclient
-        from .subclients.casubclient import CloudAppsSubclient
-        from .subclients.sqlsubclient import SQLServerSubclient
-        from .subclients.nassubclient import NASSubclient
-        from .subclients.hanasubclient import SAPHANASubclient
-        from .subclients.oraclesubclient import OracleSubclient
-        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
-        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
-        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
-        from .subclients.sybasesubclient import SybaseSubclient
-        from .subclients.saporaclesubclient import SAPOracleSubclient
-        from .subclients.exchsubclient import ExchangeSubclient
-        from .subclients.mysqlsubclient import MYSQLSubclient
-        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
-        from .subclients.postgressubclient import PostgresSubclient
-        from .subclients.informixsubclient import InformixSubclient
-        from .subclients.adsubclient import ADSubclient
-        from .subclients.sharepointsubclient import SharepointSubclient
-        from .subclients.sharepointsubclient import SharepointV1Subclient
-        from .subclients.vminstancesubclient import VMInstanceSubclient
-        from .subclients.db2subclient import DB2Subclient
-        from .subclients.casesubclient import CaseSubclient
-        from .subclients.aadsubclient import AzureAdSubclient
-
-        globals()['BigDataAppsSubclient'] = BigDataAppsSubclient
-        globals()['FileSystemSubclient'] = FileSystemSubclient
-        globals()['VirtualServerSubclient'] = VirtualServerSubclient
-        globals()['CloudAppsSubclient'] = CloudAppsSubclient
-        globals()['SQLServerSubclient'] = SQLServerSubclient
-        globals()['NASSubclient'] = NASSubclient
-        globals()['SAPHANASubclient'] = SAPHANASubclient
-        globals()['OracleSubclient'] = OracleSubclient
-        globals()['LNDbSubclient'] = LNDbSubclient
-        globals()['LNDocSubclient'] = LNDocSubclient
-        globals()['LNDmSubclient'] = LNDmSubclient
-        globals()['SybaseSubclient'] = SybaseSubclient
-        globals()['SAPOracleSubclient'] = SAPOracleSubclient
-        globals()['ExchangeSubclient'] = ExchangeSubclient
-        globals()['MYSQLSubclient'] = MYSQLSubclient
-        globals()['ExchangeDatabaseSubclient'] = ExchangeDatabaseSubclient
-        globals()['PostgresSubclient'] = PostgresSubclient
-        globals()['DB2Subclient'] = DB2Subclient
-        globals()['InformixSubclient'] = InformixSubclient
-        globals()['ADSubclient'] = ADSubclient
-        globals()['SharepointSubclient'] = SharepointSubclient
-        globals()['SharepointV1Subclient'] = SharepointV1Subclient
-        globals()['VMInstanceSubclient'] = VMInstanceSubclient
-        globals()['CaseSubclient'] = CaseSubclient
-        globals()['AzureADSubclient'] = AzureAdSubclient
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._subclients_dict = {
-            'big data apps': BigDataAppsSubclient,
-            'file system': FileSystemSubclient,
-            'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
-            'cloud apps': CloudAppsSubclient,
-            'sql server': SQLServerSubclient,
-            'nas': NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
-            'sap hana': SAPHANASubclient,
-            'oracle': OracleSubclient,
-            'oracle rac': OracleSubclient,
-            'notes database': LNDbSubclient,
-            'notes document': LNDocSubclient,
-            'domino mailbox archiver': LNDmSubclient,
-            'sybase': SybaseSubclient,
-            'sap for oracle': SAPOracleSubclient,
-            "exchange mailbox": [ExchangeSubclient, CaseSubclient],
-            'mysql': MYSQLSubclient,
-            'exchange database': ExchangeDatabaseSubclient,
-            'postgresql': PostgresSubclient,
-            'db2': DB2Subclient,
-            'informix': InformixSubclient,
-            'active directory': ADSubclient,
-            'sharepoint server': [SharepointV1Subclient,SharepointSubclient],
-            "azure ad" : AzureAdSubclient
-        }
-
         # sql server subclient type dict
         self._sqlsubclient_type_dict = {
             'DATABASE': 1,
@@ -614,32 +533,13 @@ class Subclients(object):
                         'Failed to create subclient\nError: "{0}"'.format(error_string)
                     )
                 else:
-                    subclient_id = response.json()['response']['entity']['subclientId']
-
                     # initialize the subclients again so the subclient object has all the subclients
                     self.refresh()
 
-                    agent_name = self._agent_object.agent_name
+                    subclient_name = request_json['subClientProperties']['subClientEntity']['subclientName']
 
-                    if isinstance(self._subclients_dict[agent_name], list):
-                        if self._instance_object.instance_name == "vminstance":
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                            # client type 36 is case manager client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                            # agent id 78 is sharepoint client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        else:
-                            subclient = self._subclients_dict[agent_name][0]
-                    else:
-                        subclient = self._subclients_dict[agent_name]
+                    return self.get(subclient_name)
 
-                    return subclient(
-                        self._backupset_object,
-                        request_json['subClientProperties']['subClientEntity']['subclientName'],
-                        subclient_id
-                    )
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1042,18 +942,47 @@ class Subclients(object):
 
                 subclient_content   (list)  --  Content to be added to the subclient
 
-                    Example:
-                        [
-                            {
-                            'type' : VSAObjects.APPLICATION,
-                            'name' : '',
-                            },
-                            {
-                            'type' : VSAObjects.PROJECT,
-                            'name' : '',
-                            },
+                    Example 1:
+                        [{
+                            'equal_value': True,
+                            'allOrAnyChildren': True,
+                            'id': '',
+                            'path': '',
+                            'display_name': 'sample1',
+                            'type': VSAObjects.VMName
+                        }]
+                    Example 2:
+                         [{
+                        'allOrAnyChildren': False,
+                        'content': [{
+                            'equal_value': True,
+                            'allOrAnyChildren': True,
+                            'display_name': 'sample1',
+                            'type': VSAObjects.VMName
+                        }, {
+                            'equal_value': True,
+                            'allOrAnyChildren': True,
+                            'display_name': 'sample2',
+                            'type': VSAObjects.VMName
+                        }
                         ]
-
+                        }, {
+                        'allOrAnyChildren': True,
+                        'content': [{
+                            'equal_value': True,
+                            'allOrAnyChildren': True,
+                            'display_name': 'sample3',
+                            'type': VSAObjects.RESOURCE_POOL
+                        }, {
+                            'equal_value': True,
+                            'allOrAnyChildren': True,
+                            'id': 'sample4',
+                            'display_name': 'sample4',
+                            'type': VSAObjects.SERVER
+                            }
+                            ]
+                        }
+                        ]
                         **Note** Use VSAObjects Enum present in constants.py to pass value to type
 
                 kwargs      (dict)  -- dict of keyword arguments as follows
@@ -1107,14 +1036,47 @@ class Subclients(object):
                 )
 
         content = []
+
+        def set_content(item_content):
+            """
+            create content dictionary
+            Args:
+                item_content            (dict):     Dict of content details
+
+                Example:
+                    {
+                        'equal_value': True,
+                        'allOrAnyChildren': True,
+                        'display_name': 'sample1',
+                        'type':  < VSAObjects.VMName: 10 >
+                    }
+
+            Returns:
+
+            """
+            return{
+                "equalsOrNotEquals": item_content.get('equal_value', True),
+                "name": item_content.get('id', ''),
+                "displayName": item_content.get('display_name', ''),
+                "path": item_content.get('path', ''),
+                "allOrAnyChildren": item.get('allOrAnyChildren', True),
+                "type": item_content['type'] if isinstance(item_content['type'], int) else item_content['type'].value
+            }
         for item in subclient_content:
-            content.append({
-                    "equalsOrNotEquals": True,
-                    "name": item['name'],
-                    "displayName": item['name'],
-                    "allOrAnyChildren": True,
-                    "type": item['type'].value
-                })
+            _temp_list = []
+            _temp_dict = {}
+            allOrAnyChildren = item.get('allOrAnyChildren', None)
+            if 'content' in item:
+                nested_content = item['content']
+                for each_condition in nested_content:
+                    temp_dict = set_content(each_condition)
+                    _temp_list.append(temp_dict)
+                _temp_dict['allOrAnyChildren'] = allOrAnyChildren
+                _temp_dict['children'] = _temp_list
+                content.append(_temp_dict)
+            else:
+                temp_dict = set_content(item)
+                content.append(temp_dict)
 
         request_json = {
             "subClientProperties": {
@@ -1278,28 +1240,13 @@ class Subclients(object):
         else:
             subclient_name = subclient_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_subclient(subclient_name):
-                if isinstance(self._subclients_dict[agent_name], list):
-                    if self._instance_object.instance_name == "vminstance":
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                        # client type 36 is case manager client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                        # agent id 78 is sharepoint client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    else:
-                        subclient = self._subclients_dict[agent_name][0]
-                else:
-                    subclient = self._subclients_dict[agent_name]
 
                 if self._backupset_object is None:
                     self._backupset_object = self._instance_object.backupsets.get(
                         self._subclients[subclient_name]['backupset']
                     )
-                return subclient(
+                return Subclient(
                     self._backupset_object, subclient_name, self._subclients[subclient_name]['id']
                 )
 
@@ -1389,6 +1336,87 @@ class Subclients(object):
 
 class Subclient(object):
     """Base class consisting of all the common properties and operations for a Subclient"""
+
+    def __new__(cls, backupset_object, subclient_name, subclient_id=None):
+        """Class composition for CV subclients"""
+        from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.bigdataappssubclient import BigDataAppsSubclient
+        from .subclients.vssubclient import VirtualServerSubclient
+        from .subclients.casubclient import CloudAppsSubclient
+        from .subclients.sqlsubclient import SQLServerSubclient
+        from .subclients.nassubclient import NASSubclient
+        from .subclients.hanasubclient import SAPHANASubclient
+        from .subclients.oraclesubclient import OracleSubclient
+        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
+        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
+        from .subclients.sybasesubclient import SybaseSubclient
+        from .subclients.saporaclesubclient import SAPOracleSubclient
+        from .subclients.exchsubclient import ExchangeSubclient
+        from .subclients.mysqlsubclient import MYSQLSubclient
+        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
+        from .subclients.postgressubclient import PostgresSubclient
+        from .subclients.informixsubclient import InformixSubclient
+        from .subclients.adsubclient import ADSubclient
+        from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.sharepointsubclient import SharepointV1Subclient
+        from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.db2subclient import DB2Subclient
+        from .subclients.casesubclient import CaseSubclient
+        from .subclients.aadsubclient import AzureAdSubclient
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _subclients_dict = {
+            'big data apps': BigDataAppsSubclient,
+            'file system': FileSystemSubclient,
+            'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
+            'cloud apps': CloudAppsSubclient,
+            'sql server': SQLServerSubclient,
+            'nas': NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            'sap hana': SAPHANASubclient,
+            'oracle': OracleSubclient,
+            'oracle rac': OracleSubclient,
+            'notes database': LNDbSubclient,
+            'notes document': LNDocSubclient,
+            'domino mailbox archiver': LNDmSubclient,
+            'sybase': SybaseSubclient,
+            'sap for oracle': SAPOracleSubclient,
+            "exchange mailbox": [ExchangeSubclient, CaseSubclient],
+            'mysql': MYSQLSubclient,
+            'exchange database': ExchangeDatabaseSubclient,
+            'postgresql': PostgresSubclient,
+            'db2': DB2Subclient,
+            'informix': InformixSubclient,
+            'active directory': ADSubclient,
+            'sharepoint server': [SharepointV1Subclient,SharepointSubclient],
+            "azure ad": AzureAdSubclient
+        }
+
+        agent_object = backupset_object._agent_object
+        instance_object = backupset_object._instance_object
+        client_object = agent_object._client_object
+
+        agent_name = agent_object.agent_name.lower()
+
+        if isinstance(_subclients_dict.get(agent_name), list):
+            if instance_object.instance_name == "vminstance":
+                _class = _subclients_dict[agent_name][-1]
+            elif client_object.client_type and int(client_object.client_type) == 36:
+                # client type 36 is case manager client
+                _class = _subclients_dict[agent_name][-1]
+            elif int(agent_object.agent_id) == 78 and client_object.client_type:
+                # agent id 78 is sharepoint client
+                _class = _subclients_dict[agent_name][-1]
+            else:
+                _class = _subclients_dict[agent_name][0]
+        else:
+            _class = _subclients_dict.get(agent_name, cls)
+
+        if _class.__new__ == cls.__new__:
+            return object.__new__(_class)
+        return _class.__new__(_class, backupset_object, subclient_name, subclient_id)
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         """Initialise the Subclient object.
@@ -1872,11 +1900,9 @@ c
 
     @name.setter
     def name(self, name):
-        """
-        Sets the name for the subclient
+        """Sets the name for the subclient
         Args:
             name    (str)   -- name for the subclient
-
         """
         self.display_name = name
 

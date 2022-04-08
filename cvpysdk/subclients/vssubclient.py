@@ -118,11 +118,14 @@ VirtualServerSubclient:
     full_vm_restore_in_place()              -- restores the VM specified by the
                                                user to the same location
 
+    _full_vm_restore_update_json_for_v2     -- modifies the restore json as per v2
+                                                subclient details and returns it
+
     backup()                               --  run a backup job for the subclient
 
     _advanced_backup_options()              --  sets the advanced backup options
 
-    update_properties()                       --  child method to add vsa specific properties to update
+    update_properties()                       --  child method to add vsa specific properties to update properties
 
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
@@ -397,36 +400,34 @@ class VirtualServerSubclient(Subclient):
         """
         content = []
         try:
-            for entity in subclient_content:
-                for item in entity:
-                    virtual_server_dict = {}
-                    virtual_server_dict['allOrAnyChildren'] = True
-                    temp = {
-                        'allOrAnyChildren': item.get('allOrAnyChildren', True),
-                        'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                        'name': item.get('name',""),
-                        'displayName': item.get('display_name',''),
-                        'path': '',
-                        'type': item['type'].value
-                    }
-                    if item['type'] == VSAObjects.VMNotes:
-                        temp['value'] = item['display_name']
-                        temp['displayName'] = item['display_name']
-                        temp['name'] = "Notes"
-                    if (item['type'] ==
-                            VSAObjects.VMPowerState and
-                            item['state'] == 'true'):
-                        temp['name'] = "PoweredState"
-                        temp['value'] = 1
-                        temp['displayName'] = "Powered On"
-                    if (item['type'] ==
-                            VSAObjects.VMPowerState and
-                            item['state'] == 'false'):
-                        temp['name'] = "PoweredState"
-                        temp['value'] = 0
-                        temp['displayName'] = "Powered Off"
-                    virtual_server_dict.update(temp)
-                    content.append(virtual_server_dict)
+            for item in subclient_content:
+                virtual_server_dict = {'allOrAnyChildren': True}
+                temp = {
+                    'allOrAnyChildren': item.get('allOrAnyChildren', True),
+                    'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
+                    'name': item.get('name',""),
+                    'displayName': item.get('display_name', ''),
+                    'path': '',
+                    'type': item['type'].value
+                }
+                if item['type'] == VSAObjects.VMNotes:
+                    temp['value'] = item['display_name']
+                    temp['displayName'] = item['display_name']
+                    temp['name'] = "Notes"
+                if (item['type'] ==
+                        VSAObjects.VMPowerState and
+                        item['state'] == 'true'):
+                    temp['name'] = "PoweredState"
+                    temp['value'] = 1
+                    temp['displayName'] = "Powered On"
+                if (item['type'] ==
+                        VSAObjects.VMPowerState and
+                        item['state'] == 'false'):
+                    temp['name'] = "PoweredState"
+                    temp['value'] = 0
+                    temp['displayName'] = "Powered Off"
+                virtual_server_dict.update(temp)
+                content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
@@ -800,14 +801,13 @@ class VirtualServerSubclient(Subclient):
         nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get('copy_precedence', 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for network_card_dict in vm_nics_list:
             if self._instance_object.instance_name == 'google cloud platform':
                 current_project = network_card_dict.get('subnetId').split('/')[6]
-                network_card_dict['subnetId'] = network_card_dict.get('subnetId').replace(
-                    current_project, value.get('project_id'))
-                network_card_dict['label'] = network_card_dict.get('sourceNetwork').replace(
-                    current_project, value.get('project_id'))
+                if value.get('project_id') is not None:
+                    network_card_dict['subnetId'] = value.get('subnetwork_nic')
+                    network_card_dict['sourceNetwork'] = value.get('networks_nic')
+
             _destnetwork = value.get("destination_network",
                                      value.get('network',
                                                network_card_dict['name']))
@@ -816,8 +816,8 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
-                "name": network_card_dict[
-                    'label'] if self._instance_object.instance_name == 'google cloud platform' else '',
+                "name": network_card_dict.get('sourceNetwork', "")+_destnetwork if self._instance_object.instance_name
+                == 'google cloud platform' else '' ,
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
@@ -1600,7 +1600,8 @@ class VirtualServerSubclient(Subclient):
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
             if _browse_folder_name == _restore_folder_name:
-                source_item = r'\\'.join([_source_path, _restore_folder_name])
+                source_item = '\\'.join([_source_path, _restore_folder_name])
+                source_item = '\\' + source_item
                 break
 
         if source_item is None:
@@ -1637,6 +1638,7 @@ class VirtualServerSubclient(Subclient):
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
+        _verify_path = options.get('verify_path', True)
 
         # check if inputs are correct
         if not(isinstance(destination_path, basestring) and
@@ -1668,17 +1670,35 @@ class VirtualServerSubclient(Subclient):
 
         _file_restore_option["paths"] = []
         for _each_folder in _folder_to_restore_list:
-            _file_restore_option["paths"].append(
-                self._check_folder_in_browse(_vm_ids[vm_name],
-                                             "%s" % _each_folder,
-                                             from_date,
-                                             to_date,
-                                             copy_precedence,
-                                             media_agent=browse_ma))
+            # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+            # The modified path does not work for windows VM when file indexing is enabled
+            # Set `verify_path` to False to skip this verification and use the restore path as is
+
+            if _verify_path:
+                _restore_item_path = self._check_folder_in_browse(
+                    _vm_ids[vm_name],
+                    "%s" % _each_folder,
+                    from_date,
+                    to_date,
+                    copy_precedence,
+                    media_agent=browse_ma
+                )
+            else:
+                # Converting native path to VM path
+                # C:\folder1 => \<vm_guid>\C:\folder1
+                # /folder1/folder2 => \<vm_guid>\folder1\folder2
+
+                _item_path = _each_folder.replace('/', '\\')
+                _item_path = _item_path[1:] if _item_path[0] == '\\' else _item_path
+                _restore_item_path = '\\'.join(['', _vm_ids[vm_name], _item_path])
+
+            _file_restore_option["paths"].append(_restore_item_path)
 
         # set the browse options
         _file_restore_option["disk_browse"] = False
         _file_restore_option["file_browse"] = True
+        _file_restore_option["from_time"] = from_date
+        _file_restore_option["to_time"] = to_date
 
         # set the common file level restore options
         _file_restore_option["striplevel_type"] = "PRESERVE_LEVEL"
@@ -2502,8 +2522,11 @@ class VirtualServerSubclient(Subclient):
                         _each_vm_to_restore]
                 if ("restore_new_name" in restore_option and
                         restore_option["restore_new_name"] is not None):
-                    restore_option["new_name"] = restore_option[
-                                                     "restore_new_name"] + _each_vm_to_restore
+                    if len(restore_option['vm_to_restore']) == 1:
+                        restore_option["new_name"] = restore_option["restore_new_name"]
+                    else:
+                        restore_option["new_name"] = restore_option[
+                                                         "restore_new_name"] + _each_vm_to_restore
                 else:
                     restore_option["new_name"] = "del" + _each_vm_to_restore
             else:
@@ -2520,8 +2543,51 @@ class VirtualServerSubclient(Subclient):
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "volumeRstOption"] = self._json_restore_volumeRstOption(
             restore_option)
+        if restore_option.get('v2_details') and len(restore_option.get('vm_to_restore', '')) <= 1:
+            request_json = self._full_vm_restore_update_json_for_v2(request_json, restore_option.get('v2_details'))
 
         return request_json
+
+    @staticmethod
+    def _full_vm_restore_update_json_for_v2(json_to_be_edited, v2_details):
+        """
+        Update the final request JSON to match wth the v2 vm
+        Args:
+            json_to_be_edited               (dict): Final restore JSON for the restore without v2 subclient details
+
+            v2_details                      (dict): v2 vm subclient details
+                                   eg: {
+                                            'clientName': 'vm_client1',
+                                            'instanceName': 'VMInstance',
+                                            'displayName': 'vm_client1',
+                                            'backupsetId': 12,
+                                            'instanceId': 2,
+                                            'subclientId': 123,
+                                            'clientId': 1234,
+                                            'appName': 'Virtual Server',
+                                            'backupsetName': 'defaultBackupSet',
+                                            'applicationId': 106,
+                                            'subclientName': 'default'
+                                        }
+
+        Returns:
+            json_to_be_edited        -complete json for performing Full VM Restore
+                                        options with v2 subclient details
+
+        """
+        json_to_be_edited['taskInfo']['associations'][0]['clientName'] = v2_details.get('clientName')
+        json_to_be_edited['taskInfo']['associations'][0]['clientId'] = v2_details.get('clientId')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceName'] = v2_details.get('instanceName')
+        json_to_be_edited['taskInfo']['associations'][0]['instanceId'] = v2_details.get('instanceId')
+        json_to_be_edited['taskInfo']['associations'][0]['displayName'] = v2_details.get('displayName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetName'] = v2_details.get('backupsetName')
+        json_to_be_edited['taskInfo']['associations'][0]['backupsetId'] = v2_details.get('backupsetId')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientName'] = v2_details.get('subclientName')
+        json_to_be_edited['taskInfo']['associations'][0]['subclientId'] = v2_details.get('subclientId')
+        json_to_be_edited['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption']['backupset'][
+            'clientName'] = v2_details.get('clientName')
+        del json_to_be_edited['taskInfo']['associations'][0]['subclientGUID']
+        return json_to_be_edited
 
     def backup(self,
                backup_level="Incremental",
