@@ -228,6 +228,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_JDBC_DRIVERS': '{0}dcube/GetJDBCDrivers/%s',
     'DELETE_DATASOURCE_CONTENTS': '{0}dcube/deletedata/%s?softdelete=true',
     'DELETE_DATASOURCE': '{0}dcube/deleteDataSource/%s',
+    'PRUNE_DATASOURCE': '{0}indexing/uns/deletecollection',
     'CREATE_DATASOURCE': '{0}dcube/createDataSource',
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
     'START_JOB_DATASOURCE': '{0}dcube/startjob/%s',
@@ -515,7 +516,11 @@ SERVICES_DICT_TEMPLATE = {
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
     'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
-    'EDIT_SAML': '{0}/v4/SAML/%s'
+    'EDIT_SAML': '{0}/v4/SAML/%s',
+
+    'EDIT_REGION': '{0}/entity/%s/%s/region',
+    'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
+    'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s'
 }
 
 

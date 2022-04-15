@@ -67,5 +67,8 @@ SEDS_TYPE_DICT = {
     34: 'onedriveindex',
     35: 'multinodefederated',
     36: 'fsindex',
-    37: 'dynamic365'
+    37: 'dynamic365',
+    38:	'idxlogs',
+    39: 'teamsindex',
+    40:	'cloudstorage'
 }

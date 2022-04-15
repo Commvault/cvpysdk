@@ -188,7 +188,7 @@ EdiscoveryDataSource Attributes:
 
     **data_source_type**        --  returns the type of data source
 
-    **data_source_name**        --  returns the name of data source
+    **data_source_name**        --  returns the display name of data source
 
     **plan_id**                 --  returns the associated DC plan id
 
@@ -199,6 +199,11 @@ EdiscoveryDataSource Attributes:
     **total_documents**         --  returns the total document count on this data source
 
     **sensitive_files_count**   --  returns the total sensitive files count
+
+    **name**                    --  returns the actual name for this data source
+
+    **index_server_node_client_id** --  returns the associated Index server node client id on which the collection
+                                        exists
 
 """
 import copy
@@ -1234,7 +1239,7 @@ class EdiscoveryClientOperations():
                         raise SDKException(
                             'EdiscoveryClients',
                             '102', error_message)
-                    return
+            else:
                 raise SDKException('EdiscoveryClients', '103')
             if not wait_for_job:
                 return
@@ -1510,7 +1515,8 @@ class EdiscoveryClientOperations():
                     'EdiscoveryClients',
                     '102',
                     f"Something went wrong while doing document task operation - {response.json()['errorMessage']}")
-            raise SDKException('EdiscoveryClients', '102', f"Document task failed")
+            else:
+                return
         self._response_not_success(response)
 
     def task_workflow_operation(self):
@@ -2350,6 +2356,7 @@ class EdiscoveryDatasource():
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._data_source_name = None
+        self._data_source_actual_name = None
         self._data_source_id = None
         self._data_source_type = None
         self._data_source = None
@@ -2418,6 +2425,7 @@ class EdiscoveryDatasource():
                     self._crawl_type = self._get_property_value(property_name=EdiscoveryConstants.FIELD_CRAWL_TYPE)
                     self._dc_plan_id = self._get_property_value(property_name=EdiscoveryConstants.FIELD_DC_PLAN_ID)
                     self._data_source_name = ds_list[0].get('displayName', 'NA')
+                    self._data_source_actual_name = ds_list[0].get('datasourceName', 'NA')
                 return collection
             raise SDKException('EdiscoveryClients', '110')
         self._response_not_success(response)
@@ -3227,3 +3235,25 @@ class EdiscoveryDatasource():
         count, _, _ = self.search(criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS,
                                   params={"rows": "0"})
         return count
+
+    @property
+    def name(self):
+        """returns the actual name for this data source
+
+            Returns:
+
+                str --  Actual name of the datasource
+
+        """
+        return self._data_source_actual_name
+
+    @property
+    def index_server_node_client_id(self):
+        """returns the associated Index server node client id on which the collection exists
+
+            Returns:
+
+                str --  Index server node client id on which the collection exists
+
+        """
+        return self._collection_client_id

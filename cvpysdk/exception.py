@@ -555,6 +555,10 @@ EXCEPTION_DICT = {
         '102': 'Key Management Server not found',
         '103': 'Key Management Server type is not valid',
         '104': 'Key Management Server type not found',
+    },
+    'Region': {
+        '101': 'Entity type not found.',
+        '102': ''
     }
 }
 

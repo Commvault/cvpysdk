@@ -1935,6 +1935,11 @@ class Plan(object):
         """returns the DC plan related CI properties from Plan"""
         return self._dc_plan_props
 
+    @property
+    def properties(self):
+        """Returns the configured properties for the Plan"""
+        return self._plan_properties
+
     def refresh(self):
         """Refresh the properties of the Plan."""
         self._properties = self._get_plan_properties()

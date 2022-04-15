@@ -56,7 +56,7 @@ class DRJobPhases(Enum):
     POST_VM_FAILOVER_SNAP = 41
     CLONE_VM = 42
     REFRESH_VM = 43
-
+    LIVE_MOUNT = 48
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -103,6 +103,7 @@ class DRJobPhaseToText(Enum):
     POST_VM_FAILOVER_SNAP = "Post VM Failover"
     CLONE_VM = "Clone VM"
     REFRESH_VM = "Refresh VM"
+    LIVE_MOUNT = "Live Mount"
 
 # TODO: Remove after discussing with teams
 DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
@@ -149,7 +150,8 @@ DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
     "40": "Delete DR VM",
     "41": "Post VM Failover",
     "42": "Clone VM",
-    "43": "Refresh VM"
+    "43": "Refresh VM",
+    "48": "Live Mount"
 }
 
 # TODO: Remove after discussing with teams
@@ -197,5 +199,6 @@ DR_ORCHESTRATION_JOB_PHASE_ENUM_TO_CODE = {
     "DELETE_DR_VM": 40,
     "POST_VM_FAILOVER_SNAP": 41,
     "CLONE_VM": 42,
-    "REFRESH_VM": 43
+    "REFRESH_VM": 43,
+    "LIVE_MOUNT": 48
 }

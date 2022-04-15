@@ -59,6 +59,8 @@ IndexServers
 
     refresh()                           --  refresh the index servers associated with commcell
 
+    prune_orphan_datasources()          --  Deletes all the orphan datasources
+
 IndexServers Attributes
 -----------------------
 
@@ -589,6 +591,29 @@ class IndexServers(object):
                         'errorMessage', ''))
             raise SDKException('Response', '102')
         self._response_not_success(response)
+
+    def prune_orphan_datasources(self):
+        """Deletes all the orphan datasources
+            Raises:
+                SDKException:
+                    if failed to prune the orphan datasources
+
+                    If response is empty
+
+                    if response is not success
+        """
+        prune_datasource = self._services['PRUNE_DATASOURCE']
+        request_json = IndexServerConstants.PRUNE_REQUEST_JSON
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', prune_datasource, request_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('IndexServers', '104', 'Failed to prune orphan datasources')
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
 
 class IndexServerOSType(enum.Enum):

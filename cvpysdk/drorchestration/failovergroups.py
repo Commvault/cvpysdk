@@ -417,3 +417,18 @@ class FailoverGroup:
             self._destination_instance = (vm_pair._subclient_object
                                           ._backupset_object._instance_object)
         return self._destination_instance
+
+    @property
+    def is_approval_required(self):
+        """Returns bool:
+            true : if approval set in failover group
+            false: if approval not set in failover group
+        """
+        return self._failover_group_properties.get('approvalRequired')
+
+    @property
+    def user_for_approval(self):
+        """Returns: user name set in failover group"""
+        user_name = (self._failover_group_properties.get('usersForApproval',[{}])[0]
+                     .get('userEntity',{}).get('userName',''))
+        return user_name

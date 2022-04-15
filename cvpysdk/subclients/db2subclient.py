@@ -46,6 +46,10 @@ Db2Subclient:
 
     disable_backupdata()                -- Method to disable backup data option at subclient level
 
+    enable_table_level()                -- Enable Table Level Browse
+
+    enable_acs_backup()                 -- Enable DB2 ACS snap backup
+
 """
 from __future__ import unicode_literals
 from ..subclient import Subclient
@@ -165,6 +169,23 @@ class DB2Subclient(Subclient):
         properties['db2SubclientProp']["db2DeleteLogFilesAfter"] = False
         properties['db2SubclientProp']["db2BackupLogFiles"] = True
         del properties["db2SubclientProp"]["db2BackupType"]
+        self.update_properties(properties_dict=properties)
+
+    def enable_table_level(self):
+        """
+        To enable table level browse
+
+        """
+        properties = self.properties
+        properties['db2SubclientProp']["enableTableBrowse"] = True
+        self.update_properties(properties_dict=properties)
+
+    def enable_acs_backup(self):
+        """
+        To enable DB2 ACS backup
+        """
+        properties = self.properties
+        properties['commonProperties']["snapCopyInfo"]["useDB2ACSInterface"] = True
         self.update_properties(properties_dict=properties)
 
     @property
