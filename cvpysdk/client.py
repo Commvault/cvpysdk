@@ -1198,8 +1198,7 @@ class Clients(object):
             master_node,
             secret_name,
             secret_key,
-            vsaclient,
-            vsaclient_id
+            vsaclient=None
     ):
         """Adds a new Kubernetes Virtualization Client to the Commcell.
 
@@ -1212,9 +1211,8 @@ class Clients(object):
 
                 secret_key          (str)   --  Kubernetes Secret Key
 
-                vsaclient           (str)   --  Virtual Server proxy client
+                vsaclient           (list/str)  --  Virtual Server proxy clients
 
-                vsaclient_id        (int)   --  Virtual Server Client id
 
 
             Returns:
@@ -1235,6 +1233,25 @@ class Clients(object):
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
 
+        if type(vsaclient) is str:
+            vsaclient = [vsaclient]
+
+        if not vsaclient:
+            vsaclient = []
+
+        member_servers_list = []
+        for server in vsaclient:
+            if not self.has_client(server):
+                raise SDKException('Client', '102', f'Access node {server} does not exist in CommCell')
+            member_servers_list.append(
+                {
+                    "client": {
+                        "clientName": server,
+                        "_type_": 3
+                    }
+                }
+            )
+
         request_json = {
             "clientInfo": {
                 "clientType": 12,
@@ -1247,17 +1264,7 @@ class Clients(object):
                             "secretType": "ServiceAccount",
                             "endpointurl": host_name
                         },
-                        "associatedClients": {
-                            "memberServers": [
-                                {
-                                    "client": {
-                                        "clientName": vsaclient,
-                                        "clientId": vsaclient_id,
-                                        "_type_": 3
-                                    }
-                                }
-                            ]
-                        },
+                        "associatedClients": {},
                         "vmwareVendor": {
                             "vcenterHostName": host_name
                         }
@@ -1268,6 +1275,14 @@ class Clients(object):
                 "clientName": client_name
             }
         }
+
+        if member_servers_list:
+            associated_clients = {
+                'associatedClients': {
+                    'memberServers': member_servers_list
+                }
+            }
+            request_json['clientInfo']['virtualServerClientProperties']['virtualServerInstanceInfo'].update(associated_clients)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
 

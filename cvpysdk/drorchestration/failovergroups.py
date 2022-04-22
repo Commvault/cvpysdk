@@ -89,6 +89,11 @@ FailoverGroup:
 
     destination_instance                        --  The instance object of the destination instance
 
+    is_approval_required                        --  Whether the approval is set in failover group or not
+
+    user_for_approval                           --  Returns the name of the user set in failover group
+                                                        for approval
+
 """
 from enum import Enum
 from ..exception import SDKException

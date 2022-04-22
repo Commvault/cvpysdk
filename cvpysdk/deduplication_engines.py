@@ -80,8 +80,6 @@ Store:
 
     refresh()                   - refreshes store properties
 
-    all_substores()             - returns list of all substores in a store
-
     has_substore()              - checks if a substore exists in a store
 
     get()                      - gets a substore class object for provided substore id
@@ -94,7 +92,38 @@ Store:
 
     run_ddb_verification()      - starts DDB verification job for store
 
-    enable_store_pruning        -  Property to get the current state of store pruning or enable/disable store pruning
+Attributes
+----------
+    **all_substores**       -- returns list of all substores present on a deduplication store
+
+    **store_flags**         -- returns the deduplication flags on store
+
+    **store_name**          -- returns the store display name
+
+    **store_id**            -- return the store id
+
+    **version**             -- returns deduplication store version
+
+    **status**              -- returns the store display name
+
+    **storage_policy_name** -- returns storage policy name associated with store
+
+    **copy_name**           -- returns copy name associated with store
+
+    **copy_id**             -- returns copy id the store is associated to
+
+    **enable_store_pruning**            -- returns whether purning is enabled or disabled on store
+
+    **enable_store_pruning.setter**     -- sets store purning value to true or false
+
+    **enable_garbage_collection**       -- returns garbage collection property value for store
+
+    **enable_garbage_collection.setter** -- sets garbage collection property value for store
+
+    **enable_journal_pruning**           --  Returns the value of journal pruning property
+
+    **enable_journal_pruning.setter**    --  Sets the value of journal pruning property
+
 
 Substore:
     __init__(commcell_object, storage_policy_name, copy_name,
@@ -715,6 +744,47 @@ class Store(object):
             }
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
+
+    @property
+    def enable_journal_pruning(self):
+        """returns journal pruning property value for store"""
+        if (self._extended_flags & 8) == 0:
+            return False
+        return True
+
+    @enable_journal_pruning.setter
+    def enable_journal_pruning(self, value):
+        """sets enable journal pruning with true or false
+        Args:
+              value (bool) -- value to enable journal pruning
+        """
+        if not self._extended_flags & 8 and value:
+
+            new_value = self._extended_flags | 8
+
+            request_json = {
+                "EVGui_ParallelDedupConfigReq": {
+                    "processinginstructioninfo": "",
+                    "SIDBStore": {
+                        "SIDBStoreId": self.store_id,
+                        "SIDBStoreName": self.store_name,
+                        "extendedFlags": new_value,
+                        "flags": self._store_flags,
+                        "minObjSizeKB": 50,
+                        "oldestEligibleObjArchiveTime": -1
+                    },
+                    "appTypeGroupId": 0,
+                    "commCellId": 2,
+                    "copyId": self.copy_id,
+                    "operation": 3
+                }
+            }
+            self._commcell_object.qoperation_execute(request_json)
+            self.refresh()
+        elif self._extended_flags & 8 and value:
+            raise SDKException("Response", '500', "Journal pruning is already enabled.")
+        else:
+            raise SDKException("Response", '500', "Journal pruning once enabled cannot be disabled.")
 
     def seal_deduplication_database(self):
         """ Seals the deduplication database """

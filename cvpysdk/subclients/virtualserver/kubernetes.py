@@ -214,6 +214,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
+        if not kubernetes_host:
+            kubernetes_host = self._client_object.client_name
+            vcenter_client = kubernetes_host
+
         restore_option_copy = restore_option.copy()
 
         self._set_restore_inputs(
@@ -326,9 +330,33 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         self._json_restore_diskLevelVMRestoreOption(restore_option)
         self._json_vcenter_instance(restore_option)
 
-        _new_name_dict = restore_option['restore_new_name']
+        _new_name_dict = restore_option.get('restore_new_name', {})
         for _each_vm_to_restore in restore_option['vm_to_restore']:
-            restore_option["new_name"] = _new_name_dict[_each_vm_to_restore]
+            restore_option["new_name"] = _new_name_dict.get(_each_vm_to_restore, _each_vm_to_restore)
+            namespace_app_map = restore_option.get('namespace_app_map', {})
+            datacenter = restore_option.get('datacenter', None)
+
+            if not namespace_app_map:
+                # FOR : Full Application Restores Restores
+                # If namespace_app_map is not passed the it is a full vm restore
+                # so 'datacenter' should be passed. Nothing to do here
+                pass
+
+            elif _each_vm_to_restore in namespace_app_map:
+                # FOR : Namespace Level Restore
+                # If _each_vm_to_restore is in namespace_app_map which means it's an application
+                # and not a namespace, so we need to pass 'datacenter' to advanced restore options
+
+                app_ns = namespace_app_map.get(_each_vm_to_restore)
+
+                # Getting the target namespace if restoring to a new namespace name
+                target_ns = _new_name_dict[app_ns]
+                restore_option['datacenter'] = target_ns
+            else:
+                # FOR : Namespace Level Restore
+                # If it's a namespace, then there is no 'datacenter' needed so pop it
+                if 'datacenter' in restore_option:
+                    restore_option.pop('datacenter')
             self.set_advanced_vm_restore_options(_each_vm_to_restore, restore_option)
         # prepare json
         request_json = self._restore_json(restore_option=restore_option)
@@ -452,6 +480,32 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         temp_dict = copy.deepcopy(self._advanced_option_restore_json)
         return temp_dict
 
+    def _get_app_pvc(self, application_id):
+        """Get the dictionary of PVCs in the applications with storage class info
+
+            Args:
+
+                application_id      (str)       --  Application GUID to get PVC
+
+            Returns:
+
+                List of dicts with PVC information
+        """
+        app_disks, disk_metadata = self.browse('\\' + application_id)
+        pvc_path_list = [disk for disk in app_disks if disk.split('.')[-1] != 'yaml']
+
+        pvc_list = []
+
+        for pvc in pvc_path_list:
+            temp_dict = {}
+            pvc_metadata = disk_metadata[pvc]
+            vs_metadata = pvc_metadata['advanced_data']['browseMetaData']['virtualServerMetaData']
+            temp_dict['name'] = pvc_metadata['name']
+            temp_dict['storageclass'] = vs_metadata['datastore']
+            pvc_list.append(temp_dict)
+
+        return pvc_list
+
     def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
         """
         set the advanced restore options for all vm in restore
@@ -492,6 +546,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         # with suffix Delete.
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         browse_result = self.vm_files_browse()
+        application_id = vm_ids[vm_to_restore]
 
         # vs metadata from browse result
         _metadata = browse_result[1][('\\' + vm_to_restore)]
@@ -518,30 +573,37 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             restore_option['keyPairList'] = _keypair_list
 
         # populate restore source item
-        restore_option['paths'].append("\\" + vm_ids[vm_to_restore])
+        restore_option['paths'].append("\\" + application_id)
         restore_option['name'] = vm_to_restore
-        restore_option['guid'] = vm_ids[vm_to_restore]
+        restore_option['guid'] = application_id
         restore_option["FolderPath"] = folder_path
         restore_option["ResourcePool"] = "/"
 
         # populate restore disk and datastore
         vm_disks = []
-
-        if "datastore" in restore_option:
-            ds = restore_option["datastore"]
         new_name = vm_to_restore
-        diskpattern = "automation`Deployment`{0}.yaml".format(vm_to_restore)
-        _disk_dict = self._disk_dict_pattern(diskpattern, ds, new_name)
-        if 'is_aws_proxy' in restore_option and not restore_option['is_aws_proxy']:
-            _disk_dict['Datastore'] = restore_option["datastore"]
-        vm_disks.append(_disk_dict)
-        if not vm_disks:
-            raise SDKException('Subclient', '104')
+
+        storage_class_map = restore_option.get('storage_class_map', None)
+
+        # To populate disk list for each app in case of namespace restore
+        if storage_class_map:
+            pvc_list = self._get_app_pvc(application_id)
+            for pvc in pvc_list:
+                storageclass_name = pvc['storageclass']
+                pvc_name = pvc['name']
+
+                # If 'datastore' is passed then it's full app restore, else
+                # it is namespace level restore.
+                # Namespace level restore can be passed with storage class mapping
+                if storageclass_name in storage_class_map:
+                    storageclass_name = storage_class_map[storageclass_name]
+                _disk_dict = self._disk_dict_pattern(pvc_name, storageclass_name, pvc_name)
+                vm_disks.append(_disk_dict)
+
         restore_option["disks"] = vm_disks
 
         self._set_restore_inputs(
             restore_option,
-            disks=vm_disks,
             esx_host=restore_option.get('esx_host') or vs_metadata['esxHost'],
             instance_size=restore_option.get('instanceSize', instance_size),
             new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
@@ -574,8 +636,6 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
                 power_on              (bool)        --  power on the  restored VM
                                                         default: True
-
-                kubernetes_host       (str)         --   Kubernetes host for restore
 
                 datastore              (str)         -- datastore type eg: rook-ceph, netapp
 
@@ -627,7 +687,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             restore_option['client'] = proxy_client
 
-        restore_option_copy = restore_option.copy()
+        kubernetes_host = self._client_object.client_name
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -1137,6 +1197,208 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         return self.browse_in_time(
             vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
             vm_files_browse=False, media_agent=media_agent)
+
+    def _get_apps_in_namespace(self, namespaces):
+        """Get the list of applications to be restored with the namespace level restore
+
+            Args:
+                namespaces      (list)  -   List of namespaces
+
+            Returns:
+
+                  list of applictations to be restored with namespaces
+        """
+
+        apps_to_restore = []
+        namespace_app_dict = {}
+        app, app_dict = self.browse()
+        for app_path, metadata in app_dict.items():
+            app_name = metadata['name']
+            app_id = metadata['snap_display_name']
+            app_ns = app_id.split('`')[0]
+            app_type = app_id.split('`')[1]
+            if app_type != 'Namespace' and app_ns in namespaces:
+                apps_to_restore.append(app_name)
+                namespace_app_dict[app_name] = app_ns
+
+        return apps_to_restore, namespace_app_dict
+
+    def namespace_restore_out_of_place(
+            self,
+            namespace_to_restore,
+            target_namespace_name={},
+            target_cluster_name=None,
+            storage_class_map=None,
+            overwrite=True,
+            copy_precedence=0,
+            proxy_client=None
+    ):
+        """Perform a namespace-level restore out-of-place
+
+            Args:
+
+                namespace_to_restore        (list)  --  List of namespaces to restore
+
+                target_namespace_name       (dict)  --  Target namespace name to perform restore at
+                                                        Eg. {'namespace1': 'namespace1-rst'}
+
+                target_cluster_name         (str)   --  Name of the target cluster to restore at
+
+                storage_class_map           (dict)  --  Mapping of storage classes for transformation
+                                                        Eg. {'rook-ceph-block' : 'azurefile'}
+
+                overwrite                   (bool)  --  Overwrite the existing namespace
+                                                        Default: true
+
+                copy_precedence             (int)   --  Copy preceedence value
+
+                proxy_client                (str)   --  Name of the proxy client to launch restore
+                                                        Default : None (Automatic)
+            Returns:
+
+                object - instance of the Job class for this restore job
+
+            Raises:
+
+                SDKException:
+
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        restore_options = {}
+
+        # Check mandatory input parameters are correct
+        if namespace_to_restore and not type(namespace_to_restore) is list:
+            raise SDKException('Subclient', '101')
+
+        # Populating proxy client. It automatically fetches proxy controller from subclient/instance level
+        # property if not specified
+        if proxy_client is not None:
+            restore_options['client'] = proxy_client
+
+        restore_new_name = {}
+        apps_to_restore = []
+
+        if not type(target_namespace_name) is dict:
+            raise SDKException('Subclient', '101')
+        for ns in namespace_to_restore:
+            if ns not in target_namespace_name:
+                target_namespace_name[ns] = ns
+        restore_new_name.update(target_namespace_name)
+
+        namespace_apps, namespace_app_map = self._get_apps_in_namespace(namespace_to_restore)
+        apps_to_restore.extend(namespace_apps)
+
+        for app in apps_to_restore:
+            restore_new_name[app] = app
+        apps_to_restore.extend(namespace_to_restore)
+
+        restore_options['restore_new_name'] = restore_new_name
+        restore_options['namespace_app_map'] = namespace_app_map
+
+        if not target_cluster_name:
+            target_cluster_name = self._client_object.client_name
+
+        self._set_restore_inputs(
+            restore_options,
+            in_place=False,
+            vcenter_client=target_cluster_name,
+            esx_host=target_cluster_name,
+            esx_server=None,
+            unconditional_overwrite=overwrite,
+            power_on=True,
+            vm_to_restore=self._set_vm_to_restore(apps_to_restore),
+            disk_option=self._disk_option['Original'],
+            transport_mode=self._transport_mode['Auto'],
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            source_item=[],
+            source_ip=None,
+            destination_ip=None,
+            network=None,
+            storage_class_map=storage_class_map
+        )
+
+        request_json = self._prepare_kubernetes_restore_json(restore_options)
+        return self._process_restore_response(request_json)
+
+    def namespace_restore_in_place(
+            self,
+            namespace_to_restore,
+            overwrite=True,
+            copy_precedence=0,
+            proxy_client=None
+    ):
+        """Perform a namespace-level restore in-place
+
+            Args:
+
+                namespace_to_restore        (list)  --  List of namespaces to restore
+
+                overwrite                   (bool)  --  Overwrite the existing namespace
+                                                        Default: true
+
+                copy_precedence             (int)   --  Copy preceedence value
+
+                proxy_client                (str)   --  Name of the proxy client to launch restore
+                                                        Default : None (Automatic)
+            Returns:
+
+                object - instance of the Job class for this restore job
+
+            Raises:
+
+                SDKException:
+
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        restore_options = {}
+
+        # Check mandatory input parameters are correct
+        if namespace_to_restore and not type(namespace_to_restore) is list:
+            raise SDKException('Subclient', '101')
+
+        # Populating proxy client. It automatically fetches proxy controller from subclient/instance level
+        # property if not specified
+        if proxy_client is not None:
+            restore_options['client'] = proxy_client
+
+        apps_to_restore = []
+
+        namespace_apps, namespace_app_map = self._get_apps_in_namespace(namespace_to_restore)
+        apps_to_restore.extend(namespace_apps)
+        apps_to_restore.extend(namespace_to_restore)
+
+        client_name = self._client_object.client_name
+        self._set_restore_inputs(
+            restore_options,
+            vm_to_restore=self._set_vm_to_restore(apps_to_restore),
+            in_place=True,
+            esx_host=client_name,
+            esx_server_name="",
+            volume_level_restore=1,
+            unconditional_overwrite=overwrite,
+            disk_option=self._disk_option['Original'],
+            transport_mode=self._transport_mode['Auto'],
+            copy_precedence=copy_precedence
+        )
+
+        request_json = self._prepare_kubernetes_inplace_restore_json(restore_options)
+        return self._process_restore_response(request_json)
+
 
 class ApplicationGroups(Subclients):
 
