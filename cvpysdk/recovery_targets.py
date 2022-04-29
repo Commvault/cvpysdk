@@ -259,6 +259,7 @@ class RecoveryTarget:
         self._vm_suffix = ''
 
         self._destination_host = None
+        self._vm_storage_policy = None
         self._datastore = None
         self._resource_pool = None
         self._destination_network = None
@@ -380,6 +381,7 @@ class RecoveryTarget:
                     self._vm_folder = self._recovery_target_properties['folderPath']
                     self._destination_network = self._recovery_target_properties['networkList'][0]['destinationNetwork']
 
+                    self._vm_storage_policy = self._recovery_target_properties.get('vmStoragePolicyName')
                     expiry_hours = self._recovery_target_properties.get("minutesRetainUntil")
                     expiry_days = self._recovery_target_properties.get("daysRetainUntil")
                     if expiry_hours:
@@ -460,6 +462,11 @@ class RecoveryTarget:
     def destination_host(self):
         """Returns: (str) VMware: the destination ESX host name"""
         return self._destination_host
+
+    @property
+    def vm_storage_policy(self):
+        """Returns: (str) VMware: the vm storage policy name"""
+        return self._vm_storage_policy
 
     @property
     def datastore(self):

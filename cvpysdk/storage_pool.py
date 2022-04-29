@@ -206,7 +206,7 @@ class StoragePools:
 
             response = xmltodict.parse(response.text)['Api_GetStoragePoolListResp']
 
-            if response is None:
+            if response is None or response.get('storagePoolList') is None:
                 storage_pool_list = []
             else:
                 storage_pool_list = response['storagePoolList']

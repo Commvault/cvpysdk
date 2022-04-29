@@ -552,7 +552,7 @@ class ActivateEntities(object):
         for dept in self._entities_containers:
             items_list = dept['tagSetsAndItems']
             for country in items_list:
-                tags_list = country['tags']
+                tags_list = country.get('tags',{})
                 for tag in tags_list:
                     if entity_name.lower() == tag['entityDetail']['entityName'].lower() and \
                             container_name.lower() == country['container']['containerName'].lower():
