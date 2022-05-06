@@ -83,6 +83,8 @@ Clients
 
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
 
+    add_onedrive_v2_client()              -- adds a new OneDrive for Business client to Commcell
+
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
     add_splunk_client()                   --  adds a new Splunk Client to the Commcell
@@ -367,6 +369,7 @@ from .security.user import Users
 
 from .name_change import NameChange
 from .organization import Organizations
+from .constants import AppIDAType
 
 
 class Clients(object):
@@ -2789,6 +2792,210 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_onedrive_v2_client(
+            self,
+            client_name,
+            server_plan,
+            azure_app_id,
+            azure_directory_id,
+            azure_app_key_id,
+            **kwargs):
+
+        """
+            Adds OneDrive for Business (v2) client
+
+            Args:
+                client_name (str) : Client Name
+                server_plan (str) : Server Plan's Name
+                azure_app_id (str) : Azure app ID
+                azure_directory_id (str) : Azure directory ID
+                azure_app_key_id (str) : Azure App key ID
+
+                **kwargs (dict) : Additional parameters
+                    index_server (str) : Index Server's Name
+                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                    user_name (str) : User name for shared job results
+                    user_password (str) : User password for shared job results
+                    shared_jr_directory (str) : Shared Job results directory path
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if data type of the input(s) is not valid
+
+                    if access node do not exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        # If client with given name already exists, raise Exception
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        # Get server plan details
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_id = int(server_plan_object.plan_id)
+        server_plan_resources = server_plan_object._properties.get('storageResourcePoolMap')[0].get('resources')
+
+        access_nodes_list = kwargs.get('access_nodes_list')
+        index_server = kwargs.get('index_server')
+        is_resource_pool_enabled = False if server_plan_resources is None else True
+        number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
+        user_name = kwargs.get('user_name')
+        user_password = kwargs.get('user_password')
+        shared_jr_directory = kwargs.get('shared_jr_directory')
+
+        # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+        if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+            error_string = 'For a non resource-pool server plan, access nodes and index server details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # If data type of the input(s) is not valid, raise Exception
+        if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+                (index_server and not isinstance(index_server, str)) or
+                (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+                (user_name and not isinstance(user_name, str)) or
+                (user_password and not isinstance(user_password, str)) or
+                (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+            raise SDKException('Client', '101')
+
+        # For multiple access nodes, make sure service account details are provided
+        if (access_nodes_list and len(access_nodes_list) > 1 and
+                (user_name is None or user_password is None or shared_jr_directory is None)):
+            error_string = 'For creating a multi-access node client service account details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # Get index server details
+        index_server_id = None
+        if index_server:
+            index_server_object = self.get(index_server)
+            index_server_id = int(index_server_object.client_id)
+
+        # For each access node create client object
+        member_servers = []
+
+        if access_nodes_list:
+            for client in access_nodes_list:
+                if isinstance(client, str):
+                    client = client.strip().lower()
+
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client,
+                                "clientId": int(self.all_clients.get(client).get('id')),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                elif isinstance(client, Client):
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client.client_name,
+                                "clientId": int(client.client_id),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                else:
+                    raise SDKException('Client', '101')
+
+        azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 37,
+                "useResourcePoolInfo": is_resource_pool_enabled,
+                "plan": {
+                    "planId": server_plan_id
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": 7,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 7,
+                            "serviceAccounts": {},
+                            "oneDriveInstance": {
+                                "manageContentAutomatically": False,
+                                "isAutoDiscoveryEnabled": False,
+                                "cloudRegion": 1,
+                                "azureAppList": {
+                                    "azureApps": [
+                                        {
+                                            "azureDirectoryId": azure_directory_id,
+                                            "azureAppDisplayName": azure_app_id,
+                                            "azureAppKeyValue": azure_app_key_value,
+                                            "azureAppId": azure_app_id
+                                        }
+                                    ]
+                                }
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": number_of_backup_streams,
+                                "jobResultsDir": {
+                                    "path": ""
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        if not is_resource_pool_enabled:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["indexServer"] = {
+                "clientId": index_server_id
+            }
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["memberServers"] = member_servers
+
+        if access_nodes_list and len(access_nodes_list) > 1:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["jobResultsDir"]["path"] = shared_jr_directory
+
+        if user_name:
+            user_password = b64encode(user_password.encode()).decode()
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "oneDriveInstance"][
+                "serviceAccounts"] = {
+                "accounts": [
+                    {
+                        "serviceType": 3,
+                        "userAccount": {
+                            "userName": user_name,
+                            "password": user_password
+                        }
+                    }
+                ]
+            }
+
+        self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
+
     def add_onedrive_client(self,
                             client_name,
                             instance_name,
@@ -3200,6 +3407,7 @@ class Client(object):
                 object - instance of the Client class
                 """
         from .clients.vmclient import VMClient
+        from .clients.onedrive_client import OneDriveClient
         _client = commcell_object._services['CLIENT'] % (client_id)
         flag, response = commcell_object._cvpysdk_object.make_request('GET', _client)
         if flag:
@@ -3208,6 +3416,12 @@ class Client(object):
                                                                                               {}).get(
                         'applicationId') == 106:
                     return object.__new__(VMClient)
+
+                elif (len(response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])) > 0 and
+                        response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])[0]
+                        .get('idaEntity', {}).get('applicationId') == AppIDAType.CLOUD_APP.value):
+                    return object.__new__(OneDriveClient)
+
         return object.__new__(cls)
 
     def __init__(self, commcell_object, client_name, client_id=None):

@@ -491,6 +491,11 @@ class ReplicationGroup:
         """Returns: (bool) Whether Warm sync is enabled or not"""
         return (self.restore_options.get('virtualServerRstOption', {})
                 .get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False))
+    
+    @property
+    def is_intelli_snap_enabled(self):
+        """Returns: (bool) Whether Snapshot on source is utilised or not"""
+        return self.subclient.is_intelli_snap_enabled
 
     @property
     def source_client(self):
@@ -626,3 +631,9 @@ class ReplicationGroup:
         """Returns: (str) The recovery target used for the replication"""
         return (self.restore_options.get('virtualServerRstOption', {}).get('allocationPolicy', {})
                 .get('vmAllocPolicyName'))
+
+    @property
+    def intelli_snap_engine(self):
+        """Returns: (str) Intelli Snap Engine Name"""
+        snap_engine_name = self.subclient.snapshot_engine_name if self.is_intelli_snap_enabled else ''
+        return snap_engine_name

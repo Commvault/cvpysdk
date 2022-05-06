@@ -26,6 +26,9 @@ and to perform operations on that instance
 
 GoogleInstance:
 
+    _prepare_restore_json_v2()  --  Utility function to prepare user level restore json for
+                                    OneDrive for bussiness clients
+
     _get_instance_properties()  --  Instance class method overwritten to add cloud apps
     instance properties as well
 
@@ -37,6 +40,7 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
+from ...constants import AppIDAType
 
 
 class GoogleInstance(CloudAppsInstance):
@@ -109,7 +113,7 @@ class GoogleInstance(CloudAppsInstance):
                         'generalCloudProperties', {}).get('proxyServers', [{}])[0].get('clientName')
                 else:
                     if 'clientName' in cloud_apps_instance.get(
-                        'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
+                            'generalCloudProperties', {}).get('memberServers', [{}])[0].get('client'):
                         self._proxy_client = cloud_apps_instance.get('generalCloudProperties', {}).get(
                             'memberServers', [{}])[0].get('client', {}).get('clientName')
                     else:
@@ -179,6 +183,110 @@ class GoogleInstance(CloudAppsInstance):
     def proxy_client(self):
         """Returns the proxy client name to this instance"""
         return self._proxy_client
+
+    def _prepare_restore_json_v2(self, source_item_list, **kwargs):
+
+        """ Utility function to prepare user level restore json for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+            Kwargs:
+
+                out_of_place (bool)             --  If True, out of place restore will be performed
+
+                disk_restore (bool)             --  If True, restore to disk will be performed
+
+                destination_path (str)          --  destination path for oop and disk restores
+
+                destination_client              -- destination client for disk restore
+
+                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
+
+                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
+
+                skip_file_permissions (bool)    --  If True, file permissions will be restored
+
+            Returns:
+                request_json (dict) - request json for restore job
+
+            Raises:
+                SDKException:
+
+                    if destination client with given name does not exist
+
+                    if type of parameter is invalid
+
+        """
+
+        out_of_place = kwargs.get('out_of_place', False)
+        disk_restore = kwargs.get('disk_restore', False)
+        destination_path = kwargs.get('destination_path', False)
+        destination_client = kwargs.get('destination_client')
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+        if destination_client:
+            if self._commcell_object.clients.all_clients.get(destination_client):
+                destination_client_object = self._commcell_object.clients.all_clients.get(destination_client)
+                destination_client_id = int(destination_client_object.get('id'))
+            else:
+                raise SDKException('Client', '102', 'Client "{0}" does not exist.'.format(destination_client))
+
+        if ((destination_client and not isinstance(destination_client, str) or
+             destination_path and not isinstance(destination_path, str)) or not
+            (isinstance(source_item_list, list) and
+             isinstance(skip_file_permissions, bool) and
+             isinstance(disk_restore, bool) and
+             isinstance(out_of_place, bool) and
+             isinstance(overwrite, bool) and
+             isinstance(restore_as_copy, bool))):
+            raise SDKException('Instance', '101')
+
+        request_json = self._restore_json(client=self._agent_object._client_object)
+
+        subtasks = request_json['taskInfo']['subTasks'][0]
+        options = subtasks['options']
+        restore_options = options['restoreOptions']
+
+        common_options = restore_options['commonOptions']
+        common_options['skip'] = False if overwrite or restore_as_copy else True
+        common_options['overwriteFiles'] = False if disk_restore else overwrite
+        common_options['unconditionalOverwrite'] = False if disk_restore else overwrite
+        common_options['restoreToDisk'] = disk_restore
+
+        destination = restore_options['destination']
+        destination['destAppId'] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
+        destination['inPlace'] = False if out_of_place or disk_restore else True
+
+        destination['destClient'] = {
+            "clientId": destination_client_id,
+            "clientName": destination_client
+        } if disk_restore else {
+            "clientId": int(self._agent_object._client_object.client_id),
+            "clientName": self._agent_object._client_object.client_name
+        }
+
+        if destination_path:
+            destination['destPath'] = [destination_path]
+
+        restore_options['fileOption']['sourceItem'] = source_item_list
+
+        restore_options['cloudAppsRestoreOptions'] = {
+            "instanceType": self._ca_instance_type,
+            "googleRestoreOptions": {
+                "skipPermissionsRestore": False if disk_restore else skip_file_permissions,
+                "restoreToDifferentAccount": True if out_of_place else False,
+                "restoreAsCopy": False if disk_restore else restore_as_copy,
+                "filelevelRestore": False,
+                "strDestUserAccount": destination_path if out_of_place else '',
+                "overWriteItems": False if disk_restore else overwrite,
+                "restoreToGoogle": False if disk_restore else True
+            }
+        }
+
+        return request_json
 
     def restore_out_of_place(
             self,
@@ -285,13 +393,13 @@ class GoogleInstance(CloudAppsInstance):
             restore_to_google = False
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]['cloudAppsRestoreOptions'] = {
-                "instanceType": self._ca_instance_type,
-                "googleRestoreOptions": {
-                    "strDestUserAccount": dest_user_account,
-                    "folderGuid": "",
-                    "restoreToDifferentAccount": rest_different_account,
-                    "restoreToGoogle": restore_to_google
-                }
+            "instanceType": self._ca_instance_type,
+            "googleRestoreOptions": {
+                "strDestUserAccount": dest_user_account,
+                "folderGuid": "",
+                "restoreToDifferentAccount": rest_different_account,
+                "restoreToGoogle": restore_to_google
+            }
         }
         return self._process_restore_response(request_json)
 

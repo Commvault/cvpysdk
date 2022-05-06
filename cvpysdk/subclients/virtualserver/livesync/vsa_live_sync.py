@@ -640,6 +640,7 @@ class LiveSyncVMPair:
         self._destination_instance = None
         self._last_backup_job = None
         self._latest_replication_job = None
+        self._is_warm_sync_pair = None
 
         self.refresh()
 
@@ -693,6 +694,7 @@ class LiveSyncVMPair:
                     'instanceName') or self._agent_object.instances.get(
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
+                self._is_warm_sync_pair = self._properties.get('isWarmSyncPair', False)
 
             else:
                 raise SDKException('Response', '102')
@@ -795,6 +797,11 @@ class LiveSyncVMPair:
         group_name = (self._properties.get('replicationGroup', {}).get('replicationGroupName')
                       or self._properties.get('subTask', {}).get('subTaskName'))
         return group_name.replace('_ReplicationPlan__ReplicationGroup', '')
+
+    @property
+    def is_warm_sync_pair(self):
+        """Returns (bool): Warm Sync enabled/disabled"""
+        return self._is_warm_sync_pair
 
     def refresh(self):
         """Refreshes the properties of the live sync"""

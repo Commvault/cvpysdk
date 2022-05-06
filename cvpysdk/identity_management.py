@@ -18,11 +18,13 @@
 
 """Main file for performing identity management operations
 
-IdentityManagementApps and IdentityManagementApp are the classes defined in this file
+IdentityManagementApps, IdentityManagementApp and SamlApp are the classes defined in this file
 
 IdentityManagementApps: Class for representing all the identity management apps in the commcell
 
 IdentityManagementApp: Class for representing a single identity management app in the commcell
+
+SamlApp: class for representing a single saml app in commcell
 
 IdentityManagementApps
 ======================
@@ -86,7 +88,9 @@ SamlApp
 
     refresh()                   -- refresh the details of the saml app
 
-    saml_app_details            --  gets saml app details in dict
+    saml_app_details()          --  gets saml app details in dict
+
+    get_saml_user_redirect_url() -- gets redirect url of saml user
 
 SamlApp instance Attributes
 ============================
@@ -872,6 +876,7 @@ class SamlApp(object):
         self._appname = appname
         self._properties = None
         self._SAML = commcell._services['EDIT_SAML']
+        self._redirecturl = commcell._services['POLL_REQUEST_ROUTER']
 
         if properties:
             self._properties = properties
@@ -943,6 +948,38 @@ class SamlApp(object):
                         'IdentityManagement',
                         '105',
                         ' - error {0}'.format(response.json()['errorMessage'])
+                    )
+            else:
+                raise SDKException('Response', '500' + 'Invalid Response Returned')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def get_saml_user_redirect_url(self, user_email):
+        """Get Redirect Url of SAML User
+        Args:
+            user_email         (str)        user email
+
+        Returns :
+                redirect url of user, None if redirect url is not found for the user
+        Raises:
+                SDKException:
+                    if failed to get redirect url
+                    if request is not successful
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._redirecturl % user_email
+        )
+        if flag:
+            if response.json() and 'error' in response.json() and 'errorCode' in response.json()['error']:
+                if response.json()['error']['errorCode'] == 0:
+                    if 'AvailableRedirects' in response.json():
+                        return response.json()['AvailableRedirects'][0].get('redirectUrl')
+                else:
+                    raise SDKException(
+                        'IdentityManagement',
+                        '106',
+                        ' - error {0}'.format(response.json()['error'])
                     )
             else:
                 raise SDKException('Response', '500' + 'Invalid Response Returned')
