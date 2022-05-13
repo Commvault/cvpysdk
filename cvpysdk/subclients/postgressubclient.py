@@ -302,7 +302,8 @@ class PostgresSubclient(DatabaseSubclient):
             no_of_streams=None,
             volume_level_restore=False,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            **kwargs):
         """
         Method to restore the Postgres server
 
@@ -378,6 +379,10 @@ class PostgresSubclient(DatabaseSubclient):
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -417,4 +422,5 @@ class PostgresSubclient(DatabaseSubclient):
             no_of_streams=no_of_streams,
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            revert=kwargs.get("revert", False))

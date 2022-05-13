@@ -520,7 +520,9 @@ SERVICES_DICT_TEMPLATE = {
 
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
-    'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s'
+    'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
+    
+    'GET_OEM_ID': '{0}/GetOemId'
 }
 
 

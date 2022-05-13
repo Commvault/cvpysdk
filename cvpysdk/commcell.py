@@ -123,6 +123,8 @@ Commcell:
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
+    _get_commserv_oem_id()               -- Returns back the commserv OEM ID on this commcell
+
     enable_privacy()                    --  Enables users to enable data privacy on commcell
 
     disable_privacy()                   --  Enables users to disable data privacy on commcell
@@ -156,7 +158,9 @@ Commcell instance Attributes
 
     **commcell_id**             --  returns the `CommCell` ID
 
-    **commser_metadata**        -- returns the commserv metadata of the commserv
+    **commserv_metadata**       -- returns the commserv metadata of the commserv
+
+    **commserv_oem_id**         -- returns the commserv OEM ID of the commserv
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -558,6 +562,7 @@ class Commcell(object):
         self._version_info = None
         self._is_linux_commserv = None
         self._commserv_metadata = None
+        self._commserv_oem_id = None
 
         self._id = None
         self._clients = None
@@ -1615,6 +1620,17 @@ class Commcell(object):
         if self._commserv_metadata is None:
             self._commserv_metadata = self._get_commserv_metadata()
         return self._commserv_metadata
+
+    @property
+    def commserv_oem_id(self):
+        """Returns the OEM ID of the commserve"""
+        try:
+            if self._commserv_oem_id is None:
+                self._commserv_oem_id = self._get_commserv_oem_id()
+
+            return self._commserv_oem_id
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def metallic(self):
@@ -3409,6 +3425,28 @@ class Commcell(object):
                         'commserv_certificate': response.json()['certificate']
                     }
                     return commserv_metadata
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_commserv_oem_id(self):
+        """Loads the commserve OEM ID and returns it
+
+            Returns:
+                commserv_oem_id (int) : returns a int representing the commserv OEM ID
+
+            Raises:
+                SDKException:
+                    if failed to get commserv details
+                    if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_OEM_ID'])
+
+        if flag:
+            if response.json():
+                    return response.json()['id']
             else:
                 raise SDKException('Response', '102')
         else:
