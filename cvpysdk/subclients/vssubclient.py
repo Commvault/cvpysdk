@@ -827,8 +827,7 @@ class VirtualServerSubclient(Subclient):
                 if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
-                    temp = nics['subnetId'].split('/')
-                    modify_nics = nics['subnetId'].split('/')
+                    modify_nics = value.get('subnetId', nics['subnetId']).split('/')
                     modify_nics[8] = nics["networkName"]
                     modify_nics[4] = value['networkrsg']
                     modify_nics[2] = value['destsubid']
@@ -2152,7 +2151,7 @@ class VirtualServerSubclient(Subclient):
             disks=vm_disks,
             esx_host=restore_option.get('esx_host') or vs_metadata['esxHost'],
             instanceSize=restore_option.get('instanceSize', instanceSize),
-            new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
+            new_name=restore_option.get('new_name', "del" + vm_to_restore)
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)

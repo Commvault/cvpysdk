@@ -237,9 +237,6 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException('Subclient', '101')
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = "Delete" + vm_to_restore
-
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
 

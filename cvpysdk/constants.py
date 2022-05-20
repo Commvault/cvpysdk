@@ -528,6 +528,7 @@ class VSAObjects(Enum):
     ConsistencyGroup = 39
     InstanceSize = 40
     Organization = 41
+    Selector = 47
 
 
 class InstanceBackupType(Enum):

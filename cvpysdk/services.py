@@ -67,7 +67,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
-                       '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s',
+                       '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
+                       '&applicationCheck=%s&additionalResources=%s',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
@@ -403,6 +404,7 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_NAS_CLIENT': '{0}NASClient',
     'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
     'GET_DYNAMICS_365_CLIENTS': '{0}Office365/entities?agentType=5',
+    'GET_SALESFORCE_CLIENTS': '{0}Salesforce/Organization',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',

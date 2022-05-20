@@ -49,6 +49,8 @@ Clients
 
     _get_dynamics_365_clients()           --  get all the Dynamics 365 clients in the commcell
 
+    _get_salesforce_clients()             --  get all salesforce clients in the commcell
+
     _get_hidden_clients()                 --  gets all the hidden clients associated with the
     commcell
 
@@ -119,13 +121,13 @@ Clients
 Clients Attributes
 ------------------
 
-    **all_clients**             --  returns the dictioanry consisting of all the clients that are
+    **all_clients**             --  returns the dictionary consisting of all the clients that are
     associated with the commcell and their information such as id and hostname
 
-    **hidden_clients**          --  returns the dictioanry consisting of only the hidden clients
+    **hidden_clients**          --  returns the dictionary consisting of only the hidden clients
     that are associated with the commcell and their information such as id and hostname
 
-    **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
+    **virtualization_clients**  --  returns the dictionary consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
 
     **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
@@ -133,6 +135,9 @@ Clients Attributes
 
     **dynamics365_clients**     --  Returns the dictionary consisting of all the Dynamics 365 clients
                                     that are associated with the commcell
+
+    **salesforce_clients**      --  Returns the dictionary consisting of all the salesforce clients that are
+                                    associated with the commcell
                                     
     **file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
                                     that are associated with the commcell
@@ -396,6 +401,7 @@ class Clients(object):
         self._CLIENTS = self._ADD_CLIENT = self._services['GET_ALL_CLIENTS']
         self._OFFICE_365_CLIENTS = self._services['GET_OFFICE_365_ENTITIES']
         self._DYNAMICS365_CLIENTS = self._services['GET_DYNAMICS_365_CLIENTS']
+        self._SALESFORCE_CLIENTS = self._services['GET_SALESFORCE_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
@@ -410,6 +416,7 @@ class Clients(object):
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
+        self._salesforce_clients = None
         self._file_server_clients = None
         self.refresh()
 
@@ -629,6 +636,48 @@ class Clients(object):
             self._dynamics365_clients = self._get_dynamics_365_clients()
         return self._dynamics365_clients
 
+    def _get_salesforce_clients(self):
+        """
+        REST API call to get all Salesforce clients in the commcell
+
+        Returns:
+            dict[str, dict]: Containing Salesforce clients and ids in the Commcell like
+
+                {
+                    "client1_displayName": {
+                        "id": client1_id,
+                        "clientName": "client1_name"
+                    },
+                    "client2_displayName": {
+                        "id": client2_id,
+                        "clientName": "client2_name"
+                    }
+                }
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._SALESFORCE_CLIENTS)
+
+        if flag:
+            if response.json() and 'orgs' in response.json():
+
+                return {
+                    self.all_clients[sf_subclient['clientName'].lower()]['displayName']: {
+                        'id': sf_subclient['clientId'],
+                        'clientName': sf_subclient['clientName']
+                    }
+                    for sf_subclient in map(lambda org: org['sfSubclient'], response.json()['orgs'])
+                }
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def salesforce_clients(self):
+        """Returns the dict of all salesforce clients in the commcell"""
+        if self._salesforce_clients is None:
+            self._salesforce_clients = self._get_salesforce_clients()
+        return self._salesforce_clients
+
     def _get_hidden_clients(self):
         """Gets all the clients associated with the commcell, including all VM's and hidden clients
 
@@ -729,8 +778,9 @@ class Clients(object):
                 virtualization_clients = {}
 
                 for pseudo_client in pseudo_clients:
-                    virtualization_clients[pseudo_client['client']['clientName'].lower()] = {
+                    virtualization_clients[pseudo_client['client']['displayName'].lower()] = {
                         'clientId': pseudo_client['client']['clientId'],
+                        'clientName': pseudo_client['client']['clientName'],
                         'hostName': pseudo_client['client']['hostName']
                     }
 
@@ -3388,6 +3438,7 @@ class Clients(object):
         self._virtualization_clients = self._get_virtualization_clients()
         self._office_365_clients = None
         self._file_server_clients = None
+        self._salesforce_clients = None
 
 
 class Client(object):
@@ -6496,7 +6547,9 @@ class _Readiness:
             network=True,
             resource=False,
             disabled_clients=False,
-            cs_cc_network_check=False
+            cs_cc_network_check=False,
+            application_check=False,
+            additional_resources=False,
     ):
         """
         Performs readiness check on the client
@@ -6513,7 +6566,13 @@ class _Readiness:
 
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
-
+                
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                               Default: False
+                                                       
             Raises:
                 SDKException:
                     if response is empty
@@ -6527,7 +6586,9 @@ class _Readiness:
                 network,
                 resource,
                 disabled_clients,
-                cs_cc_network_check)
+                cs_cc_network_check,
+                application_check,
+                additional_resources)
         )
 
         if flag:
@@ -6541,7 +6602,8 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False):
+    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False,
+                 application_check=False, additional_resources=False):
         """Performs readiness check on the client
 
         Args:
@@ -6557,12 +6619,19 @@ class _Readiness:
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
 
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                         Default: False
+
         Returns:
 
             (bool)  - True if ready else False
 
         """
-        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check)
+        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check,
+                                        application_check, additional_resources)
         return self._status == "Ready."
 
     def __check_reason(self):

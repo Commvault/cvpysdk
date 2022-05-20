@@ -73,7 +73,7 @@ VSINSTANCE_TYPE = {
     403: "azure_stack",
     501: "red_hat_virtualization",
     601: "nutanix_ahv",
-    701: "oraclavm",
+    701: "oraclevm",
     801: "fusioncompute",
     901: "openstack",
     1101: "oracle_cloud",
