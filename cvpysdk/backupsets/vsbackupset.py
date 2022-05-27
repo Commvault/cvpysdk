@@ -255,3 +255,55 @@ class VSBackupset(Backupset):
             return Client(self._commcell_object, client_name=client_name)
 
         return None
+
+    @index_server.setter
+    def index_server(self, value):
+        """Sets index server client for the backupset. Property value should be a client object
+
+            Args:
+
+                value     (obj)    --  The cvpysdk client object of the index server client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(value, Client):
+            raise SDKException('Backupset', '106')
+
+        properties = self._properties
+        index_server_id = int(value.client_id)
+        index_server_name = value.client_name
+
+        if 'indexSettings' in properties:
+            qualified_index_servers = []
+            if 'qualifyingIndexServers' in properties['indexSettings']:
+                for index_server in properties['indexSettings']['qualifyingIndexServers']:
+                    qualified_index_servers.append(index_server['clientId'])
+
+            if index_server_id in qualified_index_servers:
+                properties['indexSettings']['currentIndexServer'] = {
+                    'clientId': index_server_id,
+                    'clientName': index_server_name
+                }
+            else:
+                raise SDKException(
+                    'Backupset', '102', '{0} is not a qualified IndexServer client'.format(
+                        index_server_name))
+        else:
+            properties['indexSettings'] = {
+                'currentIndexServer': {
+                    'clientId': index_server_id,
+                    'clientName': index_server_name
+                }
+            }
+
+        request_json = {
+            'backupsetProperties': properties
+        }
+
+        self._process_update_reponse(request_json)

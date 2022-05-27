@@ -1929,11 +1929,13 @@ class DiskLibrary(object):
 
     @property
     def media_agents_associated(self):
-        """Returns the media agents associated with the disk library"""
+        """ Returns the media agents associated with the disk library """
         media_agents = self._library_properties['magLibSummary'].get(
             'associatedMediaAgents', None)
         if media_agents is None:
-            return []
+            mount_paths = self._library_properties.get('MountPathList')
+            media_agents = [mount_path.get('mediaAgents') for mount_path in mount_paths if "mediaAgents" in mount_path]
+            return media_agents
         return media_agents.strip().split(",")
 
     @property
@@ -2573,5 +2575,3 @@ class TapeLibrary(object):
     def library_id(self):
         """Treats the library ID as a read-only attribute."""
         return self._library_id
-
-
