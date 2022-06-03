@@ -114,7 +114,8 @@ from __future__ import unicode_literals
 
 from enum import Enum
 
-from cvpysdk.drorchestration.blr_pairs import BLRPairs
+from ..constants import AppIDAType, AppIDAName
+from .blr_pairs import BLRPairs
 from past.builtins import basestring
 from ..exception import SDKException
 
@@ -501,17 +502,17 @@ class ReplicationGroup:
     def source_client(self):
         """Returns:  the client object of the source hypervisor"""
         if not self._source_client:
-            client_name = self._replication_group_properties.get('associations', [{}])[0].get('clientName')
-            self._source_client = self._commcell_object.clients.get(client_name)
+            client_id = self._replication_group_properties.get('associations', [{}])[0].get('clientId')
+            self._source_client = self._commcell_object.clients.get(int(client_id))
         return self._source_client
 
     @property
     def destination_client(self):
         """Returns: (str) the client object for the destination hypervisor"""
         if not self._destination_client:
-            client_name = (self.restore_options.get('virtualServerRstOption', {})
-                           .get('vCenterInstance', {}).get('clientName'))
-            self._destination_client = self._commcell_object.clients.get(client_name)
+            client_id = (self.restore_options.get('virtualServerRstOption', {})
+                         .get('vCenterInstance', {}).get('clientId'))
+            self._destination_client = self._commcell_object.clients.get(int(client_id))
         return self._destination_client
 
     @property
@@ -519,6 +520,9 @@ class ReplicationGroup:
         """Returns: the agent object of the source hypervisor"""
         if not self._source_agent:
             agent_name = self._replication_group_properties.get('associations', [{}])[0].get('appName')
+            if not agent_name:
+                app_id = self._replication_group_properties.get('associations', [{}])[0].get('applicationId')
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._source_agent = self.source_client.agents.get(agent_name)
         return self._source_agent
 
@@ -527,6 +531,9 @@ class ReplicationGroup:
         """Returns: the agent object of the destination hypervisor"""
         if not self._destination_agent:
             agent_name = self._replication_group_properties.get('associations', [{}])[0].get('appName')
+            if not agent_name:
+                app_id = self._replication_group_properties.get('associations', [{}])[0].get('applicationId')
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._destination_agent = self.destination_client.agents.get(agent_name)
         return self._destination_agent
 
@@ -576,7 +583,7 @@ class ReplicationGroup:
         elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
             blr_pairs = BLRPairs(self._commcell_object, self.group_name)
             blr_pairs.refresh()
-            _live_sync_pairs = list(blr_pairs.blr_pairs)
+            _live_sync_pairs = [blr_pair.get('sourceName') for blr_pair in blr_pairs.blr_pairs.values()]
         else:
             raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'
                                                           ' of virtual server periodic')

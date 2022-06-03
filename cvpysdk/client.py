@@ -4001,11 +4001,16 @@ class Client(object):
             service_name = 'ALL'
 
         if 'windows' in self.os_info.lower():
+            
+            windows_command = operations_dict[operation]['windows_command']
+            if service_name == 'ALL' and 'grp' not in windows_command:
+                windows_command = windows_command + 'grp'
+                
             command = '"{0}" -consoleMode -{1} {2}'.format(
                 '\\'.join([self.install_directory, 'Base', 'GxAdmin.exe']),
-                operations_dict[operation]['windows_command'],
+                windows_command,
                 service_name
-            )
+            ) 
 
             __, output, __ = self.execute_command(command, wait_for_completion=False)
 

@@ -296,7 +296,7 @@ class Instances(object):
                     error_string = error['errorString']
                     raise SDKException('Instance', '102', error_string)
                 else:
-                    raise SDKException('Response', '102')
+                    return {}
             else:
                 return {}
         else:

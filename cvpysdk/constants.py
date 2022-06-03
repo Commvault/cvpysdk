@@ -478,12 +478,14 @@ class AppIDAType(Enum):
     """Class to maintain all the app ida constants"""
     WINDOWS_FILE_SYSTEM = 33
     LINUX_FILE_SYSTEM = 29
+    VIRTUAL_SERVER = 106
     CLOUD_APP = 134
 
 
 class AppIDAName(Enum):
     """Class to maintain the app IDA names"""
     FILE_SYSTEM = 'File System'
+    VIRTUAL_SERVER = 'Virtual Server'
 
 class VSAObjects(Enum):
     """Mapping for VSA Objects."""

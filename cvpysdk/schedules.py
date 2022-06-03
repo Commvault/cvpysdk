@@ -88,6 +88,10 @@ Schedule:
 
     schedule_freq_type                              -- gets the schedule frequence type
 
+    name                                            -- gets the name of the schedule
+
+    name(new_name)                                  -- sets the name of the schedule
+
     one_time                                        -- gets the one time schedule pattern dict
 
     one_time(pattern_dict)                          -- sets the one time schedule pattern
@@ -1583,6 +1587,27 @@ class Schedule:
             (str) the schedule frequency type
         """
         return self._freq_type[self._pattern['freq_type']]
+
+    @property
+    def name(self):
+        """
+                gets the name of the schedule
+                Returns:
+                     (str) The schedule name
+        """
+        return self.schedule_name
+
+    @name.setter
+    def name(self, new_name):
+        """
+                sets the name of the schedule
+                Args:
+                     new_name (str) -- New name for the schedule
+        """
+        self.schedule_name = new_name
+        self._sub_task_option['subTaskName'] = new_name
+        self._sub_task_option['subTask']['subtaskName'] = new_name
+        self._modify_task_properties()
 
     @property
     def one_time(self):

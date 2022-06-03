@@ -65,9 +65,7 @@ class DB2Backupset(Backupset):
             dest_client_name=None,
             dest_instance_name=None,
             dest_database_name=None,
-            recover_db=True,
-            restore_incremental=True
-
+            **kwargs
     ):
         """Restores the db2 databases specified in the input paths list to the same location.
 
@@ -86,6 +84,18 @@ class DB2Backupset(Backupset):
 
                 restore_incremental     (bool)  -- Restore incremental flag
 
+                    default: True
+
+                restore_data            (bool)  -- Restore data or not
+                    default: True
+
+                copy_precedence         (int)   -- Copy precedence to perform restore from
+                    default : None
+
+                roll_forward            (bool)  -- Rollforward database or not
+                    default: True
+
+                restore_logs (bool)  -   Restore the logs or not
                     default: True
 
             Returns:
@@ -114,8 +124,7 @@ class DB2Backupset(Backupset):
             dest_database_name = self.backupset_name.upper()
 
         return self._instance_object.restore_entire_database(
-            dest_client_name, dest_instance_name, dest_database_name,
-            recover_db=recover_db, restore_incremental=restore_incremental)
+            dest_client_name, dest_instance_name, dest_database_name, **kwargs)
 
     def restore_out_of_place(
             self,
@@ -173,6 +182,9 @@ class DB2Backupset(Backupset):
 
                 destination_path        (str)   --  destinath path for restore
                     default: None
+
+                restore_data            (bool)  -- Restore data or not
+                    default: True
 
             Returns:
                 object - instance of the Job class for this restore job

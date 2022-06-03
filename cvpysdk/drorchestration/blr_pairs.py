@@ -197,12 +197,11 @@ class BLRPairs:
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._replication_group_name = replication_group_name.lower()
+        self._replication_group_id = None
+        if self._replication_group_name:
+            self._replication_group_id = self._get_replication_group_id()
 
-        if replication_group_name:
-            self._LIST_BLR_PAIRS = (f"{self._services['GET_BLR_PAIRS']}"
-                                    f"?replicationGroupId={self._get_replication_group_id()}")
-        else:
-            self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
+        self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
 
         self._DELETE_BLR = self._services['DELETE_BLR_PAIR']
         self._QEXEC = self._services['EXEC_QCOMMAND']
@@ -245,7 +244,12 @@ class BLRPairs:
         if flag:
             if response.json():
                 self._summary = response.json().get('summary', {})
-                self._site_info = response.json().get('siteInfo', [])
+                if self._replication_group_id:
+                    self._site_info = [site_info for site_info in response.json().get('siteInfo', [])
+                                       if str(site_info.get('replicationGroup', {}).get('replicationGroupId', 0))
+                                       == self._replication_group_id]
+                else:
+                    self._site_info = response.json().get('siteInfo', [])
             else:
                 raise SDKException('Response', '102')
         else:

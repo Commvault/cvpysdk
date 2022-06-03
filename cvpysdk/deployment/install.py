@@ -170,9 +170,9 @@ class Install(object):
         if username:
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["clientAuthForJob"] \
                 = {
-                    "password": password,
-                    "userName": username
-                }
+                "password": password,
+                "userName": username
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
@@ -409,6 +409,9 @@ class Install(object):
                                     "db2RetrievePath": "/opt/Retrieve/",
                                     "db2AuditErrorPath": "/opt/Audit/"
                             }
+            
+            index_cache_location (str) - Set index cache location for MA package
+            Ex: index_cache_location = "/opt/IndexCache/"
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -448,10 +451,13 @@ class Install(object):
 
         """
         db2_install = False
+        ma_install = False
         if windows_features:
             os_type = 0
             if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
                 db2_install = True
+            if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
+                ma_install = True
             install_options = [{'osType': 'Windows', 'ComponentId': feature_id}
                                for feature_id in windows_features]
 
@@ -459,7 +465,8 @@ class Install(object):
             os_type = 1
             if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
                 db2_install = True
-
+            if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
+                ma_install = True
             install_options = [{'osType': 'Unix', 'ComponentId': feature_id}
                                for feature_id in unix_features]
 
@@ -491,6 +498,7 @@ class Install(object):
 
         install_flags = kwargs.get('install_flags')
         db2_logs = kwargs.get('db2_logs_location', {})
+        index_cache_location = kwargs.get('index_cache_location', None)
 
         request_json = {
             "taskInfo": {
@@ -528,7 +536,8 @@ class Install(object):
                                             "allowMultipleInstances": True,
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
-                                            "install32Base": install_flags.get('install32Base', False) if install_flags else False,
+                                            "install32Base": install_flags.get('install32Base',
+                                                                               False) if install_flags else False,
                                             "disableOSFirewall": False,
                                             "stopOracleServices": False,
                                             "skipClientsOfCS": False,
@@ -536,7 +545,8 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
-                                            "preferredIPFamily": install_flags.get('preferredIPFamily', 1) if install_flags else 1,
+                                            "preferredIPFamily": install_flags.get('preferredIPFamily',
+                                                                                   1) if install_flags else 1,
                                             "firewallInstall": {
                                                 "enableFirewallConfig": False,
                                                 "firewallConnectionType": 0,
@@ -599,6 +609,15 @@ class Install(object):
         if db2_install and db2_logs:
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
                 "clientComposition"][0]["components"]["db2"] = db2_logs
+
+        if ma_install and index_cache_location:
+            index_cache_dict = {
+                "indexCacheDirectory": {
+                    "path": index_cache_location
+                }
+            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

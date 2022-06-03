@@ -91,6 +91,14 @@ class CommCellMigration(object):
                         "Database":"commserv",
 
                         "captureMediaAgents":True,
+                        
+                        "captureSchedules":True,
+
+                        "captureActivityControl":True,
+
+                        "captureOperationWindow":True,
+
+                        "captureHolidays":True,
 
                         "csName": "CommservName",  # host cs for using sql instance export
 
@@ -134,6 +142,10 @@ class CommCellMigration(object):
         sql_password = options_dictionary.get("sqlPassword", "")
         database = options_dictionary.get("Database", "Commserv")
         capture_ma = options_dictionary.get("captureMediaAgents", True)
+        capture_schedules = options_dictionary.get("captureSchedules", True)
+        capture_activity_control = options_dictionary.get("captureActivityControl", True)
+        capture_opw = options_dictionary.get("captureOperationWindow", True)
+        capture_holidays = options_dictionary.get("captureHolidays", True)
         auto_pick_cluster = options_dictionary.get("autopickCluster", False)
         cs_name = options_dictionary.get("csName", self._commcell_name)
         client_ids = options_dictionary.get("clientIds", [])
@@ -148,6 +160,10 @@ class CommCellMigration(object):
                 and isinstance(sql_password, str)
                 and isinstance(database, str)
                 and isinstance(capture_ma, bool)
+                and isinstance(capture_schedules, bool)
+                and isinstance(capture_activity_control, bool)
+                and isinstance(capture_opw, bool)
+                and isinstance(capture_holidays, bool)
                 and isinstance(auto_pick_cluster, bool)
                 and isinstance(cs_name, str)
                 and isinstance(client_ids, list)):
@@ -214,6 +230,10 @@ class CommCellMigration(object):
                                         "lastHours": 60,
                                         "remoteDumpDir": "",
                                         "remoteCSName": "",
+                                        "captureSchedules": capture_schedules,
+                                        "captureActivityControl": capture_activity_control,
+                                        "captureOperationWindow": capture_opw,
+                                        "captureHolidays":capture_holidays,
                                         "pruneExportedDump": False,
                                         "autopickCluster": auto_pick_cluster,
                                         "copyDumpToRemoteCS": False,
@@ -235,6 +255,10 @@ class CommCellMigration(object):
                 ]
             }
         }
+
+        if not other_sql_instance:
+            del export_json['taskInfo']['subTasks'][0]['options']['adminOpts']['ccmOption'] \
+                ['captureOptions']['captureFromDB']
 
         sub_dict = export_json['taskInfo']['subTasks'][0]['options']['adminOpts']['ccmOption'] \
             ['captureOptions']['entities']
@@ -287,13 +311,20 @@ class CommCellMigration(object):
             Args:
                 import_location     ( str )         --  Location to import the generated dumps.
 
-                options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
+                options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
                     {
                         "pathType": "Network",
                         "userName" : "username",
                         "password": "password",
                         "forceOverwrite": False,
-                        "failIfEntityAlreadyExists": False
+                        "failIfEntityAlreadyExists": False,
+                        "deleteEntitiesNotPresent": False,
+                        "forceOverwriteHolidays": False,
+                        "mergeHolidays": True,
+                        "forceOverwriteOperationWindow": False,
+                        "mergeOperationWindow": False,
+                        "forceOverwriteSchedule": False,
+                        "mergeSchedules": True
                     }
 
             Returns:
@@ -312,6 +343,13 @@ class CommCellMigration(object):
         network_user_password = options_dictionary.get("password", "")
         force_overwrite = options_dictionary.get('forceOverwrite', False)
         fail_if_entry_already_exists = options_dictionary.get('failIfEntityAlreadyExists', False)
+        delete_entities_not_present = options_dictionary.get('deleteEntitiesNotPresent', False)
+        fo_holidays = options_dictionary.get("forceOverwriteHolidays", False)
+        merge_holidays = options_dictionary.get("mergeHolidays", True)
+        fo_operation_window = options_dictionary.get("forceOverwriteOperationWindow", False)
+        merge_operation_window = options_dictionary.get("mergeOperationWindow", False)
+        fo_schedules = options_dictionary.get("forceOverwriteSchedule", False)
+        merge_schedules = options_dictionary.get("mergeSchedules", True)
 
         if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
             raise SDKException('CommCellMigration', '101')
@@ -354,22 +392,22 @@ class CommCellMigration(object):
                                 "ccmOption": {
                                     "mergeOptions": {
                                         "deleteEntitiesIfOnlyfromSource": False,
-                                        "forceOverwriteHolidays": False,
+                                        "forceOverwriteHolidays": fo_holidays,
                                         "reuseTapes": False,
                                         "specifyStagingPath": False,
-                                        "forceOverwriteOperationWindow": False,
+                                        "forceOverwriteOperationWindow": fo_operation_window,
                                         "fallbackSpareGroup": "",
-                                        "mergeOperationWindow": False,
+                                        "mergeOperationWindow": merge_operation_window,
                                         "pruneImportedDump": False,
                                         "alwaysUseFallbackDataPath": True,
-                                        "deleteEntitiesNotPresent": False,
+                                        "deleteEntitiesNotPresent": delete_entities_not_present,
                                         "forceOverwrite": force_overwrite,
-                                        "mergeHolidays": True,
-                                        "forceOverwriteSchedule": False,
+                                        "mergeHolidays": merge_holidays,
+                                        "forceOverwriteSchedule": fo_schedules,
                                         "fallbackDrivePool": "",
                                         "mergeActivityControl": True,
                                         "fallbackMediaAgent": "",
-                                        "mergeSchedules": True,
+                                        "mergeSchedules": merge_schedules,
                                         "failIfEntityAlreadyExists": fail_if_entry_already_exists,
                                         "fallbackLibrary": "",
                                         "skipConflictMedia": False,

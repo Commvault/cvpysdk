@@ -226,10 +226,7 @@ class DB2Instance(Instance):
             dest_client_name,
             dest_instance_name,
             dest_database_name,
-            restore_type='ENTIREDB',
-            recover_db=True,
-            restore_incremental=True,
-
+            **kwargs
     ):
         """Restores the db2 database
 
@@ -254,6 +251,18 @@ class DB2Instance(Instance):
 
                     default: True
 
+                restore_data            (bool)  -- Restore data or not
+                    default: True
+
+                copy_precedence         (int)   -- Copy precedence to perform restore from
+                    default : None
+
+                roll_forward            (bool)  -- Rollforward database or not
+                    default: True
+
+                restore_logs (bool)  -   Restore the logs or not
+                default: True
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -267,6 +276,13 @@ class DB2Instance(Instance):
                     if response is not success
 
         """
+        recover_db = kwargs.get("recover_db", True)
+        restore_incremental = kwargs.get("restore_incremental", True)
+        restore_data = kwargs.get("restore_data", True)
+        copy_precedence = kwargs.get("copy_precedence", None)
+        roll_forward = kwargs.get("roll_forward", True)
+        restore_logs = kwargs.get("restore_logs", True)
+        restore_type = kwargs.get("restore_type", 'ENTIREDB')
 
         if "entiredb" in restore_type.lower():
             restore_type = 0
@@ -279,6 +295,11 @@ class DB2Instance(Instance):
             restore_type=restore_type,
             recover_db=recover_db,
             restore_incremental=restore_incremental,
+            restore_data=restore_data,
+            copy_precedence=copy_precedence,
+            roll_forward=roll_forward,
+            rollforward_pending=not roll_forward,
+            restore_archive_logs=restore_logs
         )
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "browseOption"]["backupset"]["backupsetName"] = dest_database_name
@@ -340,6 +361,8 @@ class DB2Instance(Instance):
                 destination_path        (str)   --  destinath path for restore
                     default: None
 
+                restore_data            (bool)  -- Restore data or not
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -362,6 +385,7 @@ class DB2Instance(Instance):
         rollforward = kwargs.get('rollforward', True)
         restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
         restore_incremental = kwargs.get('restore_incremental', True)
+        restore_data = kwargs.get('restore_data', True)
 
         if redirect_enabled:
             if not (isinstance(redirect_tablespace_path, dict) or isinstance(redirect_tablespace_path, str)) and \
@@ -381,10 +405,11 @@ class DB2Instance(Instance):
             redirect_storage_group_path=redirect_storage_group_path,
             redirect_tablespace_path=redirect_tablespace_path,
             rollforward_pending=not rollforward,
-            restoreArchiveLogs=restoreArchiveLogs,
+            restore_archive_logs=restoreArchiveLogs,
             roll_forward=rollforward,
             restore_incremental=restore_incremental,
-            storage_path=True)
+            storage_path=True,
+            restore_data=restore_data)
 
         if redirect_storage_group_path:
             storagePaths = []
