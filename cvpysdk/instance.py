@@ -147,7 +147,6 @@ from __future__ import unicode_literals
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .job import Job
 from .subclient import Subclients
@@ -328,7 +327,7 @@ class Instances(object):
                 SDKException:
                     if type of the instance name argument is not string
         """
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException('Instance', '101')
 
         return self._instances and instance_name.lower() in self._instances
@@ -348,7 +347,7 @@ class Instances(object):
 
                     if no instance exists with the given name
         """
-        if isinstance(instance_name, basestring):
+        if isinstance(instance_name, str):
             instance_name = instance_name.lower()
 
             if self.has_instance(instance_name):
@@ -375,7 +374,7 @@ class Instances(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -550,7 +549,7 @@ class Instances(object):
 
                     if no instance exists with the given name
         """
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException('Instance', '101')
         else:
             instance_name = instance_name.lower()
@@ -1889,7 +1888,7 @@ class Instance(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2060,7 +2059,7 @@ class Instance(object):
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = self._commcell_object.clients.get(client)
 
         restore_option["client_name"] = client.client_name
@@ -2416,8 +2415,8 @@ class Instance(object):
         """
         from .client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -2428,7 +2427,7 @@ class Instance(object):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')

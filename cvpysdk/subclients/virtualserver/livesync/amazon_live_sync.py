@@ -27,7 +27,6 @@ AmazonLiveSync:
     configure_live_sync()     -- To configure live sync from supplied parameters
 
 """
-from past.builtins import basestring
 from cvpysdk.subclients.virtualserver.livesync.vsa_live_sync import VsaLiveSync
 from cvpysdk.exception import SDKException
 
@@ -149,7 +148,7 @@ class AmazonLiveSync(VsaLiveSync):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if not restored_vm_name:

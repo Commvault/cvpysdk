@@ -55,8 +55,6 @@ Metallic instance Attributes:
 
 """
 
-from past.builtins import basestring
-
 from .exception import SDKException
 from .organization import Organization
 from .security.user import User
@@ -102,9 +100,9 @@ class Metallic(object):
                     if response is not success
 
         """
-        if not (isinstance(cloud_webconsole_hostname, basestring) and
-                isinstance(cloud_username, basestring) and
-                isinstance(cloud_password, basestring)):
+        if not (isinstance(cloud_webconsole_hostname, str) and
+                isinstance(cloud_username, str) and
+                isinstance(cloud_password, str)):
             raise SDKException('Metallic', '101')
         from cvpysdk.commcell import Commcell
         metallic_cell = self._get_eligible_metallic_commcells(cloud_username, cloud_webconsole_hostname)
@@ -136,11 +134,11 @@ class Metallic(object):
 
 
         """
-        if not (isinstance(cloud_webconsole_hostname, basestring) and
-                isinstance(cloud_username, basestring) and
-                isinstance(cloud_password, basestring)):
+        if not (isinstance(cloud_webconsole_hostname, str) and
+                isinstance(cloud_username, str) and
+                isinstance(cloud_password, str)):
             raise SDKException('Metallic', '101')
-        if msp_company_name and not (isinstance(msp_company_name, basestring)):
+        if msp_company_name and not (isinstance(msp_company_name, str)):
             raise SDKException('Metallic', '101')
         self._metallic_commcell_object(cloud_webconsole_hostname, cloud_username, cloud_password)
         if msp_company_name and not isinstance(msp_company_name, Organization):
@@ -241,7 +239,7 @@ class Metallic(object):
 
 
         """
-        if msp_company_name and not (isinstance(msp_company_name, basestring)):
+        if msp_company_name and not (isinstance(msp_company_name, str)):
             raise SDKException('Metallic', '101')
         if msp_company_name and not isinstance(msp_company_name, Organization):
             msp_company_obj = self._commcell_object.organizations.get(msp_company_name)

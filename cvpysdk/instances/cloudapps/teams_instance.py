@@ -32,7 +32,6 @@ TeamsInstance:
 """
 
 from __future__ import unicode_literals
-from past.builtins import basestring
 
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
@@ -108,7 +107,7 @@ class TeamsInstance(CloudAppsInstance):
 
         DISCOVERY_TYPE = 8
         max_retries = 5
-        url = self._services['GET_CLOUDAPPS_USERS'] % (self.instance_id, self._agent_object._client_object.client_id, DISCOVERY_TYPE)
+        url = f"{self._services['GET_CLOUDAPPS_USERS'] % (self.instance_id, self._agent_object._client_object.client_id, DISCOVERY_TYPE)}&pageSize=0"
 
         for retry in range(max_retries):
 
@@ -120,12 +119,13 @@ class TeamsInstance(CloudAppsInstance):
             if flag:
 
                 if response.json():
-
-                    if 'userAccounts' in response.json():
-                        return {team['smtpAddress']: team for team in response.json()['userAccounts']}
+                    resp = response.json()
+                    if 'userAccounts' in resp:
+                        self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
+                        return self.discovered_users
 
                     # IF OUR RESPONSE IS EMPTY OR WE HAVE REACHED MAXIMUM NUMBER OF ATTEMPTS WITHOUT DESIRED RESPONSE
-                    elif not response.json() or retry == max_retries-1:
+                    elif not resp or retry == max_retries-1:
                         raise SDKException('Response', '102')
 
                     time.sleep(30)

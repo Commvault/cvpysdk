@@ -33,8 +33,6 @@ JournalMailboxSubclient:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
 import time
@@ -245,21 +243,21 @@ class JournalMailboxSubclient(ExchangeSubclient):
         from ...policies.configuration_policies import ConfigurationPolicy
 
         if not (isinstance(subclient_content[
-                'journal_policy'], (ConfigurationPolicy, basestring)) and
+                'journal_policy'], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content[
-                    'retention_policy'], (ConfigurationPolicy, basestring)) and
+                    'retention_policy'], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content['mailboxNames'], list)):
             raise SDKException('Subclient', '101')
 
         if isinstance(subclient_content['journal_policy'], ConfigurationPolicy):
             journal_policy = subclient_content['journal_policy']
-        elif isinstance(subclient_content['journal_policy'], basestring):
+        elif isinstance(subclient_content['journal_policy'], str):
             journal_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content['journal_policy'])
 
         if isinstance(subclient_content['retention_policy'], ConfigurationPolicy):
             retention_policy = subclient_content['retention_policy']
-        elif isinstance(subclient_content['retention_policy'], basestring):
+        elif isinstance(subclient_content['retention_policy'], str):
             retention_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content['retention_policy'])
 

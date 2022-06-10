@@ -42,7 +42,6 @@ AmazonVirtualServerSubclient:
 """
 
 from enum import Enum
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -92,14 +91,14 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                 vm_to_restore         (list)        --  provide the VM name to restore
                                                         default: None
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
-                is_aws_proxy          (basestring)  --  boolean value whether proxy resides in AWS
+                is_aws_proxy          (str)  --  boolean value whether proxy resides in AWS
                                                         or not
                                                         default: True
 
-                amazon_bucket         (basestring)  --  Amazon bucket (required when non-AWS proxy
+                amazon_bucket         (str)  --  Amazon bucket (required when non-AWS proxy
                                                         is used)
 
                 overwrite             (bool)        --  overwrite the existing VM
@@ -135,7 +134,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -194,21 +193,21 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             Machine to the source client and corresponding zone and instance type.
 
             Args:
-                vm_to_restore         (basestring)  --  provide the VM name to restore
+                vm_to_restore         (str)  --  provide the VM name to restore
                                                         default: None
 
-                vm_display_name       (basestring)        --  provide the new display name for the
+                vm_display_name       (str)        --  provide the new display name for the
                                                         restored VM
                                                         default: None
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
-                is_aws_proxy          (basestring)  --  boolean value whether proxy resides in AWS
+                is_aws_proxy          (str)  --  boolean value whether proxy resides in AWS
                                                         or not
                                                         default: True
 
-                amazon_bucket         (basestring)  --  Amazon bucket (required when non-AWS proxy
+                amazon_bucket         (str)  --  Amazon bucket (required when non-AWS proxy
                                                         is used)
 
                 amazon_options        (dict)        --  dict containing configuration options for
@@ -256,7 +255,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             amazon_options = {}
 
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -265,19 +264,16 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
         if proxy_client is not None:
-            restore_option['client'] = proxy_client
+            restore_option['client_name'] = proxy_client
 
         if vm_display_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(vm_display_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(vm_display_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = vm_display_name
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
-
-        if proxy_client is not None:
-            restore_option['client'] = proxy_client
 
         if not is_aws_proxy:
             if not amazon_bucket:
@@ -331,24 +327,24 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             to the provided instance.
 
             Args:
-                vm_to_restore         (basestring)  --  provide the source vm name
+                vm_to_restore         (str)  --  provide the source vm name
 
-                destination_vm        (basestring)  --  provide the destination VM name to restore
+                destination_vm        (str)  --  provide the destination VM name to restore
 
-                disk_prefix       (basestring)        --  provide the new display name for the
+                disk_prefix       (str)        --  provide the new display name for the
                                                     restored disk
                                                     default: None
 
-                disk_name       (basestring)        --  provide the new display name for the source disk
+                disk_name       (str)        --  provide the new display name for the source disk
                                                     default: None
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
-                destination_vm_guid     (basestring)  --  instance id of the vm
+                destination_vm_guid     (str)  --  instance id of the vm
                                                             default:None
 
-                media_agent             (basestring)  --  media agent to be used browse and restore
+                media_agent             (str)  --  media agent to be used browse and restore
 
                 amazon_options        (dict)        --  dict containing configuration options for
                                                         restored VM. Permissible keys are below
@@ -384,7 +380,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             amazon_options = {}
 
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -471,14 +467,14 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                                                            restored VM.
                                                            default: {}
 
-                        azure_client    (basestring):      name of the AzureRM client
+                        azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
                                                            restored.
 
-                        resource_group   (basestring):      destination Resource group
+                        resource_group   (str):      destination Resource group
                                                             in the AzureRM
 
-                        storage_account  (basestring):    storage account where the
+                        storage_account  (str):    storage account where the
                                                           restored VM should be located
                                                           in AzureRM
 
@@ -488,7 +484,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                         power_on               (bool):    power on the  restored VM
                                                           default: True
 
-                        instance_size    (basestring):    Instance Size of restored VM
+                        instance_size    (str):    Instance Size of restored VM
 
                         public_ip              (bool):    If True, creates the Public IP of
                                                           restored VM
@@ -498,15 +494,15 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                         copy_precedence         (int):    copy precedence value
                                                           default: 0
 
-                        proxy_client      (basestring):   destination proxy client
+                        proxy_client      (str):   destination proxy client
 
-                        networkDisplayName(basestring):   destination network display name
+                        networkDisplayName(str):   destination network display name
 
-                        networkrsg        (basestring):   destination network display name's security group
+                        networkrsg        (str):   destination network display name's security group
 
-                        destsubid         (basestring):   destination subscription id
+                        destsubid         (str):   destination subscription id
 
-                        subnetId          (basestring):   destination subet id
+                        subnetId          (str):   destination subet id
 
 
 
@@ -527,13 +523,13 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
-        if not isinstance(azure_client, basestring):
+        if not isinstance(azure_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)

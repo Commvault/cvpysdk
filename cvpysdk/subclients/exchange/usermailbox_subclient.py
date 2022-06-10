@@ -72,8 +72,6 @@ UsermailboxSubclient:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ...exception import SDKException
 
 from ..exchsubclient import ExchangeSubclient
@@ -129,10 +127,10 @@ class UsermailboxSubclient(ExchangeSubclient):
         """
 
         from ...policies.configuration_policies import ConfigurationPolicy
-        if not (isinstance(configuration_policy, (basestring, ConfigurationPolicy))):
+        if not (isinstance(configuration_policy, (str, ConfigurationPolicy))):
             raise SDKException('Subclient', '101')
 
-        if isinstance(configuration_policy, basestring):
+        if isinstance(configuration_policy, str):
             configuration_policy = ConfigurationPolicy(
                 self._commcell_object, configuration_policy)
 

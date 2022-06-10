@@ -38,7 +38,6 @@ XenSubclient:
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
 """
-from past.builtins import basestring
 from cvpysdk.exception import SDKException
 from ..vssubclient import VirtualServerSubclient
 
@@ -82,7 +81,7 @@ class Xen(VirtualServerSubclient):
                                                    default: True
 
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 copy_precedence       (int)         --  copy precedence value
@@ -139,19 +138,19 @@ class Xen(VirtualServerSubclient):
                 vm_to_restore     (list)  --  provide the VM name to restore
                                               default: None
 
-                destination_client    (basestring) -- name of the Pseudo client
+                destination_client    (str) -- name of the Pseudo client
                                                   where the VM should be
                                                     restored.
 
-                new_name          (basestring) -- new name to be given to the
+                new_name          (str) -- new name to be given to the
                                                     restored VM
 
-                xen_server          (basestring) -- destination cluster or  host
+                xen_server          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                storage         (basestring) -- datastore where the
+                storage         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -166,7 +165,7 @@ class Xen(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                proxy_client     (basestring)  --  proxy client to be used for restore
+                proxy_client     (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
 
@@ -190,8 +189,8 @@ class Xen(VirtualServerSubclient):
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(new_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(new_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = new_name
 

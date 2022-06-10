@@ -113,7 +113,6 @@ UserGroup:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from past.builtins import basestring
 from .security_association import SecurityAssociation
 
 from ..exception import SDKException
@@ -209,7 +208,7 @@ class UserGroups(object):
                 SDKException:
                     if type of the user group name argument is not string
         """
-        if not isinstance(user_group_name, basestring):
+        if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
 
         return self._user_groups and user_group_name.lower() in self._user_groups
@@ -229,7 +228,7 @@ class UserGroups(object):
 
                     if no user group exists with the given name
         """
-        if not isinstance(user_group_name, basestring):
+        if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
         else:
             user_group_name = user_group_name.lower()

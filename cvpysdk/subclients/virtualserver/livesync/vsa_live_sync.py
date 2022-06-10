@@ -132,8 +132,6 @@ LiveSyncVMPair Attributes:
 
 import uuid
 
-from past.builtins import basestring
-
 from ....constants import HypervisorType as hv_type
 from ....constants import VSALiveSyncStatus as sync_status
 from ....constants import VSAFailOverStatus as failover_status
@@ -379,7 +377,7 @@ class VsaLiveSync:
                 if type of the live sync name argument is not string
 
         """
-        if not isinstance(live_sync_name, basestring):
+        if not isinstance(live_sync_name, str):
             raise SDKException('LiveSync', '101')
         live_sync_name = live_sync_name.lower()
         if self.has_live_sync_pair(live_sync_name):
@@ -552,7 +550,7 @@ class LiveSyncPairs:
                 if type of the vm pair name argument is not string
 
         """
-        if not isinstance(vm_pair_name, basestring):
+        if not isinstance(vm_pair_name, str):
             raise SDKException('LiveSync', '101')
         if self.has_vm_pair(vm_pair_name):
             return LiveSyncVMPair(

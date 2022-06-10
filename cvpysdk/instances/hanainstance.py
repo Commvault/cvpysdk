@@ -51,8 +51,6 @@ from __future__ import unicode_literals
 
 import threading
 
-from past.builtins import basestring
-
 from ..instance import Instance
 from ..exception import SDKException
 
@@ -67,7 +65,7 @@ class SAPHANAInstance(Instance):
         Args:
             agent_object    (object):       instance of the agent class
 
-            instance_name   (basestring):   name of the instance
+            instance_name   (str):   name of the instance
 
             instance_id     (int):          ID of the instance
 
@@ -221,7 +219,7 @@ class SAPHANAInstance(Instance):
             recover_time = 0
             point_in_time = {}
         else:
-            if not isinstance(point_in_time, basestring):
+            if not isinstance(point_in_time, str):
                 raise SDKException('Instance', 103)
 
             point_in_time = {
@@ -445,7 +443,7 @@ class SAPHANAInstance(Instance):
                     if response is not success
 
         """
-        if not isinstance(instance, (basestring, Instance)):
+        if not isinstance(instance, (str, Instance)):
             raise SDKException('Instance', '101')
 
         request_json = self._restore_request_json(

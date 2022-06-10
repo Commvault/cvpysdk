@@ -143,7 +143,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .subclient import Subclients
 from .schedules import Schedules
@@ -361,7 +360,7 @@ class Backupsets(object):
                 SDKException:
                     if type of the backupset name argument is not string
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
 
         return self._backupsets and backupset_name.lower() in self._backupsets
@@ -375,7 +374,7 @@ class Backupsets(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -451,7 +450,7 @@ class Backupsets(object):
 
                     if backupset with same name already exists
         """
-        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -581,7 +580,7 @@ request_json['backupSetInfo'].update({
                 
 
         """        
-        if not (isinstance(archiveset_name, basestring)):
+        if not (isinstance(archiveset_name, str)):
             raise SDKException('Backupset', '101')
         else:
             archiveset_name = archiveset_name.lower()
@@ -907,7 +906,7 @@ request_json['backupSetInfo'].update({
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -945,7 +944,7 @@ request_json['backupSetInfo'].update({
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -1249,7 +1248,7 @@ class Backupset(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1298,7 +1297,7 @@ class Backupset(object):
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1430,7 +1429,7 @@ class Backupset(object):
         mode = 2
         paths = []
 
-        if isinstance(options['path'], basestring):
+        if isinstance(options['path'], str):
             paths.append(options['path'])
         elif isinstance(options['path'], list):
             paths = options['path']
@@ -1873,7 +1872,7 @@ class Backupset(object):
 
                     if type of value input is not string
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -1900,7 +1899,7 @@ class Backupset(object):
                     if description cannot be modified for this backupset
         """
         if self.description is not None:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -1944,7 +1943,7 @@ class Backupset(object):
         from .plan import Plan
         if isinstance(value, Plan):
             self._plan_obj = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
             self._plan_obj = None
@@ -2194,27 +2193,6 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
-    
-    def create_subclient(self, subclient, storagepolicyname, description):
-
-            """"
-            This is to create new subclient
-            
-            Args: 
-                subclientname (str) - subclient name to be created
-                storagepolicyname  (str) - name of the storage policy associate to subclient
-                description (str) - Description for subclient which is to be created
-            Raise:
-                  Exception:
-                    If fail to create subclient
-    
-            """
-            try:
-                self.subclients.add(subclient, storagepolicyname,description)
-            except Exception as err:
-                self.log.exception(
-                    "Exception while adding contents to subclient" + str(err))
-                raise err
 
     def delete_data(self, paths):
         """Deletes items for the backupset in the Index and makes them unavailable for

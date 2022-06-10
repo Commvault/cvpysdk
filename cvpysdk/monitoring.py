@@ -108,8 +108,6 @@ Attributes
     **monitoring_policy_id**            -- returnd the id of monitoringpolicy
 """
 
-from past.builtins import basestring
-
 from .exception import SDKException
 from .job import Job
 
@@ -268,7 +266,7 @@ class MonitoringPolicies(object):
                     if type of the monitoring_policy_name is not string
         """
 
-        if not isinstance(monitoring_policy_name, basestring):
+        if not isinstance(monitoring_policy_name, str):
             raise SDKException('Monitoring', '101')
 
         return self.all_monitoring_policies and monitoring_policy_name.lower() in \
@@ -327,7 +325,7 @@ class MonitoringPolicies(object):
 
         """
 
-        if not isinstance(analytics_server_name, basestring):
+        if not isinstance(analytics_server_name, str):
             raise SDKException('Monitoring', '101')
 
         return self.all_analytics_servers and analytics_server_name.lower() in \
@@ -398,7 +396,7 @@ class MonitoringPolicies(object):
                 SDKException:
                     if type of the library name argument is not string
         """
-        if not isinstance(template_name, basestring):
+        if not isinstance(template_name, str):
             raise SDKException('Monitoring', '101')
 
         return self.all_templates and template_name.lower() in self.all_templates
@@ -419,7 +417,7 @@ class MonitoringPolicies(object):
 
                     if no monitoring policy exists with the given name
         """
-        if not isinstance(monitoring_policy_name, basestring):
+        if not isinstance(monitoring_policy_name, str):
             raise SDKException('Monitoring', '101')
 
         monitoring_policy_name = monitoring_policy_name.lower()
@@ -607,7 +605,7 @@ class MonitoringPolicies(object):
 
                     if response is not succcess
         """
-        if not isinstance(monitoring_policy_name, basestring):
+        if not isinstance(monitoring_policy_name, str):
             raise SDKException('Monitoring', '101')
         else:
             monitoring_policy_name = monitoring_policy_name.lower()

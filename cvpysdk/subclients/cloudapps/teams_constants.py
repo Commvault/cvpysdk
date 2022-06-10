@@ -124,3 +124,14 @@ class TeamsConstants:
             "subTasks": []
         }
     }
+
+    RESTORE_TASK_JSON = {
+        "initiatedFrom": 2,
+        "taskType": 1,
+        "policyType": 0
+    }
+
+    RESTORE_SUBTASK_JSON = {
+        "subTaskType": 3,
+        "operationType": 1001
+    }

@@ -76,7 +76,6 @@ Class: ApplicationGroups:                Derived class from Subclients Base
 import copy
 from cvpysdk.subclients.vssubclient import VirtualServerSubclient
 from cvpysdk.virtualmachinepolicies import VirtualMachinePolicy
-from past.builtins import basestring
 from ...exception import SDKException
 from ...subclient import Subclients
 
@@ -644,19 +643,19 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                disk_option           (basestring)  --  disk provisioning for the restored vm
+                disk_option           (str)  --  disk provisioning for the restored vm
                                                         Options for input are: 'Original',
                                                         'Thick Lazy Zero', 'Thin',
                                                         'Thick Eager Zero'
                                                         default: Original
 
-                transport_mode        (basestring)  --  transport mode to be used for
+                transport_mode        (str)  --  transport mode to be used for
                                                         the restore.
                                                         Options for input are: 'Auto', 'SAN',
                                                         ''Hot Add', NBD', 'NBD SSL'
                                                         default: Auto
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
 
@@ -677,7 +676,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
         restore_option = {}
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
         disk_option_value = self._disk_option[disk_option]
         transport_mode_value = self._transport_mode[transport_mode]
@@ -827,17 +826,17 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                destination_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (str)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
                                                         (only yaml files permitted - enter full
                                                         name of the disk)
                                                         default: None
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
             Kwargs:
@@ -885,8 +884,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, list)):
             raise SDKException('Subclient', '101')
 
@@ -1038,8 +1037,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         in_place = kwargs.get('in_place', False)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, str)):
             raise SDKException('Subclient', '101')
         if volume_level_restore not in [6, 7]:

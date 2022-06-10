@@ -43,8 +43,6 @@ NASSubclient:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from .fssubclient import FileSystemSubclient
 from ..exception import SDKException
 
@@ -98,7 +96,7 @@ class NASSubclient(FileSystemSubclient):
         else:
             request_json = self._backup_json(backup_level, incremental_backup, incremental_level)
 
-            if not isinstance(snap_name, basestring):
+            if not isinstance(snap_name, str):
                 raise SDKException('Subclient', '101')
 
             if snap_name:

@@ -37,7 +37,6 @@ GoogleInstance:
 """
 
 from __future__ import unicode_literals
-from past.builtins import basestring
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 from ...constants import AppIDAType
@@ -351,8 +350,8 @@ class GoogleInstance(CloudAppsInstance):
         """
         from cvpysdk.client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -360,7 +359,7 @@ class GoogleInstance(CloudAppsInstance):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException('Subclient', '105')

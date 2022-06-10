@@ -142,14 +142,11 @@ Substore:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from enum import Enum
 
 from .exception import SDKException
 from .job import Job
 
-install_aliases()
 
 
 class StoreFlags(Enum):
@@ -267,7 +264,7 @@ class DeduplicationEngines(object):
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         """
-        if not isinstance(storage_policy_name, basestring) and not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
 
@@ -289,7 +286,7 @@ class DeduplicationEngines(object):
 
                 if no engine exists with given storage policy and copy name
         """
-        if not isinstance(storage_policy_name, basestring) and  not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         storage_policy_name = storage_policy_name.lower()

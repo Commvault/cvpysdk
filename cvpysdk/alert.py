@@ -127,7 +127,6 @@ Alert Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import xml.etree.ElementTree as ET
-from past.builtins import basestring
 from .exception import SDKException
 
 
@@ -532,7 +531,7 @@ class Alerts(object):
                 SDKException:
                     if type of the alert name argument is not string
         """
-        if not isinstance(alert_name, basestring):
+        if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
 
         return self._alerts and alert_name.lower() in self._alerts
@@ -552,7 +551,7 @@ class Alerts(object):
 
                     if no alert exists with the given name
         """
-        if not isinstance(alert_name, basestring):
+        if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
         else:
             alert_name = alert_name.lower()
@@ -670,7 +669,7 @@ class Alerts(object):
 
                     if no alert exists with the given name
         """
-        if not isinstance(alert_name, basestring):
+        if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
         alert_name = alert_name.lower()
 
@@ -941,7 +940,7 @@ class Alert(object):
     @alert_name.setter
     def alert_name(self, name):
         """Modifies the Alert name"""
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Alert', '101')
 
         self._alert_name = name
@@ -1060,7 +1059,7 @@ class Alert(object):
 
                     if no notification type exists with the name provided
         """
-        if not isinstance(alert_notification_type, basestring):
+        if not isinstance(alert_notification_type, str):
             raise SDKException('Alert', '101')
 
         if alert_notification_type.lower() in self._all_notification_types:
@@ -1112,7 +1111,7 @@ class Alert(object):
 
                     if no notification type exists with the name provided
         """
-        if not isinstance(alert_notification_type, basestring):
+        if not isinstance(alert_notification_type, str):
             raise SDKException('Alert', '101')
 
         if alert_notification_type.lower() in self._all_notification_types:

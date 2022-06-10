@@ -104,7 +104,6 @@ OracleInstance:
 
 """
 from __future__ import unicode_literals
-from past.builtins import basestring
 from base64 import b64encode
 import json
 from ..exception import SDKException
@@ -1129,8 +1128,8 @@ class OracleInstance(DatabaseInstance):
     def _get_rac_stream_allocation(self, destination_client, destination_instance, streams):
         """setter for RAC stream allocation on nodes data population in oracle options for restore
             Args:
-                destination_client  (basestring) -- Name of the destination client
-                destination_instance(basestring) -- Name of the destination RAC instance
+                destination_client  (str) -- Name of the destination client
+                destination_instance(str) -- Name of the destination RAC instance
                 streams             (int)    -- Number of streams for restore
         """
         destination_client_obj = self._commcell_object.clients.get(destination_client)
@@ -1324,7 +1323,7 @@ class OracleInstance(DatabaseInstance):
 
         """
         if not (isinstance(path, list) and
-                isinstance(db_password, basestring)):
+                isinstance(db_password, str)):
             raise SDKException('Instance', '101')
         if not path:
             raise SDKException('Instance','103')

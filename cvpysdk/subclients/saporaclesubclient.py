@@ -40,7 +40,6 @@ SAPOracleSubclient:
 from __future__ import unicode_literals
 
 from ..subclient import Subclient
-from past.builtins import basestring
 from ..exception import SDKException
 
 

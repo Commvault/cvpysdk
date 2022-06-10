@@ -317,7 +317,6 @@ import getpass
 import socket
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from requests.exceptions import SSLError
 from requests.exceptions import Timeout
@@ -2928,7 +2927,7 @@ class Commcell(object):
                 SDKException:
                     if type of the commcell_name is not string
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
 
         return self.registered_routing_commcells and commcell_name.lower() in self.registered_routing_commcells
@@ -3075,7 +3074,7 @@ class Commcell(object):
             if there is no response
 
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
         else:
             commcell_name = commcell_name.lower()
@@ -3243,7 +3242,7 @@ class Commcell(object):
                 if response is not success
         """
 
-        if not isinstance(service_commcell, basestring):
+        if not isinstance(service_commcell, str):
             raise SDKException('User', '101')
 
         request_json = {

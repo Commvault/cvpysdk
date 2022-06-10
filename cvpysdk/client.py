@@ -356,7 +356,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 import requests
 
@@ -873,7 +872,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -1160,7 +1159,7 @@ class Clients(object):
                     if type of the client name argument is not string
 
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
         if self.all_clients and client_name.lower() in self.all_clients:
             return True
@@ -1186,7 +1185,7 @@ class Clients(object):
                 SDKException:
                     if type of the client name argument is not string
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
 
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
@@ -1201,7 +1200,7 @@ class Clients(object):
                 endpoint        (str)   --  Endpoint for making request to (default is '/Client')
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1736,7 +1735,7 @@ class Clients(object):
         member_servers = []
 
         for client in access_nodes_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -1786,55 +1785,31 @@ class Clients(object):
         }
         tenant_url = kwargs.get('tenant_url')
         global_administrator = kwargs.get('global_administrator')
-        if tenant_url:
-            user_password = b64encode(kwargs.get('user_password').encode()).decode()
-            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                "spOffice365BackupSetProp"] = {
-                "tenantUrlItem": tenant_url,
-                "cloudRegion": 1,
-                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
-                "infraStructurePoolEnabled": False,
-                "serviceAccounts": {
-                    "accounts": [
-                        {
-                            "serviceType": service_type["Sharepoint Online"],
-                            "userAccount": {
-                                "password": user_password,
-                                "userName": kwargs.get('user_username')
-                            }
-                        }
-                    ]
-                },
-                "office365Credentials": {
+        request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+            "spOffice365BackupSetProp"] = {
+            "tenantUrlItem": tenant_url,
+            "cloudRegion": 1,
+            "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
+            "infraStructurePoolEnabled": False,
+             "office365Credentials": {
                     "userName": ""
-                },
-                "azureAppList": {
+                }
+        }
+        if global_administrator:
+            azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+            global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
                         {
-                            "azureDirectoryId": "",
-                            "azureAppId": ""
-                        }
-                    ]
-                }
-            }
-            if kwargs.get('is_modern_auth_enabled'):
-                azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
-                request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                    "spOffice365BackupSetProp"]["azureAppList"]["azureApps"][0] = {
                             "azureAppId": kwargs.get('azure_app_id'),
                             "azureAppKeyValue": azure_app_key_id,
                             "azureDirectoryId": kwargs.get('azure_directory_id')
                         }
-        elif global_administrator:
-            azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
-            global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
-
+                    ]
+                }
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                "spOffice365BackupSetProp"] = {
-                "cloudRegion": 1,
-                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
-                "infraStructurePoolEnabled": False,
-                "serviceAccounts": {
+                "spOffice365BackupSetProp"]["serviceAccounts"] = {
                     "accounts": [
                         {
                             "serviceType": service_type["Sharepoint Global Administrator"],
@@ -1844,9 +1819,25 @@ class Clients(object):
                             }
                         }
                     ]
-                },
-                "office365Credentials": {},
-                "azureAppList": {
+                }
+        else:
+            user_password = b64encode(kwargs.get('user_password').encode()).decode()
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["serviceAccounts"] = {
+                    "accounts": [
+                        {
+                            "serviceType": service_type["Sharepoint Online"],
+                            "userAccount": {
+                                "password": user_password,
+                                "userName": kwargs.get('user_username')
+                            }
+                        }
+                    ]
+                }
+            if kwargs.get('is_modern_auth_enabled'):
+                azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+                request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                    "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
                         {
                             "azureAppId": kwargs.get('azure_app_id'),
@@ -1855,7 +1846,6 @@ class Clients(object):
                         }
                     ]
                 }
-            }
         if kwargs.get('azure_username'):
             azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
@@ -2146,7 +2136,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -3164,7 +3154,7 @@ class Clients(object):
                         onedrive_prop['infraStructurePoolEnabled'] = True
                     else:
                         onedrive_prop['infraStructurePoolEnabled'] = False
-                        if isinstance(access_node, basestring):
+                        if isinstance(access_node, str):
                             proxy_servers = []
                             access_node = access_node.strip().lower()
                             if self.has_client(access_node):
@@ -3318,7 +3308,7 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             name = name.lower()
             client_name = None
             client_id = None
@@ -3375,7 +3365,7 @@ class Clients(object):
                     if no client exists with the given name
 
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
         else:
             client_name = client_name.lower()
@@ -4784,7 +4774,7 @@ class Client(object):
 
                     if response is not success
         """
-        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+        if not (isinstance(script_type, str) and (isinstance(script, str))):
             raise SDKException('Client', '101')
 
         script_types = {
@@ -4893,7 +4883,7 @@ class Client(object):
                     if response is not success
 
         """
-        if not isinstance(command, basestring):
+        if not isinstance(command, str):
             raise SDKException('Client', '101')
 
         import html
@@ -5590,7 +5580,7 @@ class Client(object):
         if enc_setting is not None:
             client_props['encryptionSettings'] = enc_setting
             if enc_setting == "ON_CLIENT":
-                if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+                if not (isinstance(key, str) and isinstance(key_len, str)):
                     raise SDKException('Client', '101')
                 client_props['CipherType'] = key
                 client_props['EncryptKeyLength'] = int(key_len)
@@ -5668,7 +5658,7 @@ class Client(object):
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
         """
-        if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+        if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
             raise SDKException('Client', '101')
 
         if prop_name == "clientSideDeduplication" and prop_value == "ON_CLIENT":

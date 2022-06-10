@@ -152,7 +152,6 @@ from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
 import xmltodict
-from past.builtins import basestring
 
 from cvpysdk.plan import Plans
 from ..exception import SDKException
@@ -1242,7 +1241,7 @@ class VirtualServerSubclient(Subclient):
 
 
         """
-        if not isinstance(input_xml, basestring):
+        if not isinstance(input_xml, str):
             raise SDKException("Subclient", "101")
 
         root = ET.fromstring(input_xml)
@@ -1640,8 +1639,8 @@ class VirtualServerSubclient(Subclient):
         _verify_path = options.get('verify_path', True)
 
         # check if inputs are correct
-        if not(isinstance(destination_path, basestring) and
-               (isinstance(vm_name, basestring))):
+        if not(isinstance(destination_path, str) and
+               (isinstance(vm_name, str))):
             raise SDKException('Subclient', '105')
 
         if vm_name not in _vm_names:
@@ -1661,7 +1660,7 @@ class VirtualServerSubclient(Subclient):
         if isinstance(folder_to_restore, list):
             _folder_to_restore_list = folder_to_restore
 
-        elif isinstance(folder_to_restore, basestring):
+        elif isinstance(folder_to_restore, str):
             _folder_to_restore_list = []
             _folder_to_restore_list.append(folder_to_restore)
         else:
@@ -1769,7 +1768,7 @@ class VirtualServerSubclient(Subclient):
            specified.
 
             Args:
-                vm_path             (basestring)   --  folder path to get the contents
+                vm_path             (str)   --  folder path to get the contents
                                                 default: '\\';
                                                 returns the root of the Backup
                                                 content
@@ -1847,13 +1846,13 @@ class VirtualServerSubclient(Subclient):
         return volume restore type and destination disk Type
 
         Args:
-            src_disk_extn   (basestring)   --  source disk extension of the disk
-            dest_disk_extn  (basestring)   --  Extension to which disk is converted
+            src_disk_extn   (str)   --  source disk extension of the disk
+            dest_disk_extn  (str)   --  Extension to which disk is converted
 
         return
-            _vol_restore_type   (basestring)   -- value of Volume restore type
+            _vol_restore_type   (str)   -- value of Volume restore type
                                            parameter of the XML
-            _dest_disk_type     (basestring)   -- value of destination Disk Type
+            _dest_disk_type     (str)   -- value of destination Disk Type
                                            parameter of the XML
         """
 

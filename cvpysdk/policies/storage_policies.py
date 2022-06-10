@@ -212,17 +212,12 @@ from __future__ import unicode_literals
 
 from base64 import b64encode
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
-
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
-
-install_aliases()
 
 
 class StoragePolicies(object):
@@ -328,7 +323,7 @@ class StoragePolicies(object):
                 SDKException:
                     if type of the storage policy name argument is not string
         """
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException('Storage', '101')
 
         return self._policies and policy_name.lower() in self._policies
@@ -348,7 +343,7 @@ class StoragePolicies(object):
 
                     if no storage policy exists with the given name
         """
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
 
         storage_policy_name = storage_policy_name.lower()
@@ -404,13 +399,13 @@ class StoragePolicies(object):
 
         """
 
-        if not (isinstance(global_storage_policy_name, basestring) and
-                isinstance(library, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(global_storage_policy_name, str) and
+                isinstance(library, str) and
+                isinstance(media_agent, str)):
             raise SDKException("Storage", "101")
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
             raise SDKException("Storage", "101")
 
         request_json = {
@@ -585,15 +580,15 @@ class StoragePolicies(object):
         # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                (not (isinstance(storage_policy_name, basestring) and
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                (not (isinstance(storage_policy_name, str) and
                       isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
+                (incremental_sp is not None and not isinstance(incremental_sp, str))):
             raise SDKException('Storage', '101')
 
         if isinstance(library, DiskLibrary):
             disk_library = library
-        elif isinstance(library, basestring):
+        elif isinstance(library, str):
             disk_library = DiskLibrary(self._commcell_object, library)
         elif extra_arguments["global_policy_name"] is not None:
             pass
@@ -603,7 +598,7 @@ class StoragePolicies(object):
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         elif extra_arguments["global_policy_name"] is not None:
             pass
@@ -805,11 +800,11 @@ class StoragePolicies(object):
                     if response is not success
         """
         tape_library = library
-        if not (isinstance(drive_pool, basestring) and
-                isinstance(scratch_pool, basestring) and
-                isinstance(tape_library, basestring) and
-                isinstance(media_agent, basestring) and
-                isinstance(storage_policy_name, basestring) and
+        if not (isinstance(drive_pool, str) and
+                isinstance(scratch_pool, str) and
+                isinstance(tape_library, str) and
+                isinstance(media_agent, str) and
+                isinstance(storage_policy_name, str) and
                 (retention_period_days is None or isinstance(retention_period_days, int))):
             raise SDKException('Storage', '101')
 
@@ -892,7 +887,7 @@ class StoragePolicies(object):
 
                     if response is not success
         """
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
@@ -1059,7 +1054,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of the storage policy copy name argument is not string
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         return self._copies and copy_name.lower() in self._copies
@@ -1102,7 +1097,7 @@ class StoragePolicy(object):
                     if response is not success
         """
         if global_policy is not None:
-            if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+            if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
                 raise SDKException('Storage', '101')
 
             if self.has_copy(copy_name):
@@ -1147,9 +1142,9 @@ class StoragePolicy(object):
                     }
 
         else:
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+            if not (isinstance(copy_name, str) and
+                    isinstance(library_name, str) and
+                    isinstance(media_agent_name, str)):
                 raise SDKException('Storage', '101')
 
             if self.has_copy(copy_name):
@@ -1311,7 +1306,7 @@ class StoragePolicy(object):
 
                             if response is not success
         """
-        if not isinstance(cloud_id, basestring):
+        if not isinstance(cloud_id, str):
             raise SDKException('Storage', '101')
 
         if include_doc_type is None:
@@ -1379,7 +1374,7 @@ class StoragePolicy(object):
         """
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
             raise SDKException('Storage', '101')
-        if not isinstance(ca_client_name, basestring):
+        if not isinstance(ca_client_name, str):
             raise SDKException('Storage', '101')
         request_xml = """<EVGui_SetEntityExtractionListReq archGroupId="{0}">
         <entityExtraction isConfigured="1">""".format(self._storage_policy_id)
@@ -1481,9 +1476,9 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -1573,7 +1568,7 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         else:
             copy_name = copy_name.lower()
@@ -1646,9 +1641,9 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -2149,8 +2144,8 @@ class StoragePolicy(object):
             all_copies = False
             if not media_agent:
                 media_agent = "&lt;ANY MEDIAAGENT&gt;"
-            if not (isinstance(storage_policy_copy_name, basestring) and
-                    isinstance(media_agent, basestring)):
+            if not (isinstance(storage_policy_copy_name, str) and
+                    isinstance(media_agent, str)):
                 raise SDKException('Storage', '101')
         else:
             if all_copies is False:
@@ -2249,7 +2244,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -2278,7 +2273,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -2346,11 +2341,11 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(path, basestring) and
-                isinstance(ddb_media_agent, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(path, str) and
+                isinstance(ddb_media_agent, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if dash_full is None:
@@ -2459,9 +2454,9 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(ver_type, basestring) and
-                isinstance(ddb_ver_level, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(ver_type, str) and
+                isinstance(ddb_ver_level, str)):
             raise SDKException('Storage', '101')
 
         request = {
@@ -2558,8 +2553,8 @@ class StoragePolicy(object):
 
             errorMessage - If Data Verification Job fails to Start
         """
-        if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
-                and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+        if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
+                and isinstance(media_agent_name, str) and isinstance(streams, int)):
             raise SDKException('Storage', '101')
 
         if jobs_to_verify.upper() == 'NEW':
@@ -2675,11 +2670,11 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(dest_path, basestring) and
-                isinstance(src_path, basestring) and
-                isinstance(dest_media_agent, basestring) and
-                isinstance(src_media_agent, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(dest_path, str) and
+                isinstance(src_path, str) and
+                isinstance(dest_media_agent, str) and
+                isinstance(src_media_agent, str)):
             raise SDKException('Storage', '101')
 
         request = {
@@ -2766,15 +2761,15 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not (isinstance(copy_id, basestring) and
-                isinstance(sidb_store_id, basestring) and
-                isinstance(sidb_new_path, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(copy_id, str) and
+                isinstance(sidb_store_id, str) and
+                isinstance(sidb_new_path, str) and
+                isinstance(media_agent, str)):
             raise SDKException('Storage', '101')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
         request_xml = """
@@ -2805,7 +2800,7 @@ class StoragePolicy(object):
 
                    if no copy exists with the given name
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -3689,7 +3684,7 @@ class StoragePolicyCopy(object):
             self._copy_flags['preserveEncryptionModeAsInSource'] = 1
 
         if int(encryption_values[0]) == 1:
-            if (isinstance(encryption_values[1], basestring)
+            if (isinstance(encryption_values[1], str)
                     and isinstance(encryption_values[2], int)):
                 self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
                 self._copy_flags['auxCopyReencryptData'] = 1
@@ -3722,7 +3717,7 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string
         """
-        if not isinstance(job_id, basestring):
+        if not isinstance(job_id, str):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -3745,9 +3740,9 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string or List of strings
         """
-        if not isinstance(job_id, basestring) and not isinstance(job_id, int):
+        if not isinstance(job_id, str) and not isinstance(job_id, int):
             if not isinstance(job_id, list) or\
-                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, basestring) for id in job_id)):
+                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, str) for id in job_id)):
                 raise SDKException('Storage', '101')
 
         # send multiple requests to counter limit of URL length in IIS

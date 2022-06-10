@@ -87,7 +87,6 @@ DROrchestrationOperations:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
 from ..exception import SDKException
 
 from .dr_orchestration_job_phase import DRJobPhaseToText, DRJobPhases
@@ -467,7 +466,7 @@ class DROrchestrationOperations(object):
                     If failover phase failed at any stage
         """
 
-        if not isinstance(jobId, basestring):
+        if not isinstance(jobId, str):
             raise SDKException('DROrchestrationOperations', '101')
 
         _replicationIds = self.dr_orchestration_options.get(
@@ -851,8 +850,8 @@ class DROrchestrationOperations(object):
                     If DR orchestration phase failed at any stage
         """
 
-        if not isinstance(jobId, basestring) and not isinstance(
-                replicationId, basestring):
+        if not isinstance(jobId, str) and not isinstance(
+                replicationId, str):
             raise SDKException('DROrchestrationOperations', '101')
 
         _DR_JOB_STATS = self._commcell_object._services['DR_GROUP_JOB_STATS'] % (

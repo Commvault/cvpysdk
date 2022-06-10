@@ -70,7 +70,6 @@ SalesforceSubclient:
 from __future__ import unicode_literals
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from ..casubclient import CloudAppsSubclient
 
@@ -383,7 +382,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_client, Client):
             client = destination_client
-        elif isinstance(destination_client, basestring):
+        elif isinstance(destination_client, str):
             client = Client(self._commcell_object, destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -533,7 +532,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_client, Client):
             dest_client = destination_client
-        elif isinstance(destination_client, basestring):
+        elif isinstance(destination_client, str):
             dest_client = Client(self._commcell_object, destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -712,7 +711,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_client, Client):
             dest_client = destination_client
-        elif isinstance(destination_client, basestring):
+        elif isinstance(destination_client, str):
             dest_client = Client(self._commcell_object, destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -725,7 +724,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_instance, Instance):
             dest_instance = destination_instance
-        elif isinstance(destination_instance, basestring):
+        elif isinstance(destination_instance, str):
             dest_instance = dest_agent.instances.get(destination_instance)
         else:
             raise SDKException('Subclient', '113')
@@ -736,7 +735,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_backupset, SalesforceBackupset):
             dest_backupset = destination_backupset
-        elif isinstance(destination_backupset, basestring):
+        elif isinstance(destination_backupset, str):
             dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
         else:
             raise SDKException('Subclient', '114')
@@ -942,7 +941,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_client, Client):
             dest_client = destination_client
-        elif isinstance(destination_client, basestring):
+        elif isinstance(destination_client, str):
             dest_client = Client(self._commcell_object, destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -955,7 +954,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_instance, Instance):
             dest_instance = destination_instance
-        elif isinstance(destination_instance, basestring):
+        elif isinstance(destination_instance, str):
             dest_instance = dest_agent.instances.get(destination_instance)
         else:
             raise SDKException('Subclient', '113')
@@ -966,7 +965,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_backupset, SalesforceBackupset):
             dest_backupset = destination_backupset
-        elif isinstance(destination_backupset, basestring):
+        elif isinstance(destination_backupset, str):
             dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
         else:
             raise SDKException('Subclient', '114')
@@ -1115,7 +1114,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_client, Client):
             dest_client = destination_client
-        elif isinstance(destination_client, basestring):
+        elif isinstance(destination_client, str):
             dest_client = self._commcell_object.clients.get(destination_client)
         else:
             raise SDKException('Subclient', '105')
@@ -1128,7 +1127,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_instance, Instance):
             dest_instance = destination_instance
-        elif isinstance(destination_instance, basestring):
+        elif isinstance(destination_instance, str):
             dest_instance = dest_agent.instances.get(destination_instance)
         else:
             raise SDKException('Subclient', '113')
@@ -1139,7 +1138,7 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         if isinstance(destination_backupset, SalesforceBackupset):
             dest_backupset = destination_backupset
-        elif isinstance(destination_backupset, basestring):
+        elif isinstance(destination_backupset, str):
             dest_backupset = SalesforceBackupset(dest_instance, destination_backupset)
         else:
             raise SDKException('Subclient', '114')

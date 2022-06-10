@@ -88,8 +88,6 @@ StoragePool instance attributes
 import xmltodict
 
 from .exception import SDKException
-from past.builtins import basestring
-# from future.standard_library import install_aliases
 
 # from .job import Job
 
@@ -292,14 +290,14 @@ class StoragePools:
         
         if not isinstance(media_agents, list):
             raise SDKException('Storage', '101')
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
         
         mediagent_obj = []
         for media_agent in media_agents:
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException('Storage', '103')
@@ -371,27 +369,27 @@ class StoragePools:
         """
         # from urllib.parse import urlencode
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                not (isinstance(storage_pool_name, basestring) or not isinstance(mountpath, basestring))):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
 
         # if isinstance(library, DiskLibrary):
         #     disk_library = library
-        # elif isinstance(library, basestring):
+        # elif isinstance(library, str):
         #     disk_library = DiskLibrary(self._commcell_object, library)
         # else:
         #     raise SDKException('Storage', '104')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException('Storage', '103')
 
         if isinstance(ddb_ma, MediaAgent):
             ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, basestring):
+        elif isinstance(ddb_ma, str):
             ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
         else:
             raise SDKException('Storage', '103')
@@ -493,7 +491,7 @@ class StoragePools:
 
         """
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
         else:
             storage_pool_name = storage_pool_name.lower()
@@ -629,7 +627,7 @@ class StoragePool(object):
         for media_agent in media_agents:        
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException('Storage', '103')
@@ -702,7 +700,7 @@ class StoragePool(object):
                 SDKException:
                     if reconfigure fails
         """
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
 
 
@@ -752,20 +750,20 @@ class StoragePool(object):
                        SDKException:
                            if replace fails
                """
-        if isinstance(disk_id, basestring):
+        if isinstance(disk_id, str):
             disk_id = int(disk_id)
         elif not isinstance(disk_id, int):
             raise SDKException('Storage', '101')
 
         media_agent_obj = None
-        if isinstance(media_agent, basestring):
+        if isinstance(media_agent, str):
             media_agent_obj = self._commcell_object.media_agents.get(media_agent)
         elif isinstance(media_agent, MediaAgent):
             media_agent_obj = media_agent
         else:
             raise SDKException('Storage', '103')
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
 
         request_json = {

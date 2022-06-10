@@ -245,7 +245,6 @@ Organization Attributes
 import re
 
 from datetime import datetime
-from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -462,7 +461,7 @@ class Organizations:
                     if type of the organization name argument is not string
 
         """
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         return self._organizations and name.lower() in self._organizations
@@ -533,10 +532,10 @@ class Organizations:
         if self.has_organization(name):
             raise SDKException('Organization', '106')
 
-        if not (isinstance(name, basestring) and
-                isinstance(email, basestring) and
-                isinstance(contact_name, basestring) and
-                isinstance(company_alias, basestring)):
+        if not (isinstance(name, str) and
+                isinstance(email, str) and
+                isinstance(contact_name, str) and
+                isinstance(company_alias, str)):
             raise SDKException('Organization', '101')
 
         if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
@@ -649,7 +648,7 @@ class Organizations:
                     if no organization exists with the given name
 
         """
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         name = name.lower()
@@ -1288,7 +1287,7 @@ class Organization:
 
         Args:
 
-            value (basestring): company alias to be set
+            value (str): company alias to be set
         """
         req_json = {
             "newAliasName": value
@@ -2085,8 +2084,8 @@ class Organization:
 
         """
 
-        if not (isinstance(name, basestring) and
-                isinstance(service_commcell, basestring)):
+        if not (isinstance(name, str) and
+                isinstance(service_commcell, str)):
             raise SDKException('Organization', '101')
 
         request_json = {
@@ -2154,7 +2153,7 @@ class Organization:
 
         """
 
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         request_json = {

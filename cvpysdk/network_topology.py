@@ -86,7 +86,6 @@ NetworkTopology:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from past.builtins import basestring
 from .exception import SDKException
 
 
@@ -195,7 +194,7 @@ class NetworkTopologies(object):
                     if type of the network topology name argument is not string
         """
 
-        if not isinstance(network_topology_name, basestring):
+        if not isinstance(network_topology_name, str):
             raise SDKException('NetworkTopology', '101')
 
         return (self._network_topologies and
@@ -353,7 +352,7 @@ class NetworkTopologies(object):
 
         """
 
-        if not isinstance(network_topology_name, basestring):
+        if not isinstance(network_topology_name, str):
             raise SDKException('NetworkTopology', '101')
 
         if not isinstance(client_groups, list):
@@ -440,7 +439,7 @@ class NetworkTopologies(object):
                     if no network topology exists with the given name
 
         """
-        if not isinstance(network_topology_name, basestring):
+        if not isinstance(network_topology_name, str):
             raise SDKException('NetworkTopology', '101')
         else:
             network_topology_name = network_topology_name.lower()
@@ -469,7 +468,7 @@ class NetworkTopologies(object):
                     if no network topology exists with the given name
         """
 
-        if not isinstance(network_topology_name, basestring):
+        if not isinstance(network_topology_name, str):
             raise SDKException('NetworkTopology', '101')
         else:
             network_topology_name = network_topology_name.lower()

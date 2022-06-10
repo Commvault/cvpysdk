@@ -59,8 +59,6 @@ import re
 from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
-from past.builtins import basestring
-
 from ..instance import Instance
 from ..exception import SDKException
 
@@ -184,7 +182,7 @@ class VirtualServerInstance(Instance):
         if not isinstance(clients_list, list):
             raise SDKException('Instance', '101')
         for client_name in clients_list:
-            if not isinstance(client_name, basestring):
+            if not isinstance(client_name, str):
                 raise SDKException('Instance', '105')
 
         client_json_list = []

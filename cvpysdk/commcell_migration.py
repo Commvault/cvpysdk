@@ -33,7 +33,6 @@ CommCellMigration:
 
 """
 from base64 import b64encode
-from past.builtins import basestring
 from .job import Job
 
 from .exception import SDKException
@@ -351,7 +350,7 @@ class CommCellMigration(object):
         fo_schedules = options_dictionary.get("forceOverwriteSchedule", False)
         merge_schedules = options_dictionary.get("mergeSchedules", True)
 
-        if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
+        if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException('CommCellMigration', '101')
 
         if path_type.lower() == 'local':

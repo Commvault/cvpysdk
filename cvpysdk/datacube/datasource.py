@@ -109,8 +109,6 @@ DataSource Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from .handler import Handlers
 from .sedstype import SEDS_TYPE_DICT
 
@@ -300,7 +298,7 @@ class Datasources(object):
                     if type of the datasource name argument is not string
 
         """
-        if not isinstance(datasource_name, basestring):
+        if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
 
         return self._datasources and datasource_name in self._datasources
@@ -321,7 +319,7 @@ class Datasources(object):
                     if no datasource exists with the given name
 
         """
-        if not isinstance(datasource_name, basestring):
+        if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
 
         if self.has_datasource(datasource_name):
@@ -376,13 +374,13 @@ class Datasources(object):
 
         """
 
-        if not isinstance(datasource_name, basestring):
+        if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
 
-        if not isinstance(analytics_engine, basestring):
+        if not isinstance(analytics_engine, str):
             raise SDKException('Datacube', '101')
 
-        if not isinstance(datasource_type, basestring):
+        if not isinstance(datasource_type, str):
             raise SDKException('Datacube', '101')
 
         engine_index = None
@@ -448,7 +446,7 @@ class Datasources(object):
 
         """
 
-        if not isinstance(datasource_name, basestring):
+        if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
 
         if not self.has_datasource(datasource_name):

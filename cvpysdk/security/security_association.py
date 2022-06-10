@@ -42,8 +42,6 @@ SecurityAssociation:
 
 """
 
-from past.builtins import basestring
-
 from ..exception import SDKException
 
 
@@ -375,7 +373,7 @@ class SecurityAssociation(object):
             Returns:
                 (bool)     -  True if role with specified name exists
         """
-        if not isinstance(role_name, basestring):
+        if not isinstance(role_name, str):
             raise SDKException('Security', '101')
 
         return self._roles and role_name.lower() in self._roles

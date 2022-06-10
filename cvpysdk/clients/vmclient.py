@@ -169,10 +169,10 @@ class VMClient(Client):
                         restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                                 'del' is appended to the original vm name
 
-                        vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                        vcenter_client    (str)    --  name of the vcenter client where the VM
                                                               should be restored.
 
-                        esx_host          (basestring)    --  destination esx host. Restores to the source
+                        esx_host          (str)    --  destination esx host. Restores to the source
                                                               VM esx if this value is not specified
 
             Returns:

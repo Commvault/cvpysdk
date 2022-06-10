@@ -114,9 +114,6 @@ SamlApp instance Attributes
     **is_company_saml_app**         -- returns True if saml app is created for a company, False otherwise
 """
 
-
-from past.builtins import basestring
-
 from .exception import SDKException
 
 
@@ -227,7 +224,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if type of the app name argument is not string
         """
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException('IdentityManagement', '101')
         else:
             app_name = app_name.lower()
@@ -253,7 +250,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if type of the app name argument is not string
         """
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException('IdentityManagement', '101')
         else:
             app_name = app_name.lower()
@@ -691,7 +688,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if type of the app name argument is not string
         """
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException('IdentityManagement', '102')
 
         return self._apps and app_name.lower() in self._apps

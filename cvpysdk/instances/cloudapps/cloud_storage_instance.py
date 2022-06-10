@@ -55,7 +55,6 @@ CloudStorageInstance:
                                                 proxy passing explicit credentials of destination cloud
 
 """
-from past.builtins import basestring
 from cvpysdk.instances.cainstance import CloudAppsInstance
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException
@@ -402,10 +401,10 @@ class CloudStorageInstance(CloudAppsInstance):
 
         """
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_instance_name, basestring) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_instance_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')
@@ -473,9 +472,9 @@ class CloudStorageInstance(CloudAppsInstance):
 
         """
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')
@@ -773,9 +772,9 @@ class CloudStorageInstance(CloudAppsInstance):
                 '102',
                 'Unsupported destination cloud for restore')
 
-        if not ((isinstance(destination_client_proxy, basestring) or
+        if not ((isinstance(destination_client_proxy, str) or
                  isinstance(destination_client_proxy, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')

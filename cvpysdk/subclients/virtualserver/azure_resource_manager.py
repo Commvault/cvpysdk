@@ -44,7 +44,6 @@ AzureRMSubclient:
 
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from past.builtins import basestring
 
 
 class AzureRMSubclient(VirtualServerSubclient):
@@ -251,14 +250,14 @@ class AzureRMSubclient(VirtualServerSubclient):
                 Args:
                         vm_to_restore          (list):     provide the VM names to restore
 
-                        azure_client    (basestring):      name of the AzureRM client
+                        azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
                                                            restored.
 
-                        resource_group   (basestring):      destination Resource group
+                        resource_group   (str):      destination Resource group
                                                             in the AzureRM
 
-                        storage_account  (basestring):    storage account where the
+                        storage_account  (str):    storage account where the
                                                           restored VM should be located
                                                           in AzureRM
 
@@ -268,7 +267,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                         power_on               (bool):    power on the  restored VM
                                                           default: True
 
-                        instance_size    (basestring):    Instance Size of restored VM
+                        instance_size    (str):    Instance Size of restored VM
 
                         public_ip              (bool):    If True, creates the Public IP of
                                                           restored VM
@@ -278,7 +277,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                         copy_precedence         (int):    copy precedence value
                                                           default: 0
 
-                        proxy_client      (basestring):   destination proxy client
+                        proxy_client      (str):   destination proxy client
 
                     Returns:
                         object - instance of the Job class for this restore job
@@ -298,7 +297,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             restore_option = {}
 
         # check mandatory input parameters are correct
-        if not isinstance(azure_client, basestring):
+        if not isinstance(azure_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -345,7 +344,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                 Args:
                         vm_to_restore          (list):     provide the VM names to restore
 
-                        amazon_client    (basestring):     name of the Amazon client
+                        amazon_client    (str):     name of the Amazon client
                                                            where the VM should be
                                                            restored.
 
@@ -358,14 +357,14 @@ class AzureRMSubclient(VirtualServerSubclient):
                         copy_precedence         (int):     copy precedence value
                                                            default: 0
 
-                        proxy_client      (basestring):    destination proxy client
+                        proxy_client      (str):    destination proxy client
 
-                        is_aws_proxy      (basestring):     boolean value whether
+                        is_aws_proxy      (str):     boolean value whether
                                                             proxy resides in AWS
                                                             or not
                                                             default: True
 
-                        amazon_bucket    (basestring) :     Amazon bucket (required
+                        amazon_bucket    (str) :     Amazon bucket (required
                                                             when non-AWS proxy
                                                             is used)
 
@@ -386,7 +385,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if not isinstance(amazon_client, basestring):
+        if not isinstance(amazon_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(amazon_client, restore_option)
@@ -457,7 +456,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                 This converts the AzureRM to Hyper-v VM
                 Args:
 
-                    hyperv_client(basestring):  name of the hyper-V client
+                    hyperv_client(str):  name of the hyper-V client
                                                     where the VM should restored.
 
                     vm_to_restore(dict):    dict containing the VM name(s) to restore as
@@ -466,10 +465,10 @@ class AzureRMSubclient(VirtualServerSubclient):
                                                 restored VM.
                                                 default: {}
 
-                    DestinationPath   (basestring): DestinationPath
+                    DestinationPath   (str): DestinationPath
                                                         in the Hyper-V client
 
-                    proxy_client(basestring):   destination proxy client
+                    proxy_client(str):   destination proxy client
 
                     overwrite   (bool):    overwrite the existing VM
                                                 default: True
@@ -480,7 +479,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                     copy_precedence   (int):    copy precedence value
                                                     default: 0
 
-                    Destination_network   (basestring):      Destination network
+                    Destination_network   (str):      Destination network
                                                             in the Hyper-V client
 
                     Returns:
@@ -501,7 +500,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if not isinstance(hyperv_client, basestring):
+        if not isinstance(hyperv_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(hyperv_client, restore_option)
@@ -554,7 +553,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         """
         This converts the azure VM to VMware
         Args:
-                vcenter_client    (basestring) -- name of the vcenter client
+                vcenter_client    (str) -- name of the vcenter client
                                                   where the VM should be
                                                     restored.
 
@@ -566,12 +565,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                                                    restored VM.
                                                     default: {}
 
-                esx_host          (basestring) -- destination esx host
+                esx_host          (str) -- destination esx host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -586,21 +585,21 @@ class AzureRMSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   Options for input are: 'Original',
                                                   'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
                                                   default: Original
 
-                transport_mode    (basestring) -- transport mode to be used for
+                transport_mode    (str) -- transport mode to be used for
                                                   the restore.
                                                   Options for input are: 'Auto', 'SAN', 'Hot Add',
                                                   'NBD', 'NBD SSL'
                                                   default: Auto
 
-                proxy_client      (basestring) -- destination proxy client
+                proxy_client      (str) -- destination proxy client
 
-                destination_network (basestring)-- destiantion network
+                destination_network (str)-- destiantion network
                                                     to which VM has to be connected
 
             Returns:

@@ -72,7 +72,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from cvpysdk.exception import SDKException
-from past.builtins import basestring
 
 
 class RecoveryTargets:
@@ -178,7 +177,7 @@ class RecoveryTargets:
                     if type of the target name argument is not string
 
         """
-        if not isinstance(target_name, basestring):
+        if not isinstance(target_name, str):
             raise SDKException('Target', '101')
 
         return self._recovery_targets and target_name.lower() in self._recovery_targets
@@ -199,7 +198,7 @@ class RecoveryTargets:
                     if no target exists with the given name
 
         """
-        if not isinstance(recovery_target_name, basestring):
+        if not isinstance(recovery_target_name, str):
             raise SDKException('Target', '101')
         else:
             recovery_target_name = recovery_target_name.lower()

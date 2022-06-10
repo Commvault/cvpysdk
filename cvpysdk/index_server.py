@@ -194,7 +194,6 @@ _Roles Attributes
 
 from copy import deepcopy
 import enum
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
@@ -374,7 +373,7 @@ class IndexServers(object):
                     SDKExecption:
                         Data type of the input(s) is not valid
         """
-        if isinstance(cloud_name, basestring):
+        if isinstance(cloud_name, str):
             for index_server in self._all_index_servers:
                 if self._all_index_servers[index_server]["engineName"].lower() == cloud_name.lower():
                     return True
@@ -405,7 +404,7 @@ class IndexServers(object):
                     self._all_index_servers[cloud_data]['engineName'],
                     cloud_data)
             SDKException('IndexServers', '102')
-        elif isinstance(cloud_data, basestring):
+        elif isinstance(cloud_data, str):
             name = cloud_data.lower()
             for itter in self._all_index_servers:
                 if self._all_index_servers[itter]['engineName'].lower(
@@ -458,9 +457,9 @@ class IndexServers(object):
                         Response was empty.
         """
         if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
-                and isinstance(index_server_name, basestring)):
+                and isinstance(index_server_name, str)):
             raise SDKException('IndexServers', '101')
-        if isinstance(index_directory, basestring):
+        if isinstance(index_directory, str):
             index_directory = index_directory.split(",")
         node_count = len(index_server_node_names)
         index_directories_count = len(index_directory)
@@ -569,7 +568,7 @@ class IndexServers(object):
 
                         Response was empty.
         """
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException('IndexServers', '101')
         cloud_id = self.get(cloud_name).cloud_id
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
@@ -790,7 +789,7 @@ class IndexServer(object):
 
                             if response is not success
         """
-        if not isinstance(core_name, basestring):
+        if not isinstance(core_name, str):
             raise SDKException('IndexServers', '101')
         if self.is_cloud:
             raise SDKException('IndexServers', '104', "Not implemented for solr cloud")

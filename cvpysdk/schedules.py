@@ -155,7 +155,6 @@ Schedule:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from datetime import datetime
-from past.builtins import basestring
 import calendar
 from .exception import SDKException
 
@@ -1256,7 +1255,7 @@ class Schedules:
                 '102',
                 'Either Schedule Name or Schedule Id is needed')
 
-        if schedule_name and not isinstance(schedule_name, basestring):
+        if schedule_name and not isinstance(schedule_name, str):
             raise SDKException('Schedules', '102')
 
         if schedule_id and not isinstance(schedule_id, int):

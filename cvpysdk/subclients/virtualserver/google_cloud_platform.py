@@ -85,7 +85,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of

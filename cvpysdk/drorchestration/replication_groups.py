@@ -116,7 +116,6 @@ from enum import Enum
 
 from ..constants import AppIDAType, AppIDAName
 from .blr_pairs import BLRPairs
-from past.builtins import basestring
 from ..exception import SDKException
 
 
@@ -180,7 +179,7 @@ class ReplicationGroups:
                 SDKException:
                     if proper inputs are not provided
         """
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
 
         return self.replication_groups and replication_group_name.lower() in self.replication_groups
@@ -199,7 +198,7 @@ class ReplicationGroups:
                     if proper inputs are not provided
                     If Replication group doesnt exists with given name
         """
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
         replication_group_name = replication_group_name.lower()
         if self.has_replication_group(replication_group_name):
@@ -227,7 +226,7 @@ class ReplicationGroups:
                     if response is not success
         """
 
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
 
         replication_group_name = replication_group_name.lower()
