@@ -44,6 +44,8 @@ PostgreSQLInstance:
     restore_in_place()                   --     Restores the postgres data/log files
     specified in the input paths list to the same location
 
+    change_sa_password()                 --     Changes postgresql user password
+
 PostgreSQLInstance instance Attributes
 ======================================
 
@@ -82,6 +84,7 @@ PostgreSQLInstance instance Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from base64 import b64encode
 from ..instance import Instance
 from ..exception import SDKException
 
@@ -164,6 +167,22 @@ class PostgreSQLInstance(Instance):
 			Default: None
         """
         return self._properties.get('postGreSQLInstance', {}).get('logStoragePolicy', {}).get('storagePolicyName', None)
+
+    @log_storage_policy.setter
+    def log_storage_policy(self, value):
+        """ Setter for log storage policy in instance property
+
+            Args:
+
+                value (str)  -- Storage policy name
+
+        """
+        if not isinstance(value, str):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['logStoragePolicy'] = {}
+        properties['postGreSQLInstance']['logStoragePolicy']['storagePolicyName'] = value
+        self.update_properties(properties)
 
     @property
     def postgres_server_user_name(self):
@@ -322,6 +341,20 @@ class PostgreSQLInstance(Instance):
             raise SDKException('Instance', '101')
         properties = self._properties
         properties['postGreSQLInstance']['standbyOptions']['useMasterForDataBkp'] = value
+        self.update_properties(properties)
+
+    def change_sa_password(self, value):
+        """ Changes postgresql user password
+
+            Args:
+
+                value (bool)  -- PostgreSQL password
+
+        """
+        if not isinstance(value, str):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['postGreSQLInstance']['SAUser']['password'] = b64encode(value.encode()).decode()
         self.update_properties(properties)
 
     def _get_instance_properties(self):

@@ -1247,23 +1247,23 @@ class Clients(object):
     def add_kubernetes_client(
             self,
             client_name,
-            master_node,
-            secret_name,
-            secret_key,
-            vsaclient=None
+            api_server_endpoint,
+            service_account,
+            service_token,
+            access_nodes=None
     ):
-        """Adds a new Kubernetes Virtualization Client to the Commcell.
+        """Adds a new Kubernetes Cluster client to the Commcell.
 
             Args:
-                client_name         (str)   --  name of the new Kubernetes Virtual Client
+                client_name         (str)   --  name of the new Kubernetes Cluster client
 
-                master_node         (str)   --  Kubernetes kubectl node
+                api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-                secret_name         (str)   --  Kubernetes Secret name
+                service_account     (str)   --  Name of the Service Account for authentication
 
-                secret_key          (str)   --  Kubernetes Secret Key
+                service_token       (str)   --  Token fetched from the Service Account
 
-                vsaclient           (list/str)  --  Virtual Server proxy clients
+                access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
 
 
@@ -1281,18 +1281,17 @@ class Clients(object):
                     if response is not success
 
         """
-        host_name = master_node
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
 
-        if type(vsaclient) is str:
-            vsaclient = [vsaclient]
+        if type(access_nodes) is str:
+            access_nodes = [access_nodes]
 
-        if not vsaclient:
-            vsaclient = []
+        if not access_nodes:
+            access_nodes = []
 
         member_servers_list = []
-        for server in vsaclient:
+        for server in access_nodes:
             if not self.has_client(server):
                 raise SDKException('Client', '102', f'Access node {server} does not exist in CommCell')
             member_servers_list.append(
@@ -1311,14 +1310,14 @@ class Clients(object):
                     "virtualServerInstanceInfo": {
                         "vsInstanceType": 20,
                         "k8s": {
-                            "secretName": secret_name,
-                            "secretKey": secret_key,
+                            "secretName": service_account,
+                            "secretKey": service_token,
                             "secretType": "ServiceAccount",
-                            "endpointurl": host_name
+                            "endpointurl": api_server_endpoint
                         },
                         "associatedClients": {},
                         "vmwareVendor": {
-                            "vcenterHostName": host_name
+                            "vcenterHostName": api_server_endpoint
                         }
                     }
                 }

@@ -18,7 +18,7 @@
 
 """File for operating on a Virtual Server Kubernetes Subclient.
 
-KubernetesVirtualServerSubclient is the only class defined in this file.
+KubernetesVirtualServerSubclient and ApplicationGroups are the only class defined in this file.
 
 Class: KubernetesVirtualServerSubclient:    Derived class from VirtualServerSubClient Base
                                             class,representing a Kubernetes Subclient,
@@ -55,6 +55,10 @@ Class: KubernetesVirtualServerSubclient:    Derived class from VirtualServerSubC
 
         guest_files_browse()            --  Browse files in a application at any point in time
 
+        namespace_restore_in_place()    --  Perform a namespace level restore in-place
+
+        namespace_restore_out_of_place()--  Perform a namespace level restore out-of-place
+
 
 Class: ApplicationGroups:                Derived class from Subclients Base
                                             class,representing a Kubernetes ApplicationGroups,
@@ -64,6 +68,7 @@ Class: ApplicationGroups:                Derived class from Subclients Base
 
         __init__(class_object)           --  initialize object of Kubernetes subclient class,
                                             associated with the VirtualServer subclient
+
         browse()                         -- Browse cluster for namespace, applications, volumes, or labels
 
         get_children_node()              -- Construct the json object for content and filter
@@ -82,7 +87,7 @@ from ...subclient import Subclients
 
 class KubernetesVirtualServerSubclient(VirtualServerSubclient):
     """Derived class from VirtualServerSubclient Base class.
-       This represents a VMWare virtual server subclient,
+       This represents a Kubernetes virtual server subclient,
        and can perform restore operations on only that subclient.
 
     """
@@ -113,76 +118,45 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             'NBD SSL': 4
         }
 
-    def full_vm_restore_out_of_place(
+    def full_app_restore_out_of_place(
             self,
-            vm_to_restore,
-            restored_vm_name=None,
-            vcenter_client=None,
-            kubernetes_host=None,
-            datastore=None,
-            datacenter=None,
+            apps_to_restore,
+            restore_namespace,
+            restored_app_name=None,
+            kubernetes_client=None,
+            storage_class=None,
             overwrite=True,
-            power_on=True,
             copy_precedence=0,
-            disk_option='Original',
-            transport_mode='Auto',
             proxy_client=None,
-            source_ip=None,
-            destination_ip=None,
-            network=None
     ):
-        """Restores the FULL Virtual machine specified in the input list
-            to the provided vcenter client along with the ESX and the datastores.
-            If the provided client name is none then it restores the Full Virtual
-            Machine to the source client and corresponding ESX and datastore.
+        """Restores the FULL Application specified in the input list
+            to the provided Kubernetes client at the specified namespace with storage class.
+            If the provided client name is none then it restores the Full Application
+            to the source Kubernetes client and corresponding namespace and storage class.
 
             Args:
-                vm_to_restore            (list)   --  VM that is to be restored
+                apps_to_restore         (list)  --  List of Applications that is to be restored
 
-                restored_vm_name         (dict)   --  new name of vms
+                restored_app_name       (dict)  --  Dictionary mapping new name of Applications
 
-                vcenter_client           (str)    --  name of the vcenter client where the VM
-                                                      should be restored.
+                kubernetes_client       (str)   --  Name of the Kubernetes client where the Application should be restored
+                                                    Restores to the source Kubernetes client if this value is not specified
 
-                kubernetes_host          (str)    --  destination Kubernetes. Restores to the source
-                                                      Kubernetes host if this value is not specified
+                storage_class           (str)   --  Storage class for the PVC to be restored with.
+                                                    Uses source storage class if not specified.
 
-                datastore               (str)    --  datastore where the restored VM should be
-                                                      located. Restores to the source VM datastore
-                                                      if this value is not specified
+                restore_namespace       (str)   --  Target namespace where Applications are to be restored
 
-                datacenter               (str)   --  Datacenter / namespace for VM kubernetes
+                overwrite               (bool)  --  overwrite the existing Applications if exists
+                                                    default: True
 
-                overwrite               (bool)    --  overwrite the existing VM
-                                                      default: True
-
-                power_on                (bool)    --  power on the  restored VM
-                                                      default: True
-
-                copy_precedence          (int)    --  copy precedence value
+                copy_precedence          (int)  --  copy precedence value
                                                       default: 0
-
-                disk_option              (str)    --  disk provisioning for the  restored vm
-                                                      Options for input are: 'Original',
-                                                      'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
-                                                      default: 'Original'
-
-                transport_mode            (str)    --  transport mode to be used for the restore.
-                                                      Options for input are: 'Auto', 'SAN',
-                                                      'Hot Add', 'NBD', 'NBD SSL'
-                                                      default: Auto
 
                 proxy_client              (str)    --  destination proxy client
 
-                source_ip                 (str)    --  IP of the source VM
-
-                destination_ip            (str)    --  IP of the destination VM
-
-                network                   (str)    --  Network of the detination vm
-
             Returns:
                 object - instance of the Job class for this restore job
-
 
             Raises:
                 SDKException:
@@ -199,7 +173,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, list):
+        if apps_to_restore and not isinstance(apps_to_restore, list):
             raise SDKException('Subclient', '101')
 
         # populating proxy client. It assumes the proxy controller added in instance
@@ -207,37 +181,29 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             restore_option['client'] = proxy_client
 
-        if restored_vm_name:
-            if not(isinstance(vm_to_restore, list) or
-                   isinstance(restored_vm_name, dict)):
+        if restored_app_name:
+            if not(isinstance(apps_to_restore, list) or
+                   isinstance(restored_app_name, dict)):
                 raise SDKException('Subclient', '101')
-            restore_option['restore_new_name'] = restored_vm_name
+            restore_option['restore_new_name'] = restored_app_name
 
-        if not kubernetes_host:
-            kubernetes_host = self._client_object.client_name
-            vcenter_client = kubernetes_host
+        if not kubernetes_client:
+            kubernetes_client = self._client_object.client_name
 
         restore_option_copy = restore_option.copy()
 
         self._set_restore_inputs(
             restore_option,
             in_place=False,
-            vcenter_client=vcenter_client,
-            datastore=datastore,
-            esx_host=kubernetes_host,
-            datacenter=datacenter,
-            esx_server=None,
+            vcenter_client=kubernetes_client,
+            datastore=storage_class,
+            esx_host=kubernetes_client,
+            datacenter=restore_namespace,
             unconditional_overwrite=overwrite,
-            power_on=power_on,
-            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
-            disk_option=self._disk_option[disk_option],
-            transport_mode=self._transport_mode[transport_mode],
+            vm_to_restore=self._set_vm_to_restore(apps_to_restore),
             copy_precedence=copy_precedence,
             volume_level_restore=1,
-            source_item=[],
-            source_ip=source_ip,
-            destination_ip=destination_ip,
-            network=network
+            source_item=[]
         )
 
         request_json = self._prepare_kubernetes_restore_json(restore_option)
@@ -246,10 +212,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
     def _prepare_kubernetes_restore_json(self, restore_option):
         """
-        Prepare Full VM restore Json with all getters
+        Prepare Full Application restore Json with all getters
 
         Args:
-            restore_option - dictionary with all VM restore options
+            restore_option - dictionary with all Application restore options
 
         value:
             restore_option:
@@ -270,7 +236,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 destination_disktype       (str) - type of disk needs to be restored
                                                    like VHDX,VHD,VMDK
 
-                source_item                 (str)- GUID of VM from which disk needs to
+                source_item                 (str)- GUID of Application from which disk needs to
                                                    be restored
                                                    eg:
                                                    \\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
@@ -281,31 +247,29 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence            (int) - the copy id from which browse and
                                                    restore needs to be performed
 
-                power_on                    (bool) - power on the VM after restore
+                datastore                   (str) - Storage class which the Application PVC needs to be
+                                                    restored with
 
-                add_to_failover             (bool) - Register the VM to Failover Cluster
-
-                datastore                   (str) - Datastore where the VM needs to be
-                                                    restored
-
-                disks   (list of dict)      - list with dict for each disk in VM
+                disks   (list of dict)      - list with dict for each disk in Application
                                                 eg: [{
-                                                        name:"disk1.vmdk"
-                                                        datastore:"local"
+                                                        name:"pvc-1"
+                                                        datastore:"storageclass-1"
                                                     }
                                                     {
-                                                        name:"disk2.vmdk"
-                                                        datastore:"local1"
+                                                        name:"pvc-2"
+                                                        datastore:"storageclass-2"
                                                     }
                                                 ]
-                guid                    (str)    - GUID of the VM needs to be restored
-                new_name                (str)    - New name for the VM to be restored
-                esx_host                (str)    - esx_host or client name where it need
-                                                     to be restored
-                name                    (str)    - name of the VM to be restored
+                guid                    (str)    - GUID of the Application needs to be restored
+
+                new_name                (str)    - New name for the Application to be restored
+
+                esx_host                (str)    - client name where Application need to be restored
+
+                name                    (str)    - name of the Application to be restored
 
         returns:
-              request_json        -complete json for perfomring Full VM Restore
+              request_json        -complete json for perfomring Full Application Restore
                                    options
 
         """
@@ -337,7 +301,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
             if not namespace_app_map:
                 # FOR : Full Application Restores Restores
-                # If namespace_app_map is not passed the it is a full vm restore
+                # If namespace_app_map is not passed the it is a full application restore
                 # so 'datacenter' should be passed. Nothing to do here
                 pass
 
@@ -510,38 +474,38 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         set the advanced restore options for all vm in restore
         param
 
-            vm_to_restore               - Name of the VM to restore
+            vm_to_restore               - Name of the Application to restore
 
             restore_option              - restore options that need to be set for advanced restore option
 
-            power_on                    - power on the VM after restore
+            power_on                    - power on the Application after restore
 
-            add_to_failover             - Register the VM to Failover Cluster
+            add_to_failover             - Register the Application to Failover Cluster
 
-            datastore                   - Datastore where the VM needs to be restored
+            datastore                   - Datastore where the Application needs to be restored
 
-            disks   (list of dict)      - list with dict for each disk in VM
+            disks   (list of dict)      - list with dict for each disk in Application
                                             eg: [{
-                                                    name:"disk1.vmdk"
-                                                    datastore:"local"
-                                                }
-                                                {
-                                                    name:"disk2.vmdk"
-                                                    datastore:"local1"
-                                                }
-                                            ]
-            guid                        - GUID of the VM needs to be restored
+                                                        name:"pvc-1"
+                                                        datastore:"storageclass-1"
+                                                    }
+                                                    {
+                                                        name:"pvc-2"
+                                                        datastore:"storageclass-2"
+                                                    }
+                                                ]
+            guid                        - GUID of the Application needs to be restored
 
-            new_name                    - New name for the VM to be restored
+            new_name                    - New name for the Application to be restored
 
-            esx_host                    - esx_host or client name where it need to be restored
+            esx_host                    - client name where it need to be restored
 
-            name                        - name of the VM to be restored
+            name                        - name of the Application to be restored
 
         """
 
-        # Set the new name for the restored VM.
-        # If new_name is not given, it restores the VM with same name
+        # Set the new name for the restored Application.
+        # If new_name is not given, it restores the Application with same name
         # with suffix Delete.
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         browse_result = self.vm_files_browse()
@@ -611,53 +575,26 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
         self._advanced_restore_option_list.append(temp_dict)
 
-    def full_vm_restore_in_place(
+    def full_app_restore_in_place(
             self,
-            vm_to_restore=None,
+            apps_to_restore=None,
             overwrite=True,
-            power_on=True,
-            kubernetes_host=None,
-            datastore=None,
-            datacenter=None,
             copy_precedence=0,
-            disk_option='Original',
-            transport_mode='Auto',
             proxy_client=None):
-        """Restores the FULL Virtual machine specified in the input list
-            to the location same as the actual location of the VM in VCenter.
+        """Restores the FULL Application specified in the input list
+            to the location same as the actual location of the Application in Kubernetes cluster.
 
             Args:
-                vm_to_restore         (list)        --  provide the VM name to restore
-                                                        default: None
+                apps_to_restore     (list)      --  List of applications to restore
 
-                overwrite             (bool)        --  overwrite the existing VM
-                                                        default: True
+                overwrite           (bool)      --  overwrite the existing Applications if exists
+                                                    default: True
 
-                power_on              (bool)        --  power on the  restored VM
-                                                        default: True
+                copy_precedence     (int)       --  copy precedence value
+                                                    default: 0
 
-                datastore              (str)         -- datastore type eg: rook-ceph, netapp
-
-                datacenter              (str)         -- datacenter namespace of pod
-
-                copy_precedence       (int)         --  copy precedence value
-                                                        default: 0
-
-                disk_option           (str)  --  disk provisioning for the restored vm
-                                                        Options for input are: 'Original',
-                                                        'Thick Lazy Zero', 'Thin',
-                                                        'Thick Eager Zero'
-                                                        default: Original
-
-                transport_mode        (str)  --  transport mode to be used for
-                                                        the restore.
-                                                        Options for input are: 'Auto', 'SAN',
-                                                        ''Hot Add', NBD', 'NBD SSL'
-                                                        default: Auto
-
-                proxy_client          (str)  --  proxy client to be used for restore
-                                                        default: proxy added in subclient
-
+                proxy_client        (str)       --  proxy client to be used for restore
+                                                    default: proxy added in application group/cluster
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -676,10 +613,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
         restore_option = {}
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, str):
+        if apps_to_restore and not isinstance(apps_to_restore, list):
             raise SDKException('Subclient', '101')
-        disk_option_value = self._disk_option[disk_option]
-        transport_mode_value = self._transport_mode[transport_mode]
         if copy_precedence:
             restore_option['copy_precedence_applicable'] = True
 
@@ -691,17 +626,11 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
-            vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            vm_to_restore=self._set_vm_to_restore(apps_to_restore),
             in_place=True,
-            datastore=datastore,
             esx_host=kubernetes_host,
-            datacenter=datacenter,
-            esx_server_name="",
             volume_level_restore=1,
             unconditional_overwrite=overwrite,
-            power_on=power_on,
-            disk_option=disk_option_value,
-            transport_mode=transport_mode_value,
             copy_precedence=copy_precedence
         )
 
@@ -710,10 +639,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
     def _prepare_kubernetes_inplace_restore_json(self, restore_option):
         """
-        Prepare Full VM restore Json with all getters
+        Prepare Full Application restore in-place Json with all getters
 
         Args:
-            restore_option - dictionary with all VM restore options
+            restore_option - dictionary with all Application restore options
 
         value:
             restore_option:
@@ -734,7 +663,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 destination_disktype       (str) - type of disk needs to be restored
                                                    like VHDX,VHD,VMDK
 
-                source_item                 (str)- GUID of VM from which disk needs to
+                source_item                 (str)- GUID of Application from which disk needs to
                                                    be restored
                                                    eg:
                                                    \\5F9FA60C-0A89-4BD9-9D02-C5ACB42745EA
@@ -745,28 +674,26 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence            (int) - the copy id from which browse and
                                                    restore needs to be performed
 
-                power_on                    (bool) - power on the VM after restore
+                datastore                   (str) - Storage class which the Application PVC needs to be
+                                                    restored with
 
-                add_to_failover             (bool) - Register the VM to Failover Cluster
-
-                datastore                   (str) - Datastore where the VM needs to be
-                                                    restored
-
-                disks   (list of dict)      - list with dict for each disk in VM
+                disks   (list of dict)      - list with dict for each disk in Application
                                                 eg: [{
-                                                        name:"disk1.vmdk"
-                                                        datastore:"local"
+                                                        name:"pvc-1"
+                                                        datastore:"storageclass-1"
                                                     }
                                                     {
-                                                        name:"disk2.vmdk"
-                                                        datastore:"local1"
+                                                        name:"pvc-2"
+                                                        datastore:"storageclass-2"
                                                     }
                                                 ]
-                guid                    (str)    - GUID of the VM needs to be restored
-                new_name                (str)    - New name for the VM to be restored
-                esx_host                (str)    - esx_host or client name where it need
-                                                     to be restored
-                name                    (str)    - name of the VM to be restored
+                guid                    (str)    - GUID of the Application needs to be restored
+
+                new_name                (str)    - New name for the Application to be restored
+
+                esx_host                (str)    - client name where Application need to be restored
+
+                name                    (str)    - name of the Application to be restored
 
         returns:
               request_json        -complete json for perfomring Full VM Restore
@@ -818,7 +745,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         return request_json
 
     def disk_restore(self,
-                     vm_name,
+                     application_name,
                      destination_path,
                      disk_name=None,
                      proxy_client=None,
@@ -826,7 +753,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (str)    --  Name of the VM added in subclient content
+                application_name             (str)    --  Name of the Application added in subclient content
                                                         whose  disk is selected for restore
 
                 destination_path        (str)    --  Staging (destination) path to restore the
@@ -884,7 +811,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, str) and
+        if not (isinstance(application_name, str) and
                 isinstance(destination_path, str) and
                 isinstance(disk_name, list)):
             raise SDKException('Subclient', '101')
@@ -894,7 +821,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
         # fetching all disks from the vm
         disk_list, disk_info_dict = self.disk_level_browse(
-            "\\" + vm_ids[vm_name])
+            "\\" + vm_ids[application_name])
 
         # Filter out disks with specified extension from disk list
         disk_list = list(filter(lambda name: self._get_disk_extension([name]) == disk_extn, disk_list))
@@ -904,11 +831,11 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, check if the given application has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
-                # disk path has GUID in case of files, and vm name in case of manifests
+                # disk path has GUID in case of files, and application name in case of manifests
                 each_disk_path = "\\" + \
-                                 (vm_ids[vm_name] if volume_level_restore != 4 else vm_name) + \
+                                 (vm_ids[application_name] if volume_level_restore != 4 else application_name) + \
                                  "\\" + each_disk.split("\\")[-1]
                 if each_disk_path not in disk_list:
                     raise SDKException('Subclient', '111')
@@ -924,7 +851,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         # set Source item List
         src_item_list = []
         for each_disk in disk_name:
-            src_item_list.append("\\" + vm_ids[vm_name] + "\\" + each_disk.split("\\")[-1])
+            src_item_list.append("\\" + vm_ids[application_name] + "\\" + each_disk.split("\\")[-1])
 
         _disk_restore_option['paths'] = src_item_list
         _disk_restore_option['unconditional_overwrite'] = unconditional_overwrite
@@ -987,7 +914,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             "_commonProperties['snapCopyInfo']", properties_dict)
 
     def guest_file_restore(self,
-                           vm_name,
+                           application_name,
                            destination_path,
                            volume_level_restore,
                            disk_name=None,
@@ -998,7 +925,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         """perform Guest file restore of the provided path
 
         Args:
-            vm_name                 (str)   --  Name of the source application
+            application_name_name   (str)   --  Name of the source application
             destination_path        (str)   --  Path at the destination to restore at
             volume_level_restore    (str)   --  Flag to denote volume_level_restore
                                                 Accepted values -
@@ -1037,7 +964,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         in_place = kwargs.get('in_place', False)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, str) and
+        if not (isinstance(application_name, str) and
                 isinstance(destination_path, str) and
                 isinstance(disk_name, str)):
             raise SDKException('Subclient', '101')
@@ -1047,9 +974,9 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         if copy_precedence:
             _guest_file_rst_options['copy_precedence_applicable'] = True
 
-        # fetching all disks from the vm
+        # fetching all disks from the application
         disk_list, disk_info_dict = self.disk_level_browse(
-            "\\" + vm_ids[vm_name])
+            "\\" + vm_ids[application_name])
 
         # Filter out disks with specified extension from disk list
         disk_list = list(filter(lambda name: self._get_disk_extension([name]) == disk_extn, disk_list))
@@ -1067,7 +994,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         src_item_list = []
         for each_item in restore_list:
             item = "\\".join(each_item.split('/'))
-            src_item_list.append( "\\" + vm_ids[vm_name] + "\\" + disk_name + "\\" + item)
+            src_item_list.append( "\\" + vm_ids[application_name] + "\\" + disk_name + "\\" + item)
 
         _guest_file_rst_options['paths'] = src_item_list
 
@@ -1075,7 +1002,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
             if in_place:
                 restore_pvc_guid = "{}`PersistentVolumeClaim`{}".format(
-                    vm_ids[vm_name].split('`')[0], disk_name
+                    vm_ids[application_name].split('`')[0], disk_name
                 )
                 new_name = disk_name
 
@@ -1088,7 +1015,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         else:
 
             new_guid = "{}`PersistentVolumeClaim`{}".format(
-                vm_ids[vm_name].split('`')[0], disk_name
+                vm_ids[application_name].split('`')[0], disk_name
             )
             new_name = disk_name
 
@@ -1100,7 +1027,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         _advanced_restore_options['new_guid'] = new_guid
         _advanced_restore_options['new_name'] = new_name
         _advanced_restore_options['name'] = disk_name
-        _advanced_restore_options['guid'] = vm_ids[vm_name]
+        _advanced_restore_options['guid'] = vm_ids[application_name]
         _advanced_restore_options['end_user_vm_restore'] = True
 
         # set advanced restore options disks
@@ -1129,7 +1056,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
     def guest_files_browse(
             self,
-            vm_path='\\',
+            application_path='\\',
             show_deleted_files=False,
             restore_index=True,
             from_date=0,
@@ -1140,7 +1067,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
            range specified.
 
             Args:
-                vm_path             (str)   --  folder path to get the contents
+                application_path    (str)   --  folder path to get the contents
                                                 of
                                                 default: '\\';
                                                 returns the root of the Backup

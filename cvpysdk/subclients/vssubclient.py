@@ -399,33 +399,39 @@ class VirtualServerSubclient(Subclient):
         """
         content = []
         try:
-            for item in subclient_content:
-                virtual_server_dict = {'allOrAnyChildren': True}
-                temp = {
-                    'allOrAnyChildren': item.get('allOrAnyChildren', True),
-                    'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                    'name': item.get('name',""),
-                    'displayName': item.get('display_name', ''),
-                    'path': '',
-                    'type': item['type'].value
-                }
-                if item['type'] == VSAObjects.VMNotes:
-                    temp['value'] = item['display_name']
-                    temp['displayName'] = item['display_name']
-                    temp['name'] = "Notes"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'true'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 1
-                    temp['displayName'] = "Powered On"
-                if (item['type'] ==
-                        VSAObjects.VMPowerState and
-                        item['state'] == 'false'):
-                    temp['name'] = "PoweredState"
-                    temp['value'] = 0
-                    temp['displayName'] = "Powered Off"
-                virtual_server_dict.update(temp)
+            for entity in subclient_content:
+                virtual_server_dict = dict()
+                virtual_server_dict['allOrAnyChildren'] = True
+                virtual_server_dict['equalsOrNotEquals'] = True
+                virtual_server_dict['children'] = []
+                if not isinstance(entity,list):
+                    entity = [entity]
+                for item in entity:
+                    temp = {
+                        'allOrAnyChildren': item.get('allOrAnyChildren', True),
+                        'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
+                        'name': item.get('name',""),
+                        'displayName': item.get('display_name',''),
+                        'path': '',
+                        'type': item['type'] if isinstance(item['type'], int) else item['type'].value
+                    }
+                    if item['type'] == VSAObjects.VMNotes:
+                        temp['value'] = item['display_name']
+                        temp['displayName'] = item['display_name']
+                        temp['name'] = "Notes"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'true'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = "1"
+                        temp['displayName'] = "Powered On"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'false'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = "0"
+                        temp['displayName'] = "Powered Off"
+                    virtual_server_dict.get('children').append(temp)
                 content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))

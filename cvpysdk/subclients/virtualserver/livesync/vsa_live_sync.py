@@ -243,6 +243,8 @@ class VsaLiveSync:
             live_sync_pairs_dict = {}
             if not bool(response.json()):
                 return live_sync_pairs_dict
+            if response.json() and 'siteInfo' not in response.json():
+                return live_sync_pairs_dict
             elif response.json() and 'siteInfo' in response.json():
                 for dictionary in response.json()['siteInfo']:
                     if dictionary["replicationGroup"]["replicationGroupName"] != "":
@@ -700,6 +702,11 @@ class LiveSyncVMPair:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
+    def task_id(self):
+        """ Returns: (int) The ID of the replication schedule task"""
+        return self._properties.get('subTask', {}).get('taskId')
+
+    @property
     def vm_pair_id(self):
         """Treats the live sync id as a read-only attribute."""
         return self._vm_pair_id
@@ -720,9 +727,19 @@ class LiveSyncVMPair:
         return self._source_vm
 
     @property
+    def source_vm_guid(self):
+        """ Returns (str): The GUID of the source VM """
+        return self._properties.get('sourceGuid')
+
+    @property
     def destination_vm(self):
         """Treats the destination VM as a read-only attribute."""
         return self._destination_vm
+
+    @property
+    def destination_vm_guid(self):
+        """ Returns (str): The GUID of the destination VM """
+        return self._properties.get('destinationGuid')
 
     @property
     def destination_client(self):
