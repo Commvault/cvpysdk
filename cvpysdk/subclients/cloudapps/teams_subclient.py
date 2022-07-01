@@ -66,6 +66,7 @@ class TeamsSubclient(CloudAppsSubclient):
     """Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient
     and to perform operations on that subclient.
     """
+
     def _json_subclient_entity(self):
         """Get subclientEntity json for teams association operation.
                 Returns:
@@ -135,7 +136,8 @@ class TeamsSubclient(CloudAppsSubclient):
             request_json['cloudAppAssociation']['subclientEntity'] = subclient_entity_json
             request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'].append(user_account_json)
 
-            request_json['cloudAppAssociation']['plan']['planId'] = int(self._commcell_object.plans.get(o365_plan).plan_id)
+            request_json['cloudAppAssociation']['plan']['planId'] = int(
+                self._commcell_object.plans.get(o365_plan).plan_id)
             flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
 
             if not flag:
@@ -166,7 +168,6 @@ class TeamsSubclient(CloudAppsSubclient):
         team_json_list = []
 
         for team in teams:
-
             team_json = copy(const.BACKUP_TEAM_JSON)
             team_json['displayName'] = team['displayName']
             team_json['smtpAddress'] = team['smtpAddress']
@@ -233,14 +234,12 @@ class TeamsSubclient(CloudAppsSubclient):
                     If response is not success.
 
         """
-        if len(team) != 1:
-            raise SDKException(
-                "Subclient", "101", "Out of place restore to another team isnt supported for multiple teams")
         if not destination_team:
             raise SDKException(
                 "Subclient", "101", "Destination team value cannot be none")
         discovered_teams = self.discover()
         team = [discovered_teams[team]]
+        destination_team = discovered_teams[destination_team]
         request_json = {
             "taskInfo": {
                 "task": const.RESTORE_TASK_JSON,
@@ -251,7 +250,7 @@ class TeamsSubclient(CloudAppsSubclient):
                     {
                         "subTask": const.RESTORE_SUBTASK_JSON,
                         "options": self._json_restore_options(
-                            teams, **dict(kwargs, destination_team=destination_team))
+                            team, **dict(kwargs, destination_team=destination_team))
                     }
                 ]
             }
@@ -269,7 +268,7 @@ class TeamsSubclient(CloudAppsSubclient):
         _associtaions_json.pop('commCellName', None)
         if 'entityInfo' in _associtaions_json:
             _associtaions_json.pop('multiCommcellId', None)
-        _associtaions_json["clientGUID"]: self._client_object.client_guid
+        _associtaions_json["clientGUID"] = self._client_object.client_guid
         return _associtaions_json
 
     def _json_restoreoptions_searchprocessinginfo(self):
@@ -405,8 +404,7 @@ class TeamsSubclient(CloudAppsSubclient):
             "restoreAllMatching": False,
             "overWriteItems": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
             "restoreToTeams": True,
-            "destLocation": kwargs.get(
-                "destination_team") if "destination_team" in kwargs and kwargs.get("destination_team") else "",
+            "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get("destination_team", {}).get("displayName") else "",
             "restorePostsAsHtml": kwargs.get("restorePostsAsHtml") if "restorePostsAsHtml" in kwargs else False,
             "restoreUsingFindQuery": False,
             "selectedItemsToRestore": selectedItemsToRestore,
@@ -415,10 +413,10 @@ class TeamsSubclient(CloudAppsSubclient):
         if "destination_team" in kwargs and kwargs.get("destination_team"):
             _msTeamsRestoreOptions["destinationTeamInfo"] = {
                 "tabId": "",
-                "teamName": destination_team['displayName'],
+                "teamName": kwargs.get("destination_team")['displayName'],
                 "tabName": "",
                 "folder": "",
-                "teamId": destination_team['user']['userGUID'].lower(),
+                "teamId": kwargs.get("destination_team")['user']['userGUID'].lower(),
                 "destination": 1,
                 "channelName": "",
                 "channelId": ""
@@ -463,7 +461,8 @@ class TeamsSubclient(CloudAppsSubclient):
             "commonOptions": {
                 "skip": kwargs.get("skip") if "skip" in kwargs else True,
                 "overwriteFiles": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
-                "unconditionalOverwrite": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False
+                "unconditionalOverwrite": kwargs.get(
+                    "unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False
             },
             "destination": self._json_restoreoptions_destination(
                 kwargs.get("destination_team") if "destination_team" in kwargs else None
@@ -621,7 +620,8 @@ class TeamsSubclient(CloudAppsSubclient):
             "cloudAppAssociation": {
                 "subclientEntity": {"subclientId": int(self._subclient_id)}
             },
-            "bIncludeDeleted": False, "discoverByType": 5 if 'AllContentType' in kwargs and kwargs.get('AllContentType') else 12,
+            "bIncludeDeleted": False,
+            "discoverByType": 5 if 'AllContentType' in kwargs and kwargs.get('AllContentType') else 12,
             "searchInfo": {"isSearch": 0, "searchKey": ""},
             "sortInfo": {
                 "sortColumn": "O365Field_AUTO_DISCOVER", "sortOrder": 0

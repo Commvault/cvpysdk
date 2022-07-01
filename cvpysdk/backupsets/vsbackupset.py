@@ -211,6 +211,12 @@ class VSBackupset(Backupset):
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
+                    
+                    if 'backupTime' in result['advancedData'] and int(result['advancedData']['backupTime']) > 0:
+                        bkp_time = time.localtime(int(result['advancedData']['backupTime']))
+                        bkp_time = time.strftime('%d/%m/%Y %H:%M:%S', bkp_time)
+                    else:
+                        bkp_time = None
 
                     if 'file' in result['flags']:
                         if result['flags']['file'] is True or result['flags']['file'] == "1":
@@ -231,6 +237,7 @@ class VSBackupset(Backupset):
                         'size': size,
                         'modified_time': mod_time,
                         'type': file_or_folder,
+                        'backup_time': bkp_time,
                         'advanced_data': result['advancedData']
                     }
 

@@ -92,6 +92,10 @@ Store:
 
     run_ddb_verification()      - starts DDB verification job for store
 
+    config_only_move_partition()    - performs config-only ddb move operation on specified substore
+
+    move_partition()            - performs normal ddb move operation on specified substore
+
 Attributes
 ----------
     **all_substores**       -- returns list of all substores present on a deduplication store
@@ -151,6 +155,8 @@ from .job import Job
 
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
+    IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC = 33554432
+    IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE = 16777216
 
 
 class DeduplicationEngines(object):
@@ -755,9 +761,12 @@ class Store(object):
         Args:
               value (bool) -- value to enable journal pruning
         """
-        if not self._extended_flags & 8 and value:
+        if not self._extended_flags & 8 and value or self.version == -1:
 
-            new_value = self._extended_flags | 8
+            if value:
+                new_value = self._extended_flags | 8
+            else:
+                new_value = self._extended_flags & ~8
 
             request_json = {
                 "EVGui_ParallelDedupConfigReq": {
@@ -883,7 +892,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -895,6 +904,7 @@ class Store(object):
                         Default: False
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
+                        Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -989,7 +999,7 @@ class Store(object):
         raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=False):
+                             use_scalable_resource=True):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1001,6 +1011,7 @@ class Store(object):
                                             Default: True (quick verification)
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
+                                            Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1088,6 +1099,170 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
+    def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
+        """
+        runs config-only ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             boolean - returns true or false value depending on success of config only
+        """
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            "MediaManager_CanDDBMoveRunReq": {
+                "intReserveFiled1": 0,
+                "sourceMaId": substore.media_agent_id,
+                "flags": 1,
+                "targetPath": dest_path,
+                "stringReserveField1": "",
+                "storeId": self.store_id,
+                "subStoreId": substoreid,
+                "targetMAId": dest_ma_id,
+                "sourcePath": substore.path
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    return flag
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
+    def move_partition(self, substoreid, dest_path, dest_ma_name):
+        """
+        runs normal ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             object - instance of Job class for DDB Move job
+
+        Raises:
+             SDKException:
+                if DDB Move job failed
+
+                if response if empty
+
+                if response in not success
+        """
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            "TMMsg_CreateTaskReq": {
+                "taskInfo": {
+                    "associations": [
+                        {
+                            "sidbStoreId": self.store_id,
+                            "_type_": 18,
+                            "appName": ""
+                        }
+                    ],
+                    "task": {
+                        "ownerId": 1,
+                        "taskType": 1,
+                        "ownerName": "admin",
+                        "sequenceNumber": 0,
+                        "initiatedFrom": 1,
+                        "policyType": 0,
+                        "taskId": 0,
+                        "taskFlags": {
+                            "disabled": False
+                        }
+                    },
+                    "subTasks": [
+                        {
+                            "subTaskOperation": 1,
+                            "subTask": {
+                                "subTaskType": 1,
+                                "operationType": 5013
+                            },
+                            "options": {
+                                "adminOpts": {
+                                    "contentIndexingOption": {
+                                        "subClientBasedAnalytics": False
+                                    },
+                                    "libraryOption": {
+                                        "operation": 20,
+                                        "ddbMoveOption": {
+                                            "flags": 2,
+                                            "subStoreList": [
+                                                {
+                                                    "srcPath": substore.path,
+                                                    "storeId": self.store_id,
+                                                    "changeOnlyDB": False,
+                                                    "destPath": dest_path,
+                                                    "subStoreId": substoreid,
+                                                    "destMediaAgent": {
+                                                        "name": dest_ma_name,
+                                                        "id": dest_ma_id
+                                                    },
+                                                    "srcMediaAgent": {
+                                                        "name": substore.media_agent,
+                                                        "id": substore.media_agent_id
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "restoreOptions": {
+                                    "virtualServerRstOption": {
+                                        "isBlockLevelReplication": False
+                                    },
+                                    "commonOptions": {
+                                        "syncRestore": False
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                raise SDKException('Storage', '108')
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
 
 class SubStore(object):
     """Class to performing substore level operations for Deduplication engine"""
@@ -1128,6 +1303,7 @@ class SubStore(object):
         self._substore_properties = store._substores[self._substore_id]
         self._path = self._substore_properties['Path']
         self._media_agent = self._substore_properties['MediaAgent']['name']
+        self._media_agent_id = self._substore_properties['MediaAgent']['id']
 
     def refresh(self):
         """refresh the properties of a substore"""
@@ -1155,6 +1331,11 @@ class SubStore(object):
     def media_agent(self):
         """returns media agent for the substore"""
         return self._media_agent
+
+    @property
+    def media_agent_id(self):
+        """returns media agent id for the substore"""
+        return self._media_agent_id
 
     @property
     def path(self):

@@ -1439,7 +1439,8 @@ class StoragePolicy(object):
                          source_copy,
                          provisioning_policy=None,
                          resource_pool=None,
-                         is_replica_copy=None):
+                         is_replica_copy=None,
+                         **kwargs):
         """Creates Snap copy for this storage policy
 
             Args:
@@ -1463,6 +1464,9 @@ class StoragePolicy(object):
 
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
+
+                job_retention       (bool)  -- if true job based retention will be set
+                default : False
 
             Raises:
                 SDKException:
@@ -1503,6 +1507,8 @@ class StoragePolicy(object):
             provisioning_policy = ""
             resource_pool = ""
 
+        job_based_retention = kwargs.get('job_based_retention', False)
+        job_retention = 1 if job_based_retention else 0
         request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
@@ -1511,14 +1517,16 @@ class StoragePolicy(object):
                             <library _type_="9" libraryName="{7}" />
                             <mediaAgent _type_="11" mediaAgentName="{8}" />
                             <spareMediaGroup _type_="67" libraryName="{7}" />
-                            <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1" />
+                            <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
+                            <retentionFlags jobBasedRetention="{11}" />
+                            </retentionRules>
                             <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
                             <resourcePoolsList operation="1" resourcePoolName="{10}" />
                         </storagePolicyCopyInfo>
                     </App_CreateStoragePolicyCopyReq>
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -2428,7 +2436,8 @@ class StoragePolicy(object):
     def run_ddb_verification(self,
                              copy_name,
                              ver_type,
-                             ddb_ver_level):
+                             ddb_ver_level,
+                             use_scalable=True):
         """
         Runs DDB verification job
 
@@ -2440,6 +2449,9 @@ class StoragePolicy(object):
                 ddb_ver_level   (str)   --  DDB verification type
                                             (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                             QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+                use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                            Default: True
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2485,7 +2497,7 @@ class StoragePolicy(object):
                                         "maxNumberOfStreams": 0,
                                         "allCopies": True,
                                         "useMaximumStreams": True,
-                                        "useScallableResourceManagement": False,
+                                        "useScallableResourceManagement": use_scalable,
                                         "mediaAgent": {
                                             "mediaAgentName": ""
                                         }
@@ -2527,7 +2539,7 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     def run_data_verification(self, media_agent_name='', copy_name='', streams=0,
-                              jobs_to_verify='NEW', use_scalable=False, schedule_pattern=None, **kwargs):
+                              jobs_to_verify='NEW', use_scalable=True, schedule_pattern=None, **kwargs):
         """Runs Data verification job
 
         Args:
@@ -2543,6 +2555,7 @@ class StoragePolicy(object):
                                          (NEW/ VERF_EXPIRED/ ALL)
 
             use_scalable       (bool) : True/False to use Scalable Resource Allocation
+                                         (default - True)
 
             kwargs              (dict) : optional arguments
                 Available kwargs Options:
@@ -3319,6 +3332,7 @@ class StoragePolicyCopy(object):
         retention_values["days"] = self._retention_rules['retainBackupDataForDays']
         retention_values["cycles"] = self._retention_rules['retainBackupDataForCycles']
         retention_values["archiveDays"] = self._retention_rules['retainArchiverDataForDays']
+        retention_values["jobs"] = self._retention_rules['jobs']
         return retention_values
 
     @copy_retention.setter
@@ -3335,21 +3349,28 @@ class StoragePolicyCopy(object):
 
                         **int** -   value to specify retainArchiverDataForDays
 
+                        **int** -   value to specify jobs
+
                     e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1)
+                         storage_policy_copy.copy_retention = (30, 15, 1, 8)
 
             Raises:
                 SDKException:
                     if failed to update retention values on the copy
 
         """
-
         if retention_values[0] >= 0:
             self._retention_rules['retainBackupDataForDays'] = retention_values[0]
         if retention_values[1] >= 0:
             self._retention_rules['retainBackupDataForCycles'] = retention_values[1]
         if retention_values[2] >= 0:
             self._retention_rules['retainArchiverDataForDays'] = retention_values[2]
+        if len(retention_values) > 3:
+            self._retention_rules['jobs'] = retention_values[3]
+            if retention_values[3] > 0:
+                self._retention_rules['retentionFlags']['jobBasedRetention'] = 1
+            else:
+                self._retention_rules['retentionFlags']['jobBasedRetention'] = 0
 
         self._set_copy_properties()
 
