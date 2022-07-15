@@ -144,7 +144,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
 
-    def backup(self, teams):
+    def backup(self, teams=None):
         """Run an Incremental backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
@@ -160,59 +160,47 @@ class TeamsSubclient(CloudAppsSubclient):
                     If response is not success.
 
         """
-        discovered_teams = self.discover()
-        teams = [discovered_teams[team] for team in teams]
-
         url = self._services['CREATE_TASK']
-
-        team_json_list = []
-
-        for team in teams:
-            team_json = copy(const.BACKUP_TEAM_JSON)
-            team_json['displayName'] = team['displayName']
-            team_json['smtpAddress'] = team['smtpAddress']
-            team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
-            team_json['user'] = {"userGUID": team['user']['userGUID']}
-            team_json_list.append(team_json)
-
-        associations = copy(const.ASSOCIATIONS)
-        associations["subclientId"] = int(self._subclient_id)
-        associations["applicationId"] = int(self._subClientEntity['applicationId'])
-        associations["clientName"] = self._subClientEntity['clientName']
-        associations["displayName"] = self._subClientEntity['displayName']
-        associations["backupsetId"] = self._subClientEntity['backupsetId']
-        associations["instanceId"] = self._subClientEntity['instanceId']
-        associations["subclientGUID"] = self.subclient_guid
-        associations["clientId"] = int(self._client_object.client_id)
-        associations["clientGUID"] = self._client_object.client_guid
-        associations["subclientName"] = self.subclient_name
-        associations["backupsetName"] = self._subClientEntity['backupsetName']
-        associations["instanceName"] = self._subClientEntity['instanceName']
-        associations["_type_"] = self._subClientEntity['_type_']
-
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
-        backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
-
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
-        request_json['taskInfo']['associations'].append(associations)
-        request_json['taskInfo']['subTasks'].append(backup_subtask_json)
+        request_json['taskInfo']['associations'] = [self._json_association()]
 
+        if teams:
+            discovered_teams = self.discover()
+            teams = [discovered_teams[team] for team in teams]
+            team_json_list = []
+            selected_items_json = []
+            for team in teams:
+                team_json = copy(const.BACKUP_TEAM_JSON)
+                team_json['displayName'] = team['displayName']
+                team_json['smtpAddress'] = team['smtpAddress']
+                team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
+                team_json['user'] = {"userGUID": team['user']['userGUID']}
+                team_json_list.append(team_json)
+                selected_items_json.append({
+                    'selectedItems': {
+                        "itemName": team['displayName'], "itemType": "Team"
+                    }
+                })
+            backup_subtask_json['options']['commonOpts']['selectedItems'] = selected_items_json
+            backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
+        else:
+            backup_subtask_json['options']['commonOpts']['selectedItems']= [{
+                "itemName": "All%20teams", "itemType": "All teams"
+            }]
+            backup_subtask_json['options']['backupOpts'].pop('cloudAppOptions', None)
+        request_json['taskInfo']['subTasks'].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
 
         if flag:
-
             if response.json():
-
                 if 'jobIds' in response.json():
                     return Job(self._commcell_object, response.json()['jobIds'][0])
-
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
                     raise SDKException('Subclient', '102', f"Backup failed, error message : {error_message}")
-
             else:
                 raise SDKException('Response', '102')
-
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -402,15 +390,16 @@ class TeamsSubclient(CloudAppsSubclient):
 
         _msTeamsRestoreOptions = {
             "restoreAllMatching": False,
-            "overWriteItems": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
+            "overWriteItems": kwargs.get("unconditionalOverwrite", False),
             "restoreToTeams": True,
-            "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get("destination_team", {}).get("displayName") else "",
-            "restorePostsAsHtml": kwargs.get("restorePostsAsHtml") if "restorePostsAsHtml" in kwargs else False,
+            "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get(
+                "destination_team", {}).get("displayName") else "",
+            "restorePostsAsHtml": kwargs.get("restorePostsAsHtml", False),
             "restoreUsingFindQuery": False,
             "selectedItemsToRestore": selectedItemsToRestore,
             "findQuery": self._json_restoreoptions_findquery(teams)
         }
-        if "destination_team" in kwargs and kwargs.get("destination_team"):
+        if kwargs.get("destination_team", None):
             _msTeamsRestoreOptions["destinationTeamInfo"] = {
                 "tabId": "",
                 "teamName": kwargs.get("destination_team")['displayName'],
@@ -444,8 +433,7 @@ class TeamsSubclient(CloudAppsSubclient):
                     restoreOptions json for teams restore operation
         """
 
-        if "skip" in kwargs and kwargs.get("skip") and "unconditionalOverwrite" in kwargs and kwargs.get(
-                "unconditionalOverwrite"):
+        if kwargs.get("skip", False) and kwargs.get("unconditionalOverwrite", False):
             raise SDKException('Subclient', '102', "Both skip and unconditionalOverwrite cannot be True")
         selectedItems = []
         for team in teams:
@@ -459,13 +447,12 @@ class TeamsSubclient(CloudAppsSubclient):
                 "timeRange": {}
             },
             "commonOptions": {
-                "skip": kwargs.get("skip") if "skip" in kwargs else True,
-                "overwriteFiles": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
-                "unconditionalOverwrite": kwargs.get(
-                    "unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False
+                "skip": kwargs.get("skip", True),
+                "overwriteFiles": kwargs.get("unconditionalOverwrite", False),
+                "unconditionalOverwrite": kwargs.get("unconditionalOverwrite", False)
             },
             "destination": self._json_restoreoptions_destination(
-                kwargs.get("destination_team") if "destination_team" in kwargs else None
+                kwargs.get("destination_team", None)
             ),
             "fileOption": {
                 "sourceItem": [
@@ -621,7 +608,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 "subclientEntity": {"subclientId": int(self._subclient_id)}
             },
             "bIncludeDeleted": False,
-            "discoverByType": 5 if 'AllContentType' in kwargs and kwargs.get('AllContentType') else 12,
+            "discoverByType": 5 if kwargs.get('AllContentType', False) else 12,
             "searchInfo": {"isSearch": 0, "searchKey": ""},
             "sortInfo": {
                 "sortColumn": "O365Field_AUTO_DISCOVER", "sortOrder": 0
@@ -661,7 +648,7 @@ class TeamsSubclient(CloudAppsSubclient):
     def remove_team_association(self, user_assoc):
         """Removes user association from a teams client
                 Args:
-                    user_assoc   (list): List of input users whose association is to be removed
+                    user_assoc   (list): List of input users assoication object whose association is to be removed
                 Returns
                     Boolean if the association was removed successfully
 

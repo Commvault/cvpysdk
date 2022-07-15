@@ -19,10 +19,24 @@
 
 This file has all the classes related to Key Management Server operations.
 
+KeyManagementServerConstants --  Abstract class to define the key management server related  constancts
+
 KeyManagementServers        --   Class for representing all the KMS in the commcell.
 
 KeyManagementServer         --   Class for representing a single KMS in the commcell.
 
+
+KeyManagementServerConstants Attributes
+=======================================
+    **_KMS_TYPE**           --    dictionary of key management server types
+    **_KMS_AUTHENTICATION_TYPE** -- dictionary of key management server authentication
+    
+
+KeyManagementServers Attributes
+==========================
+
+    **_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
+    
 
 KeyManagementServers:
 =================
@@ -44,11 +58,6 @@ KeyManagementServers:
     add_aws_kms()           --      configures AWS Key Management Server
 
 
-KeyManagementServers Attributes
-==========================
-
-    **_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
-
 KeyManagementServer:
 =================
 
@@ -67,8 +76,28 @@ KeyManagementServer Attributes
 """
 
 from .exception import SDKException
+from abc import ABC
 
-class KeyManagementServers(object):
+
+class KeyManagementServerConstants(ABC):
+
+    def __init__(self):
+        self._KMS_TYPE = {
+            1: "KEY_PROVIDER_COMMVAULT",
+            2: "KEY_PROVIDER_KMIP",
+            3: "KEY_PROVIDER_AWS_KMS",
+            4: "KEY_PROVIDER_AZURE_KEY_VAULT",
+            5: "KEY_PROVIDER_SAFENET",
+            6: "KEY_PROVIDER_PASSPHRASE",
+        }
+
+        self._KMS_AUTHENTICATION_TYPE = {
+            "AWS_KEYS": 0,
+            "AWS_IMA": 1
+        }
+
+
+class KeyManagementServers(KeyManagementServerConstants):
     """Class for representing all the KMS in the commcell."""
 
     def __init__(self, commcell):
@@ -78,6 +107,7 @@ class KeyManagementServers(object):
                 commcell    (object)    --  instance of commcell
 
         """
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
 
         self._cvpysdk_object = commcell._cvpysdk_object
@@ -256,19 +286,67 @@ class KeyManagementServers(object):
         KeyManagementServers._validate_input(kms_name, str)
         
         return kms_name.lower() in self._kms_dict
-    
-    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None):
+ 
+
+    def add(self, kms_details):
+        """
+        Method to add Key Management Server
+
+        Args:
+                kms_details    (dictionary)   -- dictionary with KMS details
+
+        input dictionary for creating AWS KMS without access node ( key based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "KMS_NAME": "KMS1" ,
+                "AWS_ACCESS_KEY":"1234",
+                "AWS_SECRET_KEY": "1234",
+                "AWS_REGION_NAME": "Asia Pacific (Mumbai)",  -- Optional Value. Default is "Asia Pacific (Mumbai)"
+                "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS"
+            }
+
+        input dictionary for creating AWS KMS with access node ( key based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
+                "ACCESS_NODE_NAME": "ma1",
+                "KMS_NAME": "kms1"",
+                "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS",
+                "AWS_ACCESS_KEY": "1234",
+                "AWS_SECRET_KEY": "1234"
+            }
+        """
+        KeyManagementServers._validate_input(kms_details, dict)
+
+        if kms_details['KEY_PROVIDER_TYPE'] not in self._KMS_TYPE.values():
+            raise SDKException("KeyManagementServer", 103)
+
+        if kms_details['KEY_PROVIDER_AUTH_TYPE'] not in self._KMS_AUTHENTICATION_TYPE:
+            raise SDKException("KeyManagementServer", 105)
+
+        if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_AWS_KMS":
+            if "AWS_REGION_NAME" not in kms_details:
+                kms_details["AWS_REGION_NAME"] = "Asia Pacific (Mumbai)"
+
+            self.add_aws_kms(kms_name=kms_details['KMS_NAME'], aws_access_key=kms_details['AWS_ACCESS_KEY'], aws_secret_key=kms_details['AWS_SECRET_KEY'],aws_region_name=kms_details["AWS_REGION_NAME"], kms_details = kms_details)
+
+        self.refresh()
+        return self.get(kms_details['KMS_NAME'])
+
+    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
         """Configure AWS Key Management Server
-        
+
             Args:
                 kms_name        (string) -- name of the Key Management Server
-                
+
                 aws_access_key  (string) -- AWS access key
-                
+
                 aws_secret_key  (string) -- AWS secret key, base64 encoded
 
-                aws_region_name (string) -- AWS region 
+                aws_region_name (string) -- AWS region
                                             defaults to "Asia Pacific (Mumbai)"
+
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
 
             Raises SDKException:
                 If inputs are wrong data type
@@ -279,31 +357,93 @@ class KeyManagementServers(object):
 
                 If error code on API response JSON is not 0
         """
+
         KeyManagementServers._validate_input(kms_name, str)
-        KeyManagementServers._validate_input(aws_access_key, str)
-        KeyManagementServers._validate_input(aws_secret_key, str)
 
-        if aws_region_name is None:
-            aws_region_name = "Asia Pacific (Mumbai)"
+        payload = None
 
-        KeyManagementServers._validate_input(aws_region_name, str)
+        if kms_details == None or "ACCESS_NODE_NAME" not in kms_details:
 
-        payload = {
-            "keyProvider": {
-                "encryptionType": 3,
-                "keyProviderType": 3,
-                "provider": {
-                    "keyProviderName": kms_name
-                },
-                "properties": {
-                    "regionName": aws_region_name,
-                    "userAccount": {
-                        "userName": aws_access_key,
-                        "password": aws_secret_key
+            if aws_region_name is None:
+                aws_region_name = "Asia Pacific (Mumbai)"
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+                "keyProvider": {
+                    "encryptionType": 3,
+                    "keyProviderType": 3,
+                    "provider": {
+                        "keyProviderName": kms_name
+                    },
+                    "properties": {
+                        "regionName": aws_region_name,
+                        "userAccount": {
+                            "userName": aws_access_key,
+                            "password": aws_secret_key
+                        }
                     }
                 }
             }
-        }
+
+        elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AWS_KEYS" and kms_details['ACCESS_NODE_NAME'] != None:
+
+            if "AWS_REGION_NAME" not in kms_details:
+                kms_details['AWS_REGION_NAME'] = "Asia Pacific (Mumbai)"
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+		            "keyProvider": {
+			            "properties": {
+				            "accessNodes": [
+					        {
+						        "accessNode": {
+							        "clientName": kms_details['ACCESS_NODE_NAME']
+						        },
+						        "awsCredential": {
+							        "userAccount": {
+								        "password": aws_secret_key,
+								        "userName": aws_access_key
+							        },
+							    "amazonAuthenticationType": self._KMS_AUTHENTICATION_TYPE[kms_details['KEY_PROVIDER_AUTH_TYPE']]
+						        }
+					        }
+				            ],
+				            "bringYourOwnKey": "0",
+				            "regionName": aws_region_name if aws_region_name!=None else kms_details['AWS_REGION_NAME']
+			            },
+			            "provider": {
+				            "keyProviderName": kms_name
+			            },
+			            "encryptionType": 3,
+			            "keyProviderType": "3"
+		            }
+                }
+
+        self._kms_api_call(payload)
+
+    def _kms_api_call(self, payload):
+        """ Calling KMS API
+
+        :param
+        kms_details ( JSON ) - prefilled JSON payload for KMS API
+
+        :exception
+        Raises SDKException:
+                    If API response code is not successful
+
+                    If response JSON is empty
+
+                    If errorCode is not part of the response JSON
+
+        """
+    
+        KeyManagementServers._validate_input(payload, dict)
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._KMS_ADD_GET, payload)
@@ -316,11 +456,10 @@ class KeyManagementServers(object):
             raise SDKException("Response", 102)
 
         error_code = response.json().get("errorCode", -1)
+
         if error_code != 0:
             response_string = self._commcell._update_response_(response.text)
             raise SDKException("Response", 101, response_string)
-
-        self.refresh()
     
     def __str__(self):
         """Representation string consisting of all KMS of the commcell.
@@ -349,15 +488,6 @@ class KeyManagementServers(object):
 class KeyManagementServer(object):
     """Class for representing a single KMS in the commcell."""
 
-    _TYPE = {
-        1: "KEY_PROVIDER_COMMVAULT",
-        2: "KEY_PROVIDER_KMIP",
-        3: "KEY_PROVIDER_AWS_KMS",
-        4: "KEY_PROVIDER_AZURE_KEY_VAULT",
-        5: "KEY_PROVIDER_SAFENET",
-        6: "KEY_PROVIDER_PASSPHRASE",
-    }
-
     def __init__(self, commcell, name, id, type_id):
         """Initializes the KeyManagementServer object
 
@@ -371,6 +501,7 @@ class KeyManagementServer(object):
             If input type is invalid for any param
 
         """
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
         self._cvpysdk_object = commcell._cvpysdk_object
         self._services = commcell._services
@@ -404,10 +535,10 @@ class KeyManagementServer(object):
         KeyManagementServers._validate_input(type_id, int, 103)
         type_id = int(type_id)
 
-        if type_id not in self._TYPE:
+        if type_id not in self._KMS_TYPE:
             raise SDKException("KeyManagementServer", 104)
         
-        return self._TYPE[type_id]
+        return self._KMS_TYPE[type_id]
     
     def __repr__(self):
         """String representation of the instance of this class."""

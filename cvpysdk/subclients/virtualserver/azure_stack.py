@@ -71,7 +71,7 @@ class AzureStackSubclient(VirtualServerSubclient):
 
             Args:
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 resource_group        (str)        -- provide the resource group to restore
 
@@ -142,7 +142,7 @@ class AzureStackSubclient(VirtualServerSubclient):
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the of list VM name(s) to restore
 
                 createPublicIP
                         default:True   (bool)      --  creates the Public IP of the new VM

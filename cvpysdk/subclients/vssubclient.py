@@ -278,7 +278,7 @@ class VirtualServerSubclient(Subclient):
         Returns:
                 string          (string) :      Proxy at instane
         """
-        return self._proxyClient['clientName']
+        return self._proxyClient.get('clientName', None)
 
     @property
     def vm_filter(self):
@@ -2210,7 +2210,7 @@ class VirtualServerSubclient(Subclient):
                 ds = restore_option["datastore"]
             new_name_prefix = restore_option.get("disk_name_prefix")
             if self._instance_object.instance_name != 'openstack':
-                new_name = data["name"].replace("/", "_").replace(" ", "_")
+                new_name = data["snap_display_name"].replace("/", "_").replace(" ", "_")
                 new_name = "del_" + new_name if new_name_prefix is None \
                     else new_name_prefix + "_" + new_name
             else:
