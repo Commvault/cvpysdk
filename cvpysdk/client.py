@@ -5626,7 +5626,9 @@ class Client(object):
                            prop_value,
                            client_side_cache=None,
                            max_cache_db=None,
-                           high_latency_optimization=None):
+                           high_latency_optimization=None,
+                           variable_content_alignment=None
+                           ):
         """
             Set DDB propeties
 
@@ -5653,6 +5655,12 @@ class Client(object):
                                     32768
                                     65536
                                     131072
+                    variable_content_alignment: to increase the effectiveness of deduplication on the client computer.
+                                                Variable content alignment reduces the amount of data stored during a
+                                                backup operation.
+                               Values - None(Default) - DoNotModify the property value
+                                        True/False - Enable/Disable optimization respectively
+
                     high_latency_optimization: To set Optimization for High latency Networks
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
@@ -5672,6 +5680,11 @@ class Client(object):
                 if high_latency_optimization is not None:
                     dedupe_props['deDuplicationProperties'][
                         'enableHighLatencyOptimization'] = high_latency_optimization
+
+                if variable_content_alignment is not None:
+                    dedupe_props['deDuplicationProperties'][
+                        'enableVariableContentAlignment'] = variable_content_alignment
+
             else:
                 dedupe_props = {
                     'deDuplicationProperties': {

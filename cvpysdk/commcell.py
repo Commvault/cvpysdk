@@ -70,6 +70,8 @@ Commcell:
 
     download_software()         --  triggers the Download Software job with the given options
 
+    copy_software()             --  triggers the Copy Software job with the given options
+
     sync_remote_cache()         --  syncs remote cache
 
     get_remote_cache()     		--  returns the instance of the RemoteCache class
@@ -2167,6 +2169,64 @@ class Commcell(object):
             cu_number=cu_number,
             sync_cache=sync_cache,
             sync_cache_list=sync_cache_list,
+            schedule_pattern=schedule_pattern
+        )
+
+    def copy_software(self,
+                      media_loc,
+                      username=None,
+                      password=None,
+                      sync_cache=True,
+                      schedule_pattern=None):
+        """copies media from the specified location on the commcell
+
+                    Args:
+
+                        media_loc      (str)           --  Media Location to be used for copy software
+
+                        username       (str)           --  username to authenticate to external location
+
+                        password       (str)           --  password to authenticate to external location
+
+                        sync_cache (bool)              --  True if download and sync
+                                                           False only download
+
+                        schedule_pattern(dict)         --  pattern for schedule task
+
+
+                    Returns:
+                        object - instance of the Job class for this copy software job
+
+                    Raises:
+                        SDKException:
+                            if Download job failed
+
+                            if response is empty
+
+                            if response is not success
+
+                            if another download job is running
+                    Usage:
+
+                        -   if media_location directory is local to the machine - username and password is not needed
+
+                            >>> commcell_obj.copy_software(media_loc = "C:\\Downloads\\Media")
+
+                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                            to authenticate the cache
+
+                            >>> commcell_obj.copy_software(
+                            media_loc = "\\subdomain.company.com\Media",
+                            username = "domainone\\userone",
+                            password = "base64encoded password"
+                            )
+                """
+        download = Download(self)
+        return download.copy_software(
+            media_loc=media_loc,
+            username=username,
+            password=password,
+            sync_cache=sync_cache,
             schedule_pattern=schedule_pattern
         )
 
