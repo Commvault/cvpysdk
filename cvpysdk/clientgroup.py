@@ -375,6 +375,7 @@ class ClientGroups(object):
             'is true': 1,
             'is false': 2,
             'contains': 10,
+            'starts with': 14,
             }
         prop_id_dict = {
             'Name': 1,
