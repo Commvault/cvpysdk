@@ -524,7 +524,10 @@ SERVICES_DICT_TEMPLATE = {
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
     
-    'GET_OEM_ID': '{0}/GetOemId'
+    'GET_OEM_ID': '{0}/GetOemId',
+    
+    'GET_SLA': '{0}GetSLAConfiguration',
+    'WORKLOAD_REGION': '{0}entity/COMMCELL/%s/region?entityRegionType=WORKLOAD'
 }
 
 

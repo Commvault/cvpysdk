@@ -980,10 +980,10 @@ class Clients(object):
             raise SDKException('Client', '101')
 
         if "windows" in client_type.lower():
-            os_id = 0
+            os_id = "WINDOWS"
 
         if "unix" in client_type.lower():
-            os_id = 1
+            os_id = "UNIX"
 
         if "unix cluster" in client_type.lower():
             os_id = 11

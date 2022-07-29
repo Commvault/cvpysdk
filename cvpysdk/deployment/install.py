@@ -409,9 +409,52 @@ class Install(object):
                                     "db2RetrievePath": "/opt/Retrieve/",
                                     "db2AuditErrorPath": "/opt/Audit/"
                             }
-            
             index_cache_location (str) - Set index cache location for MA package
             Ex: index_cache_location = "/opt/IndexCache/"
+            firewall_inputs (dict) - dictionary for firewall configuration
+            Ex: firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": "encrypted_tunnel"
+                            }
+
+            firewall_inputs can take the following values
+
+            Ex 1: Client can open connection to CS
+             firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 0,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+            Ex 2: CS can open connection to Client
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+
+            Ex 3: Client can communicate to CS using Proxy
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 2,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": True/False
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -481,6 +524,7 @@ class Install(object):
                 client_details.append(
                     {
                         "clientEntity": {
+                            "clientId": 0,
                             "clientName": client_name,
                             "commCellName": commcell_name
                         }
@@ -499,6 +543,7 @@ class Install(object):
         install_flags = kwargs.get('install_flags')
         db2_logs = kwargs.get('db2_logs_location', {})
         index_cache_location = kwargs.get('index_cache_location', None)
+        firewall_inputs = kwargs.get('firewall_inputs', {})
 
         request_json = {
             "taskInfo": {
@@ -530,10 +575,10 @@ class Install(object):
                                         "requestType": 0,
                                         "Operationtype": 0,
                                         "CommServeHostName":
-                                            self.commcell_object.commserv_hostname,
+                                            self.commcell_object.commserv_name,
                                         "RemoteClient": False,
                                         "installFlags": {
-                                            "allowMultipleInstances": True,
+                                            "allowMultipleInstances": False,
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
                                             "install32Base": install_flags.get('install32Base',
@@ -559,6 +604,7 @@ class Install(object):
                                         },
                                         "clientComposition": [
                                             {
+                                                "activateClient": True,
                                                 "overrideSoftwareCache": True if sw_cache_client else False,
                                                 "softwareCacheOrSrmProxyClient": {
                                                     "clientName": sw_cache_client if sw_cache_client else ""
@@ -618,6 +664,11 @@ class Install(object):
             }
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
                 "clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
+
+        if firewall_inputs:
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "installFlags"]["firewallInstall"] = firewall_inputs
+
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

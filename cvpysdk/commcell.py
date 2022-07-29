@@ -137,6 +137,10 @@ Commcell:
     
     allow_users_to_enable_passkey()     --      Enable or Disable passkey authorization for company administrators and client owners
 
+    get_sla_configuration()         --  gets the sla configuration details at commcell level
+
+    get_workload_region()           --  gets the current workload region
+
 Commcell instance Attributes
 ============================
 
@@ -2087,7 +2091,7 @@ class Commcell(object):
                           options=None,
                           os_list=None,
                           service_pack=None,
-                          cu_number=0,
+                          cu_number=1,
                           sync_cache=True,
                           sync_cache_list=None,
                           schedule_pattern=None):
@@ -3554,3 +3558,71 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+def get_sla_configuration(self):
+        """Makes a rest api call to get SLA configuration at commcell level
+
+            Returns:
+                dict   -   sla details
+                example:
+                    {
+                        'slaDays': 7, 
+                        'excludedReason': '', 
+                        'useSystemDefaultSLA': False, 
+                        'excludeFromSLA': False, 
+                        'delayInterval': 0, 
+                        'inheritedSLA': {
+                            'slaDays': 0, 
+                            'entityType': 0, 
+                            'excludeFromSLA': False
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        request_json = {"entities": [{"entity": {"commCellId": self.commcell_id, "_type_": 1}}]}
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GET_SLA'], payload=request_json
+        )
+
+        if flag:
+            if response.ok and response.json():
+                return response.json().get('entities', [{}])[0]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_workload_region(self):
+        """Makes a rest api call to get commserve workload region
+
+            Returns:
+                dict    -   with region id,name
+                example:
+                    {
+                        'regionId': 2, 
+                        'displayName': 'Asia', 
+                        'regionName': 'Asia'
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['WORKLOAD_REGION'] % self.commcell_id)
+
+        if flag:
+            if response.ok and response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
