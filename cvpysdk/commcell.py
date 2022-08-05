@@ -3559,7 +3559,7 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-def get_sla_configuration(self):
+    def get_sla_configuration(self):
         """Makes a rest api call to get SLA configuration at commcell level
 
             Returns:

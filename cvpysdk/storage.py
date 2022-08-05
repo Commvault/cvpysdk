@@ -20,6 +20,7 @@
 
 This file has all the classes related to Storage operations.
 
+
 MediaAgents:      Class for representing all the media agents attached to the commcell.
 
 MediaAgent:       Class for representing a single media agent attached to the commcell.
@@ -1927,13 +1928,9 @@ class DiskLibrary(object):
     @property
     def media_agents_associated(self):
         """ Returns the media agents associated with the disk library """
-        media_agents = self._library_properties['magLibSummary'].get(
-            'associatedMediaAgents', None)
-        if media_agents is None:
-            mount_paths = self._library_properties.get('MountPathList')
-            media_agents = [mount_path.get('mediaAgents') for mount_path in mount_paths if "mediaAgents" in mount_path]
-            return media_agents
-        return media_agents.strip().split(",")
+        mount_paths = self._library_properties.get('MountPathList')
+        media_agents = [mount_path.get('mountPathName').split('[')[1].split(']')[0] for mount_path in mount_paths if "mountPathName" in mount_path]
+        return list(set(media_agents))
 
     @property
     def name(self):

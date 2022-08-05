@@ -665,8 +665,7 @@ class Clients(object):
                     }
                     for sf_subclient in map(lambda org: org['sfSubclient'], response.json()['orgs'])
                 }
-            else:
-                raise SDKException('Response', '102')
+            return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
