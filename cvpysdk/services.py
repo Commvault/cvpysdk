@@ -394,11 +394,17 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
     'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
 
-    'DR_GROUPS': '{0}DRGroups',
-    'GET_DR_GROUP': '{0}DRGroups/%s',
-    'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
-    'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
-    'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
+    'DR_GROUPS': '{0}FailoverGroups',
+    'GET_DR_GROUP': '{0}FailoverGroups/%s',
+    'DR_GROUP_MACHINES': '{0}FailoverGroups/ClientList?source=1&entityType=3&entityId=%s',
+    'DR_GROUP_JOB_STATS': '{0}DR/JobStats?jobId=%s&failoverGroupId=%s&replicationId=%s&clientId=0',
+    'DR_JOB_STATS': '{0}DR/JobStats?jobId=%s',
+
+    'FAILOVER_GROUPS': '{0}FailoverGroups',
+    'GET_FAILOVER_GROUP': '{0}FailoverGroups/%s',
+    'FAILOVER_GROUP_MACHINES': '{0}FailoverGroups/ClientList?source=1&entityType=3&entityId=%s',
+    'FAILOVER_GROUP_JOB_STATS': '{0}DR/JobStats?jobId=%s&failoverGroupId=%s&replicationId=%s&clientId=0',
+    'DRORCHESTRATION_JOB_STATS': '{0}DR/JobStats?jobId=%s',
 
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
@@ -456,8 +462,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
-    'GLOBAL_PARAM': '{0}/setGlobalParam',
-    'GET_GLOBAL_PARAM': '{0}/CommServ/AddRemoveSoftware/CommServeSoftwareCache',
+    'SET_GLOBAL_PARAM': '{0}/setGlobalParam',
+    'GET_GLOBAL_PARAM': '{0}/CommServ/GlobalParams',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',

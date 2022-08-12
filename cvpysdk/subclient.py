@@ -541,7 +541,7 @@ class Subclients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add(self, subclient_name, storage_policy,
+    def add(self, subclient_name, storage_policy=None,
             subclient_type=None, description='', advanced_options=None,
             pre_scan_cmd=None):
         """Adds a new subclient to the backupset.
@@ -551,6 +551,8 @@ class Subclients(object):
 
                 storage_policy      (str)   --  name of the storage policy to be associated
                 with the subclient
+
+                    default: None
 
                 subclient_type      (str)   --  type of subclient for sql server
 
@@ -599,7 +601,6 @@ class Subclients(object):
 
         """
         if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
                 isinstance(description, str)):
             raise SDKException('Subclient', '101')
 
@@ -619,7 +620,7 @@ class Subclients(object):
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
-        if not self._commcell_object.storage_policies.has_policy(
+        if storage_policy and not self._commcell_object.storage_policies.has_policy(
                 storage_policy):
             raise SDKException(
                 'Subclient',
@@ -658,6 +659,10 @@ class Subclients(object):
                 }
             }
         }
+
+        if storage_policy is None:
+            del request_json["subClientProperties"]["commonProperties"]["storageDevice"]
+
         if pre_scan_cmd is not None:
             request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = {
                 "runAs": 1,

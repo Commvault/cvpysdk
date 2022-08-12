@@ -899,11 +899,16 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_gxglobalparam_value(self):
+    def get_gxglobalparam_value(self, parameters):
         """Makes a rest api call to get values from GXGlobalParam
 
+            Args:
+                parameters      (str/list)  --  The single parameter name or list of parameter names to get value for
+
             Returns:
-                dict    -   json response received from the server
+                str     --      If parameters argument is a string. None if the parameter is not found in response
+
+                list    --      If parameters argument is a list.
 
             Raises:
                 SDKException:
@@ -912,16 +917,34 @@ class Commcell(object):
                     if response is not success
 
         """
+
+        parameters_orig = parameters
+        if isinstance(parameters, str):
+            parameters = [parameters]
+
+        if not isinstance(parameters, list):
+            raise SDKException('Commcell', '107')
+
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_GLOBAL_PARAM']
+            'POST', self._services['GET_GLOBAL_PARAM'], {
+                'globalParamsRequestList': parameters
+            }
         )
 
         if flag:
-            if response.ok:
-                try:
-                    return response.json()
-                except ValueError:
-                    return {'output': response}
+            if response.json():
+                param_results = response.json().get('globalParamsResultList')
+
+                # If requested parameter is a string, then return the single value directly instead of the list response
+                if isinstance(parameters_orig, str):
+                    for param_result in param_results:
+                        if param_result.get('name').lower() == parameters_orig.lower():
+                            return param_result.get('value')
+
+                    # Return None if the requested parameter is not found in the response
+                    return None
+
+                return param_results
             else:
                 raise SDKException('Response', '102')
         else:
@@ -957,7 +980,7 @@ class Commcell(object):
                     if response is not success
 
         """
-        if  isinstance(request_json, list):
+        if isinstance(request_json, list):
             global_params_list = request_json
             payload = {
                 "App_SetGlobalParamsReq": {
@@ -971,7 +994,7 @@ class Commcell(object):
             raise SDKException('Commcell', 107, message)
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['GLOBAL_PARAM'], request_json
+            'POST', self._services['SET_GLOBAL_PARAM'], request_json
         )
 
         if flag:
