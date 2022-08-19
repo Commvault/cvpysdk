@@ -2339,12 +2339,12 @@ class Backupset(object):
         if not len(browse_response) > 1:
             raise SDKException('Backupset', '102', 'Browse response is not proper')
         browse_response = browse_response[1]
-        if 'browseResponses' not in browse_response or len(browse_response['browseResponses'] == 0):
+        if 'browseResponses' not in browse_response or len(browse_response['browseResponses']) == 0:
             raise SDKException('Backupset', '102', 'Browse response is missing browseResponses')
         browse_response = browse_response['browseResponses'][0]
         if 'browseResult' not in browse_response:
             raise SDKException('Backupset', '102', 'Browse response is missing browseResult')
         browse_result = browse_response['browseResult']
-        if 'aggrResultSet' not in browse_result or len(browse_result['aggrResultSet'] == 0):
+        if 'aggrResultSet' not in browse_result or len(browse_result['aggrResultSet']) == 0:
             raise SDKException('Backupset', '102', 'Browse response is missing aggrResultSet')
         return browse_result['aggrResultSet'][0].get('count', 0)

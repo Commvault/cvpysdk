@@ -317,6 +317,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'METRICS': '{0}CommServ/MetricsReporting',
     'GET_METRICS': '{0}CommServ/MetricsReporting?isPrivateCloud=%s',
+    'LOCAL_METRICS': '{0}CommServ/MetricsReporting?isLocalMetrics=%s',
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
@@ -394,11 +395,11 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_REPLICATION_GROUPS': '{0}ReplicationGroups/Action/Delete',
     'REPLICATION_GROUP_DETAILS': '{0}Vsa/ReplicationGroup/%s',
 
-    'DR_GROUPS': '{0}FailoverGroups',
-    'GET_DR_GROUP': '{0}FailoverGroups/%s',
-    'DR_GROUP_MACHINES': '{0}FailoverGroups/ClientList?source=1&entityType=3&entityId=%s',
-    'DR_GROUP_JOB_STATS': '{0}DR/JobStats?jobId=%s&failoverGroupId=%s&replicationId=%s&clientId=0',
-    'DR_JOB_STATS': '{0}DR/JobStats?jobId=%s',
+    'DR_GROUPS': '{0}DRGroups',
+    'GET_DR_GROUP': '{0}DRGroups/%s',
+    'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
+    'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
+    'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
 
     'FAILOVER_GROUPS': '{0}FailoverGroups',
     'GET_FAILOVER_GROUP': '{0}FailoverGroups/%s',

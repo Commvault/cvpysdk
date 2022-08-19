@@ -103,6 +103,8 @@ IndexServer
 
     get_os_info()                       --  returns the OS type for the Index server
 
+    __form_field_query()                --  returns the query with the key and value passed
+
 IndexServer Attributes
 ----------------------
 
@@ -918,11 +920,12 @@ class IndexServer(object):
                 op_params = {'wt': "json"}
             else:
                 op_params['wt'] = "json"
-            for key, value in op_params.items():
-                if value is None:
-                    ex_query += f'&{key}'
+            for key, values in op_params.items():
+                if isinstance(values, list):
+                    for value in values:
+                        ex_query += self.__form_field_query(key, value)
                 else:
-                    ex_query += f'&{key}={str(value)}'
+                    ex_query += self.__form_field_query(key, values)
             final_url = f'{search_query}{field_query}{ex_query}'
             return final_url
         except Exception as excp:
@@ -1027,6 +1030,22 @@ class IndexServer(object):
                 if IndexServerOSType.WINDOWS.value.lower() in node.lower():
                     return IndexServerOSType.MIXED.value
             return IndexServerOSType.UNIX.value
+
+    def __form_field_query(self, key, value):
+        """
+        Returns the query with the key and value passed
+        Args:
+                key(str)    -- key for forming the query
+                value(str)  -- value for forming the query
+            Returns:
+                query to be executed against solr
+        """
+        query = None
+        if value is None:
+            query = f'&{key}'
+        else:
+            query = f'&{key}={str(value)}'
+        return query
 
     @property
     def os_info(self):
