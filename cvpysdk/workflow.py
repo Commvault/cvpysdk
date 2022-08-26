@@ -1255,7 +1255,7 @@ class WorkFlow(object):
                     else:
                         return output, Job(self._commcell_object, response.json()['jobId'])
                 elif "errorCode" in response.json():
-                    if response.json()['errorCode'] == 0:
+                    if int(response.json()['errorCode']) == 0:
                         return output, 'Workflow Execution Finished Successfully'
                     else:
                         error_message = response.json()['errorMessage']

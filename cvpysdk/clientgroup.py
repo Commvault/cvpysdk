@@ -905,6 +905,7 @@ class ClientGroup(object):
         self._is_restore_enabled = None
         self._is_data_aging_enabled = None
         self._is_smart_client_group = None
+        self._company_name = None
 
         self.refresh()
 
@@ -991,6 +992,8 @@ class ClientGroup(object):
                         self._is_restore_enabled = control_options['enableActivityType']
                     elif control_options['activityType'] == 16:
                         self._is_data_aging_enabled = control_options['enableActivityType']
+
+        self._company_name = clientgroup_props.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName')
 
     def _request_json_(self, option, enable=True, enable_time=None, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
@@ -1282,6 +1285,11 @@ class ClientGroup(object):
     def is_smart_client_group(self):
         """Returns boolean indicating whether client group is smart client group"""
         return self._is_smart_client_group
+    
+    @property
+    def company_name(self):
+        """Returns company name to which client group belongs to"""
+        return self._company_name
     
     @property
     def network(self):
@@ -1974,3 +1982,45 @@ class ClientGroup(object):
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
+
+    def change_company(self, target_company_name):
+        """
+        Changes Company for client group and its belonging clients
+
+        Args:
+            target_company_name (str)  --  Company name to which clientgroup and its clients to be migrated
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        if target_company_name.lower() == 'commcell':
+            company_id = 0
+        else:
+            company_id = int(self._commcell_object.organizations.get(target_company_name).organization_id)
+    
+        request_json = {
+            "entities": [
+                {
+                    "name": self._clientgroup_name,
+                    "clientGroupId": int(self._clientgroup_id),
+                    "_type_": 28
+                }
+            ]
+        }
+        
+        req_url = self._services['ORGANIZATION_ASSOCIATION'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()

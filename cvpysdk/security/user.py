@@ -372,6 +372,7 @@ class Users(object):
         }
         response_json = self._add_user(create_user_request)
 
+
         created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
 
         return self.get(created_user_username)

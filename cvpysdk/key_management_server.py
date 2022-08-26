@@ -55,7 +55,9 @@ KeyManagementServers:
 
     has_kms()               --      checks if the Key Management Server exists or not
 
-    add_aws_kms()           --      configures AWS Key Management Server
+    add_aws_kms()           --      configures AWS Key Management Server with key based authentication
+    
+    _add_aws_kms_with_cred_file --  configures AWS KMS with credential file based authentication
 
 
 KeyManagementServer:
@@ -288,6 +290,47 @@ class KeyManagementServers(KeyManagementServerConstants):
         return kms_name.lower() in self._kms_dict
  
 
+    def _add_aws_kms_with_cred_file(self, kms_details):
+            """Configure AWS Key Management Server with credential file based authentication
+
+                :arg
+                    kms_details ( dictionary ) - Dictionary with AWS KMS details
+                :return:
+                    Object of KeyManagementServer class for the newly created KMS.
+            """
+
+            if "ACCESS_NODE_NAME" in kms_details:
+                payload = {
+                    "keyProvider": {
+
+                        "provider": {
+                            "keyProviderName": kms_details["KMS_NAME"]
+                        },
+                        "encryptionType": 3,
+                        "keyProviderType": 3,
+
+                        "properties": {
+                            "accessNodes": [
+                                {
+                                    "accessNode": {
+                                        "clientName": kms_details["ACCESS_NODE_NAME"]
+                                    },
+                                    "awsCredential": {
+                                        "profile": kms_details["AWS_CREDENTIALS_FILE_PROFILE_NAME"],
+                                        "amazonAuthenticationType": self._KMS_AUTHENTICATION_TYPE[kms_details["KEY_PROVIDER_AUTH_TYPE"]]
+                                    }
+                                }
+                            ],
+                            "bringYourOwnKey": 0,
+                            "regionName": kms_details["AWS_REGION_NAME"]
+                        }
+
+                    }
+                }
+
+                self._kms_api_call(payload)
+                self.refresh()
+
     def add(self, kms_details):
         """
         Method to add Key Management Server
@@ -305,6 +348,7 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS"
             }
 
+
         input dictionary for creating AWS KMS with access node ( key based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
@@ -315,6 +359,18 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "AWS_ACCESS_KEY": "1234",
                 "AWS_SECRET_KEY": "1234"
             }
+
+
+        input dictionary for creating AWS KMS with access node ( credential template file based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
+                "ACCESS_NODE_NAME": "client1",
+                "KMS_NAME": "AWS_KMS_NAME",
+                "KEY_PROVIDER_AUTH_TYPE": "AWS_CREDENTIALS_FILE",
+                "AWS_CREDENTIALS_FILE_PROFILE_NAME": "AWSProfile1"
+            }
+            
         """
         KeyManagementServers._validate_input(kms_details, dict)
 
@@ -328,9 +384,12 @@ class KeyManagementServers(KeyManagementServerConstants):
             if "AWS_REGION_NAME" not in kms_details:
                 kms_details["AWS_REGION_NAME"] = "Asia Pacific (Mumbai)"
 
-            self.add_aws_kms(kms_name=kms_details['KMS_NAME'], aws_access_key=kms_details['AWS_ACCESS_KEY'], aws_secret_key=kms_details['AWS_SECRET_KEY'],aws_region_name=kms_details["AWS_REGION_NAME"], kms_details = kms_details)
+            if kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AWS_KEYS":
+                self.add_aws_kms(kms_name=kms_details['KMS_NAME'], aws_access_key=kms_details['AWS_ACCESS_KEY'], aws_secret_key=kms_details['AWS_SECRET_KEY'],aws_region_name=kms_details["AWS_REGION_NAME"], kms_details = kms_details)
 
-        self.refresh()
+            elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AWS_CREDENTIALS_FILE":
+                self._add_aws_kms_with_cred_file(kms_details)
+
         return self.get(kms_details['KMS_NAME'])
 
     def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):

@@ -361,9 +361,12 @@ class Organizations:
                     name = provider['connectName'].lower()
                     organization_id = provider['shortName']['id']
                     organization_guid = provider['providerGUID']
+                    cloud_service_organizations = provider.get("organizationCloudServiceDetails", [{}])[0].\
+                        get("cloudService", {}).get('redirectUrl')
                     organizations[name] = organization_id
                     self._adv_config[name] = {
-                        'GUID': organization_guid
+                        'GUID': organization_guid,
+                        'redirect_url': cloud_service_organizations
                     }
 
             self._get_associated_entities_count()
@@ -400,9 +403,8 @@ class Organizations:
                     name = provider.get('connectName').lower()
                     organization_entites_count = provider.get('associatedEntitiesCount')
                     if name:
-                        self._adv_config[name] = {
-                            'count': organization_entites_count
-                        }
+                        if name in self._adv_config.keys():
+                            self._adv_config[name].update({'count': organization_entites_count})
 
                 return
             else:
@@ -428,19 +430,21 @@ class Organizations:
 
     @property
     def all_organizations_props(self):
-        """Returns the dictionary consisting of all the organizations guid info.
+        """Returns the dictionary consisting of all the organizations guid info and redirect URL if present.
 
             dict - consists of all the organizations configured on the commcell
 
                 {
                     "organization1_name":
                      {
-                     GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB28"
+                     GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB28",
+                     redirect_url: "https://url_to_redirect.com:80/webconsole"
                      },
 
                     "organization2_name":
                     {
-                    GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB27"
+                    GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB27",
+                    redirect_url: None
                     }
                 }
 
