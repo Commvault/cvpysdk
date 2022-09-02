@@ -726,7 +726,7 @@ class VirtualServerSubclient(Subclient):
                                                 and corresponding
         """
 
-        if not new_name and not self._instance_object.instance_name == HypervisorType.Google_Cloud.value.lower():
+        if not new_name and not self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             new_name = name
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
@@ -807,7 +807,7 @@ class VirtualServerSubclient(Subclient):
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
         for network_card_dict in vm_nics_list:
-            if self._instance_object.instance_name == HypervisorType.Google_Cloud.value.lower():
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 current_project = network_card_dict.get('subnetId').split('/')[6]
                 if value.get('project_id') is not None:
                     network_card_dict['subnetId'] = value.get('subnetwork_nic')
@@ -823,7 +823,7 @@ class VirtualServerSubclient(Subclient):
                 "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
                 "name": (network_card_dict.get('sourceNetwork',
                                                "") + _destnetwork) if self._instance_object.instance_name ==
-                                                                      HypervisorType.Google_Cloud.value.lower() and _destnetwork else
+                                                                      HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
                 network_card_dict['label'],
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
@@ -2124,7 +2124,7 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
-            if self._instance_object.instance_name == HypervisorType.Google_Cloud.value.lower():
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 new_name = ""
             if restore_option['destination_instance'].lower() == 'vmware':
                 _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
@@ -2138,7 +2138,7 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        if "nics" not in restore_option or self._instance_object.instance_name == HypervisorType.Google_Cloud.value.lower():
+        if "nics" not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
             if restore_option.get('source_ip') and restore_option.get('destination_ip'):

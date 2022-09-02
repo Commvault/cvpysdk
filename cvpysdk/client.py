@@ -56,7 +56,7 @@ Clients
 
     _get_virtualization_clients()         --  gets all the virtualization clients associated with
     the commcell
-
+    
     _get_client_dict()                    --  returns the client dict for client to be added to
     member server
 
@@ -68,6 +68,8 @@ Clients
 
     _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
     hostname if exists
+    
+    _get_client_from_displayname()        --  get the client name for given display name
 
     has_client(client_name)               --  checks if a client exists with the given name or not
 
@@ -229,7 +231,7 @@ Client
     repair_software()            -- triggers Repair software on the client machine
 
     get_dag_member_servers()     --  Gets the member servers of an Exchange DAG client.
-
+    
     create_pseudo_client()       --  Creates a pseudo client
 
     register_decoupled_client()  --  registers decoupled client
@@ -492,7 +494,7 @@ class Clients(object):
 
                             "hostname": client2_hostname.
 
-                            "displayName": client1_displayname
+                            "displayName": client2_displayname
                         }
                     }
 
@@ -927,6 +929,32 @@ class Clients(object):
             for hidden_client in self.hidden_clients:
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client
+                
+    def _get_client_from_displayname(self, displayname):
+        """get the client name for given display name
+            name
+
+            Args:
+                displayname    (str)   --  displayname of the  client on this commcell
+
+            Returns:
+                str     -   name of the client associated with this displayname
+            
+                None    -   if no client has the displayname as the given input
+            Raises:
+                Exception:
+                    if multiple clients has same display name
+        """
+        displayname_occurence = 0
+        for client  in self._get_clients():
+            if self._get_clients()[client]['displayName'] == displayname:
+                displayname_occurence += 1
+                client_name = client
+        if displayname_occurence > 1:
+            raise Exception('multiple clients have same display name')
+        else:
+            return client_name
+
 
     @property
     def all_clients(self):
@@ -3315,6 +3343,8 @@ class Clients(object):
                 client_from_hostname = self._get_client_from_hostname(name)
                 if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
+            elif not self.has_client(name):
+                client_from_hostname = self._get_client_from_displayname(name)
             else:
                 raise SDKException(
                     'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
