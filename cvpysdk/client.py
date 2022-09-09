@@ -56,7 +56,10 @@ Clients
 
     _get_virtualization_clients()         --  gets all the virtualization clients associated with
     the commcell
-    
+
+    _get_virtualization_access_nodes()    --  gets all the virtualization access nodes associated with
+    the commcell
+
     _get_client_dict()                    --  returns the client dict for client to be added to
     member server
 
@@ -68,7 +71,7 @@ Clients
 
     _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
     hostname if exists
-    
+
     _get_client_from_displayname()        --  get the client name for given display name
 
     has_client(client_name)               --  checks if a client exists with the given name or not
@@ -130,6 +133,9 @@ Clients Attributes
     that are associated with the commcell and their information such as id and hostname
 
     **virtualization_clients**  --  returns the dictionary consisting of only the virtualization
+    clients that are associated with the commcell and their information such as id and hostname
+
+    **virtualization_access_nodes** --  returns the dictionary consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
 
     **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
@@ -231,7 +237,7 @@ Client
     repair_software()            -- triggers Repair software on the client machine
 
     get_dag_member_servers()     --  Gets the member servers of an Exchange DAG client.
-    
+
     create_pseudo_client()       --  Creates a pseudo client
 
     register_decoupled_client()  --  registers decoupled client
@@ -405,6 +411,7 @@ class Clients(object):
         self._SALESFORCE_CLIENTS = self._services['GET_SALESFORCE_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
+        self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services['CREATE_PSEUDO_CLIENT']
@@ -415,6 +422,7 @@ class Clients(object):
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
+        self._virtualization_access_nodes = None
         self._office_365_clients = None
         self._dynamics365_clients = None
         self._salesforce_clients = None
@@ -790,6 +798,49 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _get_virtualization_access_nodes(self):
+        """REST API call to get all virtualization access nodes in the commcell
+            Returns:
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._GET_VIRTUALIZATION_ACCESS_NODES)
+
+        virtualization_access_nodes = {}
+        if flag and response:
+            if response.json() and 'clients' in response.json():
+                for virtualization_access_node in response.json()['clients']:
+                    client_id = virtualization_access_node.get('clientId')
+                    client_name = virtualization_access_node.get('clientName').lower()
+                    display_name = virtualization_access_node.get('displayName').lower()
+                    host_name = virtualization_access_node.get('hostName').lower()
+                    if client_name:
+                        virtualization_access_nodes[display_name] = {
+                            'id': client_id,
+                            'name': client_name,
+                            'hostName': host_name
+                        }
+            return virtualization_access_nodes
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def _get_fileserver_clients(self):
         """REST API call to get all file server clients in the commcell
 
@@ -929,7 +980,7 @@ class Clients(object):
             for hidden_client in self.hidden_clients:
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client
-                
+
     def _get_client_from_displayname(self, displayname):
         """get the client name for given display name
             name
@@ -939,7 +990,7 @@ class Clients(object):
 
             Returns:
                 str     -   name of the client associated with this displayname
-            
+
                 None    -   if no client has the displayname as the given input
             Raises:
                 Exception:
@@ -1146,6 +1197,26 @@ class Clients(object):
 
         """
         return self._virtualization_clients
+
+    @property
+    def virtualization_access_nodes(self):
+        """Returns the dictionary consisting of the virtualization access nodes
+
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+        """
+        return self._virtualization_access_nodes
 
     @property
     def file_server_clients(self):
@@ -3454,6 +3525,7 @@ class Clients(object):
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
+        self._virtualization_access_nodes = self._get_virtualization_access_nodes()
         self._office_365_clients = None
         self._file_server_clients = None
         self._salesforce_clients = None

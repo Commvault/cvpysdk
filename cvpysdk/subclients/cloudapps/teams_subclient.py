@@ -227,7 +227,11 @@ class TeamsSubclient(CloudAppsSubclient):
                 "Subclient", "101", "Destination team value cannot be none")
         discovered_teams = self.discover()
         team = [discovered_teams[team]]
-        destination_team = discovered_teams[destination_team]
+        if not kwargs.get("dest_subclient_obj"):
+            destination_team = discovered_teams[destination_team]
+        else:
+            dest_discovered_teams = kwargs.get("dest_subclient_obj").discover()
+            destination_team = dest_discovered_teams[destination_team]
         request_json = {
             "taskInfo": {
                 "task": const.RESTORE_TASK_JSON,
@@ -238,7 +242,8 @@ class TeamsSubclient(CloudAppsSubclient):
                     {
                         "subTask": const.RESTORE_SUBTASK_JSON,
                         "options": self._json_restore_options(
-                            team, **dict(kwargs, destination_team=destination_team))
+                            team, **dict(kwargs, destination_team=destination_team,
+                                         dest_subclient_obj=kwargs.get("dest_subclient_obj")))
                     }
                 ]
             }
@@ -392,8 +397,7 @@ class TeamsSubclient(CloudAppsSubclient):
             "restoreAllMatching": False,
             "overWriteItems": kwargs.get("unconditionalOverwrite", False),
             "restoreToTeams": True,
-            "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get(
-                "destination_team", {}).get("displayName") else "",
+            "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get("destination_team", {}).get("displayName") else "",
             "restorePostsAsHtml": kwargs.get("restorePostsAsHtml", False),
             "restoreUsingFindQuery": False,
             "selectedItemsToRestore": selectedItemsToRestore,
@@ -442,6 +446,14 @@ class TeamsSubclient(CloudAppsSubclient):
                 "itemType": "Team"
             })
 
+        if kwargs.get("dest_subclient_obj"):
+            dest_subclient_obj = kwargs.get("dest_subclient_obj")
+            if isinstance(dest_subclient_obj, TeamsSubclient):
+                dest_details = dest_subclient_obj._json_restoreoptions_destination(kwargs.get("destination_team", None))
+            else:
+                raise Exception("Wrongly supplied subclient object")
+        else:
+            dest_details = self._json_restoreoptions_destination(kwargs.get("destination_team", None))
         _restore_options = {
             "browseOption": {
                 "timeRange": {}
@@ -451,9 +463,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 "overwriteFiles": kwargs.get("unconditionalOverwrite", False),
                 "unconditionalOverwrite": kwargs.get("unconditionalOverwrite", False)
             },
-            "destination": self._json_restoreoptions_destination(
-                kwargs.get("destination_team", None)
-            ),
+            "destination": dest_details,
             "fileOption": {
                 "sourceItem": [
                     ""
@@ -773,3 +783,4 @@ class TeamsSubclient(CloudAppsSubclient):
                 raise SDKException('Subclient', '102', o_str)
         else:
             raise SDKException('Response', '102', self._update_response_(response.text))
+
