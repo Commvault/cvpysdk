@@ -2593,12 +2593,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -2697,12 +2697,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
