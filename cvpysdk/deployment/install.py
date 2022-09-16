@@ -35,6 +35,7 @@ Download
 
 from ..job import Job
 from ..exception import SDKException
+from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures
 
 
 class Install(object):
@@ -169,9 +170,9 @@ class Install(object):
         if username:
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["clientAuthForJob"] \
                 = {
-                    "password": password,
-                    "userName": username
-                }
+                "password": password,
+                "userName": username
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
@@ -402,6 +403,59 @@ class Install(object):
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
 
+            db2_logs_location (dict) - dictionary of db2 logs location
+            Ex: db2_logs_location = {
+                                    "db2ArchivePath": "/opt/Archive/",
+                                    "db2RetrievePath": "/opt/Retrieve/",
+                                    "db2AuditErrorPath": "/opt/Audit/"
+                            }
+            index_cache_location (str) - Set index cache location for MA package
+            Ex: index_cache_location = "/opt/IndexCache/"
+            firewall_inputs (dict) - dictionary for firewall configuration
+            Ex: firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": "encrypted_tunnel"
+                            }
+
+            firewall_inputs can take the following values
+
+            Ex 1: Client can open connection to CS
+             firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 0,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+            Ex 2: CS can open connection to Client
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+
+            Ex 3: Client can communicate to CS using Proxy
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 2,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": True/False
+                            }
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -439,13 +493,23 @@ class Install(object):
                     not both
 
         """
+        db2_install = False
+        ma_install = False
         if windows_features:
             os_type = 0
+            if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
+                db2_install = True
+            if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
+                ma_install = True
             install_options = [{'osType': 'Windows', 'ComponentId': feature_id}
                                for feature_id in windows_features]
 
         elif unix_features:
             os_type = 1
+            if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
+                db2_install = True
+            if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
+                ma_install = True
             install_options = [{'osType': 'Unix', 'ComponentId': feature_id}
                                for feature_id in unix_features]
 
@@ -460,6 +524,7 @@ class Install(object):
                 client_details.append(
                     {
                         "clientEntity": {
+                            "clientId": 0,
                             "clientName": client_name,
                             "commCellName": commcell_name
                         }
@@ -476,6 +541,9 @@ class Install(object):
                                       for client_group in client_group_name]
 
         install_flags = kwargs.get('install_flags')
+        db2_logs = kwargs.get('db2_logs_location', {})
+        index_cache_location = kwargs.get('index_cache_location', None)
+        firewall_inputs = kwargs.get('firewall_inputs', {})
 
         request_json = {
             "taskInfo": {
@@ -507,13 +575,14 @@ class Install(object):
                                         "requestType": 0,
                                         "Operationtype": 0,
                                         "CommServeHostName":
-                                            self.commcell_object.commserv_hostname,
+                                            self.commcell_object.commserv_name,
                                         "RemoteClient": False,
                                         "installFlags": {
-                                            "allowMultipleInstances": True,
+                                            "allowMultipleInstances": False,
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
-                                            "install32Base": install_flags.get('install32Base', False) if install_flags else False,
+                                            "install32Base": install_flags.get('install32Base',
+                                                                               False) if install_flags else False,
                                             "disableOSFirewall": False,
                                             "stopOracleServices": False,
                                             "skipClientsOfCS": False,
@@ -521,7 +590,8 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
-                                            "preferredIPFamily": install_flags.get('preferredIPFamily', 1) if install_flags else 1,
+                                            "preferredIPFamily": install_flags.get('preferredIPFamily',
+                                                                                   1) if install_flags else 1,
                                             "firewallInstall": {
                                                 "enableFirewallConfig": False,
                                                 "firewallConnectionType": 0,
@@ -534,6 +604,7 @@ class Install(object):
                                         },
                                         "clientComposition": [
                                             {
+                                                "activateClient": True,
                                                 "overrideSoftwareCache": True if sw_cache_client else False,
                                                 "softwareCacheOrSrmProxyClient": {
                                                     "clientName": sw_cache_client if sw_cache_client else ""
@@ -580,6 +651,24 @@ class Install(object):
                 ]
             }
         }
+
+        if db2_install and db2_logs:
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "clientComposition"][0]["components"]["db2"] = db2_logs
+
+        if ma_install and index_cache_location:
+            index_cache_dict = {
+                "indexCacheDirectory": {
+                    "path": index_cache_location
+                }
+            }
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
+
+        if firewall_inputs:
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "installFlags"]["firewallInstall"] = firewall_inputs
+
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

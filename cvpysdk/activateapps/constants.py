@@ -32,9 +32,516 @@ PlanConstants                   -       Maintains constants for Plan operations
 
 InventoryConstants              -       Maintains constants for Inventory Manager apps
 
+EdiscoveryConstants             -       Maintains constants for Ediscovery clients in activate
+
+RequestConstants                -       Maintains constants for request manager in Activate
+
 """
 import copy
 from enum import Enum
+
+
+class RequestConstants:
+    """class to maintain constants for request manager"""
+    PROPERTY_REVIEW_CRIERIA = 'ReviewCriteria'
+    PROPERTY_ENTITIES = 'Entities'
+    PROPERTY_REQUEST_HANDLER_ID = 'RequestHandlerId'
+    PROPERTY_REQUEST_HANDLER_NAME = 'RequestHandlerName'
+    PROPERTY_REVIEW_SET_ID = 'ReviewSetId'
+    SEARCH_QUERY_SELECTION_SET = {
+        "entity_*",
+        "count_entity_*",
+        "Url",
+        "contentid",
+        "FileName",
+        "Size",
+        "data_source",
+        "data_source_name",
+        "entities_extracted",
+        "RedactMode*",
+        "CommentFor*",
+        "ConsentFor*"}
+
+    FACET_REVIEWED = '_ConsentFor_%s_b_Reviewed'
+    FACET_NOT_REVIEWED = '_ConsentFor_%s_b_Not reviewed'
+    FACET_ACCEPTED = '_ConsentFor_%s_b_Accepted'
+    FACET_DECLINED = '_ConsentFor_%s_b_Declined'
+    FACET_REDACTED = '_RedactMode_%s_b_Redacted'
+    FACET_NOT_REDACTED = '_RedactMode_%s_b_Not redacted'
+    FACET_COUNT = "count"
+    REQUEST_FEDERATED_FACET_SEARCH_QUERY = {"searchParams": [{"key": "q",
+                                                              "value": "*:*"},
+                                                             {"key": "wt",
+                                                              "value": "json"},
+                                                             {"key": "rows",
+                                                              "value": "0"},
+                                                             {"key": "defType",
+                                                              "value": "edismax"},
+                                                             {"key": "facet",
+                                                              "value": "true"},
+                                                             {"key": "json.facet",
+                                                              "value": "{\"_ConsentFor_<rsidparam>_b_Reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:*\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Not reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"contentid:* AND -(ConsentFor_<rsidparam>_b:*)\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Accepted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:true\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Declined\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:false\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:true\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Not redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:false\",\"facet\":{}},\"FileExtension\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_FileExtension\",\"tag_exclude_FileExtension\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"FileExtension\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"ReadAccessUserName\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_ReadAccessUserName\",\"tag_exclude_ReadAccessUserName\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"ReadAccessUserName\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"data_source_name\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_data_source_name\",\"tag_exclude_data_source_name\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"data_source_name\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}}}"},
+                                                             {"key": "useDCubeReq",
+                                                              "value": "true"}]}
+
+    FIELD_DOC_COUNT = "TotalDocuments"
+    FIELD_REVIEWED = "ReviewedDocuments"
+    FIELD_NOT_REVIEWED = "Non-ReviewedDocuments"
+    FIELD_ACCEPTED = 'AcceptedDocuments'
+    FIELD_DECLINED = 'DeclinedDocuments'
+    FIELD_REDACTED = 'RedactedDocuments'
+    FIELD_NOT_REDACTED = 'Non-RedactedDocuments'
+
+    class RequestStatus(Enum):
+        """enum to specify different request status"""
+        TaskCreated = 1
+        TaskConfigured = 2
+        ReviewInProgress = 3
+        ReviewCompleted = 4
+        ApproveCompleted = 5
+        ExportCompleted = 6
+        DeleteCompleted = 7
+        TaskCompleted = 8
+        ApprovalRequested = 9
+        ActionInProgress = 10
+        CompletedWithErrors = 11
+        Failed = 12
+
+    class RequestType(Enum):
+        """enum to maintain different request type"""
+        EXPORT = 'EXPORT'
+        DELETE = 'DELETE'
+
+
+class EdiscoveryConstants:
+    """class to maintain constants for ediscovery clients"""
+
+    class CrawlType(Enum):
+        """Crawl type for SDG/FSO jobs"""
+        LIVE = 1
+        BACKUP = 2
+        CONTENT_INDEXED = 3
+        FILE_LEVEL_ANALYTICS = 4
+        BACKUP_V2 = 5
+
+    class SourceType(Enum):
+        """Source type of data for FSO/SDG app"""
+        SOURCE = 1
+        BACKUP = 2
+
+    class ReviewActions(Enum):
+        """Review actions for documents on SDG/FSO app"""
+        DELETE = 1
+        MOVE = 4
+        RETENTION = 10
+        IGNORE = 11
+        ARCHIVE = 90
+        TAG = 98
+
+    class RiskTypes(Enum):
+        """Different risk types for documents on SDG/FSO app"""
+        OPEN_ACCESS = 1
+        OLD_FILES = 2
+        FILE_MOVED = 3
+        MULTI_USER_ACCESS = 4
+        NO_RETENTION = 5
+        IS_PROTECTED = 6
+
+    FSO_SERVERS = "FsoServers"
+    FSO_SERVER_GROUPS = "FsoServerGroups"
+
+    SERVER_LEVEL_SCHEDULE_JSON = {
+        "taskInfo": {
+            "task": {
+                "taskType": 4,
+                "taskFlags": {
+                    "isEdiscovery": True
+                },
+                "taskName": ""
+            },
+            "subTasks": [
+                {
+                    "subTask": {
+                        "operationType": 5025,
+                        "subTaskType": 1,
+                        "subTaskName": ""
+                    },
+                    "pattern": {},
+                    "options": {
+                        "backupOpts": {
+                            "backupLevel": 2,
+                            "mediaOpt": {
+                                "auxcopyJobOption": {
+                                    "allCopies": True,
+                                    "useMaximumStreams": True,
+                                    "maxNumberOfStreams": 1
+                                }
+                            }
+                        },
+                        "adminOpts": {
+                            "contentIndexingOption": {
+                                "idaType": 1,
+                                "operationType": 2,
+                                "fileAnalytics": False
+                            }
+                        }
+                    }
+                }
+            ],
+            "associations": [
+                {
+                    "clientId": 0,
+                    "_type_": 3
+                }
+            ]
+        }
+    }
+
+    REVIEW_ACTION_FSO_SUPPORTED = [ReviewActions.DELETE.value, ReviewActions.MOVE.value, ReviewActions.ARCHIVE.value]
+
+    REVIEW_ACTION_SDG_SUPPORTED = [
+        ReviewActions.DELETE.value,
+        ReviewActions.MOVE.value,
+        ReviewActions.ARCHIVE.value,
+        ReviewActions.RETENTION.value,
+        ReviewActions.IGNORE.value]
+
+    CREATE_CLIENT_REQ_JSON = {
+        "clientInfo": {
+            "clientType": 19,
+            "edgeDrivePseudoClientProperties": {
+                "systemDriveType": 6,
+                "edgeDriveAssociations": {},
+                "eDiscoveryInfo": {
+                    "eDiscoverySubType": 2,
+                    "inventoryDataSource": {
+                        "seaDataSourceId": 0
+                    }
+                }
+            },
+            "plan": {
+                "planId": 0
+            }
+        },
+        "entity": {
+            "clientName": "",
+            "_type_": 3
+        }
+    }
+
+    REVIEW_ACTION_DELETE_REQ_JSON = {
+        "operation": ReviewActions.DELETE.value,
+        "files": "",
+        "deleteFromBackup": False,
+        "options": ""}
+
+    REVIEW_ACTION_MOVE_REQ_JSON = {"operation": ReviewActions.MOVE.value, "files": "", "options": ""}
+
+    REVIEW_ACTION_SET_RETENTION_REQ_JSON = {
+        "operation": ReviewActions.RETENTION.value,
+        "remActionRequest": {
+            "dataSourceId": 0,
+            "handlerName": "default",
+            "isBulkOperation": False,
+            "searchRequest": ""},
+        "setRetentionReq": {"numOfMonthsRemain": 0},
+    }
+
+    REVIEW_ACTION_IGNORE_FILES_REQ_JSON = {
+        "operation": ReviewActions.IGNORE.value,
+        "remActionRequest": {
+            "dataSourceId": 0,
+            "handlerName": "default",
+            "isBulkOperation": False,
+            "searchRequest": ""},
+        "ignoreRisksReq": {"ignoreAllRisks": False},
+    }
+
+    REVIEW_ACTION_TAG_REQ_JSON = {
+        "operation": ReviewActions.TAG.value,
+        "remActionRequest": {
+            "dataSourceId": 0,
+            "isBulkOperation": False},
+        "taggingRequest": {}}
+
+    REVIEW_ACTION_BULK_SEARCH_REQ = "{\"searchParams\":" \
+                                    "[{\"key\":\"q\",\"value\":\"*:*\"},{\"key\":\"wt\",\"value\":\"json\"}," \
+                                    "{\"key\":\"rows\",\"value\":\"0\"},{\"key\":\"defType\",\"value\":\"edismax\"}," \
+                                    "{\"key\":\"fq\",\"value\":\"IsFile:\\\"1\\\"\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"FileName\"},{\"key\":\"fl\",\"value\":\"OwnerName\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"OwnerLocation\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"CountryCode\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"FileExtension\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"operatingSystem\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"IsProtected\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"FileName_path\"},{\"key\":\"fl\",\"value\":\"Url\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ClientId\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"DocumentType\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"contentid\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AllowListUsername\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AllowModifyUsername\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AllowWriteUsername\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AllowExecuteUsername\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AllowFullControlUsername\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ExpiryDate\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"CreatedTime\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"data_source\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"data_source_name\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"data_source_type\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"entities_extracted\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ConsentFor_*\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"RedactFor_*\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"RedactMode_*\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"CommentFor_*\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AppType\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ApplicationId\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"CVTurboGUID\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"CommcellNumber\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"AchiveFileId\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ArchiveFileOffset\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"Size\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"Risk_*\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"LastAccessedBy\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"LastModifiedBy\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"ModifiedTimeAsStr\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"entity_doc_tags\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"TagIds\"},{\"key\":\"fl\",\"value\":\"FileName\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"Url\"},{\"key\":\"fl\",\"value\":\"Size\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"OwnerName\"}," \
+                                    "{\"key\":\"fl\",\"value\":\"entity_doc_tags\"}," \
+                                    "{\"key\":\"start\",\"value\":\"0\"}]}"
+
+    REVIEW_ACTION_SEARCH_FL_SET = {
+        "FileName",
+        "OwnerName",
+        "OwnerLocation",
+        "CountryCode",
+        "FileExtension",
+        "operatingSystem",
+        "IsProtected",
+        "FileName_path",
+        "Url",
+        "ClientId",
+        "DocumentType",
+        "contentid",
+        "AllowListUsername",
+        "AllowModifyUsername",
+        "AllowWriteUsername",
+        "AllowExecuteUsername",
+        "AllowFullControlUsername",
+        "ExpiryDate",
+        "CreatedTime",
+        "data_source",
+        "data_source_name",
+        "data_source_type",
+        "entities_extracted",
+        "ConsentFor_*",
+        "RedactFor_*",
+        "RedactMode_*",
+        "CommentFor_*",
+        "AppType",
+        "ApplicationId",
+        "CVTurboGUID",
+        "CommcellNumber",
+        "AchiveFileId",
+        "ArchiveFileOffset",
+        "Size",
+        "Risk_*",
+        "LastAccessedBy",
+        "LastModifiedBy",
+        "ModifiedTimeAsStr",
+        "entity_doc_tags",
+        "TagIds"}
+
+    REVIEW_ACTION_IDA_SELECT_SET = {
+        5: {'contentid', 'Url', 'ClientId', 'CreatedTime', 'FileName'}}
+
+    FS_SERVER_HANDLER_NAME = 'GetFileServers'
+    ADD_FS_REQ_JSON = {
+        "datasourceId": 0,
+        "indexServerClientId": 0,
+        "followScheduleCrawl": False,
+        "datasources": [
+            {
+                "datasourceName": "",
+                "properties": [],
+                "datasourceType": 5,
+                "accessNodes": [
+                    {
+                        "clientId": 0,
+                        "clientName": ""
+                    }
+                ]
+            }
+        ]
+    }
+
+    FS_DEFAULT_EXPORT_FIELDS = {'FileName', 'Url', 'Size', 'OwnerName', 'CreatedTime', 'AccessTime', 'ModifiedTime'}
+    EXPORT_DOWNLOAD_REQ = {
+        "appTypeId": 200,
+        "responseFileName": "",
+        "fileParams": [
+            {
+                "name": "",
+                "id": 2
+            },
+            {
+                "name": "zip",
+                "id": 3
+            },
+            {
+                "name": "Streamed",
+                "id": 10
+            }
+        ]
+    }
+
+    DATA_SOURCE_TYPES = {
+        0: 'NONE',
+        1: 'jdbc',
+        5: 'file',
+        9: 'ldap',
+        10: 'federated',
+        11: 'blank',
+        15: 'fla',
+        16: 'edge',
+        17: 'exchange',
+        18: 'reviewset',
+        22: 'nfs',
+        24: 'systemdefault',
+        26: 'onedrive',
+        27: 'sharepoint',
+        28: 'email',
+        29: 'dbanalysis',
+        30: 'cloudpaas',
+        31: 'googledrive',
+        32: 'gmail',
+        34: 'onedriveindex',
+        37: 'dynamic365'
+    }
+
+    VIEW_CATEGORY_PERMISSION = {
+        "permissionId": 31,
+        "permissionName": "View",
+        "_type_": 122
+    }
+    EDIT_CATEGORY_PERMISSION = {
+        "permissionId": 2,
+        "permissionName": "Agent Management",
+        "_type_": 122
+    }
+
+    SHARE_REQUEST_JSON = {
+        "entityAssociated": {
+            "entity": [
+                {
+                    "_type_": 3,
+                    "clientId": 0
+                }
+            ]
+        },
+        "securityAssociations": {
+            "associationsOperationType": 1,
+            "associations": [
+                {
+                    "userOrGroup": [
+                        {
+                            "userId": 0,
+                            "_type_": 0,
+                            "userName": ""
+                        }
+                    ],
+                    "properties": {
+                        "categoryPermission": {
+                            "categoriesPermissionOperationType": 1,
+                            "categoriesPermissionList": [
+                                VIEW_CATEGORY_PERMISSION
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    DS_FILE = 'file'
+    DS_CLOUD_STORAGE = 'cloudstorage'
+    FIELD_DATA_SOURCE_DISPLAY_NAME = 'datasourceDisplayName'
+    FIELD_DISPLAY_NAME = 'displayName'
+    FIELD_DATA_SOURCE_NAME = 'datasourceName'
+    FIELD_DATA_SOURCE_ID_NON_SEA = 'datasourceId'
+    FIELD_DOCUMENT_COUNT = 'documentCount'
+    FIELD_DATA_SOURCE_TYPE = 'datasourceType'
+    FIELD_DATA_SOURCE_ID = 'seaDataSourceId'
+    FIELD_PLAN_ID = 'planId'
+    FIELD_DC_PLAN_ID = 'dcplanid'
+    FIELD_PSEDUCO_CLIENT_ID = 'pseudoclientid'
+    FIELD_SUBCLIENT_ID = 'subclientid'
+    FIELD_CRAWL_TYPE = 'crawltype'
+    FIELD_DATA_SOURCE_NAME_SEA = 'seaDataSourceName'
+    FIELD_CONTENT_ID = 'contentid'
+    FIELD_IS_FILE = 'IsFile:1'
+    DYNAMIC_FEDERATED_SEARCH_PARAMS = {"searchParams": []}
+
+    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
+
+    TAGGING_ITEMS_REQUEST = {
+        "entityType": "SEA_DATASOURCE_ENTITY",
+        "entityIds": [],
+        "handler": "default",
+        "searchRequest": {},
+        "opType": "ADD",
+        "tags": [],
+        "isAsync": True}
+    TAGGING_ITEMS_REVIEW_REQUEST = {"operation": ReviewActions.TAG.value, "files": "",
+                                    "options": "",
+                                    "taggingInformation": {'opType': 'ADD', "tagIds": []}}
+
+    START_CRAWL_SERVER_REQUEST_JSON = {
+        "taskInfo": {
+            "associations": [
+                {
+                    "clientId": 0,
+                    "_type_": 3
+                }
+            ],
+            "task": {
+                "taskType": 1,
+                "taskName": "",
+                "taskFlags": {
+                    "isEdiscovery": True
+                }
+            },
+            "subTasks": [
+                {
+                    "subTask": {
+                        "subTaskName": "CVPYSDK_FSO_IMMEDIATE",
+                        "subTaskType": 1,
+                        "operationType": 5025
+                    },
+                    "options": {
+                        "backupOpts": {
+                            "backupLevel": 2,
+                            "mediaOpt": {
+                                "auxcopyJobOption": {
+                                    "maxNumberOfStreams": 1,
+                                    "allCopies": True,
+                                    "useMaximumStreams": True
+                                }
+                            }
+                        },
+                        "adminOpts": {
+                            "contentIndexingOption": {
+                                "fileAnalytics": False,
+                                "idaType": 1,
+                                "operationType": 2
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
 
 
 class InventoryConstants:
@@ -47,54 +554,31 @@ class InventoryConstants:
     CRAWL_JOB_COMPLETE_ERROR_STATE = 13
 
     INVENTORY_ADD_REQUEST_JSON = {
-        "inventoryName": "",
-        "assets": [],
-        "analyticsEngineCloud": {
+        "name": "",
+        "identityServers": [],
+        "indexServer": {
             "cloudId": 0,
-            "cloudDisplayName": ""
+            "displayName": ""
         }
-    }
-
-    ASSET_ADD_REQUEST_JSON = {
-        "name": "",
-        "type": 0
-    }
-
-    ASSET_PROPERTY_JSON = {
-        "propertyValues": {
-            "nameValues": [
-
-            ]
-        }
-    }
-    ASSET_PROPERTY_NAME_VALUE_PAIR_JSON = {
-        "name": "",
-        "value": ""
     }
 
     FIELD_PROPERTY_NAME = 'name'
-    FIELD_PROPERTY_DNSHOST = 'dNSHostName'
+    FIELD_PROPERTY_DNSHOST = 'hostName'
     FIELD_PROPERTY_OS = 'operatingSystem'
-    FIELD_PROPERTY_IP = 'ipAddresses'
+    FIELD_PROPERTY_IP = 'ipAddress'
     FIELD_PROPERTY_COUNTRYCODE = 'countryCode'
-    FIELD_PROPERTY_CO = 'co'
-    FIELD_PROPERTY_DOMAIN = 'domainName'
 
     KWARGS_NAME = 'name'
     KWARGS_IP = 'ip'
     KWARGS_OS = 'os'
-    KWARGS_DOMAIN = 'domain'
     KWARGS_FQDN = 'fqdn'
-    KWARGS_COUNTRY_NAME = 'country_name'
     KWARGS_COUNTRY_CODE = 'country_code'
 
     FIELD_PROPS_MAPPING = {
         FIELD_PROPERTY_NAME: KWARGS_NAME,
         FIELD_PROPERTY_IP: KWARGS_IP,
         FIELD_PROPERTY_OS: KWARGS_OS,
-        FIELD_PROPERTY_DOMAIN: KWARGS_DOMAIN,
         FIELD_PROPERTY_DNSHOST: KWARGS_FQDN,
-        FIELD_PROPERTY_CO: KWARGS_COUNTRY_NAME,
         FIELD_PROPERTY_COUNTRYCODE: KWARGS_COUNTRY_CODE
     }
 
@@ -103,19 +587,10 @@ class InventoryConstants:
         FIELD_PROPERTY_DNSHOST,
         FIELD_PROPERTY_OS,
         FIELD_PROPERTY_IP,
-        FIELD_PROPERTY_COUNTRYCODE,
-        FIELD_PROPERTY_CO,
-        FIELD_PROPERTY_DOMAIN]
+        FIELD_PROPERTY_COUNTRYCODE
+    ]
 
-    ASSET_ADD_TO_INVENTORY_JSON = {
-        "inventoryId": 0,
-        "assets": []
-    }
-
-    ASSET_DELETE_FROM_INVENTORY_JSON = {
-        "inventoryId": 0,
-        "assets": []
-    }
+    IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON = {"identityServers": [], "startDataCollection": True}
 
     VIEW_CATEGORY_PERMISSION = {
         "permissionId": 31,
@@ -162,7 +637,8 @@ class InventoryConstants:
     }
 
     class AssetType(Enum):
-        NAME_SERVER = 61
+        """Asset type for inventory"""
+        IDENTITY_SERVER = 61
         FILE_SERVER = 132
 
 
@@ -172,7 +648,8 @@ class PlanConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = "*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind"
+    DEFAULT_INCLUDE_DOC_TYPES = "*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html," \
+                                "*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind"
     DEFAULT_EXCLUDE_LIST = [
         "C:\\Program Files",
         "C:\\Program Files (x86)",

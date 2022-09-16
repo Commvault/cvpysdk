@@ -143,7 +143,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .subclient import Subclients
 from .schedules import Schedules
@@ -191,30 +190,6 @@ class Backupsets(object):
         self._BACKUPSETS = self._services['GET_ALL_BACKUPSETS'] % (self._client_object.client_id)
         if self._agent_object:
             self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
-        from .backupsets.fsbackupset import FSBackupset
-        from .backupsets.nasbackupset import NASBackupset
-        from .backupsets.hanabackupset import HANABackupset
-        from .backupsets.cabackupset import CloudAppsBackupset
-        from .backupsets.postgresbackupset import PostgresBackupset
-        from .backupsets.adbackupset import ADBackupset
-        from .backupsets.db2backupset import DB2Backupset
-        from .backupsets.vsbackupset import VSBackupset
-        from .backupsets.aadbackupset import AzureAdBackupset
-        from .backupsets.sharepointbackupset import SharepointBackupset
-
-        self._backupsets_dict = {
-            'file system': FSBackupset,
-            'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
-            'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
-            'sap hana': HANABackupset,
-            'cloud apps': CloudAppsBackupset,
-            'postgresql': PostgresBackupset,
-            "active directory" : ADBackupset,
-            'db2': DB2Backupset,
-            'virtual server': VSBackupset,
-            "azure ad" : AzureAdBackupset,
-            'sharepoint server': SharepointBackupset
-        }
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
@@ -350,7 +325,7 @@ class Backupsets(object):
 
                 return return_dict
             else:
-                raise SDKException('Response', '102')
+                return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -385,7 +360,7 @@ class Backupsets(object):
                 SDKException:
                     if type of the backupset name argument is not string
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
 
         return self._backupsets and backupset_name.lower() in self._backupsets
@@ -399,7 +374,7 @@ class Backupsets(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -475,7 +450,7 @@ class Backupsets(object):
 
                     if backupset with same name already exists
         """
-        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -605,7 +580,7 @@ request_json['backupSetInfo'].update({
                 
 
         """        
-        if not (isinstance(archiveset_name, basestring)):
+        if not (isinstance(archiveset_name, str)):
             raise SDKException('Backupset', '101')
         else:
             archiveset_name = archiveset_name.lower()
@@ -931,7 +906,7 @@ request_json['backupSetInfo'].update({
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -941,19 +916,11 @@ request_json['backupSetInfo'].update({
                     self._instance_object = self._agent_object.instances.get(
                         self._backupsets[backupset_name]['instance']
                     )
-
-                if self._agent_object.agent_name in self._backupsets_dict.keys():
-                    return self._backupsets_dict[self._agent_object.agent_name](
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name]["id"]
-                    )
-                else:
-                    return Backupset(
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name]["id"]
-                    )
+                return Backupset(
+                    self._instance_object,
+                    backupset_name,
+                    self._backupsets[backupset_name]["id"]
+                )
 
             raise SDKException(
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
@@ -977,7 +944,7 @@ request_json['backupSetInfo'].update({
 
                     if no backupset exists with the given name
         """
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
         else:
             backupset_name = backupset_name.lower()
@@ -1038,6 +1005,41 @@ request_json['backupSetInfo'].update({
 
 class Backupset(object):
     """Class for performing backupset operations for a specific backupset."""
+
+    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+        """Class composition for CV backupsets"""
+        from .backupsets.fsbackupset import FSBackupset
+        from .backupsets.nasbackupset import NASBackupset
+        from .backupsets.hanabackupset import HANABackupset
+        from .backupsets.cabackupset import CloudAppsBackupset
+        from .backupsets.postgresbackupset import PostgresBackupset
+        from .backupsets.adbackupset import ADBackupset
+        from .backupsets.db2backupset import DB2Backupset
+        from .backupsets.vsbackupset import VSBackupset
+        from .backupsets.aadbackupset import AzureAdBackupset
+        from .backupsets.sharepointbackupset import SharepointBackupset
+
+        _backupsets_dict = {
+            'file system': FSBackupset,
+            'nas': NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASBackupset,       # SP12 and above honors NDMP as the Agent Name
+            'sap hana': HANABackupset,
+            'cloud apps': CloudAppsBackupset,
+            'postgresql': PostgresBackupset,
+            "active directory": ADBackupset,
+            'db2': DB2Backupset,
+            'virtual server': VSBackupset,
+            "azure ad": AzureAdBackupset,
+            'sharepoint server': SharepointBackupset
+        }
+
+        if instance_object._agent_object.agent_name in _backupsets_dict.keys():
+            _class = _backupsets_dict.get(instance_object._agent_object.agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, instance_object, backupset_name, backupset_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, instance_object, backupset_name, backupset_id=None):
         """Initialise the backupset object.
@@ -1246,7 +1248,7 @@ class Backupset(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1295,7 +1297,7 @@ class Backupset(object):
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1427,7 +1429,7 @@ class Backupset(object):
         mode = 2
         paths = []
 
-        if isinstance(options['path'], basestring):
+        if isinstance(options['path'], str):
             paths.append(options['path'])
         elif isinstance(options['path'], list):
             paths = options['path']
@@ -1462,7 +1464,7 @@ class Backupset(object):
                 "toTime": self._get_epoch_time(options['to_time'])
             },
             "advOptions": {
-                "copyPrecedence": options['copy_precedence']
+                "copyPrecedence": int(options['copy_precedence'])
             },
             "ma": {
                 "clientName": options['media_agent']
@@ -1569,6 +1571,12 @@ class Backupset(object):
                 mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
             else:
                 mod_time = None
+            
+            if 'backupTime' in result['advancedData'] and int(result['advancedData']['backupTime']) > 0:
+                bkp_time = time.localtime(int(result['advancedData']['backupTime']))
+                bkp_time = time.strftime('%d/%m/%Y %H:%M:%S', bkp_time)
+            else:
+                bkp_time = None
 
             if 'file' in result['flags']:
                 if result['flags']['file'] in (True, '1'):
@@ -1594,6 +1602,7 @@ class Backupset(object):
                 'size': size,
                 'modified_time': mod_time,
                 'type': file_or_folder,
+                'backup_time': bkp_time,
                 'advanced_data': result['advancedData']
             }
 
@@ -1699,6 +1708,12 @@ class Backupset(object):
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
+                    
+                    if 'backupTime' in result['advancedData'] and int(result['advancedData']['backupTime']) > 0:
+                        bkp_time = time.localtime(int(result['advancedData']['backupTime']))
+                        bkp_time = time.strftime('%d/%m/%Y %H:%M:%S', bkp_time)
+                    else:
+                        bkp_time = None
 
                     if 'file' in result['flags']:
                         if result['flags']['file'] in (True, '1'):
@@ -1719,6 +1734,7 @@ class Backupset(object):
                         'size': size,
                         'modified_time': mod_time,
                         'type': file_or_folder,
+                        'backup_time': bkp_time,
                         'advanced_data': result['advancedData']
                     }
 
@@ -1870,7 +1886,7 @@ class Backupset(object):
 
                     if type of value input is not string
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -1897,7 +1913,7 @@ class Backupset(object):
                     if description cannot be modified for this backupset
         """
         if self.description is not None:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -1941,7 +1957,7 @@ class Backupset(object):
         from .plan import Plan
         if isinstance(value, Plan):
             self._plan_obj = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
             self._plan_obj = None
@@ -2191,27 +2207,6 @@ class Backupset(object):
             options['filters'].append(('FileSize', options['file_size_et'], 'EQUALSBLAH'))
 
         return self._do_browse(options)
-    
-    def create_subclient(self, subclient, storagepolicyname, description):
-
-            """"
-            This is to create new subclient
-            
-            Args: 
-                subclientname (str) - subclient name to be created
-                storagepolicyname  (str) - name of the storage policy associate to subclient
-                description (str) - Description for subclient which is to be created
-            Raise:
-                  Exception:
-                    If fail to create subclient
-    
-            """
-            try:
-                self.subclients.add(subclient, storagepolicyname,description)
-            except Exception as err:
-                self.log.exception(
-                    "Exception while adding contents to subclient" + str(err))
-                raise err
 
     def delete_data(self, paths):
         """Deletes items for the backupset in the Index and makes them unavailable for
@@ -2311,19 +2306,45 @@ class Backupset(object):
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-    def backed_up_files_count(self):
+    def backed_up_files_count(self, path="\\**\\*"):
         """Returns the count of the total number of files present in the backed up data
-         of all the subclients of the given backupset.
+         of all the subclients of the given backupset and given path.
+
+                Args:
+
+                    path        (str)       --  Folder path to find no of backed up files
+                                                    (Default: \\**\\*)
+
+                Returns:
+
+                    int --  No of backed up files count in given path
+
+                Raises:
+
+                    Exception:
+
+                        if browse response is not proper
          """
-        options_dic = {"operation": "find", "opType": 1, "path": "\**\*",
-               "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
-                                    "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
-                       "criteria": {
-                           "field": "Flags",
-                           "dataOperator": "IN",
-                           "values": ["file"]
-                       }
-                   }]}], "_raw_response": True}
+        options_dic = {"operation": "find", "opType": 1, "path": path,
+                       "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
+                                            "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
+                                                "criteria": {
+                                                    "field": "Flags",
+                                                    "dataOperator": "IN",
+                                                    "values": ["file"]
+                                                }
+                                            }]}], "_raw_response": True}
 
         browse_response = self._do_browse(options_dic)
-        return browse_response[1]['browseResponses'][0]['browseResult']['aggrResultSet'][0]['count']
+        if not len(browse_response) > 1:
+            raise SDKException('Backupset', '102', 'Browse response is not proper')
+        browse_response = browse_response[1]
+        if 'browseResponses' not in browse_response or len(browse_response['browseResponses']) == 0:
+            raise SDKException('Backupset', '102', 'Browse response is missing browseResponses')
+        browse_response = browse_response['browseResponses'][0]
+        if 'browseResult' not in browse_response:
+            raise SDKException('Backupset', '102', 'Browse response is missing browseResult')
+        browse_result = browse_response['browseResult']
+        if 'aggrResultSet' not in browse_result or len(browse_result['aggrResultSet']) == 0:
+            raise SDKException('Backupset', '102', 'Browse response is missing aggrResultSet')
+        return browse_result['aggrResultSet'][0].get('count', 0)

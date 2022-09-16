@@ -38,7 +38,6 @@ FusionComputeVirtualServerSubclient:
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
 """
-from past.builtins import basestring
 from cvpysdk.exception import SDKException
 from ..vssubclient import VirtualServerSubclient
 
@@ -73,7 +72,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -91,13 +91,14 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                destination_client (basestring)  -- proxy client to be used for
-                                                    restore
-                                                    default: proxy added in
-                                                    subclient
-
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -113,7 +114,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -141,7 +142,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             copy_precedence=0,
-            disk_provisioning='original'):
+            disk_provisioning='original',
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -151,19 +153,19 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 vm_to_restore     (list)  --  provide the VM name to restore
                                               default: None
 
-                destination_client    (basestring) -- name of the Pseudo client
+                destination_client    (str) -- name of the Pseudo client
                                                   where the VM should be
                                                     restored.
 
-                new_name          (basestring) -- new name to be given to the
+                new_name          (str) -- new name to be given to the
                                                     restored VM
 
-                Host          (basestring) -- destination cluster or  host
+                host          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -178,12 +180,18 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
-                proxy_client     (basestring)  --  proxy client to be used for restore
+                proxy_client     (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -200,14 +208,14 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(new_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(new_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = new_name
 

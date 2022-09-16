@@ -130,6 +130,31 @@ ClientGroup:
 
     disable_auto_discover()         -- disables  autodiscover option at client group level
 
+ClientGroup Attributes
+-----------------------
+
+    Following attributes are available for an instance of the ClientGroup class:
+
+        **name**                       --      returns the name of client group
+        
+        **clientgroup_id**             --      returns the id of client group
+        
+        **clientgroup_name**           --      returns the name of client group
+        
+        **description**                --      returns the description of client group
+        
+        **associated_clients**         --      returns the associated clients of client group
+        
+        **is_backup_enabled**          --      returns the backup activity status of client group
+        
+        **is_restore_enabled**         --      returns the restore activity status of client group
+        
+        **is_data_aging_enabled**      --      returns the data aging activity status of client group
+        
+        **is_smart_client_group**      --      returns true if client group is a smart client group
+        
+        **is_auto_discover_enabled**   --      returns the auto discover status of client group
+        
 """
 
 from __future__ import absolute_import
@@ -137,8 +162,6 @@ from __future__ import unicode_literals
 
 import time
 import copy
-
-from past.builtins import basestring
 
 from .exception import SDKException
 from .network import Network
@@ -277,7 +300,7 @@ class ClientGroups(object):
         clients = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -310,7 +333,7 @@ class ClientGroups(object):
                 SDKException:
                     if type of the client group name argument is not string
         """
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException('ClientGroup', '101')
 
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
@@ -352,6 +375,7 @@ class ClientGroups(object):
             'is true': 1,
             'is false': 2,
             'contains': 10,
+            'starts with': 14,
             }
         prop_id_dict = {
             'Name': 1,
@@ -423,6 +447,7 @@ class ClientGroups(object):
             'Clients With Encryption': 80,
             'Client CIDR Address Range': 81,
             'HAC Cluster': 85,
+            'Client Display Name': 116
             }
         ptype_dict = {
             'Name': 2,
@@ -640,14 +665,14 @@ class ClientGroups(object):
 
                     if client group already exists with the given name
         """
-        if not (isinstance(clientgroup_name, basestring) and
-                isinstance(kwargs.get('clientgroup_description', ''), basestring)):
+        if not (isinstance(clientgroup_name, str) and
+                isinstance(kwargs.get('clientgroup_description', ''), str)):
             raise SDKException('ClientGroup', '101')
 
         if not self.has_clientgroup(clientgroup_name):
             if isinstance(clients, list):
                 clients = self._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 clients = self._valid_clients(clients.split(','))
             else:
                 raise SDKException('ClientGroup', '101')
@@ -759,7 +784,7 @@ class ClientGroups(object):
 
                     if no client group exists with the given name
         """
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException('ClientGroup', '101')
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -792,7 +817,7 @@ class ClientGroups(object):
                     if no clientgroup exists with the given name
         """
 
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException('ClientGroup', '101')
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -879,6 +904,8 @@ class ClientGroup(object):
         self._is_backup_enabled = None
         self._is_restore_enabled = None
         self._is_data_aging_enabled = None
+        self._is_smart_client_group = None
+        self._company_name = None
 
         self.refresh()
 
@@ -949,6 +976,7 @@ class ClientGroup(object):
             for client in clientgroup_props['associatedClients']:
                 self._associated_clients.append(client['clientName'])
 
+        self._is_smart_client_group = self._properties['isSmartClientGroup']
         self._is_backup_enabled = False
         self._is_restore_enabled = False
         self._is_data_aging_enabled = False
@@ -964,6 +992,8 @@ class ClientGroup(object):
                         self._is_restore_enabled = control_options['enableActivityType']
                     elif control_options['activityType'] == 16:
                         self._is_data_aging_enabled = control_options['enableActivityType']
+
+        self._company_name = clientgroup_props.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName')
 
     def _request_json_(self, option, enable=True, enable_time=None, **kwargs):
         """Returns the JSON request to pass to the API as per the options selected by the user.
@@ -1167,12 +1197,12 @@ class ClientGroup(object):
 
                     if failed to remove clients from the ClientGroup
         """
-        if isinstance(clients, (basestring, list)):
+        if isinstance(clients, (str, list)):
             clientgroups_object = ClientGroups(self._commcell_object)
 
             if isinstance(clients, list):
                 validated_clients_list = clientgroups_object._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 validated_clients_list = clientgroups_object._valid_clients(clients.split(','))
 
             if operation_type in ['ADD', 'OVERWRITE']:
@@ -1251,6 +1281,16 @@ class ClientGroup(object):
         """Treats the clientgroup data aging attribute as a property of the ClientGroup class."""
         return self._is_data_aging_enabled
 
+    @property
+    def is_smart_client_group(self):
+        """Returns boolean indicating whether client group is smart client group"""
+        return self._is_smart_client_group
+    
+    @property
+    def company_name(self):
+        """Returns company name to which client group belongs to"""
+        return self._company_name
+    
     @property
     def network(self):
         """Returns the object of Network class."""
@@ -1573,7 +1613,7 @@ class ClientGroup(object):
     @clientgroup_name.setter
     def clientgroup_name(self, value):
         """Sets the name of the clientgroup as the value provided as input."""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=value,
                 clientgroup_description=self.description,
@@ -1593,7 +1633,7 @@ class ClientGroup(object):
     @description.setter
     def description(self, value):
         """Sets the description of the clientgroup as the value provided in input."""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=self.name,
                 clientgroup_description=value,
@@ -1942,3 +1982,45 @@ class ClientGroup(object):
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
+
+    def change_company(self, target_company_name):
+        """
+        Changes Company for client group and its belonging clients
+
+        Args:
+            target_company_name (str)  --  Company name to which clientgroup and its clients to be migrated
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        if target_company_name.lower() == 'commcell':
+            company_id = 0
+        else:
+            company_id = int(self._commcell_object.organizations.get(target_company_name).organization_id)
+    
+        request_json = {
+            "entities": [
+                {
+                    "name": self._clientgroup_name,
+                    "clientGroupId": int(self._clientgroup_id),
+                    "_type_": 28
+                }
+            ]
+        }
+        
+        req_url = self._services['ORGANIZATION_ASSOCIATION'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()

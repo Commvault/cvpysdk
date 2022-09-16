@@ -32,8 +32,6 @@ HANABackupset:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ..backupset import Backupset
 from ..exception import SDKException
 
@@ -105,7 +103,7 @@ class HANABackupset(Backupset):
         """
         from ..instance import Instance
 
-        if not isinstance(instance, (basestring, Instance)):
+        if not isinstance(instance, (str, Instance)):
             raise SDKException('Backupset', '101')
 
         request_json = self._instance_object._restore_request_json(

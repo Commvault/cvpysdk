@@ -55,7 +55,6 @@ CloudStorageInstance:
                                                 proxy passing explicit credentials of destination cloud
 
 """
-from past.builtins import basestring
 from cvpysdk.instances.cainstance import CloudAppsInstance
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException
@@ -165,8 +164,8 @@ class CloudStorageInstance(CloudAppsInstance):
                 self._access_node = cloud_apps_instance.get(
                     'generalCloudProperties', {}).get(
                     'proxyServers', [{}])[0].get('clientName', cloud_apps_instance.get(
-                    'generalCloudProperties', {}).get('memberServers', [{}])[
-                    0].get('client', {}).get('clientName'))
+                        'generalCloudProperties', {}).get('memberServers', [{}])[
+                        0].get('client', {}).get('clientName'))
 
     @property
     def google_host_url(self):
@@ -212,7 +211,6 @@ class CloudStorageInstance(CloudAppsInstance):
     def access_keyid(self):
         """Returns the access key ID property as a read-only attribute."""
         return self._access_keyid
-
 
     @property
     def server_name(self):
@@ -266,7 +264,6 @@ class CloudStorageInstance(CloudAppsInstance):
             for key in kwargs:
 
                 if not key == "restore_options":
-
                     restore_options[key] = kwargs[key]
 
         else:
@@ -282,7 +279,7 @@ class CloudStorageInstance(CloudAppsInstance):
             "cloudAppsRestoreOptions"] = self._set_cloud_restore_options_json
         cloud_restore_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["commonOptions"] = self._common_options_json
-        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] =  int(self._agent_object.backupsets.get(
+        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] = int(self._agent_object.backupsets.get(
             'defaultBackupSet').backupset_id)
 
         return cloud_restore_json
@@ -324,7 +321,6 @@ class CloudStorageInstance(CloudAppsInstance):
 
         if not (isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException('Instance', '101')
 
         request_json = self._generate_json(
@@ -347,7 +343,8 @@ class CloudStorageInstance(CloudAppsInstance):
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
         """Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -372,6 +369,19 @@ class CloudStorageInstance(CloudAppsInstance):
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+               kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -391,10 +401,10 @@ class CloudStorageInstance(CloudAppsInstance):
 
         """
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_instance_name, basestring) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_instance_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')
@@ -408,7 +418,8 @@ class CloudStorageInstance(CloudAppsInstance):
             in_place=False,
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+            **kwargs)
 
         return self._process_restore_response(request_json)
 
@@ -461,15 +472,15 @@ class CloudStorageInstance(CloudAppsInstance):
 
         """
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException('Instance', '101')
 
-        destination_appTypeId = int(self._commcell_object.clients.get(destination_client).agents.get('file system').agent_id)
+        destination_appTypeId = int(
+            self._commcell_object.clients.get(destination_client).agents.get('file system').agent_id)
 
         request_json = self._generate_json(
             paths=paths,
@@ -640,7 +651,8 @@ class CloudStorageInstance(CloudAppsInstance):
             self._proxy_credential_json = {
                 "instanceType": 20,
                 "googleCloudInstance": {
-                    "serverName": destination_cloud.get('google_cloud', {}).get('google_host_url', 'storage.googleapis.com'),
+                    "serverName": destination_cloud.get('google_cloud', {}).get('google_host_url',
+                                                                                'storage.googleapis.com'),
                     "credentials": {
                         "userName": destination_cloud.get('google_cloud', {}).get('google_access_key', ""),
                         "password": destination_cloud.get('google_cloud', {}).get('google_secret_key', "")
@@ -747,7 +759,7 @@ class CloudStorageInstance(CloudAppsInstance):
         if len(destination_cloud) > 1:
             raise SDKException(
                 'Instance', '102', 'only one cloud vendor details can'
-                'be passed.Multiple entries not allowed')
+                                   'be passed.Multiple entries not allowed')
 
         cloud_vendors = ["google_cloud", "amazon_s3", "azure_blob"]
         # Check if destination cloud falls within supported cloud vendors
@@ -760,9 +772,9 @@ class CloudStorageInstance(CloudAppsInstance):
                 '102',
                 'Unsupported destination cloud for restore')
 
-        if not ((isinstance(destination_client_proxy, basestring) or
+        if not ((isinstance(destination_client_proxy, str) or
                  isinstance(destination_client_proxy, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')

@@ -397,7 +397,8 @@ class RemoteCache(object):
                 "uaList": {
                     "addedList": {
                         "id": entity_id,
-                        "name": entity_name
+                        "name": entity_name,
+                        "type": entity_type
                     }
                 }
             }

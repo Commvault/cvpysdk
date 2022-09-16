@@ -88,13 +88,12 @@ StoragePool instance attributes
 import xmltodict
 
 from .exception import SDKException
-from past.builtins import basestring
-# from future.standard_library import install_aliases
 
 # from .job import Job
 
 from .storage import DiskLibrary
 from .storage import MediaAgent
+from .security.security_association import SecurityAssociation
 
 
 class StoragePools:
@@ -205,7 +204,7 @@ class StoragePools:
 
             response = xmltodict.parse(response.text)['Api_GetStoragePoolListResp']
 
-            if response is None:
+            if response is None or response.get('storagePoolList') is None:
                 storage_pool_list = []
             else:
                 storage_pool_list = response['storagePoolList']
@@ -291,14 +290,14 @@ class StoragePools:
         
         if not isinstance(media_agents, list):
             raise SDKException('Storage', '101')
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
         
         mediagent_obj = []
         for media_agent in media_agents:
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException('Storage', '103')
@@ -370,27 +369,27 @@ class StoragePools:
         """
         # from urllib.parse import urlencode
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                not (isinstance(storage_pool_name, basestring) or not isinstance(mountpath, basestring))):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
 
         # if isinstance(library, DiskLibrary):
         #     disk_library = library
-        # elif isinstance(library, basestring):
+        # elif isinstance(library, str):
         #     disk_library = DiskLibrary(self._commcell_object, library)
         # else:
         #     raise SDKException('Storage', '104')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException('Storage', '103')
 
         if isinstance(ddb_ma, MediaAgent):
             ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, basestring):
+        elif isinstance(ddb_ma, str):
             ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
         else:
             raise SDKException('Storage', '103')
@@ -492,7 +491,7 @@ class StoragePools:
 
         """
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
         else:
             storage_pool_name = storage_pool_name.lower()
@@ -628,7 +627,7 @@ class StoragePool(object):
         for media_agent in media_agents:        
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException('Storage', '103')
@@ -701,7 +700,7 @@ class StoragePool(object):
                 SDKException:
                     if reconfigure fails
         """
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
 
 
@@ -751,20 +750,20 @@ class StoragePool(object):
                        SDKException:
                            if replace fails
                """
-        if isinstance(disk_id, basestring):
+        if isinstance(disk_id, str):
             disk_id = int(disk_id)
         elif not isinstance(disk_id, int):
             raise SDKException('Storage', '101')
 
         media_agent_obj = None
-        if isinstance(media_agent, basestring):
+        if isinstance(media_agent, str):
             media_agent_obj = self._commcell_object.media_agents.get(media_agent)
         elif isinstance(media_agent, MediaAgent):
             media_agent_obj = media_agent
         else:
             raise SDKException('Storage', '103')
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException('Storage', '101')
 
         request_json = {
@@ -810,3 +809,35 @@ class StoragePool(object):
     def refresh(self):
         """Refreshes propery of the class object"""
         self._get_storage_pool_properties()
+
+    def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
+        """
+        Adds the security association on the storage pool object
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            'user_name': user1,
+                            'role_name': role1
+                        },
+                        {
+                            'user_name': user2,
+                            'role_name': role2
+                        }
+                    ]
+ 
+            isUser (bool)           --    True or False. set isUser = False, If associations_list made up of user groups
+            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is being done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of List type
+        """
+        if not isinstance(associations_list, list):
+            raise SDKException('StoragePool', '101')
+
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                        user= isUser, request_type = request_type, externalGroup = externalGroup)

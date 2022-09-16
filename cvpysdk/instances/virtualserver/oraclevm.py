@@ -76,6 +76,12 @@ class OracleVMInstance(VirtualServerInstance):
 
         """
         super(OracleVMInstance, self)._get_instance_properties()
+        if "vmwareVendor" in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance['vmwareVendor']['virtualCenter']
+
+            self._server_name.append(self._instance['clientName'])
+
+            self._server_host_name.append(self._vmwarvendor["domainName"])
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
@@ -102,11 +108,9 @@ class OracleVMInstance(VirtualServerInstance):
     @property
     def server_host_name(self):
         """getter for the domain name in the OracleVM vendor json"""
-        return ["vmcontrol.commvault.com"]
-
+        return self._server_host_name
 
     @property
     def server_name(self):
         """return the Oracle client associated with the PseudoClient"""
-        # TODO will change with Praveen Form(rsn)
-        return ["vmcontrol.commvault.com"]
+        return self._server_name

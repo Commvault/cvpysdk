@@ -32,7 +32,6 @@ SharepointInstance:
 
 from cvpysdk.exception import SDKException
 from ..instance import Instance
-from past.builtins import basestring
 
 
 
@@ -166,7 +165,7 @@ class SharepointInstance(Instance):
         # restore_option should use client key for destination client info
         client = restore_option.get("client", self._agent_object._client_object)
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = self._commcell_object.clients.get(client)
 
         restore_option["client_name"] = client.client_name

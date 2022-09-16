@@ -31,7 +31,6 @@ AlibabaCloudVirtualServerSubclient:
 
 """
 
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -56,7 +55,8 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             overwrite=False,
             copy_precedence=0,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -89,11 +89,20 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
                 power_on                (bool)  --  power on the restored VM
                                                         default: True
 
+                overwrite             (bool)        --  overwrite the existing VM
+                                                        default: True
+
                 copy_precedence         (int)   --  copy precedence to restored from
                                                         default: 0
 
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -111,6 +120,7 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
         """
         if not restore_option:
             restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         if bool(restore_option):
             if not (isinstance(overwrite, bool) and
@@ -118,7 +128,7 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
                 raise SDKException('Subclient', '101')
 
         if new_name:
-            if not isinstance(new_name, basestring):
+            if not isinstance(new_name, str):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = new_name
 

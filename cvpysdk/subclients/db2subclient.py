@@ -46,6 +46,10 @@ Db2Subclient:
 
     disable_backupdata()                -- Method to disable backup data option at subclient level
 
+    enable_table_level()                -- Enable Table Level Browse
+
+    enable_acs_backup()                 -- Enable DB2 ACS snap backup
+
 """
 from __future__ import unicode_literals
 from ..subclient import Subclient
@@ -146,7 +150,7 @@ class DB2Subclient(Subclient):
 
     def enable_backupdata(self):
         """
-        To enable or disable data backup
+        To enable data backup
 
         """
 
@@ -154,11 +158,35 @@ class DB2Subclient(Subclient):
 
     def disable_backupdata(self):
         """
-        To enable or disable data backup
+        To disable data backup
 
         """
+        properties = self.properties
+        properties['db2SubclientProp']["db2BackupData"] = False
+        properties['db2SubclientProp']["skipLogsInBackupImage"] = 0
+        properties['db2SubclientProp']["db2BackupMode"] = 0
+        properties['db2SubclientProp']["db2UseDedupeDevice"] = True
+        properties['db2SubclientProp']["db2DeleteLogFilesAfter"] = False
+        properties['db2SubclientProp']["db2BackupLogFiles"] = True
+        del properties["db2SubclientProp"]["db2BackupType"]
+        self.update_properties(properties_dict=properties)
 
-        self._set_subclient_properties("_db2_subclient_properties['db2BackupData']", False)
+    def enable_table_level(self):
+        """
+        To enable table level browse
+
+        """
+        properties = self.properties
+        properties['db2SubclientProp']["enableTableBrowse"] = True
+        self.update_properties(properties_dict=properties)
+
+    def enable_acs_backup(self):
+        """
+        To enable DB2 ACS backup
+        """
+        properties = self.properties
+        properties['commonProperties']["snapCopyInfo"]["useDB2ACSInterface"] = True
+        self.update_properties(properties_dict=properties)
 
     @property
     def backup_mode_online(self):
@@ -226,3 +254,100 @@ class DB2Subclient(Subclient):
                           }
                           }
         return subclient_json
+
+    def _db2_backup_request_json(self,
+                                 backup_level,
+                                 **kwargs):
+        """
+        Returns the JSON request to pass to the API as per the options selected by the user.
+
+            Args:
+               backup_level                     (list)  --  level of backup the user wish to run
+                                                            Full / Incremental / Differential
+
+               create_backup_copy_immediately   (bool)  --  Sybase snap job needs
+                                                            this backup copy operation
+                    default : False
+
+               backup_copy_type                 (int)   --  backup copy job to be launched
+                                                            based on below two options
+                 default : 2,
+                 possible values :
+                            1 (USING_STORAGE_POLICY_RULE),
+                            2( USING_LATEST_CYCLE)
+
+            Returns:
+
+                (dict) - JSON request to pass to the API
+
+        """
+        request_json = self._backup_json(backup_level, False, "BEFORE_SYNTH")
+        create_backup_copy_immediately = kwargs.get("create_backup_copy_immediately", False)
+        backup_copy_type = kwargs.get("backup_copy_type", 2)
+        db2_options = dict()
+        if create_backup_copy_immediately:
+            sub_opt = {"dataOpt":
+                       {
+                           "createBackupCopyImmediately": create_backup_copy_immediately,
+                           "backupCopyType": backup_copy_type
+                       }
+                      }
+            db2_options.update(sub_opt)
+        request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
+            db2_options
+        )
+        return request_json
+
+    def db2_backup(self,
+                   backup_level="full",
+                   **kwargs):
+        """
+        Performs backup on DB2 subclient
+
+        Args:
+            backup_level                            (str)   --  Level of backup.
+                                                                full|incremental|differential
+
+            create_backup_copy_immediately          (bool)  --  Sybase snap job needs
+                                                                this backup copy operation
+                    default : False
+
+            backup_copy_type                        (int)   --  backup copy job to be launched
+                                                                based on below two options
+             default : 2,
+             possible values :
+                        1 (USING_STORAGE_POLICY_RULE),
+                        2( USING_LATEST_CYCLE)
+
+        Returns:
+            (object) - instance of Job class
+
+        Raises:
+            SDKException:
+                if backup level is incorrect
+
+                if response is empty
+
+                if response does not succeed
+
+        """
+        backup_level = backup_level.lower()
+
+        if backup_level not in ['full', 'incremental', 'differential']:
+            raise SDKException('Subclient', '103')
+
+        create_backup_copy_immediately = kwargs.get("create_backup_copy_immediately", False)
+
+        if create_backup_copy_immediately:
+            if backup_level != 'full':
+                raise SDKException(
+                    'Subclient', '102', 'Backup Copy job is not valid for Incremental or Differential')
+
+        request_json = self._db2_backup_request_json(backup_level, **kwargs)
+
+        backup_service = self._commcell_object._services['CREATE_TASK']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', backup_service, request_json
+        )
+        return self._process_backup_response(flag, response)

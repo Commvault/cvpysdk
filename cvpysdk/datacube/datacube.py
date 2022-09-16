@@ -45,8 +45,6 @@ Datacube:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from .datasource import Datasources
 
 from ..exception import SDKException
@@ -163,7 +161,7 @@ class Datacube(object):
                     if response is not success
 
         """
-        if not isinstance(analytics_engine, basestring):
+        if not isinstance(analytics_engine, str):
             raise SDKException('Datacube', '101')
 
         engine_index = (

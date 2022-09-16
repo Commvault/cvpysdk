@@ -96,8 +96,7 @@ import string
 import time
 import copy
 
-from past.builtins import basestring
-
+from .constants import AppIDAName
 from .instance import Instances
 from .backupset import Backupsets
 from .schedules import Schedules
@@ -127,14 +126,6 @@ class Agents(object):
 
         self._agents = None
         self.refresh()
-
-        from .agents.exchange_database_agent import ExchangeDatabaseAgent
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._agents_dict = {
-            'exchange database': ExchangeDatabaseAgent
-        }
 
     def __str__(self):
         """Representation string consisting of all agents of the client.
@@ -252,7 +243,7 @@ class Agents(object):
                 SDKException:
                     if type of the agent name argument is not string
         """
-        if not isinstance(agent_name, basestring):
+        if not isinstance(agent_name, str):
             raise SDKException('Agent', '101')
 
         return self._agents and agent_name.lower() in self._agents
@@ -272,18 +263,13 @@ class Agents(object):
 
                     if no agent exists with the given name
         """
-        if not isinstance(agent_name, basestring):
+        if not isinstance(agent_name, str):
             raise SDKException('Agent', '101')
         else:
             agent_name = agent_name.lower()
 
             if self.has_agent(agent_name):
-                updated_agent_name = agent_name
-                if "file system" in agent_name:
-                    updated_agent_name = "file system"
-                return self._agents_dict.get(agent_name, Agent)(
-                    self._client_object, updated_agent_name, self._agents[agent_name]
-                )
+                return Agent(self._client_object, agent_name, self._agents[agent_name])
 
             raise SDKException('Agent', '102', 'No agent exists with name: {0}'.format(agent_name))
 
@@ -299,7 +285,7 @@ class Agents(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -415,6 +401,21 @@ class Agents(object):
 
 class Agent(object):
     """Class for performing agent operations of an agent for a specific client."""
+    def __new__(cls, client_object, agent_name, agent_id=None):
+        from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _agents_dict = {
+            'exchange database': ExchangeDatabaseAgent
+        }
+
+        if agent_name in _agents_dict:
+            _class = _agents_dict.get(agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, client_object, agent_name, agent_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, client_object, agent_name, agent_id=None):
         """Initialize the instance of the Agent class.
@@ -436,7 +437,8 @@ class Agent(object):
         """
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
-        self._agent_name = agent_name.lower()
+        self._agent_name = (AppIDAName.FILE_SYSTEM.value.lower()
+                            if AppIDAName.FILE_SYSTEM.value.lower() in agent_name.lower() else agent_name.lower())
 
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services

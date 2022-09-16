@@ -70,8 +70,6 @@ FSBackupset:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
@@ -274,10 +272,10 @@ class FSBackupset(Backupset):
         """
         self._instance_object._restore_association = self._backupset_association
 
-        if not isinstance(client, (basestring, Client)):
+        if not isinstance(client, (str, Client)):
             raise SDKException('Subclient', '101')
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
@@ -681,7 +679,7 @@ class FSBackupset(Backupset):
         vm_option['oneTouchResponse']['clients'][0]['client'][
             'clientName'] = restore_options.get('ClientName', None)
 
-        if instance_name == 'vmware' or 'hyper-v':
+        if instance_name == 'vmware' or instance_name == 'hyper-v':
 
             vm_option['isoPath'] = restore_options.get('IsoPath')
 
@@ -736,8 +734,7 @@ class FSBackupset(Backupset):
 
                 vm_option['vmInfo']['vmLocation']['vCenter'] = restore_options.get('VirtualizationClient')
 
-
-        if instance_name == 'azure resource manager' or 'azure stack':
+        if 'azure' in instance_name:
 
             az_advanced_ops_json = self._azure_advancedopts_json()
 

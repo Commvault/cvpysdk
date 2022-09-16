@@ -214,6 +214,8 @@ Job
 
     get_events()                --  returns the commserv events for the job
 
+    get_child_jobs()            --  Returns the child jobs
+
 
 Job instance Attributes
 -----------------------
@@ -383,6 +385,15 @@ class JobController(object):
 
                             default: []
 
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                            Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
+
+
             Returns:
                 dict    -   request json that is to be sent to server
 
@@ -423,6 +434,9 @@ class JobController(object):
                 ]
             }
         }
+
+        if "entity" in options:
+            request_json['jobFilter']['entity'] = options.get("entity")
 
         return request_json
 
@@ -474,6 +488,16 @@ class JobController(object):
                                     job_type = ''
                                     pending_reason = ''
                                     subclient_id = ''
+                                    client_id = ''
+                                    client_name = ''
+                                    job_elapsed_time = 0
+                                    job_start_time = 0
+
+                                    if 'jobElapsedTime' in job_summary:
+                                        job_elapsed_time = job_summary['jobElapsedTime']
+
+                                    if 'jobStartTime' in job_summary:
+                                        job_start_time = job_summary['jobStartTime']
 
                                     if 'appTypeName' in job_summary:
                                         app_type = job_summary['appTypeName']
@@ -488,6 +512,10 @@ class JobController(object):
                                         job_subclient = job_summary['subclient']
                                         if 'subclientId' in job_subclient:
                                             subclient_id = job_subclient['subclientId']
+                                        if 'clientId' in job_subclient:
+                                            client_id = job_subclient['clientId']
+                                        if 'clientName' in job_subclient:
+                                            client_name = job_subclient['clientName']
 
                                     jobs_dict[job_id] = {
                                         'operation': operation,
@@ -496,8 +524,13 @@ class JobController(object):
                                         'job_type': job_type,
                                         'percent_complete': percent_complete,
                                         'pending_reason': pending_reason,
+                                        'client_id': client_id,
+                                        'client_name': client_name,
                                         'subclient_id': subclient_id,
-                                        'backup_level': backup_level
+                                        'backup_level': backup_level,
+                                        'job_start_time': job_start_time,
+                                        'job_elapsed_time': job_elapsed_time
+
                                     }
 
                     return jobs_dict
@@ -718,6 +751,14 @@ class JobController(object):
 
                         accepted values: ['basic', 'full']
 
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                        Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
+
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
                 as the key, and their details as its value
@@ -801,6 +842,14 @@ class JobController(object):
                         default: basic
 
                         accepted values: ['basic', 'full']
+
+                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
+
+                        Example : To fetch job details of particular data source id
+
+                                "entity": {
+                                            "dataSourceId": 2575
+                                            }
 
             Returns:
                 dict    -   dictionary consisting of the job IDs matching the given criteria
@@ -1925,6 +1974,7 @@ class Job(object):
         self._KILL = self._services['KILL_JOB'] % self.job_id
         self._RESUBMIT = self._services['RESUBMIT_JOB'] % self.job_id
         self._JOB_EVENTS = self._services['JOB_EVENTS'] % self.job_id
+        self._JOB_TASK_DETAILS = self._services['JOB_TASK_DETAILS']
 
         self._client_name = None
         self._agent_name = None
@@ -1941,6 +1991,7 @@ class Job(object):
         self._phase = None
         self._summary = None
         self._details = None
+        self._task_details = None
 
         self.refresh()
 
@@ -2068,6 +2119,54 @@ class Job(object):
 
         raise SDKException('Response', '102')
 
+    def _get_job_task_details(self):
+        """Gets the task details of this job.
+
+            Returns:
+                dict    -   dict consisting of the task details of the job
+
+            Raises:
+                SDKException:
+                    if failed to get the job task details
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        retry_count = 0
+
+        while retry_count < 5:  # Retrying to ignore the transient case when job task details are not found
+            flag, response = self._cvpysdk_object.make_request('GET', self._JOB_TASK_DETAILS % self.job_id)
+            retry_count += 1
+
+            if flag:
+                if response.json():
+                    if 'taskInfo' in response.json():
+                        return response.json()['taskInfo']
+                    elif 'error' in response.json():
+                        error_code = response.json()['error']['errList'][0]['errorCode']
+                        error_message = response.json()['error']['errList'][0]['errorMessage']
+
+                        raise SDKException(
+                            'Job',
+                            '105',
+                            'Error Code: "{0}"\nError Message: "{1}"'.format(error_code, error_message)
+                        )
+                    else:
+                        raise SDKException('Job', '106', 'Response JSON: {0}'.format(response.json()))
+                else:
+                    if retry_count > 4:
+                        raise SDKException('Response', '102')
+                    time.sleep(20)
+            else:
+                if retry_count > 4:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                time.sleep(20)
+
+        raise SDKException('Response', '102')
+
     def _initialize_job_properties(self):
         """Initializes the common properties for the job.
             Adds the client, agent, backupset, subclient name to the job object.
@@ -2101,7 +2200,7 @@ class Job(object):
 
             time.sleep(3)
 
-    def wait_for_completion(self, timeout=30):
+    def wait_for_completion(self, timeout=30, **kwargs):
         """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
             Kills the job and exits, if the job has been in Pending / Waiting state for more than
             the timeout value.
@@ -2114,6 +2213,10 @@ class Job(object):
                         if the job has been in Pending / Waiting state
                     default: 30
 
+                **kwargs    (str)   --  accepted optional arguments
+
+                    return_timeout  (int)   -- minutes after which the method will return False.
+
             Returns:
                 bool    -   boolean specifying whether the job had finished or not
                     True    -   if the job had finished successfully
@@ -2121,15 +2224,19 @@ class Job(object):
                     False   -   if the job was killed/failed
 
         """
-        start_time = time.time()
+        start_time = actual_start_time = time.time()
         pending_time = 0
         waiting_time = 0
         previous_status = None
+        return_timeout = kwargs.get('return_timeout')
 
         status_list = ['pending', 'waiting']
 
         while not self.is_finished:
             time.sleep(30)
+
+            if return_timeout and ((time.time() - actual_start_time) / 60) > return_timeout:
+                return False
 
             # get the current status of the job
             status = self.status.lower()
@@ -2297,7 +2404,6 @@ class Job(object):
         """Treats the userid as a read-only attribute."""
         return self._summary['userName']['userId']
 
-
     @property
     def details(self):
         """Treats the job full details as a read-only attribute."""
@@ -2311,6 +2417,15 @@ class Job(object):
             return self._summary['sizeOfApplication']
 
     @property
+    def media_size(self):
+        """
+        Treats the size of media as a read-only attribute
+        Returns:
+            integer - size of media or data written
+        """
+        return self._summary.get('sizeOfMediaOnDisk', 0)
+
+    @property
     def num_of_files_transferred(self):
         """Treats the number of files transferred as a read-only attribute."""
         self.is_finished
@@ -2321,6 +2436,13 @@ class Job(object):
         """Treats the job state as a read-only attribute."""
         self.is_finished
         return self._details['jobDetail']['progressInfo']['state']
+
+    @property
+    def task_details(self):
+        """Returns: (dict) A dictionary of job task details"""
+        if not self._task_details:
+            self._task_details = self._get_job_task_details()
+        return self._task_details
 
     def pause(self, wait_for_job_to_pause=False):
         """Suspends the job.
@@ -2603,6 +2725,20 @@ class Job(object):
             }
         """
         return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
+
+    def get_child_jobs(self):
+        """ Get the child jobs details for the current job
+        Returns:
+                _jobs_list          (list):     List of child jobs
+
+        """
+        _jobs_list = []
+        if self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus'):
+            for _job in self.details['jobDetail']['clientStatusInfo']['vmStatus']:
+                _jobs_list.append(_job)
+            return _jobs_list
+        else:
+            return None
 
 
 class _ErrorRule:

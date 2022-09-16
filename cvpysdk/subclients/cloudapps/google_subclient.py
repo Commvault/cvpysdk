@@ -39,15 +39,27 @@ GoogleSubclient:
 
     add_AD_group()                      --  adds AD group to the subclient
 
-    add_user                            --  adds user to the subclient
+    add_user()                          --  adds user to the subclient
+
+    add_users_v2()                      --  Adds user to OneDrive for Business Client
+
+    search_for_user()                   --  Searches for a specific user's details from discovered list
+
+    disk_restore_v2()                   --  Runs disk restore of selected users for OneDrive for Business Client
+
+    out_of_place_restore_v2()           --  Runs out-of-place restore of selected users for OneDrive for Business Client
+
+    in_place_restore_v2()               --  Runs in-place restore of selected users for OneDrive for Business Client
+
+    _get_user_guids()                   --  Retrieve GUIDs for users specified
 
 """
 
 from __future__ import unicode_literals
-
 from ...exception import SDKException
-
+import time
 from ..casubclient import CloudAppsSubclient
+from ...constants import AppIDAType
 
 
 class GoogleSubclient(CloudAppsSubclient):
@@ -66,7 +78,7 @@ class GoogleSubclient(CloudAppsSubclient):
         for account in self._content:
             temp_account = account["cloudconnectorContent"]["includeAccounts"]
 
-            if temp_account['contentType'] == 134:
+            if temp_account['contentType'] == AppIDAType.CLOUD_APP.value:
                 content_dict = {
                     'SMTPAddress': temp_account["contentName"].split(";")[0],
                     'display_name': temp_account["contentValue"]
@@ -125,7 +137,7 @@ class GoogleSubclient(CloudAppsSubclient):
                     "cloudconnectorContent": {
                         "includeAccounts": {
                             "contentValue": account['display_name'],
-                            "contentType": 134,
+                            "contentType": AppIDAType.CLOUD_APP.value,
                             "contentName": account['SMTPAddress']
                         }
                     }
@@ -297,10 +309,10 @@ class GoogleSubclient(CloudAppsSubclient):
                 for group in groups:
                     if group['contentName'].lower() == item.lower():
                         grp_list.append({
-                                "cloudconnectorContent": {
+                            "cloudconnectorContent": {
                                 "includeAccounts": group
-                                }
-                            })
+                            }
+                        })
             self._content.extend(grp_list)
             self._set_subclient_properties("_subclient_properties['content']", self._content)
         self.refresh()
@@ -336,10 +348,10 @@ class GoogleSubclient(CloudAppsSubclient):
 
         for grp in grp_list:
             info = {
-                      "contentValue": grp['contentValue'],
-                      "contentType": grp['contentType'],
-                      "contentName": grp['contentName']
-                    }
+                "contentValue": grp['contentValue'],
+                "contentType": grp['contentType'],
+                "contentName": grp['contentName']
+            }
             contentinfo.append(info)
 
         request_json = {
@@ -399,7 +411,7 @@ class GoogleSubclient(CloudAppsSubclient):
         }
 
         add_user = self._services['EXECUTE_QCOMMAND']
-        flag,response = self._cvpysdk_object.make_request('POST', add_user, request_json)
+        flag, response = self._cvpysdk_object.make_request('POST', add_user, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -429,3 +441,306 @@ class GoogleSubclient(CloudAppsSubclient):
     def get_subclient_users(self):
         """Returns the users in subclient"""
         return self._get_subclient_users()
+
+    def add_users_v2(self, users, plan_name):
+        """ Adds given OneDrive users to v2 client
+
+            Args:
+
+                users (list) : List of user's SMTP address
+
+                plan_name (str) : O365 plan name to associate with users
+
+            Raises:
+
+                SDKException:
+
+                    if response is not success
+
+                    if response is returned with errors
+        """
+
+        if not (isinstance(users, list) and isinstance(plan_name, str)):
+            raise SDKException('Subclient', '101')
+
+        # Get o365plan
+        plan_name = plan_name.strip()
+        o365_plan_object = self._commcell_object.plans.get(plan_name)
+        o365_plan_id = int(o365_plan_object.plan_id)
+
+        # Get client ID
+        client_id = int(self._client_object.client_id)
+
+        user_accounts = []
+
+        for user_id in users:
+            # Get user details
+            user_response = self.search_for_user(user_id)
+            display_name = user_response[0].get('displayName')
+            user_guid = user_response[0].get('user').get('userGUID')
+            is_auto_discovered_user = user_response[0].get('isAutoDiscoveredUser')
+            is_super_admin = user_response[0].get('isSuperAdmin')
+
+            user_accounts.append({
+                "displayName": display_name,
+                "isSuperAdmin": is_super_admin,
+                "smtpAddress": user_id,
+                "isAutoDiscoveredUser": is_auto_discovered_user,
+                "associated": False,
+                "commonFlags": 0,
+                "user": {
+                    "userGUID": user_guid
+                }
+            })
+
+        request_json = {
+            "LaunchAutoDiscovery": False,
+            "cloudAppAssociation": {
+                "accountStatus": 0,
+                "subclientEntity": {
+                    "subclientId": int(self.subclient_id),
+                    "clientId": client_id,
+                    "applicationId": AppIDAType.CLOUD_APP.value
+                },
+                "cloudAppDiscoverinfo": {
+                    "discoverByType": 1,
+                    "userAccounts": user_accounts
+                },
+                "plan": {
+                    "planId": o365_plan_id
+                }
+            }
+        }
+
+        user_associations = self._services['UPDATE_USER_POLICY_ASSOCIATION']
+        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to add user\nError: {error_message}'
+                    raise SDKException('Subclient', '102', output_string)
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def verify_discovery_v2(self):
+        """ Verifies that discovery is complete
+
+            Returns:
+
+                discovery_stats (tuple):
+
+                    discovery_status (bool): True if users are discovered else returns False
+
+                    total_records (int):     Number of users fetched, returns -1 if discovery is not complete
+
+            Raises:
+
+                 SDKException:
+
+                        if response is not success
+
+                        if response received does not contain pagining info
+        """
+
+        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
+                                                               self._client_object.client_id,
+                                                               AppIDAType.CLOUD_APP.value))
+
+        # determines the number of accounts to return in response
+        page_size = 1
+        discover_query = f'{browse_content}&pageSize={page_size}'
+
+        flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+
+        if flag:
+            no_of_records = -1
+            if response and response.json():
+                if 'pagingInfo' in response.json():
+                    no_of_records = response.json().get('pagingInfo', {}).get('totalRecords', -1)
+                    if no_of_records > 0:
+                        return True, no_of_records
+            return False, no_of_records
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def search_for_user(self, user_id):
+        """ Searches for a specific user's details from discovered list
+
+            Args:
+                user_id (str) : user's SMTP address
+
+            Returns:
+
+                user_accounts (list): user details' list fetched from discovered content
+                              eg: [
+                                      {
+                                        'displayName': '',
+                                        'smtpAddress': '',
+                                        'isSuperAdmin': False,
+                                        'isAutoDiscoveredUser': False,
+                                        'commonFlags': 0,
+                                        'user': {
+                                            '_type_': 13,
+                                             'userGUID': 'UserGuid'
+                                             }
+                                       }
+                                  ]
+
+            Raises:
+
+                SDKException:
+
+                    if discovery is not complete
+
+                    if invalid SMTP address is passed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
+                                                               self._client_object.client_id,
+                                                               AppIDAType.CLOUD_APP.value))
+
+        search_query = f'{browse_content}&search={user_id}'
+
+        flag, response = self._cvpysdk_object.make_request('GET', search_query)
+
+        if flag:
+            if response and response.json():
+                if 'userAccounts' in response.json():
+                    user_accounts = response.json().get('userAccounts', [])
+                    if len(user_accounts) == 0:
+                        error_string = 'Either discovery is not complete or user is not available in discovered data'
+                        raise SDKException('Subclient', '102', error_string)
+                    return user_accounts
+                else:
+                    raise SDKException('Response', '102', 'Check if the user provided is valid')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def disk_restore_v2(self, users, destination_client, destination_path, skip_file_permissions=False):
+        """ Runs an out-of-place restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) : list of SMTP addresses of users
+                destination_client (str) : client where the users need to be restored
+                destination_path (str) : Destination folder location
+                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+        """
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
+        kwargs = {
+            'disk_restore': True,
+            'destination_path': destination_path,
+            'destination_client': destination_client,
+            'skip_file_permissions': skip_file_permissions
+        }
+        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def out_of_place_restore_v2(self, users, destination_path, **kwargs):
+        """ Runs an out-of-place restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) : list of SMTP addresses of users
+                destination_path (str) : SMTP address of destination user
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if overwrite and restore as copy file options are both selected
+        """
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+        if overwrite and restore_as_copy:
+            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
+        kwargs = {
+            'out_of_place': True,
+            'destination_path': destination_path,
+            'overwrite': overwrite,
+            'restore_as_copy': restore_as_copy,
+            'skip_file_permissions': skip_file_permissions
+        }
+        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def in_place_restore_v2(self, users, **kwargs):
+        """ Runs an in-place restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) :  List of SMTP addresses of users
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if overwrite and restore as copy file options are both selected
+        """
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+        if overwrite and restore_as_copy:
+            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
+        kwargs = {
+            'overwrite': overwrite,
+            'restore_as_copy': restore_as_copy,
+            'skip_file_permissions': skip_file_permissions
+        }
+        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def _get_user_guids(self, users):
+        """ Retrieve GUIDs for users specified
+
+            Args:
+                user (list) : List of SMTP addresses of users
+
+            Returns:
+                user_guid_list (list) : list of GUIDs of specified users
+
+            Raises:
+                SDKException:
+                    if user details couldn't be found in discovered data
+        """
+        user_guid_list = []
+        for user_id in users:
+            user = self.search_for_user(user_id)
+            if len(user)!=0 and user[0].get('user', {}).get('userGUID') is not None:
+                user_guid_list.append(user[0].get('user').get('userGUID'))
+            else:
+                raise SDKException('Subclient', '102', 'User details not found in discovered data')
+        return  user_guid_list

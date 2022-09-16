@@ -16,188 +16,147 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Main file for performing failover specific operations.
+"""
+Main file for getting failover group related information
 
 FailoverGroups and FailoverGroup are 2 classes defined in this file.
 
-FailoverGroups:     Class for representing all the failover groups associated
-                    with a specific client
+FailoverGroups:     Class for getting information of all failover groups in the commcell
 
-FailoverGroup:      Class for a single failover group selected for a client,
-                    and to perform operations on that failover group
+FailoverGroup:      Class for a failover group that gives us all the live sync pairs associated to in,
+                    with addition to the clients/hypervisors associated
 
 
 FailoverGroups:
-    __init__(client_object)                     --  Initialise object of FailoverGroups class
+    FailoverGroupTypes                          --  Enum to represent all types of failover groups
+    DRReplicationTypes                          --  Enum to represent all live sync types
+    __init__(commcell_object)                   --  Initialize the object of failovergroups class for commcell
 
-    __str__()                                   --  Returns all the failover groups
+    __str__()                                   --  Returns the list of all failover groups
 
-    __repr__()                                  --  Returns the string for the instance of the
-                                                    FailoverGroups class
+    __repr__()                                  --  Returns the string for the instance of the FailoverGroups class
 
-    has_failover_group(
-            failover_group_name)                --  Checks if failover group exists with the given name
+    has_failover_group(failover_group_name)     --  Checks if failover group exists with the given name
 
-    get(failover_group_name)                    --  Returns the FailoverGroup class object of the input
-                                                    failover name
-
-    add(failover_group_options = None)          --  Creates new failover group with failover group name
-
-    delete(ffailover_group_name)                --  Delete failover group with failover group name
+    get(failover_group_name)                    --  Returns the FailoverGroup class object of the given name
 
     refresh()                                   --  Refresh all failover groups created on the commcell
 
     #### internal methods ###
-    _get_failover_groups()                      -- REST API call to get all failover groups
-                                                    in the commcell
-
-    _check_failover_group_options(              -- Checks failover group options are correct/not against
-                                                    test case inputs
-            failover_group_options)
-
-    _get_failover_machines()                    -- REST API call to get all machines in the
-                                                    virtualization client. It might contains
-                                                    VMs/Physical machines from different sub clients but
-                                                    in the same virtualization client
-
-
-    _set_failover_machines(
-                failover_group_options)         -- Sets failover machines in the failover group
-                                                    options dict
-
-    _prepare_add_failover_group_json(
-                failover_group_options)         -- Constructs failover group json to create
-                                                    failover group in the commcell
-
-
-    _prepare_client_list_for_failover_group_json(
-                            failover_group_options) -- Internal method to create client list json
-                                                        to be appended to failover group json
-                                                        while creating new failover group
-
-
-    _prepare_vm_groups_for_failover_group_json(
-                            failover_group_options) -- Internal method to create vm groups json to
-                                                        be appended to failover group json
-                                                        while creating new failover group
+    _get_failover_groups()                      --  Internal call to get information of all failover groups in commcell
 
     ##### properties ######
-    failover_groups()                               -- Returns all failover groups in the commcell
+    failover_groups                             --  Returns the dictionary of all failover groups and their info
 
 
 FailoverGroup:
     __init__(commcell_object,
-            failover_group_options)                 -- Initialise object of FailoverGroup with the
-                                                        specified failover name and id
+            failover_group_name)                --  Initialize object of FailoverGroup with the given name
 
-    __repr__()                                      -- return the FailoverGroup name
+    __repr__()                                  --  Returns the name of the failover group for the object
 
-    testboot()                                      -- Call testboot operation
+    __str__()                                   --  Returns the name of the all VM pairs for the failover group
 
-    planned_failover()                              -- Call Planned failvoer operation
-
-    unplanned_failover()                            -- Call Unplanned Failover operation
-
-    failback()                                      -- Call failback operation
-
-    undo_failover()                                 -- Call UndoFailover operation
-
-    revert_failover()                               -- Call RevertFailover operation
-
-    point_in_time_failover()                        -- Call PointInTimeFailover operation
-
-    reverse_replication()                           -- Schedule and call ReverseReplication operation
-
-    schedule_reverse_replication()                  -- Schedule ReverseReplication
-
-    force_reverse_replication()                     -- Call ReverseReplication operation
-
-    validate_dr_orchestration_job(jobId)            -- Validate DR orchestration job Id
-
-    refresh()                                       -- Refresh the object properties
+    refresh()                                   --  Refresh the failover group properties
 
     ##### internal methods #####
-    _get_failover_group_id()                        -- Method to get failvoer group id
+    _get_failover_group_dict()                  --  Gets the failover group information from FailoverGroups class
 
-    _get_failover_group_properties()                -- Get the failvoer group properties
-
+    _get_failover_group_properties()            --  Get the failover group properties
 
     ##### properties #####
-    failover_group_options()                        -- Returns failover group options
+    failover_group_name                         --  The name of the failover group
 
-    failover_group_properties()                     -- Returns failover group propeerties
+    is_client_group                             --  Whether the VM pairs are part of a client group or not
 
-    failover_group_id()                             -- Returns failover group Id
+    vm_pair_ids                                 --  The ID of the live sync pairs
 
-    failover_group_name()                           -- Returns failover group name
+    vm_pairs                                    --  Returns the live sync pair objects for each VM pair of the group
+                                                        as a mapping of source VM name and VM pair object
 
-    _replication_Ids()                              -- Returns replication Ids list
+    replication_groups                          --  The names of all replication groups associated
+                                                    to the failover group
 
+    source_client                               --  The client object of the source client
+
+    source_agent                                --  The agent object of the source client
+
+    source_instance                             --  The instance object of the source client
+
+    destination_client                          --  The client object of the destination client
+
+    destination_agent                           --  The agent object of the destination client
+
+    destination_instance                        --  The instance object of the destination instance
+
+    is_approval_required                        --  Whether the approval is set in failover group or not
+
+    user_for_approval                           --  Returns the name of the user set in failover group
+                                                        for approval
 
 """
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from past.builtins import basestring
+from enum import Enum
 from ..exception import SDKException
-from .drorchestrationoperations import DROrchestrationOperations
-from cvpysdk.instances.vsinstance import VirtualServerInstance
+from .replication_pairs import ReplicationPair
 
 
-class FailoverGroups(object):
+class FailoverGroups:
     """Class for getting all the failover groups in commcell."""
 
-    def __init__(self, commcell_object, instance_object: VirtualServerInstance = None):
-        """Initialize object of the Failover groups.
+    class FailoverGroupTypes(Enum):
+        """ Enum to map Failover Group Types to integers"""
+        LIVE_MOUNT = 1
+        LIVE_SYNC = 2
+        RESTORE = 4
+        LIVE_RECOVERY = 8
+        FAILOVER = 16
+        VIRTUAL_LAB = 32
+        ORACLE_EBS_APP = 64
+        GENERIC_ENTERPRISE_APP = 128
+        TEST_FAILOVER = 256
 
+    class DRReplicationTypes(Enum):
+        """ Enum to map replication types to replication groups/failover groups"""
+        LIVE_SYNC = 0
+        LIVE_SYNC_DIRECT = 1
+        LIVE_SYNC_IO = 2
+        SNAP_ARRAY = 3
+
+    def __init__(self, commcell_object):
+        """Initialize object of the Failover groups
             Args:
-                commcell_object (object)  --  instance of the Commcell class
-
-            Returns:
-                object - instance of the FailoverGroups class
+                commcell_object (Commcell)  --  instance of the Commcell class
         """
         self._commcell_object = commcell_object
-        self._client_object = commcell_object.clients
         self._services = commcell_object._services
-        self._instance_object = instance_object
 
-        ####### init REST API URLS #########
-        self._DRGROUPS = self._commcell_object._services['DR_GROUPS']
-        self._DRGROUPS_MACHINES = self._commcell_object._services['DR_GROUP_MACHINES']
-
-        #### init variables ######
-        self._vclientId = None
-        self._failovergroups = None
+        self._failover_groups = None
 
         self.refresh()
 
     def __str__(self):
-        """Representation string consisting of all failover groups.
-
+        """Representation string consisting of all failover groups in a formatted output
             Returns:
                 str - string of all the failover groups
         """
-        representation_string = '{:^5}\t{:^20}\t{:^20}\n\n'.format(
-            'S. No.', 'Failover Group Id', 'Failover Group')
+        representation_string = (f'{"S. No.":^5}\t'
+                                 f'{"Failover Group Id":^20}\t'
+                                 f'{"Failover Group":^20}\n\n')
 
-        for index, failover_group in enumerate(self._failovergroups):
-            sub_str = '{:^5}\t{:20}\t{:20}\n'.format(
-                index + 1,
-                self._failovergroups[failover_group],
-                failover_group
-            )
+        for index, failover_group in enumerate(self._failover_groups):
+            sub_str = (f'{index + 1:^5}\t'
+                       f'{self._failover_groups[failover_group]:20}\t'
+                       f'{failover_group:20}\n')
             representation_string += sub_str
 
         return representation_string.strip()
 
     def __repr__(self):
         """Representation string for the instance of the FailoverGroups class."""
-        return "Failover Groups for Commserv: '{0}'".format(
-            self._commcell_object.commserv_name)
+        return f"Failover Groups for Commserv: '{self._commcell_object.commserv_name}'"
 
     def has_failover_group(self, failover_group_name):
-        """Checks if failover group exists or not.
+        """Checks if failover group exists or not
 
             Args:
                 failover_group_name (str)  --  name of the failover group
@@ -209,78 +168,16 @@ class FailoverGroups(object):
                 SDKException:
                     if proper inputs are not provided
         """
-        if not isinstance(failover_group_name, basestring):
+        if not isinstance(failover_group_name, str):
             raise SDKException('FailoverGroup', '101')
 
         return self.failover_groups and failover_group_name.lower() in self.failover_groups
 
-    def add(self, failover_group_options=None):
-        """add new failover group exists or not.
-
-            Args:
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-
-            Returns:
-                FailoverGroup object if successfully created else Exception is raised
-
-            Raises:
-                SDKException:
-                    If Failed to construct failover group json
-                    If Failed to create failover group
-                    If response is empty
-                    If response is not success
-        """
-        # check proper failover group options are set
-        self._check_failover_group_options(failover_group_options)
-
-        # construct request json
-        add_failover_group_json = self._prepare_add_failover_group_json(
-            failover_group_options)
-
-        if not add_failover_group_json:
-            raise SDKException(
-                'FailoverGroup',
-                '102',
-                'Failed to construct add failover group json.')
-
-        # passing the built json to create the vm policy
-        (flag, response) = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._DRGROUPS, add_failover_group_json)
-
-        if flag:
-            if response.json():
-                if 'error' in response.json():
-                    error_message = response.json()['error']['errorMessage']
-                    o_str = 'Failed to create failover group \nError: "{0}"'.format(
-                        error_message)
-
-                    raise SDKException('FailoverGroup', '102', o_str)
-                else:
-                    # return object of corresponding Virtual Machine Policy
-                    # here
-                    self.refresh()
-                    return self.get(failover_group_options)
-
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def get(self, failover_group_options):
+    def get(self, failover_group_name):
         """Returns a failover group object of the specified failover group name.
 
             Args:
-                failover_group_options (json)  --  name of the failover group
+                failover_group_name (str)  --  name of the failover group
 
             Returns:
                 object - instance of the FailoverGroup class for the given failover group name
@@ -290,82 +187,67 @@ class FailoverGroups(object):
                     if proper inputs are not provided
                     If Failover group doesnt exists with given name
         """
-        if not isinstance(failover_group_options, dict):
+        if not isinstance(failover_group_name, str):
             raise SDKException('FailoverGroup', '101')
-        else:
-            failover_group_name = failover_group_options.get(
-                'failoverGroupName').lower()
+        failover_group_name = failover_group_name.lower()
+        if not self.has_failover_group(failover_group_name):
+            raise SDKException('FailoverGroup', '103')
+        return FailoverGroup(self._commcell_object, failover_group_name)
 
-            if self.has_failover_group(failover_group_name):
-                return FailoverGroup(
-                    self._commcell_object, failover_group_options)
+    @property
+    def failover_groups(self):
+        """ return all failover groups
+        Args:
 
-            raise SDKException(
-                'Failover',
-                '102',
-                'Failover group doesnt exists with name: {0}'.format(failover_group_name))
+        Returns: (dict) All the failover groups in the commcell
+                eg:
+                {
+                     "failover_group_name1": {id: '1', 'type': VSA_PERIODIC, 'operation_type': FAILOVER},
+                     "failover_group_name2": {id: '2', 'type': VSA_CONTINUOUS, 'operation_type': FAILOVER}
+                }
+        Raises:
+        """
+        return self._failover_groups
 
-    def delete(self, failover_group_name):
-        """ Deletes the specified failover group name.
-
+    def _get_failover_groups(self):
+        """REST API call for all the failover groups in the commcell.
             Args:
-                failover_group_name (str)  --  name of the failover group
 
             Returns:
-
+                dict - consists of all failover groups
+                    {
+                         "failover_group_name1": {id: '1', 'type': VSA_PERIODIC, 'operation_type': FAILOVER},
+                         "failover_group_name2": {id: '2', 'type': VSA_CONTINUOUS, 'operation_type': FAILOVER}
+                    }
 
             Raises:
                 SDKException:
-                    if proper inputs are not provided
                     if response is empty
                     if response is not success
         """
+        failover_groups = {}
 
-        if not isinstance(failover_group_name, basestring):
-            raise SDKException('FailoverGroup', '101')
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', (self._services['FAILOVER_GROUPS']
+                    if self._commcell_object.commserv_version > 30
+                    else self._services['DR_GROUPS']))
+        if flag:
+            if 'vApp' in response.json():
+                for failover_group in response.json().get('vApp', []):
+                    failover_group_id = str(failover_group.get('vAppEntity', {}).get('vAppId'))
+                    failover_group_name = failover_group.get('vAppEntity', {}).get('vAppName', '').lower()
+                    operation_type = self.FailoverGroupTypes(int(failover_group.get('operationType', 16)))
+                    replication_type = self.DRReplicationTypes(int(failover_group.get('replicationType', 0)))
+                    failover_groups[failover_group_name] = {
+                        'id': failover_group_id,
+                        'operation_type': operation_type,
+                        'type': replication_type
+                    }
+                return failover_groups
+            raise SDKException('Response', '102')
 
-        else:
-            failover_group_name = failover_group_name.lower()
-
-        if self.has_failover_group(failover_group_name):
-
-            failover_group_id = self.failover_groups.get(
-                failover_group_name.lower())
-
-            if failover_group_id:
-                _GET_DR_GROUP = self._commcell_object._services['GET_DR_GROUP'] % (
-                    failover_group_id)
-
-                # passing the built json to create the vm policy
-                (flag, response) = self._commcell_object._cvpysdk_object.make_request(
-                    method='DELETE', url=_GET_DR_GROUP)
-
-                if flag:
-                    if response.json():
-                        if 'error' in response.json():
-                            error_message = response.json(
-                            )['error']['errorMessage']
-                            o_str = 'Failed to delete failover group: {0} \nError: "{1}"'\
-                                .format(failover_group_name, error_message)
-
-                            raise SDKException('Failover', '102', o_str)
-                        else:
-                            # return object of corresponding Virtual Machine
-                            # Policy here
-                            self.refresh()
-
-                    else:
-                        raise SDKException('Response', '102')
-                else:
-                    response_string = self._commcell_object._update_response_(
-                        response.text)
-                    raise SDKException('Response', '101', response_string)
-
-        else:
-            raise SDKException(
-                'Failover', '102', 'No failovergroup exists with name: "{0}"'.format(
-                    failover_group_name)
-            )
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     def refresh(self):
         """ Refresh the failover groups created in the commcell.
@@ -376,626 +258,59 @@ class FailoverGroups(object):
         Raises:
 
         """
-        self._failovergroups = self._get_failover_groups()
+        self._failover_groups = self._get_failover_groups()
 
-    @property
-    def failover_groups(self):
-        """ return all failover groups
-        Args:
 
-        Returns: All the failover groups in the commcell
+class FailoverGroup:
+    """ Class for representing a failover group """
 
-        Raises:
-        """
-        if not self._failovergroups:
-            self.refresh()
-        return self._failovergroups
-
-    ################# internal functions #######################
-    def _check_failover_group_options(self, failover_group_options=None):
-        """ checks failover group options provided from test case inputs are valid or not
-
+    def __init__(self, commcell_object, failover_group_name):
+        """Initialise the FailoverGroup object for the given group name
             Args:
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-            Returns:
-
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-                    if no virtualization clients exist in the commcell
-                    if bo live sync schedules exist in the commcell
+                commcell_object (Commcell)      --  instance of the Commcell class
+                failover_group_name (str)       --  name of the failover group
         """
-
-        # failover group options json not given
-        if not failover_group_options:
-            failover_group_options = {}
-
-        if 'failoverGroupName' not in failover_group_options:
-            raise SDKException('FailoverGroup', '101')
-
-        virtualization_clients = self._client_object.virtualization_clients
-        if not virtualization_clients:
-            err_msg = 'No virtualization clients setup on this Commcell'
-            raise SDKException('FailoverGroup', '102', err_msg)
-
-        # get the first source virtualization client if not supplied in input test case
-        if 'VirtualizationClient' not in failover_group_options:
-            v_client = list(virtualization_clients.keys())[0]
-
-        else:
-            v_client = virtualization_clients.get(failover_group_options.get("VirtualizationClient")).get("hostName")
-
-        failover_group_options["VirtualizationClient"] = {
-            "clientName": v_client,
-            "clientId": virtualization_clients.get(v_client).get("clientId"),
-            "hostName": virtualization_clients.get(v_client).get("hostName")
-        }
-
-        # set internal vclient Id
-        self._vclientId = self._client_object.get(v_client).client_id
-
-        if 'machines' not in failover_group_options:
-            machines = self._get_failover_machines()
-            if not machines:
-                err_msg = 'No live sync schedules setup on this Commcell'
-                raise SDKException('FailoverGroup', '102', err_msg)
-
-            failover_group_options["machines"] = machines
-
-    def _get_failover_groups(self):
-        """REST API call for all the failover groups in the commcell.
-            Args:
-
-            Returns:
-                dict - consists of all failover groups
-                    {
-                         "failover_group_name1": failover_group_id1,
-                         "failover_group_name2": failover_group_id2
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
-        """
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._DRGROUPS)
-
-        if flag:
-            if response.json() and 'vApp' in response.json():
-
-                failover_groups_dict = {}
-
-                for dictionary in response.json()['vApp']:
-                    temp_name = dictionary['vAppEntity']['vAppName'].lower()
-                    temp_id = str(dictionary['vAppEntity']['vAppId']).lower()
-                    failover_groups_dict[temp_name] = temp_id
-
-                return failover_groups_dict
-
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _get_failover_machines(self):
-        """ REST API call to get all machines in the virtualization client.
-            It might contains VMs/Physical machines from
-        different sub clients but in the same virtualization client
-
-        Args:
-
-        Returns: dict {
-                    {
-                    "client": {
-                        "subclientId": 0,
-                        "clientName": "",
-                        "instanceId": 0,
-                        "clientId": 0,
-                        "GUID": ""
-                    },
-                    "lastbackuptime": {
-                        "time": 1510332496
-                    },
-                    "backupSet": {
-                        "backupsetId": 0,
-                        "backupsetName": "defaultBackupSet",
-                        "applicationId": 0
-                    },
-                    "isVM": true,
-                    "supportedOperation": 1,
-                    "vendor": "VMW",
-                    "copyPrecedence": 0,
-                    "scheduleName": "",
-                    "destClient": {
-                        "clientName": "",
-                        "GUID": ""
-                    },
-                    "lastSyncTime": {
-                        "time": 1510332235
-                    },
-                    "replicationId": 3,
-                    "syncStatus": 1,
-                    "failoverStatus": 0,
-                    "destinationClient": {
-                        "clientName": "",
-                        "clientId": 0
-                    },
-                    "destVendor": "VMW"
-                },
-
-        Raises:
-            SDKException:
-                if response is empty
-                if response is not success
-
-        """
-        dr_group_machines = self._DRGROUPS_MACHINES % (self._vclientId)
-
-        (flag, response) = self._commcell_object._cvpysdk_object.make_request(
-            method='GET', url=dr_group_machines)
-
-        if flag:
-            if response.json() and 'client' in response.json():
-                machines = response.json()['client']
-
-                if not isinstance(machines, list):
-                    raise SDKException('Response', '102')
-                return machines
-
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
-
-    def _prepare_add_failover_group_json(self, failover_group_options):
-        """ Constructs failover group json to create failover group in the commcell
-
-        Args: input dict of failover group options
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-        Returns: dict of failover group json to be be created
-
-        Raises:
-            SDKException:
-                if proper inputs are not provided
-        """
-
-        if not isinstance(failover_group_options, dict):
-            raise SDKException('FailoverGroup', '101')
-
-        if ('failoverGroupName' not in failover_group_options) or \
-                ('approvalRequired' not in failover_group_options):
-            raise SDKException('FailoverGroup', '101')
-
-        failover_group_json = {
-            "action": 0,
-            "vApp": {
-                "source": 1,
-                "operationType": 16,
-                "approvalRequired": failover_group_options.get("approvalRequired", False),
-                "isClientGroup": False,
-                "version": 2,
-                "vAppEntity": {
-                    "vAppName": failover_group_options.get("failoverGroupName")
-                },
-                "selectedEntities": [
-                    {
-                        "clientId": failover_group_options.get("VirtualizationClient").get("clientId"),
-                        "entityId": failover_group_options.get("VirtualizationClient").get("clientId"),
-                        "entityName": failover_group_options.get("VirtualizationClient").get("clientName"),
-                        "instanceId": failover_group_options.get("machines")[0].get("client").get("instanceId"),
-                        "_type_": 3
-                    }
-                ],
-                "clientList": self._prepare_client_list_for_failover_group_json(failover_group_options),
-                "config": self._prepare_vm_groups_for_failover_group_json(failover_group_options),
-
-                "usersForApproval": []
-            }
-        }
-
-        return failover_group_json
-
-
-    def _prepare_client_list_for_failover_group_json(
-            self, failover_group_options):
-        """ Create client list json to be appended to failover group json
-        while creating new failover group
-
-        Args: input dict of failover group options
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-        Returns:
-
-        Raises:
-            SDKException:
-                if proper inputs are not provided
-        """
-
-        if not isinstance(failover_group_options, dict):
-            raise SDKException('FailoverGroup', '101')
-
-        if 'machines' not in failover_group_options:
-            raise SDKException('FailoverGroup', '101')
-
-        clients = []
-
-        # iterate over all machines
-        for machine in failover_group_options.get("machines"):
-            client = {}
-
-            client["GUID"] = machine['client']['GUID']
-            client["backupsetId"] = machine['backupSet']['backupsetId']
-            client["backupsetName"] = machine['backupSet']['backupsetName']
-            client["clientId"] = machine['client']['clientId']
-            client["clientName"] = machine['client']['clientName']
-            client["entityId"] = machine['replicationId']
-            clients.append(client)
-
-        return clients
-
-    def _prepare_vm_groups_for_failover_group_json(
-            self, failover_group_options):
-        """ Create vm groups json to be appended to failover group json
-        while creating new failover group
-
-        Args: input dict of failover group options
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-        Returns:
-
-        Raises:
-            SDKException:
-                if proper inputs are not provided
-        """
-
-        if not isinstance(failover_group_options, dict):
-            raise SDKException('FailoverGroup', '101')
-
-        if 'machines' not in failover_group_options:
-            raise SDKException('FailoverGroup', '101')
-
-        vm_sequences = []
-
-        for machine in failover_group_options.get("machines"):
-            vm_sequence = {}
-            vm_sequence["copyPrecedence"] = 0
-            vm_sequence["replicationId"] = machine['replicationId']
-            vm_sequence["vmInfo"] = {
-                'vmGUID': machine['client']['GUID'],
-                'vmName': machine['client']['clientName']}
-            vm_sequence["delay"] = 1
-            vm_sequence["createPublicIp"] = False
-            vm_sequences.append(vm_sequence)
-
-        # return clients
-
-        vm_groups = {"vmGroups": [
-            {
-                "vmSequence": vm_sequences,
-                "delay": 2,
-                "groupId": 1
-            }
-        ]
-        }
-        return vm_groups
-
-
-class FailoverGroup(object):
-    """Class for performing failover operations on a specified failover group."""
-
-    def __init__(self, commcell_object, failover_group_options, instance_object: VirtualServerInstance = None):
-        """Initialise the FailoverGroup object.
-
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
-
-                input dict of failover group options
-                failover_group_options (json) -- failover group options for creating group
-                {
-                    "failoverGroupName": "",
-                    "failoverGroupVMs": "",
-                    "VirtualizationClient": "",
-                    "approvalRequired": false,
-                    "initiatedFromMonitor": false
-                }
-
-            Returns:
-                object - instance of the FailoverGroup class
-        """
-        ##### local variables of these class ########
         self._commcell_object = commcell_object
-        self._instance_object = instance_object
-        self._failover_group_options = failover_group_options
         self._services = commcell_object._services
         self._failover_group_properties = None
-        self._failover_group_name = failover_group_options.get(
-            "failoverGroupName")
-        self._failover_group_id = self._get_failover_group_id()
 
-        # create DROrchestrationOperations object
-        self._dr_operation = DROrchestrationOperations(commcell_object)
+        self._failover_group_name = failover_group_name.lower()
+        self._failover_group_dict = self._get_failover_group_dict()
 
-        ##### REST API URLs #####
-        self._GET_DR_GROUP = self._commcell_object._services['GET_DR_GROUP'] % (
-            self._failover_group_id)
+        self._source_client = None
+        self._destination_client = None
+        self._destination_agent = None
+        self._source_instance = None
+        self._destination_instance = None
 
-        # init local variables
-        self._replicationIds = []
+        self._vm_pairs = {}
 
         self.refresh()
 
-        # set dr orchestration options property
-        self._failover_group_options['failoverGroupId'] = self._failover_group_id
-        self._failover_group_options['replicationIds'] = self._replication_Ids
-        self._dr_operation.dr_orchestration_options = self.failover_group_options
+    def __repr__(self):
+        """String representation of the instance of the failover group"""
+        return f'FailoverGroup class instance for {self._failover_group_name}'
 
-    @property
-    def failover_group_options(self):
-        """Getter failover group options"""
-        return self._failover_group_options
-
-    @property
-    def failover_group_properties(self):
-        """Getter failover group properties"""
-        return self._failover_group_properties
-
-    @property
-    def failover_group_id(self):
-        """Getter failover group Id"""
-        return self._failover_group_id
-
-    @property
-    def failover_group_name(self):
-        """Getter failover group name"""
-        return self._failover_group_name
-
-    @property
-    def _replication_Ids(self):
-        """ Returns replicationIds of the failover """
-
-        if not self._replicationIds:
-            _repIds = []
-
-            # iterate over vm groups
-            for vm_group in self.failover_group_properties.get(
-                    'config').get('vmGroups'):
-
-                # iterate over machines
-                for machine in vm_group.get('vmSequence'):
-
-                    _repIds.append(int(machine.get('replicationId', 0)))
-
-            self._replicationIds = _repIds
-
-        return self._replicationIds
-
-    def refresh(self):
-        """Refresh the failover group properties.
-        Args:
-
-        Returns:
-
-        Raises:
-        """
-        self._get_failover_group_properties()
-
-    def testboot(self):
-        """Performs testboot failover operation.
-
-            Args:
-
+    def __str__(self):
+        """Strings showing all VM pairs of the failover group in a formatted output
             Returns:
-                (JobId, TaskId) - JobId and taskId of the Testboot job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
+                str - string of all VM pairs
         """
-        return self._dr_operation.testboot()
+        representation_string = f'{"Pair Id":^5}\t{"Source VM":^20}\t{"Destination VM":^20}\n\n'
 
-    def planned_failover(self):
-        """Performs Planned failover operation.
+        for source_vm in self.vm_pairs:
+            sub_str = (f'{self.vm_pairs[source_vm].vm_pair_id:^5}\t'
+                       f'{source_vm:20}\t'
+                       f'{self.vm_pairs[source_vm].destination_vm:20}'
+                       f'\n')
+            representation_string += sub_str
 
-            Args:
+        return representation_string.strip()
 
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the Planned Failover job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.planned_failover()
-
-    def unplanned_failover(self):
-        """Performs UnPlanned failover operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the Unplanned Failover job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.unplanned_failover()
-
-    def failback(self):
-        """Performs Failback operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-
-        return self._dr_operation.failback()
-
-    def undo_failover(self):
-        """Performs Undo Failover operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.undo_failover()
-
-    def reverse_replication(self):
-        """Schedules and calls Reverse Replication
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.reverse_replication()
-
-    def schedule_reverse_replication(self):
-        """Schedules Reverse Replication.
-
-            Args:
-
-            Returns:
-                (TaskId) - TaskId of the scheduling reverse replication job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.schedule_reverse_replication()
-
-    def force_reverse_replication(self):
-        """Performs one reverse replication operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the reverse replication job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.force_reverse_replication()
-
-    def revert_failover(self):
-        """Performs Revert Failover operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        return self._dr_operation.revert_failover()
-
-    def point_in_time_failover(self):
-        """Performs Revert Failover operation.
-
-            Args:
-
-            Returns:
-                (JobId, TaskId) - JobId and taskId of the failback job triggered
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-        """
-        snapshot_list = self._get_snapshot_list()
-
-        if len(snapshot_list) == 0:
-            raise SDKException("Failover Group", "101",
-                               "No snapshot is found.")
-
-        # fetch the first snapshot to run
-        return self._dr_operation.point_in_time_failover(
-            snapshot_list[0]["timestamp"],
-            self.failover_group_options["replicationIds"][0])
-
-    def validate_dr_orchestration_job(self, jobId):
-        """ Validates DR orchestration job of jobId
-            Args:
-                JobId: Job Id of the DR orchestration job
-
-            Returns:
-                bool - boolean that represents whether the DR orchestration job finished successfully or not
-
-            Raises:
-                SDKException:
-                    if proper inputs are not provided
-                    If failover phase failed at any stage
-        """
-        return self._dr_operation.validate_dr_orchestration_job(jobId)
-
-#################### private functions #####################
-
-    def _get_failover_group_id(self):
-        """ Gets failover group Id
-            Args:
-
-            Returns: Gets the failover group id
-
-            Raises:
-        """
-        failvr_groups = FailoverGroups(self._commcell_object)
-
-        if isinstance(failvr_groups, FailoverGroups):
-            failover_group_id = failvr_groups.failover_groups.get(
-                str(self._failover_group_name).lower(), 0)
-
-            if failover_group_id:
-                return failover_group_id
-
-        raise SDKException('FailoverGroup', '101')
+    def _get_failover_group_dict(self):
+        """Get the failover group's basic information from FailoverGroups object for Commcell"""
+        fgs_obj = FailoverGroups(self._commcell_object)
+        return fgs_obj.failover_groups.get(self._failover_group_name)
 
     def _get_failover_group_properties(self):
         """ Gets failover group properties
@@ -1008,50 +323,121 @@ class FailoverGroup(object):
                     if response is empty
 
                     if response is not success
-
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._GET_DR_GROUP)
-
+            'GET',
+            (self._services['GET_FAILOVER_GROUP']
+             if self._commcell_object.commserv_version > 30
+             else self._services['GET_DR_GROUP']) % str(self._failover_group_dict.get('id'))
+        )
         if flag:
-            if response.json() and 'vApp' in response.json():
-                self._failover_group_properties = response.json()['vApp'][0]
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+            if 'vApp' in response.json():
+                return response.json().get('vApp', [{}])[0]
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
-    def _get_snapshot_list(self):
-        """ Gets snapshot list for the destination client
+    def refresh(self):
+        """ Refresh the failover group properties """
+        self._failover_group_properties = self._get_failover_group_properties()
+        self._vm_pairs = None
 
-            Args:
+    @property
+    def failover_group_name(self):
+        """Returns: (str) The name of the failover group"""
+        return self._failover_group_name
 
-            Returns:
-                list of dict: list of snapshot information
+    @property
+    def is_client_group(self):
+        """Returns: (bool) Whether this failover group has a client group or not"""
+        return self._failover_group_properties.get('isClientGroup')
+
+    @property
+    def vm_pair_ids(self):
+        """Returns: (List[str]) Returns the VM pair IDs that belong to this failover group"""
+        vm_sequence = (self._failover_group_properties.get('config', {}).get('vmGroups', [{}])[0]
+                       .get('vmSequence', []))
+        return [str(vm_info.get('replicationId')) for vm_info in vm_sequence if 'replicationId' in vm_info]
+
+    @property
+    def vm_pairs(self):
         """
-        if not isinstance(self._instance_object, VirtualServerInstance):
-            raise SDKException('CVPySDK', '102', 'instance_object is not set')
+        Returns: (dict) The list of all live sync VM pairs
+            eg:
+                {
+                    <source_vm1>: <Replication_pair_obj1>,
+                    <source_vm2>: <Replication_pair_obj2>
+                }
+        """
+        if not self._vm_pairs:
+            for replication_id in self.vm_pair_ids:
+                vm_pair = ReplicationPair(self._commcell_object, replication_id)
+                self._vm_pairs[vm_pair.source_vm] = vm_pair
+        return self._vm_pairs
 
-        # Gets DR client list to fetch the dest GUID
-        entity_id = self.failover_group_properties['clientList'][0]["clientId"]
-        client_list_req = self._commcell_object._services["DR_GROUP_MACHINES"] % (
-            entity_id)
+    @property
+    def replication_groups(self):
+        """Returns: (list) The list of all replication group names"""
+        group_names = {vm_pair.replication_group_name for vm_pair in self.vm_pairs.values()}
+        return list(group_names)
 
-        (flag, response) = self._commcell_object._cvpysdk_object.make_request(
-            method='GET', url=client_list_req)
-        if flag:
-            res_json = response.json()
-            if res_json and 'client' in res_json and len(
-                    res_json['client']) > 0 and 'destClient' in res_json['client'][
-                    0] and 'GUID' in res_json['client'][0]['destClient']:
-                destination_guid = res_json['client'][0]['destClient']['GUID']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(
-                response.text)
-            raise SDKException('Response', '101', response_string)
+    @property
+    def source_client(self):
+        """Returns: (Client) The client object for the failover group's source hypervisor"""
+        if not self._source_client:
+            client_name = self._failover_group_properties.get('selectedEntities', [{}])[0].get('entityName', '')
+            self._source_client = self._commcell_object.clients.get(client_name)
+        return self._source_client
 
-        return self._dr_operation.get_snapshot_list(destination_guid, int(self._instance_object.instance_id))
+    @property
+    def source_agent(self):
+        """Returns: (Agent) The agent object for the source hypervisor"""
+        return self.source_instance._agent_object
+
+    @property
+    def source_instance(self):
+        """Returns: (Instance) The instance object for the source hypervisor"""
+        if not self._source_instance:
+            instance_id = self._failover_group_properties.get('selectedEntities', [{}])[0].get('instanceId', '')
+            for agent_name in self.source_client.agents.all_agents:
+                agent_object = self.source_client.agents.get(agent_name)
+                for instance_name, inst_id in agent_object.instances.all_instances.items():
+                    if inst_id == str(instance_id):
+                        self._source_instance = agent_object.instances.get(instance_name)
+                        return self._source_instance
+
+        return self._source_instance
+
+    @property
+    def destination_client(self):
+        """Returns: (Client) The client object for the failover group's destination hypervisor"""
+        return self.destination_agent._client_object
+
+    @property
+    def destination_agent(self):
+        """Returns: (Agent) The agent object for the destination hypervisor"""
+        return self.destination_instance._agent_object
+
+    @property
+    def destination_instance(self):
+        """Returns: (Instance) The instance object for the destination hypervisor"""
+        if not self._destination_client:
+            vm_pair = list(self.vm_pairs.values())[0]
+            self._destination_instance = (vm_pair._subclient_object
+                                          ._backupset_object._instance_object)
+        return self._destination_instance
+
+    @property
+    def is_approval_required(self):
+        """Returns bool:
+            true : if approval set in failover group
+            false: if approval not set in failover group
+        """
+        return self._failover_group_properties.get('approvalRequired')
+
+    @property
+    def user_for_approval(self):
+        """Returns: user name set in failover group"""
+        user_name = (self._failover_group_properties.get('usersForApproval',[{}])[0]
+                     .get('userEntity',{}).get('userName',''))
+        return user_name

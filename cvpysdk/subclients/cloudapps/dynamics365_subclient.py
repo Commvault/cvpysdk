@@ -353,7 +353,7 @@ class MSDynamics365Subclient(CloudAppsSubclient):
         if flag:
             try:
                 if response.json():
-                    if response.json()['resp']['errorCode'] != 0:
+                    if response.json().get('resp', {}).get('errorCode', 0) != 0:
                         error_message = response.json()['errorMessage']
                         output_string = 'Failed to Create Association for a Dynamics 365 CRM client\nError: "{0}"'
                         raise SDKException(

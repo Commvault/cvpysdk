@@ -99,12 +99,12 @@ DisasterRecoveryManagement Attributes:
 
 """
 from base64 import b64encode
-from past.builtins import basestring
 from cvpysdk.policies.storage_policies import StoragePolicy
 from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
+from .constants import AppIDAType
 
 
 class DisasterRecovery(object):
@@ -274,8 +274,8 @@ class DisasterRecovery(object):
 
                     if response is not success
         """
-        if not ((isinstance(client, (basestring, Client))
-                 and isinstance(destination_path, basestring)
+        if not ((isinstance(client, (str, Client))
+                 and isinstance(destination_path, str)
                  and isinstance(overwrite, bool) and isinstance(restore_data_and_acl, bool))):
             raise SDKException('Response', '101')
 
@@ -284,16 +284,17 @@ class DisasterRecovery(object):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self.commcell, client)
         else:
             raise SDKException('Response', '105')
+
+        agent_obj = client.agents.get("File System")
         drpath = self.path + "\\CommserveDR"
-        destination_path = self._filter_paths([destination_path], True)
-        drpath = [self._filter_paths([drpath], True)]
+        destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+        drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
         if not drpath:
             raise SDKException('Response', '104')
-        agent_obj = client.agents.get("File System")
         instance_obj = agent_obj.instances.get("DefaultInstanceName")
 
         instance_obj._restore_association = {
@@ -470,7 +471,7 @@ class DisasterRecovery(object):
         response_string = self.commcell._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def _filter_paths(self, paths, is_single_path=False):
+    def _filter_paths(self, paths, is_single_path=False, agent_id=None):
         """Filters the paths based on the Operating System, and Agent.
 
             Args:
@@ -478,20 +479,27 @@ class DisasterRecovery(object):
 
                 is_single_path  (bool)  --  boolean specifying whether to return a single path
                                                 or the entire list
-
+                agent_id        (str)   --   File system agent id
             Returns:
                 list    -   if the boolean is_single_path is set to False
 
                 str     -   if the boolean is_single_path is set to True
         """
         for index, path in enumerate(paths):
-
-            path = path.strip('\\').strip('/')
-            if path:
-                path = path.replace('/', '\\')
-            else:
-                path = '\\'
-
+            # "if" condition is default i.e. if client is not provided
+            if agent_id is None or int(agent_id) == AppIDAType.WINDOWS_FILE_SYSTEM.value:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('/', '\\')
+                else:
+                    path = '\\'
+            elif int(agent_id) == AppIDAType.LINUX_FILE_SYSTEM.value:
+                path = path.strip('\\').strip('/')
+                if path:
+                    path = path.replace('\\', '/')
+                else:
+                    path = '\\'
+                path = '/' + path
             paths[index] = path
 
         if is_single_path:
@@ -532,7 +540,7 @@ class DisasterRecovery(object):
     @backup_type.setter
     def backup_type(self, value):
         """Treats the backup_type as a read-only attribute."""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._backup_type = value
         else:
             raise SDKException('DisasterRecovery', '101')
@@ -730,7 +738,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._export_settings['backupMetadataFolder'] = path
             self._set_dr_properties()
         else:
@@ -750,7 +758,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring) and isinstance(username, basestring) and isinstance(password, basestring):
+        if isinstance(path, str) and isinstance(username, str) and isinstance(password, str):
             self._export_settings['backupMetadataFolder'] = path
             self._export_settings['networkUserAccount']['userName'] = username
             self._export_settings['networkUserAccount']['password'] = b64encode(password.encode()).decode()
@@ -775,7 +783,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloud'] = flag
             if flag:
-                if isinstance(username, basestring) and isinstance(password, basestring):
+                if isinstance(username, str) and isinstance(password, str):
                     self._export_settings['cloudCredentials']['userName'] = username
                     self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
                 else:
@@ -799,7 +807,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloudLib'] = flag
             if flag:
-                if isinstance(libraryname, basestring):
+                if isinstance(libraryname, str):
                     cloud_lib_obj = DiskLibrary(self._commcell, library_name=libraryname)
                 elif isinstance(libraryname, DiskLibrary):
                     cloud_lib_obj = libraryname
@@ -828,7 +836,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._prepost_settings['useImpersonateUser'] = flag
             if flag:
-                if isinstance(username, basestring) and isinstance(password, basestring):
+                if isinstance(username, str) and isinstance(password, str):
                     self._prepost_settings['impersonateUser']['userName'] = username
                     self._prepost_settings['impersonateUser']['password'] = b64encode(password.encode()).decode()
                 else:
@@ -1011,7 +1019,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['preScanProcess'] = path
             self._set_dr_properties()
         else:
@@ -1038,7 +1046,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['postScanProcess'] = path
             self._set_dr_properties()
         else:
@@ -1065,7 +1073,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['preBackupProcess'] = path
             self._set_dr_properties()
         else:
@@ -1092,7 +1100,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['postBackupProcess'] = path
             self._set_dr_properties()
         else:

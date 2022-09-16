@@ -20,6 +20,7 @@
 
 This file has all the classes related to Storage operations.
 
+
 MediaAgents:      Class for representing all the media agents attached to the commcell.
 
 MediaAgent:       Class for representing a single media agent attached to the commcell.
@@ -173,6 +174,12 @@ TapeLibraries:
 
     delete()                     --  Deletes the specified library
 
+    lock_mm_configuration()      --  Locks the MM config for tape library detection
+
+    unlock_mm_configuration()    --  Unlocks the MM config for tape library detection
+
+    __lock_unlock_mm_configuration()    --  Locks or unlocks the MM config for tape library detection
+
     detect_tape_library()        --  Detect the tape library of the specified MediaAgent(s)
 
     configure_tape_library()     --  Configure the specified tape library
@@ -187,6 +194,10 @@ TapeLibrary:
      _get_library_id()  --  Returns the library ID
 
      _get_library_properties()   --  gets the disk library properties
+
+     get_drive_list()   --  Returns the tape drive list of this tape library
+     
+     refresh()          --  Refresh the properties of this tape library.
      
      
 """
@@ -197,11 +208,8 @@ import uuid, time, json
 
 from base64 import b64encode
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from .exception import SDKException
 
-install_aliases()
 
 
 class MediaAgents(object):
@@ -337,7 +345,7 @@ class MediaAgents(object):
                 SDKException:
                     if type of the media agent name argument is not string
         """
-        if not isinstance(media_agent_name, basestring):
+        if not isinstance(media_agent_name, str):
             raise SDKException('Storage', '101')
 
         return self._media_agents and media_agent_name.lower() in self._media_agents
@@ -357,7 +365,7 @@ class MediaAgents(object):
 
                     if no media agent exists with the given name
         """
-        if not isinstance(media_agent_name, basestring):
+        if not isinstance(media_agent_name, str):
             raise SDKException('Storage', '101')
         else:
             media_agent_name = media_agent_name.lower()
@@ -392,7 +400,7 @@ class MediaAgents(object):
                     if no media agent exists with the given name
 
         """
-        if not isinstance(media_agent, basestring):
+        if not isinstance(media_agent, str):
             raise SDKException('Storage', '101')
         else:
             media_agent = media_agent.lower()
@@ -1074,7 +1082,7 @@ class Libraries(object):
                 SDKException:
                     if type of the library name argument is not string
         """
-        if not isinstance(library_name, basestring):
+        if not isinstance(library_name, str):
             raise SDKException('Storage', '101')
 
         return self._libraries and library_name.lower() in self._libraries
@@ -1168,15 +1176,15 @@ class DiskLibraries(Libraries):
 
                     if response is not success
         """
-        if not (isinstance(library_name, basestring) and
-                isinstance(mount_path, basestring) and
-                isinstance(username, basestring) and
-                isinstance(password, basestring)):
+        if not (isinstance(library_name, str) and
+                isinstance(mount_path, str) and
+                isinstance(username, str) and
+                isinstance(password, str)):
             raise SDKException('Storage', '101')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException('Storage', '103')
@@ -1248,7 +1256,7 @@ class DiskLibraries(Libraries):
                     if no library exists with the given name
                     if response is incorrect
         """
-        if not isinstance(library_name, basestring):
+        if not isinstance(library_name, str):
             raise SDKException('Storage', '101')
 
         if not self.has_library(library_name):
@@ -1311,7 +1319,7 @@ class DiskLibraries(Libraries):
 
                     if no disk library exists with the given name
         """
-        if not isinstance(library_name, basestring):
+        if not isinstance(library_name, str):
             raise SDKException('Storage', '101')
         else:
             library_name = library_name.lower()
@@ -1400,8 +1408,8 @@ class DiskLibrary(object):
         if not (isinstance(mountpath_id, int) and
                 isinstance(source_mediaagent_id, int) and
                 isinstance(target_mediaagent_id, int) and
-                isinstance(target_device_path, basestring) and
-                isinstance(source_device_path, basestring)):
+                isinstance(target_device_path, str) and
+                isinstance(source_device_path, str)):
             raise SDKException('Storage', '101')
 
         request_xml = """<TMMsg_CreateTaskReq>
@@ -1471,7 +1479,7 @@ class DiskLibrary(object):
         """
 
         if not (isinstance(mountpath_drive_id, int) and
-                isinstance(media_agent, basestring)):
+                isinstance(media_agent, str)):
             raise SDKException('Storage', '101')
 
 
@@ -1549,8 +1557,8 @@ class DiskLibrary(object):
                 - if response code is not as expected
             """
 
-        if not (isinstance(mount_path, basestring) or isinstance(media_agent, basestring)
-                or isinstance(username, basestring) or isinstance(password, basestring)
+        if not (isinstance(mount_path, str) or isinstance(media_agent, str)
+                or isinstance(username, str) or isinstance(password, str)
                 or isinstance(server_type, int)):
             raise SDKException('Storage', '101')
 
@@ -1659,7 +1667,7 @@ class DiskLibrary(object):
                 - if response code is not as expected
             """
 
-        if not isinstance(mount_path, basestring) or not isinstance(media_agent, basestring):
+        if not isinstance(mount_path, str) or not isinstance(media_agent, str):
             raise SDKException('Storage', '101')
 
         request_json = {
@@ -1798,7 +1806,7 @@ class DiskLibrary(object):
                 location_id --  Slot Id of the media on the library
         """
 
-        if not (isinstance(media_name, basestring) and
+        if not (isinstance(media_name, str) and
                 isinstance(location_id,int)):
             raise SDKException('Storage', '101')
 
@@ -1863,7 +1871,7 @@ class DiskLibrary(object):
                 value  (str)   -- option needed to set for mountpath usage
                                     value: 'SPILL_AND_FILL' or 'FILL_AND_SPILL'
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise SDKException('Storage', '101')
 
         if value == 'SPILL_AND_FILL':
@@ -1919,12 +1927,10 @@ class DiskLibrary(object):
 
     @property
     def media_agents_associated(self):
-        """Returns the media agents associated with the disk library"""
-        media_agents = self._library_properties['magLibSummary'].get(
-            'associatedMediaAgents', None)
-        if media_agents is None:
-            return []
-        return media_agents.strip().split(",")
+        """ Returns the media agents associated with the disk library """
+        mount_paths = self._library_properties.get('MountPathList')
+        media_agents = [mount_path.get('mountPathName').split('[')[1].split(']')[0] for mount_path in mount_paths if "mountPathName" in mount_path]
+        return list(set(media_agents))
 
     @property
     def name(self):
@@ -2161,7 +2167,7 @@ class RPStores(object):
         Returns:
             bool : True if present else False
         """
-        if not isinstance(rpstore_name, basestring):
+        if not isinstance(rpstore_name, str):
             raise SDKException('Storage', '101')
 
         return rpstore_name.lower() in self._rp_stores
@@ -2176,7 +2182,7 @@ class RPStores(object):
             An instance of the RPStore
 
         """
-        if not isinstance(rpstore_name, basestring):
+        if not isinstance(rpstore_name, str):
             raise SDKException('Storage', '101')
 
         try:
@@ -2220,6 +2226,7 @@ class TapeLibraries(Libraries):
         self._commcell_object = commcell_object
         self._DETECT_TAPE_LIBRARY = self._commcell_object._services['DETECT_TAPE_LIBRARY']
         self._CONFIGURE_TAPE_LIBRARY = self._commcell_object._services['CONFIGURE_TAPE_LIBRARY']
+        self._LOCK_MM_CONFIGURATION = self._commcell_object._services['LOCK_MM_CONFIGURATION']
 
 
     def __str__(self):
@@ -2259,7 +2266,7 @@ class TapeLibraries(Libraries):
                             if type of the library name argument is not string
         """
 
-        if not isinstance(tape_library_name, basestring):
+        if not isinstance(tape_library_name, str):
             raise SDKException('Storage', '101')
         else:
             if self.has_library(tape_library_name):
@@ -2283,7 +2290,7 @@ class TapeLibraries(Libraries):
                             if its failed to delete the library
         """
 
-        if not isinstance(tape_library_name, basestring):
+        if not isinstance(tape_library_name, str):
             raise SDKException('Storage', '101')
 
         if not self.has_library(tape_library_name):
@@ -2302,6 +2309,71 @@ class TapeLibraries(Libraries):
             raise SDKException('Storage', '102', "Failed to DELETE the library")
 
         self.refresh()
+
+
+    def __lock_unlock_mm_configuration(self, operation):
+        """
+                Locks or unlocks the MM config for tape library detection
+
+                            Args:
+                                operation (int)  --  operation type
+                                                            1 : Lock
+                                                            0 : Unlock
+                                                            2: Force lock
+
+                            Raises:
+                                SDKException:
+                                    If API call is not successful
+                                    If API response is invalid
+                                    If errorCode is not part of response JSON
+                                    If lock/unlock operation fails
+        """
+
+        if not isinstance(operation, int):
+            raise SDKException('Storage', '101', "Invalid Operation data type. Expected is integer")
+
+        if not operation in [0,1,2]:
+            raise SDKException('Storage', '101', "Invalid Operation type. Expected among [0,1,2] but received "+str(operation))
+
+        pay_load ={
+        "configLockUnlock": {
+        "lockType": operation
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._LOCK_MM_CONFIGURATION, pay_load)
+
+        if flag :
+            if response and response.json():
+                if 'errorCode' in response.json():
+                    if response.json()['errorCode'] != 0:
+                        raise SDKException('Storage', '102', "Failed to lock the MM Config. errorMessage : "+response.json().get('errorMessage'))
+                else:
+                    raise SDKException('Storage', '102',
+                                       "lock_unlock_mm_configuration :: Error code is not part of response JSON")
+            else:
+                raise SDKException('Response', '102', "Invalid response")
+        else:
+            raise SDKException('Response', '101', "API call is not successful")
+
+    def lock_mm_configuration(self, forceLock = False):
+        """
+            Locks the MM config for tape library detection
+
+                Args:
+                    forceLock (bool)  --  True for force lock
+        """
+        if forceLock:
+            self.__lock_unlock_mm_configuration(2)
+            return
+        self.__lock_unlock_mm_configuration(1)
+
+    def unlock_mm_configuration(self):
+        """
+            Unlocks the MM config for tape library detection
+        """
+        self.__lock_unlock_mm_configuration(0)
+
 
     def detect_tape_library(self, mediaagents):
         """
@@ -2323,7 +2395,11 @@ class TapeLibraries(Libraries):
         "mediaAgentIdList": mediaagents
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+        try:
+            self.lock_mm_configuration()
+            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DETECT_TAPE_LIBRARY, pay_load )
+        finally:
+            self.unlock_mm_configuration()
 
         if flag and response.json():
             return response.json()
@@ -2365,7 +2441,9 @@ class TapeLibraries(Libraries):
 
         if not flag:
             raise SDKException('Storage', '102', "Failed to configure the library")
+            
         self.refresh()
+        
         tape_library_name = tape_library_name.lower()
         for lib_name, lib_id in self._libraries.items():
             if lib_name.startswith(tape_library_name + " "):
@@ -2420,6 +2498,34 @@ class TapeLibrary(object):
         )
 
 
+    def _get_library_id(self):
+        """Gets the library id associated with this tape library.
+
+            Returns:
+                str - id associated with this tape library
+        """
+        libraries = TapeLibraries(self._commcell_object)
+        return libraries.get(self.library_name).library_id
+
+
+    def get_drive_list(self):
+        """
+            Returns the tape drive list of this tape library
+
+            Returns:
+                list - List of the drives of this tape library
+        """
+        
+        self.refresh()
+        
+        drive_list=[]
+
+        if self.library_properties["DriveList"]:
+            for drive in self.library_properties["DriveList"]:
+                drive_list.append(drive["driveName"])
+
+        return drive_list
+
 
     def _get_library_properties(self):
         """Gets the tape library properties.
@@ -2449,6 +2555,11 @@ class TapeLibrary(object):
         raise SDKException('Response', '101', response_string)
 
 
+    def refresh(self):
+        """Refresh the properties of this tape library."""
+        self.library_properties = self._get_library_properties()
+        
+
     @property
     def library_name(self):
         """Treats the library name as a read-only attribute."""
@@ -2456,7 +2567,5 @@ class TapeLibrary(object):
 
     @property
     def library_id(self):
-        """Treats the library name as a read-only attribute."""
+        """Treats the library ID as a read-only attribute."""
         return self._library_id
-
-

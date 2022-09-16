@@ -128,9 +128,6 @@ from xml.parsers.expat import ExpatError
 import os
 import xmltodict
 
-from past.builtins import basestring
-from past.builtins import raw_input
-
 from .job import Job
 from .exception import SDKException
 
@@ -399,7 +396,7 @@ class WorkFlows(object):
                     if type of the workflow name argument is not string
 
         """
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException('Workflow', '101')
 
         return self._workflows and workflow_name.lower() in self._workflows
@@ -420,7 +417,7 @@ class WorkFlows(object):
                     if type of the workflow activity name argument is not string
 
         """
-        if not isinstance(activity_name, basestring):
+        if not isinstance(activity_name, str):
             raise SDKException('Workflow', '101')
 
         return self._activities and activity_name.lower() in self._activities
@@ -447,7 +444,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         """
-        if not isinstance(workflow_xml, basestring):
+        if not isinstance(workflow_xml, str):
             raise SDKException('Workflow', '101')
 
         if os.path.isfile(workflow_xml):
@@ -498,7 +495,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         """
-        if not isinstance(activity_xml, basestring):
+        if not isinstance(activity_xml, str):
             raise SDKException('Workflow', '101')
 
         if os.path.isfile(activity_xml):
@@ -551,7 +548,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / download workflow failed
 
         """
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException('Workflow', '101')
 
         from .commcell import Commcell
@@ -633,7 +630,7 @@ class WorkFlows(object):
 
                     if no workflow exists with the given name
         """
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException('Workflow', '101')
         else:
             workflow_name = workflow_name.lower()
@@ -662,7 +659,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         """
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException('Workflow', '101')
 
         workflow_xml = """
@@ -691,11 +688,13 @@ class WorkFlows(object):
         """Refresh the list of workflow activities deployed on the Commcell."""
         self._activities = self._get_activities()
 
-    def get_interaction_properties(self, interaction_id):
+    def get_interaction_properties(self, interaction_id, workflow_job_id=None):
         """Returns a workflow interaction properties to the user
 
             Args:
                 interaction_id (int)  --  Workflow interaction id
+
+                workflow_job_id (int) --  Workflow job id
 
             Returns:
                 dictionary - Workflow interaction id properties
@@ -705,6 +704,16 @@ class WorkFlows(object):
                     - if response is empty
 
         """
+        if not interaction_id:
+            if not workflow_job_id:
+                raise SDKException('Workflow', '102', "Please provide either interaction id or workflow job id")
+            all_interactions = self.all_interactions()
+            for interaction in all_interactions:
+                if int(interaction['jobId']) == workflow_job_id:
+                    interaction_id = interaction['interactionId']
+                    break
+            if not interaction_id:
+                raise SDKException('Workflow', '102', "Failed to find workflow job")
         flag, response = self._cvpysdk_object.make_request('GET', self._INTERACTION % interaction_id)
 
         if flag:
@@ -763,7 +772,7 @@ class WorkFlows(object):
                 Exception:
                     Failed to submit workflow interaction request
         """
-        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+        if not isinstance(input_xml, str) or not isinstance(interaction, dict) or not isinstance(action, str):
             raise SDKException('Workflow', '101')
 
         from xml.sax.saxutils import escape
@@ -901,9 +910,9 @@ class WorkFlow(object):
             prompt = input_dict['display_name']
 
         if input_dict['is_required']:
-            value = raw_input(prompt + '*' + '::  ')
+            value = input(prompt + '*' + '::  ')
         else:
-            value = raw_input(prompt + '::  ')
+            value = input(prompt + '::  ')
 
         if value:
             return value
@@ -1099,8 +1108,8 @@ class WorkFlow(object):
 
         workflow_name = self._workflow_name.lower()
 
-        if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
-                (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+        if not ((workflow_engine is not None and isinstance(workflow_engine, str)) or
+                (workflow_xml is not None and isinstance(workflow_xml, str))):
             raise SDKException('Workflow', '101')
 
         if not self._commcell_object.workflows.has_workflow(workflow_name):
@@ -1246,7 +1255,7 @@ class WorkFlow(object):
                     else:
                         return output, Job(self._commcell_object, response.json()['jobId'])
                 elif "errorCode" in response.json():
-                    if response.json()['errorCode'] == 0:
+                    if int(response.json()['errorCode']) == 0:
                         return output, 'Workflow Execution Finished Successfully'
                     else:
                         error_message = response.json()['errorMessage']
@@ -1293,7 +1302,7 @@ class WorkFlow(object):
         if export_location is None:
             export_location = os.getcwd()
         else:
-            if not isinstance(export_location, basestring):
+            if not isinstance(export_location, str):
                 raise SDKException('Workflow', '101')
 
             if not os.path.exists(export_location):
@@ -1533,7 +1542,7 @@ class WorkFlow(object):
 
                     if the type of value input is not string
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_workflow_properties("description", value)
         else:
             raise SDKException(

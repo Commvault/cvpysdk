@@ -35,6 +35,10 @@ DB2Instance:
 
     restore_entire_database()       --      Restores the db2 database
 
+    restore_out_of_place()          --      runs the out of place restore for given backupset
+
+    restore_table_level()           --      Table level restore function
+
 
 DB2Instance instance Attributes:
 ================================
@@ -54,6 +58,7 @@ DB2Instance instance Attributes:
 from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
+from base64 import b64encode
 
 
 class DB2Instance(Instance):
@@ -213,17 +218,15 @@ class DB2Instance(Instance):
 
         json = self._db2_restore_options_json(restore_option)
         rest_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"] = json
+
         return rest_json
 
     def restore_entire_database(
             self,
             dest_client_name,
             dest_instance_name,
-            dest_backupset_name,
-            restore_type='ENTIREDB',
-            recover_db=True,
-            restore_incremental=True,
-
+            dest_database_name,
+            **kwargs
     ):
         """Restores the db2 database
 
@@ -248,6 +251,18 @@ class DB2Instance(Instance):
 
                     default: True
 
+                restore_data            (bool)  -- Restore data or not
+                    default: True
+
+                copy_precedence         (int)   -- Copy precedence to perform restore from
+                    default : None
+
+                roll_forward            (bool)  -- Rollforward database or not
+                    default: True
+
+                restore_logs (bool)  -   Restore the logs or not
+                default: True
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -261,6 +276,13 @@ class DB2Instance(Instance):
                     if response is not success
 
         """
+        recover_db = kwargs.get("recover_db", True)
+        restore_incremental = kwargs.get("restore_incremental", True)
+        restore_data = kwargs.get("restore_data", True)
+        copy_precedence = kwargs.get("copy_precedence", None)
+        roll_forward = kwargs.get("roll_forward", True)
+        restore_logs = kwargs.get("restore_logs", True)
+        restore_type = kwargs.get("restore_type", 'ENTIREDB')
 
         if "entiredb" in restore_type.lower():
             restore_type = 0
@@ -268,13 +290,310 @@ class DB2Instance(Instance):
         request_json = self._restore_json(
             dest_client_name=dest_client_name,
             dest_instance_name=dest_instance_name,
-            dest_backupset_name=dest_backupset_name,
-            target_db=dest_backupset_name,
+            dest_backupset_name=dest_database_name,
+            target_db=dest_database_name,
             restore_type=restore_type,
             recover_db=recover_db,
             restore_incremental=restore_incremental,
+            restore_data=restore_data,
+            copy_precedence=copy_precedence,
+            roll_forward=roll_forward,
+            rollforward_pending=not roll_forward,
+            restore_archive_logs=restore_logs
         )
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"]["backupset"]["backupsetName"] = dest_database_name
+
+        return self._process_restore_response(request_json)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs):
+        """Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Destination DB restore path
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {'Storage Group Name': 'Redirect Path'}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {'Tablespace name': 'Redirect Path'}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+                restore_data            (bool)  -- Restore data or not
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        copy_precedence = kwargs.get('copy_precedence', None)
+        from_time = kwargs.get('from_time', None)
+        to_time = kwargs.get('to_time', None)
+        redirect_enabled = kwargs.get('redirect_enabled', False)
+        redirect_tablespace_path = kwargs.get('redirect_tablespace_path', None)
+        redirect_storage_group_path = kwargs.get('redirect_storage_group_path', None)
+        rollforward = kwargs.get('rollforward', True)
+        restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
+        restore_incremental = kwargs.get('restore_incremental', True)
+        restore_data = kwargs.get('restore_data', True)
+
+        if redirect_enabled:
+            if not (isinstance(redirect_tablespace_path, dict) or isinstance(redirect_tablespace_path, str)) and \
+                    not isinstance(redirect_storage_group_path, dict):
+                raise SDKException('Instance', '101')
+
+        request_json = self._restore_json(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_db=dest_backupset_name,
+            target_path=target_path,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            redirect=redirect_enabled,
+            redirect_storage_group_path=redirect_storage_group_path,
+            redirect_tablespace_path=redirect_tablespace_path,
+            rollforward_pending=not rollforward,
+            restore_archive_logs=restoreArchiveLogs,
+            roll_forward=rollforward,
+            restore_incremental=restore_incremental,
+            storage_path=True,
+            restore_data=restore_data)
+
+        if redirect_storage_group_path:
+            storagePaths = []
+            storageGroup = {"storageGroup": []}
+
+            for name, path in redirect_storage_group_path.items():
+                if isinstance(path, str):
+                    storageGroup["storageGroup"].append({"groupName": name, "stoPaths": [path]})
+                    storagePaths = [path]
+                else:
+                    storageGroup["storageGroup"].append({"groupName": name, "stoPaths": path})
+                    storagePaths = [path[0]]
+
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "redirectStorageGroups"] = True
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "storagePaths"] = storagePaths
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "storageGroupInfo"] = storageGroup
+
+        if redirect_tablespace_path:
+            if isinstance(redirect_tablespace_path, str):
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                    "redirectAllPaths"] = redirect_tablespace_path
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                    "redirectAllTableSpacesSelected"] = True
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                    "redirectAllTableSpacesValue"] = redirect_tablespace_path
+            else:
+                redirect_info = []
+                for tablespace, path in redirect_tablespace_path.items():
+                    table_string = "%s\t1\t%s\t6\t25600\t1\t1" % (tablespace, path)
+                    redirect_info.append(table_string)
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                    "redirectInfo"] = redirect_info
+
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "browseOption"]["backupset"]["backupsetName"] = dest_backupset_name
 
         return self._process_restore_response(request_json)
+
+    def restore_table_level(
+            self,
+            aux_client_name,
+            aux_instance_name,
+            aux_backupset_name,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            staging_path,
+            tables_path,
+            user_name,
+            password,
+            **kwargs
+        ):
+        """
+        Performs DB2 table level restore
+            Args:
+                aux_client_name         (str)   --  auxiliary client name where files are to be restored
+                aux_instance_name       (str)   --  auxiliary instance name where files are to be restored
+                aux_backupset_name      (str)   --  auxiliary backupset name where files are to be restored
+                dest_client_name        (str)   --  destination client name where files are to be restored
+                dest_instance_name      (str)   --  destination db2 instance name of destination client
+                dest_backupset_name     (str)   --  destination db2 backupset name of destination client
+
+                target_path             (str)   --  Destination DB restore path
+
+                src_backupset_name       (str)   --  Source Backupset Name
+
+                staging_path             (str)   -- Staging Path
+
+                user_name                (str)   -- Destination User name
+
+                password                 (str)  --  Destination User Password
+
+                tables_path             (list)   -- List of tables path
+                    Example:
+                        Unix:  ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
+                        Windows: ["\+tblview+\instance_name\database_name\schema_name\table_name\**"]
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                rollForward             (bool)   --   Rollforward or not
+                    default: True
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+                server_port              (int)   -- Server Port Destination instance
+                    default: 50000
+
+                generateAuthorizationDDL    (bool)  -- Generate Authorization DDL
+                    default: False
+
+                extractDDLStatements        (bool)  --  Extracts DDL statement or not
+                    default: True
+
+                clearAuxiliary              (bool)  -- Cleanup auxilliary or not
+                    default: True
+
+                dropTable                   (bool)  -- Drop table for import
+                    default: False
+
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        copy_precedence = kwargs.get('copy_precedence', None)
+        from_time = kwargs.get('from_time', None)
+        to_time = kwargs.get('to_time', None)
+        rollforward = kwargs.get('rollforward', True)
+        restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
+
+        request_json = self._restore_json(
+            dest_client_name=aux_client_name,
+            dest_instance_name=aux_instance_name,
+            dest_backupset_name=aux_backupset_name,
+            target_db=aux_backupset_name,
+            target_path=target_path,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            rollforward_pending=not rollforward,
+            restoreArchiveLogs=restoreArchiveLogs,
+            roll_forward=rollforward,
+            storage_path=True,
+            table_view_restore=True)
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+            "storagePaths"] = [target_path]
+
+        password = b64encode(password.encode()).decode()
+
+        table_json = {
+            "additionalExportParameter": kwargs.get("additionalExportParameter", ""),
+            "serverPort": kwargs.get("server_port", 50000),
+            "generateAuthorizationDDL": kwargs.get("generateAuthorizationDDL", False),
+            "importInstance": dest_instance_name,
+            "extractDDLStatements": kwargs.get("extractDDLStatements", True),
+            "useAdditionalExportParameters": kwargs.get("useAdditionalExportParameters", False),
+            "auxiliaryInstance": False,
+            "clearAuxiliary": kwargs.get("clearAuxiliary", True),
+            "importDatabase": dest_backupset_name,
+            "importToWhere": 2,
+            "dropTable": kwargs.get("dropTable", False),
+            "stagingPath": staging_path,
+            "importDbClient": {"clientName": dest_client_name},
+            "importUserInfo": {"userName": user_name, "password": password}
+        }
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+            "storagePaths"] = [target_path]
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+            "databaseTableRstOptions"] = table_json
+
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"]["backupset"]["backupsetName"] = aux_backupset_name
+
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "fileOption"]["filterItem"] = tables_path
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "fileOption"]["sourceItem"] = tables_path
+
+        return self._process_restore_response(request_json)
+

@@ -70,10 +70,7 @@ UsermailboxSubclient:
 
 """
 
-
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from ...exception import SDKException
 
@@ -130,10 +127,10 @@ class UsermailboxSubclient(ExchangeSubclient):
         """
 
         from ...policies.configuration_policies import ConfigurationPolicy
-        if not (isinstance(configuration_policy, (basestring, ConfigurationPolicy))):
+        if not (isinstance(configuration_policy, (str, ConfigurationPolicy))):
             raise SDKException('Subclient', '101')
 
-        if isinstance(configuration_policy, basestring):
+        if isinstance(configuration_policy, str):
             configuration_policy = ConfigurationPolicy(
                 self._commcell_object, configuration_policy)
 
@@ -303,7 +300,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         task_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = backup_options
         task_json['taskInfo']['subTasks'][0]['options']['dataOpt'] = data_options
-        return task_json  
+        return task_json
 
     def _set_association_request(self, associations_json):
         """Runs the emailAssociation ass API to set association
@@ -410,14 +407,15 @@ class UsermailboxSubclient(ExchangeSubclient):
             if response and response.json():
                 discover_content = response.json()
 
-                if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get('resp', {}).get('errorCode', 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    # if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
+                    time.sleep(10)  # the results might take some time depending on domains
                     if retry_attempts > 10:
                         raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
-                    return self._get_discover_users(use_without_refresh_url=True ,
+                    return self._get_discover_users(use_without_refresh_url=True,
                                                     retry_attempts=retry_attempts + 1)
-
 
                 if 'discoverInfo' in discover_content.keys():
                     if 'mailBoxes' in discover_content['discoverInfo']:
@@ -491,7 +489,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         groups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'User')
+                                              'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'User')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._EMAIL_POLICY_ASSOCIATIONS
@@ -565,7 +563,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         databases = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'Database')
+                                              'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'Database')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._EMAIL_POLICY_ASSOCIATIONS
@@ -616,7 +614,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         adgroups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'AD Group')
+                                              'GET_EMAIL_POLICY_ASSOCIATIONS'] % (self.subclient_id, 'AD Group')
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._EMAIL_POLICY_ASSOCIATIONS
@@ -811,7 +809,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                 'pstOwnerManagement': {
                     'adProperty': "",
                     'startingFolderPath': "",
-                    'pstStubsAction':1,
+                    'pstStubsAction': 1,
                     'managePSTStubs': False,
                     'mergeintoMailBox': True,
                     'pstOwnerBasedOnACL': True,
@@ -894,8 +892,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                                                (str(subclient_name), str(backupset_name)))
                         subclient_name = subclient_name.lower()
                         sub_dict = {"subclientId": int(backupset_obj.subclients.all_subclients[
-                            subclient_name]['id']),
-                            "subclientName": subclient_name}
+                                                           subclient_name]['id']),
+                                    "subclientName": subclient_name}
                         sub_dict.update(backupset_dict)
                         sub_dict["_type_"] = _type_id["subclient"]
                         assoc_list.append(sub_dict)
@@ -1065,7 +1063,7 @@ class UsermailboxSubclient(ExchangeSubclient):
             }
         }
         task_dict["taskInfo"]["subTasks"][0]["options"]["backupOpts"]["exchOnePassOptions"][
-                "genericAssociations"]= subclient_content
+            "genericAssociations"] = subclient_content
         return task_dict
 
     def enable_ews_support(self, service_url):
@@ -1079,8 +1077,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         self.agentproperties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = service_url
         self._agent_object.update_properties(self.agentproperties)
 
-
-    def browse_mailboxes(self,retry_attempts=0):
+    def browse_mailboxes(self, retry_attempts=0):
         """
         This function returns the mailboxes available for OOP restore
         return: dictionary containing mailbox info
@@ -1088,7 +1085,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         BROWSE_MAILBOXES = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
             int(self._backupset_object.backupset_id), 'User'
         )
-        flag,response = self._commcell_object._cvpysdk_object.make_request('GET',BROWSE_MAILBOXES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', BROWSE_MAILBOXES)
         if flag:
             if response and response.json():
                 discover_content = response.json()
@@ -1096,16 +1093,16 @@ class UsermailboxSubclient(ExchangeSubclient):
                     time.sleep(10)
                     if retry_attempts > 10:
                         raise SDKException('Subclient', '102', 'Failed to perform browse operation.')
-                    return self.browse_mailboxes(retry_attempts+1)
+                    return self.browse_mailboxes(retry_attempts + 1)
                 if 'discoverInfo' in discover_content.keys():
                     if 'mailBoxes' in discover_content['discoverInfo']:
-                        mailboxes=discover_content["discoverInfo"]["mailBoxes"]
+                        mailboxes = discover_content["discoverInfo"]["mailBoxes"]
                         return mailboxes
             else:
                 raise SDKException("Response", "102")
         else:
-            response_string=self.commcell._update_response_(response.text)
-            raise SDKException('Response','101',response_string)
+            response_string = self.commcell._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def backup_generic_items(self, subclient_content):
         """
@@ -1389,7 +1386,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         _assocaition_json_ = self._association_json(subclient_content)
         _assocaition_json_["emailAssociation"]["emailStatus"] = 1
-        _assocaition_json_["emailAssociation"]["advanceOptions"]["enableAutoDiscovery"]=subclient_content["is_auto_discover_user"]
+        _assocaition_json_["emailAssociation"]["advanceOptions"]["enableAutoDiscovery"] = subclient_content[
+            "is_auto_discover_user"]
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
@@ -1492,7 +1490,6 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         self._set_association_request(_association_json)
 
-
     def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
         """
             Delete all users association for UserMailboxSubclient.
@@ -1533,7 +1530,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             }
 
         if association_name.lower() not in association_dict:
-            raise SDKException("Subclient", "102","Invalid Association Name supplied")
+            raise SDKException("Subclient", "102", "Invalid Association Name supplied")
 
         if use_policies == True:
             _association_json_ = self._association_json(subclient_content)
@@ -1541,7 +1538,6 @@ class UsermailboxSubclient(ExchangeSubclient):
             planobject = self._commcell_object.plans.get(subclient_content["plan_name"])
             _association_json_ = self._association_json_with_plan(plan_details=planobject)
 
-        
         discover_info = {
             "discoverByType": association_dict[association_name.lower()],
             "genericAssociations": [
@@ -1573,7 +1569,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def create_recovery_point(self, mailbox_prop, job = None, job_id = None):
+    def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
         """
             Method to create a recovery point
 
@@ -1599,10 +1595,10 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
         """
 
-        if(job==None and job_id ==None):
+        if (job == None and job_id == None):
             raise Exception("At least one value out of job or job_id should be passed")
 
-        if(job == None and type(job_id)==int):
+        if (job == None and type(job_id) == int):
             job = self._commcell_object.job_controller.get(job_id)
 
         index_server = self._commcell_object.clients.get(mailbox_prop['index_server'])
@@ -1666,21 +1662,23 @@ class UsermailboxSubclient(ExchangeSubclient):
                 browse_response = response.json()
 
                 if 'browseResponses' in browse_response.keys():
-                    recovery_point_job_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get('advConfig', {}).get(
+                    recovery_point_job_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get(
+                        'advConfig', {}).get(
                         'applicationMining', {}).get('browseInitResp', {}).get('recoveryPointJobID')
 
-                    recovery_point_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get('advConfig', {}).get(
-                        'applicationMining', {}).get('browseInitResp', {}).get('recoveryPointID',{})
+                    recovery_point_id = browse_response.get('browseResponses', [{}])[0].get('browseResult', {}).get(
+                        'advConfig', {}).get(
+                        'applicationMining', {}).get('browseInitResp', {}).get('recoveryPointID', {})
 
                     res_dict = {
-                        'recovery_point_job_id' : recovery_point_job_id,
+                        'recovery_point_job_id': recovery_point_job_id,
                         'recovery_point_id': recovery_point_id
                     }
                     return res_dict
                 else:
                     raise SDKException('Response', '102', response.json)
             else:
-                raise SDKException('Response', '102', response.json )
+                raise SDKException('Response', '102', response.json)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

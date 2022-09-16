@@ -43,13 +43,16 @@ CloudDatabaseInstance:
 
 from __future__ import unicode_literals
 import time
-from past.builtins import basestring
 from ..cainstance import CloudAppsInstance
 from ...exception import SDKException
 
 
 class CloudDatabaseInstance(CloudAppsInstance):
-    """Class for representing an Instance of the Cloud Database such as Amazon RDS/Redshift/DocumentDB/DynamoDB"""
+    """
+    Class for representing an Instance of the Cloud Database such as
+    Amazon RDS/Redshift/DocumentDB/DynamoDB/Cloud Spanner
+
+    """
 
     def __init__(self, agent_object, instance_name, instance_id=None):
         """Initializes the object of the CloudDatabaseInstance class
@@ -223,8 +226,8 @@ class CloudDatabaseInstance(CloudAppsInstance):
 
                 object - instance of the Job class for this restore job
         """
-        if not (isinstance(source, basestring) or
-                isinstance(destination, basestring) or
+        if not (isinstance(source, str) or
+                isinstance(destination, str) or
                 isinstance(options, dict)):
             raise SDKException('Instance', '101')
         request_json = self._restore_json(destination=destination, source=source, options=options)

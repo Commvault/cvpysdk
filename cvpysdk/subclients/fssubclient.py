@@ -163,7 +163,6 @@ FileSystemSubclient Instance Attributes:
 
 from __future__ import unicode_literals
 from base64 import b64encode
-from past.builtins import basestring
 
 from ..client import Client
 from ..subclient import Subclient
@@ -1392,7 +1391,7 @@ class FileSystemSubclient(Subclient):
 
                 3. `USE CELL LEVEL POLICY`
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise SDKException('Subclient', '101')
 
         return self._set_subclient_properties(
@@ -1690,7 +1689,7 @@ class FileSystemSubclient(Subclient):
 
         """
         if on_demand_input is not None:
-            if not isinstance(on_demand_input, basestring):
+            if not isinstance(on_demand_input, str):
                 raise SDKException('Subclient', '101')
 
             if not self.is_on_demand_subclient:
@@ -1954,10 +1953,10 @@ class FileSystemSubclient(Subclient):
         """
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
-        if not isinstance(client, (basestring, Client)):
+        if not isinstance(client, (str, Client)):
             raise SDKException('Subclient', '101')
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):

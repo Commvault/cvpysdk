@@ -43,7 +43,6 @@ VMWareVirtualServerSubclient:
 
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from past.builtins import basestring
 
 
 class RhevVirtualServerSubclient(VirtualServerSubclient):
@@ -79,7 +78,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option='Original',
-            proxy_client=None):
+            proxy_client=None,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -96,14 +96,20 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                disk_option           (basestring)  --  disk provisioning for the restored vm
+                disk_option           (str)  --  disk provisioning for the restored vm
                                                         Options for input are: 'Original',
                                                         'Thick Lazy Zero', 'Thin',
                                                         'Thick Eager Zero'
                                                         default: Original
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -120,10 +126,10 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         disk_option_value = self._disk_option[disk_option]
@@ -161,7 +167,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option='Original',
-            proxy_client=None
+            proxy_client=None,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -174,13 +181,13 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                       'delete' is appended to the original vm name
 
-                destination_client   (basestring) --  name of the RHEV client where the VM
+                destination_client   (str) --  name of the RHEV client where the VM
                                                       should be restored.
 
-                cluster           (basestring)    --  destination cluster host. Restores to the source
+                cluster           (str)    --  destination cluster host. Restores to the source
                                                       VM cluster if this value is not specified
 
-                repository         (basestring)   --  datastore where the restored VM should be
+                storage         (str)   --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -193,16 +200,18 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence          (int)    --  copy precedence value
                                                       default: 0
 
-                disk_option       (basestring)    --  disk provisioning for the  restored vm
+                disk_option       (str)    --  disk provisioning for the  restored vm
                                                       Options for input are: 'Original',
                                                       'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
                                                       default: 'Original'
 
-                proxy_client      (basestring)    --  destination proxy client
+                proxy_client      (str)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -221,10 +230,10 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -236,8 +245,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(restored_vm_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 

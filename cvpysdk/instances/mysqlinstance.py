@@ -77,6 +77,10 @@ MYSQLInstance instance Attributes:
 
     **proxy_options**                   -- Returns the MySQL Server proxy options
 
+    **mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
+    details
+
+    **no_lock_status**                  --  Returns the No Lock check box status for MySQL Instance
 
 """
 
@@ -276,6 +280,63 @@ class MYSQLInstance(Instance):
             "clientName": proxy_settings.get('proxyInstance', {}).get('clientName', None)}
         return proxy_opt
 
+    @property
+    def mysql_enterprise_backup_binary_path(self):
+        """ Returns the MySQL Enterprise backup binary path detail
+
+            Return Type: dict
+
+        """
+        meb_settings = self._properties.get('mySqlInstance', {}).get('mebSettings', {})
+        return meb_settings
+
+    @mysql_enterprise_backup_binary_path.setter
+    def mysql_enterprise_backup_binary_path(self, value):
+        """ Setter for MySQL Enterprise backup binary path
+
+            Args:
+
+                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
+                in MySQL Instance property
+
+        """
+        if not isinstance(value, str):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        meb_bin_path_update = {
+            "enableMEB": False if value == '' else True,
+            "mebBinPath": value
+        }
+        properties['mySqlInstance']['mebSettings'] = meb_bin_path_update
+        self.update_properties(properties)
+
+    @property
+    def no_lock_status(self):
+        """ Returns the status of No Lock Checkbox in MySQL Instance
+
+            Returns:
+            (bool)  --  True if No Lock checkbox is enabled
+                        False if No Lock checkbox is disabled
+
+        """
+        return self._properties.get('mySqlInstance', {}).get('EnableNoLocking', False)
+
+    @no_lock_status.setter
+    def no_lock_status(self, value):
+        """ Setter for No Lock property in MySQL Instance
+
+            Args:
+
+                value (bool)  -- True or False to enable or disable the No Lock
+                property in MySQL Instance
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['mySqlInstance']['EnableNoLocking'] = value
+        self.update_properties(properties)
+
     def _get_instance_properties(self):
         """Gets the properties of this instance.
 
@@ -348,7 +409,8 @@ class MYSQLInstance(Instance):
             clone_env=False,
             clone_options=None,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            browse_jobid=None):
         """Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
@@ -435,6 +497,10 @@ class MYSQLInstance(Instance):
 
                     default: None
 
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -478,7 +544,8 @@ class MYSQLInstance(Instance):
             clone_env=clone_env,
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid)
 
         return self._process_restore_response(request_json)
 
@@ -492,6 +559,13 @@ class MYSQLInstance(Instance):
             "clientName": self._agent_object._client_object.client_name,
             "backupsetName": "defaultDummyBackupSet"
         }
+
+        if value.get("browse_jobid"):
+            self._browse_restore_json['browseJobId'] = value.get("browse_jobid")
+
+        if value.get("from_time") and value.get("to_time"):
+            self._browse_restore_json["timeRange"] = {"fromTime" : value.get("from_time"),
+                                                      "toTime" : value.get("to_time")}
 
     def _restore_common_options_json(self, value):
         """setter for the Common options in restore JSON"""
@@ -560,7 +634,7 @@ class MYSQLInstance(Instance):
             "dataStagingLocation": "",
             "logRestoreType": 0,
             "tableLevelRestore": value.get("table_level_restore", False),
-            "pointofTime": False,
+            "pointofTime": True if value.get("to_time") else False,
             "instanceRestore": True,
             "isCloneRestore": value.get("clone_env", False),
             "fromTime": value.get("from_time", {}),
@@ -579,3 +653,16 @@ class MYSQLInstance(Instance):
         if value.get("redirect_path"):
             self.mysql_restore_json["redirectEnabled"] = True
             self.mysql_restore_json["redirectItems"] = [value.get("redirect_path")]
+
+        if value.get("from_time"):
+            self.mysql_restore_json["fromTime"] = {"time" : value.get("to_time")}
+
+        if value.get("to_time"):
+            self.mysql_restore_json["refTime"] = {"time" : value.get("to_time")}
+
+        if value.get("to_time"):
+            self.mysql_restore_json["pointInTime"] = {"time" : value.get("to_time")}
+
+        if value.get("dest_instance_name"):
+            self.mysql_restore_json["destinationServer"] = {"name": value.get(
+                "dest_instance_name")}

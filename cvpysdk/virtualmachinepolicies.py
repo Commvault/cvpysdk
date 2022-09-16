@@ -207,8 +207,6 @@ LiveMountPolicy:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from .exception import SDKException
 from .job import Job
 
@@ -684,7 +682,7 @@ class VirtualMachinePolicies(object):
                 SDKException:
                     if type of the vm policy name argument is not string
         """
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException('Virtual Machine', '101')
 
         return (self._vm_policies and
@@ -704,7 +702,7 @@ class VirtualMachinePolicies(object):
                     if type of the virtual machine policy name argument is not string
                     if no virtual machine policy exists with the given name
         """
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException('Virtual Machine', '101')
 
         vm_policy_name = vm_policy_name.lower()
@@ -810,8 +808,8 @@ class VirtualMachinePolicies(object):
                             'restore from backup': 13}
         self.refresh()
         if (
-                not isinstance(vm_policy_name, basestring)
-                or not isinstance(vclient_name, basestring)
+                not isinstance(vm_policy_name, str)
+                or not isinstance(vclient_name, str)
                 or not isinstance(vm_policy_options, (dict, type(None)))
         ):
             raise SDKException('Virtual Machine', '101')
@@ -876,7 +874,7 @@ class VirtualMachinePolicies(object):
 
                     if response is not success
         """
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException('Virtual Machine', '101')
 
         if self.has_policy(vm_policy_name):
@@ -1100,7 +1098,7 @@ class VirtualMachinePolicy(object):
                     if a vm policy already exists by the desired vm policy name
         """
         vm_policies_object = VirtualMachinePolicies(self._commcell_object)
-        if not isinstance(desired_vm_policy_name, basestring):
+        if not isinstance(desired_vm_policy_name, str):
             raise SDKException('Virtual Machine', '101')
         elif vm_policies_object.has_policy(desired_vm_policy_name):
             err_msg = 'Policy "{0}" already exists'.format(desired_vm_policy_name)
@@ -1593,7 +1591,7 @@ class LiveMountPolicy(VirtualMachinePolicy):
                                                             mount job
         """
         # check if client name is string
-        if not isinstance(client_vm_name, basestring):
+        if not isinstance(client_vm_name, str):
             raise SDKException('Virtual Machine', '101')
         # check if client is a valid hidden client
         elif not self._is_hidden_client(client_vm_name):

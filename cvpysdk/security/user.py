@@ -109,7 +109,6 @@ User
 """
 
 from base64 import b64encode
-from past.builtins import basestring
 from .security_association import SecurityAssociation
 from ..exception import SDKException
 
@@ -242,6 +241,8 @@ class Users(object):
 
         self._users = self._get_users()
 
+        return response.json()
+
     def add(self,
             user_name,
             email,
@@ -330,8 +331,8 @@ class Users(object):
             if not password:
                 system_generated_password = True
 
-        if not (isinstance(username, basestring) and
-                isinstance(email, basestring)):
+        if not (isinstance(username, str) and
+                isinstance(email, str)):
             raise SDKException('User', '101')
 
         if self.has_user(username):
@@ -369,8 +370,12 @@ class Users(object):
                 "associatedUserGroups": groups_json
             }]
         }
-        self._add_user(create_user_request)
-        return self.get(username)
+        response_json = self._add_user(create_user_request)
+
+
+        created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
+
+        return self.get(created_user_username)
 
     def has_user(self, user_name):
         """Checks if any user with specified name exists on this commcell
@@ -383,7 +388,7 @@ class Users(object):
                 SDKException:
                     if data type of input is invalid
         """
-        if not isinstance(user_name, basestring):
+        if not isinstance(user_name, str):
             raise SDKException('User', '101')
 
         return self._users and user_name.lower() in self._users
@@ -831,8 +836,7 @@ class User(object):
         """
         returns user associated company name
         """
-
-        return self._properties.get('userEntity', {}).get('entityInfo', {}).get('companyName')
+        return self._properties.get('userEntity', {}).get('entityInfo', {}).get('companyName', "").lower()
 
     @age_password_days.setter
     def age_password_days(self, days):

@@ -183,7 +183,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
+
         """ Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -210,6 +212,19 @@ class CloudStorageSubclient(CloudAppsSubclient):
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+                kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -224,7 +239,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path=destination_path,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+            **kwargs)
 
     def restore_to_fs(
             self,

@@ -35,11 +35,15 @@ from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJo
 
 class DRJob(Job):
     """Class for performing DR orchestration operations on ReplicationMonitor."""
+
     def __init__(self, commcell_object, job_id):
         """Initialise the DR job"""
         self._replication_job_stats = None
 
-        self._REPLICATION_STATS = commcell_object._services['DR_JOB_STATS'] % job_id
+        service_url = (commcell_object._services['DRORCHESTRATION_JOB_STATS']
+                       if commcell_object.commserv_version > 30
+                       else commcell_object._services['DR_JOB_STATS'])
+        self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
 
@@ -97,7 +101,7 @@ class DRJob(Job):
 
         if flag:
             if response.json() and 'job' in response.json():
-                return response.json()['job']
+                return response.json()['job'] or []
             elif response.json() and 'errors' in response.json():
                 errors = response.json().get('errors', [{}])
                 error_list = errors[0].get('errList', [{}])
@@ -135,6 +139,8 @@ class DRJob(Job):
             }
         """
         job_stats = {}
+        if not self._replication_job_stats:
+            return job_stats
         for pair_stats in self._replication_job_stats:
             phases = []
             for phase in pair_stats.get('phase', []):

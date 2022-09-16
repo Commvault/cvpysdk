@@ -62,6 +62,7 @@ class Download(object):
             service_pack=None,
             cu_number=0,
             sync_cache=True,
+            sync_cache_list=None,
             schedule_pattern=None):
         """Downloads the os packages on the commcell
 
@@ -77,6 +78,12 @@ class Download(object):
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
+
+                schedule_pattern (dict)        --  pattern for schedule task
+                                                   
 
             Returns:
                 object - instance of the Job class for this download job
@@ -165,6 +172,13 @@ class Download(object):
         if os_list is None:
             os_list = ['Windows(X64)']
 
+        client_groups = []
+        if sync_cache and sync_cache_list:
+            for cache in sync_cache_list:
+                client_groups.append({"clientName": cache})
+        elif sync_cache and not sync_cache_list:
+            client_groups = [{"_type_": 2}]
+
         request_json = {
             "taskInfo": {
                 "task": {
@@ -222,13 +236,129 @@ class Download(object):
                                         "windowsX64": 'Windows(X64)' in os_list,
                                         "windows32": 'Windows(32)' in os_list
                                     },
+                                    "clientAndClientGroups": client_groups,
+                                    "downloadUpdatesJobOptions": {
+                                        "downloadSoftware": True
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self.commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
+
+                else:
+                    raise SDKException('Download', '101')
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+        """copies media from the specified location on the commcell
+
+                    Args:
+
+                        media_loc      (str)           --  Media Location to be used for copy software
+
+                        username       (str)           --  username to authenticate to external location
+
+                        password       (str)           --  password to authenticate to external location
+
+                        sync_cache (bool)              --  True if download and sync
+                                                           False only download
+
+                        schedule_pattern(dict)         --  pattern for schedule task
+
+
+                    Returns:
+                        object - instance of the Job class for this copy software job
+
+                    Raises:
+                        SDKException:
+                            if Download job failed
+
+                            if response is empty
+
+                            if response is not success
+
+                            if another download job is running
+                    Usage:
+
+                        -   if media_location directory is local to the machine - username and password is not needed
+
+                            >>> commcell_obj.copy_software(media_loc = "C:\\Downloads\\Media")
+
+                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                            to authenticate the cache
+
+                            >>> commcell_obj.copy_software(
+                            media_loc = "\\subdomain.company.com\Media",
+                            username = "domainone\\userone",
+                            password = "base64encoded password"
+                            )
+                """
+        client_auth = {}
+        if username:
+            if password is None:
+                raise Exception(f"Password missing for remote location {media_loc}")
+            client_auth = {
+                "userName": username,
+                "password": password
+            }
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2,
+                    "policyType": 0,
+                    "alert": {
+                        "alertName": ""
+                    },
+                    "taskFlags": {
+                        "isEdgeDrive": False,
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4019
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "updateOption": {
+                                    "syncUpdateCaches": sync_cache,
+                                    "copyUpdates": True,
+                                    "copySoftwareAndUpdates": True,
                                     "clientAndClientGroups": [
                                         {
                                             "_type_": 2
                                         }
                                     ],
                                     "downloadUpdatesJobOptions": {
-                                        "downloadSoftware": True
+                                        "downloadSoftware": True,
+                                        "updateCachePath": media_loc,
+                                        "clientAuth": client_auth
                                     }
                                 }
                             }

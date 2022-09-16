@@ -467,7 +467,7 @@ class HypervisorType(Enum):
     GOOGLE_CLOUD = "Google Cloud Platform"
     Azure_Stack = "Azure Stack"
     Rhev = "Red Hat Virtualization"
-    AMAZON_AWS = "Amazon"
+    AMAZON_AWS = "Amazon Web Services"
     VCLOUD = "vCloud Director"
     Nutanix = "Nutanix AHV"
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
@@ -478,7 +478,14 @@ class AppIDAType(Enum):
     """Class to maintain all the app ida constants"""
     WINDOWS_FILE_SYSTEM = 33
     LINUX_FILE_SYSTEM = 29
+    VIRTUAL_SERVER = 106
+    CLOUD_APP = 134
 
+
+class AppIDAName(Enum):
+    """Class to maintain the app IDA names"""
+    FILE_SYSTEM = 'File System'
+    VIRTUAL_SERVER = 'Virtual Server'
 
 class VSAObjects(Enum):
     """Mapping for VSA Objects."""
@@ -523,6 +530,7 @@ class VSAObjects(Enum):
     ConsistencyGroup = 39
     InstanceSize = 40
     Organization = 41
+    Selector = 47
 
 
 class InstanceBackupType(Enum):

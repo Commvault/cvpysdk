@@ -23,7 +23,6 @@ OpenshiftSubclient:
 
 """
 
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 

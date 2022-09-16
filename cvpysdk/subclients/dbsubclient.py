@@ -33,7 +33,6 @@ DatabaseSubclient:
 
 """
 from __future__ import unicode_literals
-from past.builtins import basestring
 
 from ..subclient import Subclient
 from ..exception import SDKException
@@ -66,7 +65,7 @@ class DatabaseSubclient(Subclient):
 
                     if log backup storage policy name is not in string format
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.lower()
 
             if not self._commcell_object.storage_policies.has_policy(value):

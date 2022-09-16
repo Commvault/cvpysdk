@@ -49,10 +49,15 @@ Clients
 
     _get_dynamics_365_clients()           --  get all the Dynamics 365 clients in the commcell
 
+    _get_salesforce_clients()             --  get all salesforce clients in the commcell
+
     _get_hidden_clients()                 --  gets all the hidden clients associated with the
     commcell
 
     _get_virtualization_clients()         --  gets all the virtualization clients associated with
+    the commcell
+
+    _get_virtualization_access_nodes()    --  gets all the virtualization access nodes associated with
     the commcell
 
     _get_client_dict()                    --  returns the client dict for client to be added to
@@ -66,6 +71,8 @@ Clients
 
     _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
     hostname if exists
+
+    _get_client_from_displayname()        --  get the client name for given display name
 
     has_client(client_name)               --  checks if a client exists with the given name or not
 
@@ -82,6 +89,8 @@ Clients
     add_nas_client()                      --  adds a new NAS Client
 
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
+
+    add_onedrive_v2_client()              -- adds a new OneDrive for Business client to Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
@@ -113,16 +122,20 @@ Clients
 
     refresh()                             --  refresh the clients associated with the commcell
 
+
 Clients Attributes
 ------------------
 
-    **all_clients**             --  returns the dictioanry consisting of all the clients that are
+    **all_clients**             --  returns the dictionary consisting of all the clients that are
     associated with the commcell and their information such as id and hostname
 
-    **hidden_clients**          --  returns the dictioanry consisting of only the hidden clients
+    **hidden_clients**          --  returns the dictionary consisting of only the hidden clients
     that are associated with the commcell and their information such as id and hostname
 
-    **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
+    **virtualization_clients**  --  returns the dictionary consisting of only the virtualization
+    clients that are associated with the commcell and their information such as id and hostname
+
+    **virtualization_access_nodes** --  returns the dictionary consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
 
     **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
@@ -131,6 +144,11 @@ Clients Attributes
     **dynamics365_clients**     --  Returns the dictionary consisting of all the Dynamics 365 clients
                                     that are associated with the commcell
 
+    **salesforce_clients**      --  Returns the dictionary consisting of all the salesforce clients that are
+                                    associated with the commcell
+                                    
+    **file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
+                                    that are associated with the commcell
 
 Client
 ======
@@ -242,6 +260,13 @@ Client
 
     disable_content_indexing()   --  Disables the v1 content indexing on the client
 
+    check_eligibility_for_migration()  --   Checks whether client is Eligible for Migration or not
+
+    change_company_for_client()        --   Migrates client to specified company
+
+    disable_owner_privacy()                 --  Disables the privacy option for client
+
+    enable_owner_privacy()                  --  Enables the privacy option for client
 
 Client Attributes
 -----------------
@@ -325,6 +350,9 @@ Client Attributes
 
     **vm_guid**                     -- returns guid of the vm client
 
+    **company_name**                 -- returns company name for the client
+
+    **is_privacy_enabled**          -- returns if client privacy is enabled
 """
 
 from __future__ import absolute_import
@@ -336,7 +364,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 import requests
 
@@ -353,6 +380,8 @@ from .network_throttle import NetworkThrottle
 from .security.user import Users
 
 from .name_change import NameChange
+from .organization import Organizations
+from .constants import AppIDAType
 
 
 class Clients(object):
@@ -379,8 +408,11 @@ class Clients(object):
         self._CLIENTS = self._ADD_CLIENT = self._services['GET_ALL_CLIENTS']
         self._OFFICE_365_CLIENTS = self._services['GET_OFFICE_365_ENTITIES']
         self._DYNAMICS365_CLIENTS = self._services['GET_DYNAMICS_365_CLIENTS']
+        self._SALESFORCE_CLIENTS = self._services['GET_SALESFORCE_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
+        self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
+        self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -390,9 +422,11 @@ class Clients(object):
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
+        self._virtualization_access_nodes = None
         self._office_365_clients = None
         self._dynamics365_clients = None
-
+        self._salesforce_clients = None
+        self._file_server_clients = None
         self.refresh()
 
     def __str__(self):
@@ -468,7 +502,7 @@ class Clients(object):
 
                             "hostname": client2_hostname.
 
-                            "displayName": client1_displayname
+                            "displayName": client2_displayname
                         }
                     }
 
@@ -611,6 +645,47 @@ class Clients(object):
             self._dynamics365_clients = self._get_dynamics_365_clients()
         return self._dynamics365_clients
 
+    def _get_salesforce_clients(self):
+        """
+        REST API call to get all Salesforce clients in the commcell
+
+        Returns:
+            dict[str, dict]: Containing Salesforce clients and ids in the Commcell like
+
+                {
+                    "client1_displayName": {
+                        "id": client1_id,
+                        "clientName": "client1_name"
+                    },
+                    "client2_displayName": {
+                        "id": client2_id,
+                        "clientName": "client2_name"
+                    }
+                }
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._SALESFORCE_CLIENTS)
+
+        if flag:
+            if response.json() and 'orgs' in response.json():
+
+                return {
+                    self.all_clients[sf_subclient['clientName'].lower()]['displayName']: {
+                        'id': sf_subclient['clientId'],
+                        'clientName': sf_subclient['clientName']
+                    }
+                    for sf_subclient in map(lambda org: org['sfSubclient'], response.json()['orgs'])
+                }
+            return {}
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def salesforce_clients(self):
+        """Returns the dict of all salesforce clients in the commcell"""
+        if self._salesforce_clients is None:
+            self._salesforce_clients = self._get_salesforce_clients()
+        return self._salesforce_clients
+
     def _get_hidden_clients(self):
         """Gets all the clients associated with the commcell, including all VM's and hidden clients
 
@@ -711,8 +786,9 @@ class Clients(object):
                 virtualization_clients = {}
 
                 for pseudo_client in pseudo_clients:
-                    virtualization_clients[pseudo_client['client']['clientName'].lower()] = {
+                    virtualization_clients[pseudo_client['client']['displayName'].lower()] = {
                         'clientId': pseudo_client['client']['clientId'],
+                        'clientName': pseudo_client['client']['clientName'],
                         'hostName': pseudo_client['client']['hostName']
                     }
 
@@ -722,6 +798,91 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _get_virtualization_access_nodes(self):
+        """REST API call to get all virtualization access nodes in the commcell
+            Returns:
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._GET_VIRTUALIZATION_ACCESS_NODES)
+
+        virtualization_access_nodes = {}
+        if flag and response:
+            if response.json() and 'clients' in response.json():
+                for virtualization_access_node in response.json()['clients']:
+                    client_id = virtualization_access_node.get('clientId')
+                    client_name = virtualization_access_node.get('clientName').lower()
+                    display_name = virtualization_access_node.get('displayName').lower()
+                    host_name = virtualization_access_node.get('hostName').lower()
+                    if client_name:
+                        virtualization_access_nodes[display_name] = {
+                            'id': client_id,
+                            'name': client_name,
+                            'hostName': host_name
+                        }
+            return virtualization_access_nodes
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_fileserver_clients(self):
+        """REST API call to get all file server clients in the commcell
+
+            Returns:
+                dict    -   consists of all file server clients in the commcell
+
+                    {
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "displayName": client1_displayname
+                        },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "displayName": client2_displayname
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._FS_CLIENTS)
+
+        fs_clients = {}
+        if flag and response:
+            if response.json() and 'fileServers' in response.json():
+                for file_server in response.json()['fileServers']:
+                    fs_clients[file_server['name']] = {
+                        'id': file_server['id'],
+                        'displayName': file_server['displayName']
+                    }
+            return fs_clients
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+    
     @staticmethod
     def _get_client_dict(client_object):
         """Returns the client dict for the client object to be appended to member server.
@@ -763,7 +924,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -820,6 +981,32 @@ class Clients(object):
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client
 
+    def _get_client_from_displayname(self, displayname):
+        """get the client name for given display name
+            name
+
+            Args:
+                displayname    (str)   --  displayname of the  client on this commcell
+
+            Returns:
+                str     -   name of the client associated with this displayname
+
+                None    -   if no client has the displayname as the given input
+            Raises:
+                Exception:
+                    if multiple clients has same display name
+        """
+        displayname_occurence = 0
+        for client  in self._get_clients():
+            if self._get_clients()[client]['displayName'] == displayname:
+                displayname_occurence += 1
+                client_name = client
+        if displayname_occurence > 1:
+            raise Exception('multiple clients have same display name')
+        else:
+            return client_name
+
+
     @property
     def all_clients(self):
         """Returns the dictionary consisting of all the clients and their info.
@@ -853,6 +1040,7 @@ class Clients(object):
 
                     Available Values for client_type : "windows"
                                                        "unix"
+                                                       "unix cluster"
 
             Returns:
                 client object for the created client.
@@ -870,10 +1058,13 @@ class Clients(object):
             raise SDKException('Client', '101')
 
         if "windows" in client_type.lower():
-            os_id = 0
+            os_id = "WINDOWS"
 
         if "unix" in client_type.lower():
-            os_id = 1
+            os_id = "UNIX"
+
+        if "unix cluster" in client_type.lower():
+            os_id = 11
 
         request_json = {
             'App_CreatePseudoClientRequest':
@@ -1007,6 +1198,51 @@ class Clients(object):
         """
         return self._virtualization_clients
 
+    @property
+    def virtualization_access_nodes(self):
+        """Returns the dictionary consisting of the virtualization access nodes
+
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+        """
+        return self._virtualization_access_nodes
+
+    @property
+    def file_server_clients(self):
+        """Returns the dictionary consisting of the file server clients and their info.
+
+            dict - consists of all file server clients in the commcell
+                    {
+                        "client1_name": {
+
+                            "id": client1_id,
+
+                            "displayName": client1_displayname
+                        },
+
+                        "client2_name": {
+
+                            "id": client2_id,
+
+                            "displayName": client2_displayname
+                        }
+                    }
+        """
+        if self._file_server_clients is None:
+            self._file_server_clients = self._get_fileserver_clients()
+        return self._file_server_clients
+
     def has_client(self, client_name):
         """Checks if a client exists in the commcell with the given client name / hostname.
 
@@ -1021,7 +1257,7 @@ class Clients(object):
                     if type of the client name argument is not string
 
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
         if self.all_clients and client_name.lower() in self.all_clients:
             return True
@@ -1047,7 +1283,7 @@ class Clients(object):
                 SDKException:
                     if type of the client name argument is not string
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
 
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
@@ -1062,7 +1298,7 @@ class Clients(object):
                 endpoint        (str)   --  Endpoint for making request to (default is '/Client')
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1109,26 +1345,24 @@ class Clients(object):
     def add_kubernetes_client(
             self,
             client_name,
-            master_node,
-            secret_name,
-            secret_key,
-            vsaclient,
-            vsaclient_id
+            api_server_endpoint,
+            service_account,
+            service_token,
+            access_nodes=None
     ):
-        """Adds a new Kubernetes Virtualization Client to the Commcell.
+        """Adds a new Kubernetes Cluster client to the Commcell.
 
             Args:
-                client_name         (str)   --  name of the new Kubernetes Virtual Client
+                client_name         (str)   --  name of the new Kubernetes Cluster client
 
-                master_node         (str)   --  Kubernetes kubectl node
+                api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-                secret_name         (str)   --  Kubernetes Secret name
+                service_account     (str)   --  Name of the Service Account for authentication
 
-                secret_key          (str)   --  Kubernetes Secret Key
+                service_token       (str)   --  Token fetched from the Service Account
 
-                vsaclient           (str)   --  Virtual Server proxy client
+                access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
-                vsaclient_id        (int)   --  Virtual Server Client id
 
 
             Returns:
@@ -1145,9 +1379,27 @@ class Clients(object):
                     if response is not success
 
         """
-        host_name = master_node
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        if type(access_nodes) is str:
+            access_nodes = [access_nodes]
+
+        if not access_nodes:
+            access_nodes = []
+
+        member_servers_list = []
+        for server in access_nodes:
+            if not self.has_client(server):
+                raise SDKException('Client', '102', f'Access node {server} does not exist in CommCell')
+            member_servers_list.append(
+                {
+                    "client": {
+                        "clientName": server,
+                        "_type_": 3
+                    }
+                }
+            )
 
         request_json = {
             "clientInfo": {
@@ -1156,24 +1408,14 @@ class Clients(object):
                     "virtualServerInstanceInfo": {
                         "vsInstanceType": 20,
                         "k8s": {
-                            "secretName": secret_name,
-                            "secretKey": secret_key,
+                            "secretName": service_account,
+                            "secretKey": service_token,
                             "secretType": "ServiceAccount",
-                            "endpointurl": host_name
+                            "endpointurl": api_server_endpoint
                         },
-                        "associatedClients": {
-                            "memberServers": [
-                                {
-                                    "client": {
-                                        "clientName": vsaclient,
-                                        "clientId": vsaclient_id,
-                                        "_type_": 3
-                                    }
-                                }
-                            ]
-                        },
+                        "associatedClients": {},
                         "vmwareVendor": {
-                            "vcenterHostName": host_name
+                            "vcenterHostName": api_server_endpoint
                         }
                     }
                 }
@@ -1182,6 +1424,14 @@ class Clients(object):
                 "clientName": client_name
             }
         }
+
+        if member_servers_list:
+            associated_clients = {
+                'associatedClients': {
+                    'memberServers': member_servers_list
+                }
+            }
+            request_json['clientInfo']['virtualServerClientProperties']['virtualServerInstanceInfo'].update(associated_clients)
 
         flag, response = self._cvpysdk_object.make_request('POST', self._ADD_CLIENT, request_json)
 
@@ -1582,7 +1832,7 @@ class Clients(object):
         member_servers = []
 
         for client in access_nodes_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -1632,55 +1882,31 @@ class Clients(object):
         }
         tenant_url = kwargs.get('tenant_url')
         global_administrator = kwargs.get('global_administrator')
-        if tenant_url:
-            user_password = b64encode(kwargs.get('user_password').encode()).decode()
-            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                "spOffice365BackupSetProp"] = {
-                "tenantUrlItem": tenant_url,
-                "cloudRegion": 1,
-                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
-                "infraStructurePoolEnabled": False,
-                "serviceAccounts": {
-                    "accounts": [
-                        {
-                            "serviceType": service_type["Sharepoint Online"],
-                            "userAccount": {
-                                "password": user_password,
-                                "userName": kwargs.get('user_username')
-                            }
-                        }
-                    ]
-                },
-                "office365Credentials": {
+        request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+            "spOffice365BackupSetProp"] = {
+            "tenantUrlItem": tenant_url,
+            "cloudRegion": 1,
+            "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
+            "infraStructurePoolEnabled": False,
+             "office365Credentials": {
                     "userName": ""
-                },
-                "azureAppList": {
+                }
+        }
+        if global_administrator:
+            azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+            global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
                         {
-                            "azureDirectoryId": "",
-                            "azureAppId": ""
-                        }
-                    ]
-                }
-            }
-            if kwargs.get('is_modern_auth_enabled'):
-                azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
-                request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                    "spOffice365BackupSetProp"]["azureAppList"]["azureApps"][0] = {
                             "azureAppId": kwargs.get('azure_app_id'),
                             "azureAppKeyValue": azure_app_key_id,
                             "azureDirectoryId": kwargs.get('azure_directory_id')
                         }
-        elif global_administrator:
-            azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
-            global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
-
+                    ]
+                }
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
-                "spOffice365BackupSetProp"] = {
-                "cloudRegion": 1,
-                "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
-                "infraStructurePoolEnabled": False,
-                "serviceAccounts": {
+                "spOffice365BackupSetProp"]["serviceAccounts"] = {
                     "accounts": [
                         {
                             "serviceType": service_type["Sharepoint Global Administrator"],
@@ -1690,9 +1916,25 @@ class Clients(object):
                             }
                         }
                     ]
-                },
-                "office365Credentials": {},
-                "azureAppList": {
+                }
+        else:
+            user_password = b64encode(kwargs.get('user_password').encode()).decode()
+            request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                "spOffice365BackupSetProp"]["serviceAccounts"] = {
+                    "accounts": [
+                        {
+                            "serviceType": service_type["Sharepoint Online"],
+                            "userAccount": {
+                                "password": user_password,
+                                "userName": kwargs.get('user_username')
+                            }
+                        }
+                    ]
+                }
+            if kwargs.get('is_modern_auth_enabled'):
+                azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+                request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                    "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
                         {
                             "azureAppId": kwargs.get('azure_app_id'),
@@ -1701,7 +1943,6 @@ class Clients(object):
                         }
                     ]
                 }
-            }
         if kwargs.get('azure_username'):
             azure_secret = b64encode(kwargs.get('azure_secret').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
@@ -1992,7 +2233,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -2063,14 +2304,16 @@ class Clients(object):
                                 }
                             ]
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureAppList"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureAppList"] = azure_app_dict
         else:
             azure_app_dict = {
                             "azureAppKeySecret": azure_app_key_secret,
                             "azureTenantName": azure_tenant_name,
                             "azureAppKeyID": azure_app_key_id
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureDetails"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureDetails"] = azure_app_dict
 
         if int(self._commcell_object.version.split(".")[1]) >= 25 and environment_type == 4:
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
@@ -2341,7 +2584,8 @@ class Clients(object):
                 raise SDKException('Client', '102', 'Missing inputs. Check db_options dictionary')
             request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
                 ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"] = {
-                "dbPort": str(db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
+                "dbPort": str(
+                    db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
                 "dbEnabled": True,
                 "dbName": db_options.get("db_name"),
                 "dbType": db_options.get("db_type", "POSTGRESQL"),
@@ -2353,7 +2597,8 @@ class Clients(object):
             }
             if db_options.get('db_instance', None):
                 request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
-                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options["db_instance"]
+                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options[
+                    "db_instance"]
         self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
     def add_azure_client(self, client_name, access_node, azure_options):
@@ -2684,6 +2929,210 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_onedrive_v2_client(
+            self,
+            client_name,
+            server_plan,
+            azure_app_id,
+            azure_directory_id,
+            azure_app_key_id,
+            **kwargs):
+
+        """
+            Adds OneDrive for Business (v2) client
+
+            Args:
+                client_name (str) : Client Name
+                server_plan (str) : Server Plan's Name
+                azure_app_id (str) : Azure app ID
+                azure_directory_id (str) : Azure directory ID
+                azure_app_key_id (str) : Azure App key ID
+
+                **kwargs (dict) : Additional parameters
+                    index_server (str) : Index Server's Name
+                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                    user_name (str) : User name for shared job results
+                    user_password (str) : User password for shared job results
+                    shared_jr_directory (str) : Shared Job results directory path
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if data type of the input(s) is not valid
+
+                    if access node do not exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        # If client with given name already exists, raise Exception
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        # Get server plan details
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_id = int(server_plan_object.plan_id)
+        server_plan_resources = server_plan_object._properties.get('storageResourcePoolMap')[0].get('resources')
+
+        access_nodes_list = kwargs.get('access_nodes_list')
+        index_server = kwargs.get('index_server')
+        is_resource_pool_enabled = False if server_plan_resources is None else True
+        number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
+        user_name = kwargs.get('user_name')
+        user_password = kwargs.get('user_password')
+        shared_jr_directory = kwargs.get('shared_jr_directory')
+
+        # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+        if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+            error_string = 'For a non resource-pool server plan, access nodes and index server details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # If data type of the input(s) is not valid, raise Exception
+        if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+                (index_server and not isinstance(index_server, str)) or
+                (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+                (user_name and not isinstance(user_name, str)) or
+                (user_password and not isinstance(user_password, str)) or
+                (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+            raise SDKException('Client', '101')
+
+        # For multiple access nodes, make sure service account details are provided
+        if (access_nodes_list and len(access_nodes_list) > 1 and
+                (user_name is None or user_password is None or shared_jr_directory is None)):
+            error_string = 'For creating a multi-access node client service account details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # Get index server details
+        index_server_id = None
+        if index_server:
+            index_server_object = self.get(index_server)
+            index_server_id = int(index_server_object.client_id)
+
+        # For each access node create client object
+        member_servers = []
+
+        if access_nodes_list:
+            for client in access_nodes_list:
+                if isinstance(client, str):
+                    client = client.strip().lower()
+
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client,
+                                "clientId": int(self.all_clients.get(client).get('id')),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                elif isinstance(client, Client):
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client.client_name,
+                                "clientId": int(client.client_id),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                else:
+                    raise SDKException('Client', '101')
+
+        azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 37,
+                "useResourcePoolInfo": is_resource_pool_enabled,
+                "plan": {
+                    "planId": server_plan_id
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": 7,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 7,
+                            "serviceAccounts": {},
+                            "oneDriveInstance": {
+                                "manageContentAutomatically": False,
+                                "isAutoDiscoveryEnabled": False,
+                                "cloudRegion": 1,
+                                "azureAppList": {
+                                    "azureApps": [
+                                        {
+                                            "azureDirectoryId": azure_directory_id,
+                                            "azureAppDisplayName": azure_app_id,
+                                            "azureAppKeyValue": azure_app_key_value,
+                                            "azureAppId": azure_app_id
+                                        }
+                                    ]
+                                }
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": number_of_backup_streams,
+                                "jobResultsDir": {
+                                    "path": ""
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        if not is_resource_pool_enabled:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["indexServer"] = {
+                "clientId": index_server_id
+            }
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["memberServers"] = member_servers
+
+        if access_nodes_list and len(access_nodes_list) > 1:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["jobResultsDir"]["path"] = shared_jr_directory
+
+        if user_name:
+            user_password = b64encode(user_password.encode()).decode()
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "oneDriveInstance"][
+                "serviceAccounts"] = {
+                "accounts": [
+                    {
+                        "serviceType": 3,
+                        "userAccount": {
+                            "userName": user_name,
+                            "password": user_password
+                        }
+                    }
+                ]
+            }
+
+        self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
+
     def add_onedrive_client(self,
                             client_name,
                             instance_name,
@@ -2802,7 +3251,7 @@ class Clients(object):
                         onedrive_prop['infraStructurePoolEnabled'] = True
                     else:
                         onedrive_prop['infraStructurePoolEnabled'] = False
-                        if isinstance(access_node, basestring):
+                        if isinstance(access_node, str):
                             proxy_servers = []
                             access_node = access_node.strip().lower()
                             if self.has_client(access_node):
@@ -2956,15 +3405,17 @@ class Clients(object):
 
                     if no client exists with the given name
         """
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             name = name.lower()
             client_name = None
             client_id = None
 
             if self.has_client(name):
                 client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname:
+                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
+            elif not self.has_client(name):
+                client_from_hostname = self._get_client_from_displayname(name)
             else:
                 raise SDKException(
                     'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
@@ -3013,7 +3464,7 @@ class Clients(object):
                     if no client exists with the given name
 
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Client', '101')
         else:
             client_name = client_name.lower()
@@ -3074,11 +3525,45 @@ class Clients(object):
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
+        self._virtualization_access_nodes = self._get_virtualization_access_nodes()
         self._office_365_clients = None
+        self._file_server_clients = None
+        self._salesforce_clients = None
 
 
 class Client(object):
     """Class for performing client operations for a specific client."""
+
+    def __new__(cls, commcell_object, client_name, client_id=None):
+        """Decides and creates which client object needs to be created
+            Args:
+                commcell_object (object)     --  instance of the Commcell class
+
+                client_name     (str)        --  name of the client
+
+                client_id       (str)        --  id of the client
+                    default: None
+
+            Returns:
+                object - instance of the Client class
+                """
+        from .clients.vmclient import VMClient
+        from .clients.onedrive_client import OneDriveClient
+        _client = commcell_object._services['CLIENT'] % (client_id)
+        flag, response = commcell_object._cvpysdk_object.make_request('GET', _client)
+        if flag:
+            if response.json() and 'clientProperties' in response.json():
+                if response.json().get('clientProperties', {})[0].get('vmStatusInfo', {}).get('vsaSubClientEntity',
+                                                                                              {}).get(
+                        'applicationId') == 106:
+                    return object.__new__(VMClient)
+
+                elif (len(response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])) > 0 and
+                        response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])[0]
+                        .get('idaEntity', {}).get('applicationId') == AppIDAType.CLOUD_APP.value):
+                    return object.__new__(OneDriveClient)
+
+        return object.__new__(cls)
 
     def __init__(self, commcell_object, client_name, client_id=None):
         """Initialise the Client class instance.
@@ -3127,9 +3612,7 @@ class Client(object):
         self._network = None
         self._network_throttle = None
         self._association_object = None
-
         self._properties = None
-
         self._os_info = None
         self._install_directory = None
         self._version = None
@@ -3144,15 +3627,17 @@ class Client(object):
         self._is_restore_enabled = None
         self._client_hostname = None
         self._job_results_directory = None
+        self._block_level_cache_dir = None
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
         self._job_start_time = None
         self._timezone = None
+        self._is_privacy_enabled = None
 
         self._readiness = None
-
         self._vm_guid = None
+        self._company_name = None
 
         self.refresh()
 
@@ -3210,6 +3695,10 @@ class Client(object):
 
                 self._is_ci_enabled = client_props['activityControl']['EnableOnlineContentIndex']
 
+                self._is_privacy_enabled = client_props.get("clientSecurity", {}).get("enableDataSecurity")
+
+                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')
+
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
                 for activity in activities:
@@ -3251,6 +3740,9 @@ class Client(object):
 
                 if 'jobStartTime' in client_props:
                     self._job_start_time = client_props['jobStartTime']
+
+                if 'BlockLevelCacheDir' in client_props:
+                    self._block_level_cache_dir = client_props['BlockLevelCacheDir']
 
             else:
                 raise SDKException('Response', '102')
@@ -3599,11 +4091,16 @@ class Client(object):
             service_name = 'ALL'
 
         if 'windows' in self.os_info.lower():
+            
+            windows_command = operations_dict[operation]['windows_command']
+            if service_name == 'ALL' and 'grp' not in windows_command:
+                windows_command = windows_command + 'grp'
+                
             command = '"{0}" -consoleMode -{1} {2}'.format(
                 '\\'.join([self.install_directory, 'Base', 'GxAdmin.exe']),
-                operations_dict[operation]['windows_command'],
+                windows_command,
                 service_name
-            )
+            ) 
 
             __, output, __ = self.execute_command(command, wait_for_completion=False)
 
@@ -3653,6 +4150,10 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
         )
+        success_alerts = [f"cluster group [{request_json['association']['entity'][0]['clientName'].lower()}] "
+                          f"configuration was saved on commserve successfully."]
+        success = False
+
         if flag:
             if response.json():
                 if 'response' in response.json():
@@ -3660,9 +4161,12 @@ class Client(object):
                         error_message = response.json()['response'][0].get('errorMessage')
                         if not error_message:
                             error_message = response.json()['response'][0].get('errorString', '')
-
-                        o_str = 'Failed to set property\nError: "{0}"'.format(error_message)
-                        raise SDKException('Client', '102', o_str)
+                        for success_alert in success_alerts:
+                            if success_alert in error_message.lower():
+                                success = True
+                        if not success:
+                            o_str = 'Failed to set property\nError: "{0}"'.format(error_message)
+                            raise SDKException('Client', '102', o_str)
                     self.refresh()
             else:
                 raise SDKException('Response', '102')
@@ -3848,6 +4352,11 @@ class Client(object):
         return self._is_intelli_snap_enabled
 
     @property
+    def is_privacy_enabled(self):
+        """Returns if client privacy is enabled"""
+        return self._is_privacy_enabled
+
+    @property
     def install_directory(self):
         """Treats the install directory as a read-only attribute."""
         return self._install_directory
@@ -3871,6 +4380,11 @@ class Client(object):
     def job_results_directory(self):
         """Treats the job_results_directory pack as a read-only attribute."""
         return self._job_results_directory
+
+    @property
+    def block_level_cache_dir(self):
+        """Returns the Block level cache directory"""
+        return self._block_level_cache_dir
 
     @property
     def instance(self):
@@ -4360,7 +4874,7 @@ class Client(object):
 
                     if response is not success
         """
-        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+        if not (isinstance(script_type, str) and (isinstance(script, str))):
             raise SDKException('Client', '101')
 
         script_types = {
@@ -4469,7 +4983,7 @@ class Client(object):
                     if response is not success
 
         """
-        if not isinstance(command, basestring):
+        if not isinstance(command, str):
             raise SDKException('Client', '101')
 
         import html
@@ -4839,8 +5353,8 @@ class Client(object):
 
         """
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_NETWORK_SUMMARY'].replace('%s',
-                                                                                                                self.client_id))
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_NETWORK_SUMMARY'].replace('%s', self.client_id))
         if flag:
             if "No Network Config found" in response.text:
                 return ""
@@ -5166,7 +5680,7 @@ class Client(object):
         if enc_setting is not None:
             client_props['encryptionSettings'] = enc_setting
             if enc_setting == "ON_CLIENT":
-                if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+                if not (isinstance(key, str) and isinstance(key_len, str)):
                     raise SDKException('Client', '101')
                 client_props['CipherType'] = key
                 client_props['EncryptKeyLength'] = int(key_len)
@@ -5213,7 +5727,9 @@ class Client(object):
                            prop_value,
                            client_side_cache=None,
                            max_cache_db=None,
-                           high_latency_optimization=None):
+                           high_latency_optimization=None,
+                           variable_content_alignment=None
+                           ):
         """
             Set DDB propeties
 
@@ -5240,11 +5756,17 @@ class Client(object):
                                     32768
                                     65536
                                     131072
+                    variable_content_alignment: to increase the effectiveness of deduplication on the client computer.
+                                                Variable content alignment reduces the amount of data stored during a
+                                                backup operation.
+                               Values - None(Default) - DoNotModify the property value
+                                        True/False - Enable/Disable optimization respectively
+
                     high_latency_optimization: To set Optimization for High latency Networks
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
         """
-        if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+        if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
             raise SDKException('Client', '101')
 
         if prop_name == "clientSideDeduplication" and prop_value == "ON_CLIENT":
@@ -5259,6 +5781,11 @@ class Client(object):
                 if high_latency_optimization is not None:
                     dedupe_props['deDuplicationProperties'][
                         'enableHighLatencyOptimization'] = high_latency_optimization
+
+                if variable_content_alignment is not None:
+                    dedupe_props['deDuplicationProperties'][
+                        'enableVariableContentAlignment'] = variable_content_alignment
+
             else:
                 dedupe_props = {
                     'deDuplicationProperties': {
@@ -5779,13 +6306,16 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def uninstall_software(self, force_uninstall=True):
+    def uninstall_software(self, force_uninstall=True,software_list=[]):
         """
         Performs readiness check on the client
 
             Args:
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
+                software_list (list): The client_composition will contain the list of components need to be uninstalled. 
 
+            Usage:
+                client_obj.uninstall_software(force_uninstall=False,software_list=["Index Store","File System"])
 
             Returns:
                 The job object of the uninstall software job
@@ -5798,8 +6328,42 @@ class Client(object):
         """
 
         uninstall = Uninstall(self._commcell_object)
+        client_composition = []
+        if software_list:
+            componentInfo = self.__get_componentInfo(software_list)
+            client_composition = [{"activateClient": True, "packageDeliveryOption": 0,
+                                "components": {
+                                    "componentInfo": componentInfo}
+                                }]
 
-        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall)
+        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall,
+                                            client_composition=client_composition)
+
+    def __get_componentInfo(self, software_list):
+        """get the component info for the installed software
+
+        Args:
+            software_list (list): list of software to uninstall
+
+        Returns:
+            list: list of componetInfo for the software list.
+            [
+                {
+                    "osType": "Windows",
+                    "ComponentName": "High Availability Computing"
+                }
+            ]
+        """
+        componentInfo = []
+        os_type = "Windows" if "Windows" in self._os_info else "Unix"
+        for software in software_list:
+            componentInfo.append(
+                {
+                    "osType": os_type,
+                    "ComponentName": software
+                }
+            )
+        return componentInfo
 
     @property
     def job_start_time(self):
@@ -5850,7 +6414,8 @@ class Client(object):
 
     def get_needs_attention_details(self):
         """
-        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
+        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers
+        for all the service commcells
 
         example output:
             {
@@ -5870,7 +6435,8 @@ class Client(object):
         if flag:
             if response.json() and 'commcellEntityRespList' in response.json():
                 needs_attention_tile_dict = {}
-                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers', 'CountOfAnomalousJobs']
+                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers',
+                             'CountOfAnomalousJobs']
                 for key in main_keys:
                     tile = {}
                     for tile_info in response.json()['commcellEntityRespList']:
@@ -5882,7 +6448,7 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_mount_volumes(self, volume_names = None):
+    def get_mount_volumes(self, volume_names=None):
         """"Gets mount volumes information for client
             Args:
                 volume_names (list): List of volume names to be fetched (optional)
@@ -5930,6 +6496,148 @@ class Client(object):
         update_properties['client']['EnableContentIndexing'] = 'false'
         self.update_properties(update_properties)
 
+    def enable_owner_privacy(self):
+        """Enables the privacy option for client"""
+
+        if self.is_privacy_enabled:
+            return
+
+        self.set_privacy(True)
+
+    @property
+    def company_name(self):
+        """Returns Company Name to which client belongs to, Returns Empty String, If client belongs to Commcell"""
+        return self._company_name
+
+    def check_eligibility_for_migration(self, destination_company_name):
+        """Checks whether Client is Eligible for migration
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Returns:
+            eligibility_status (bool)   --  True, If Clients are eligible for migration else False
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['CHECK_ELIGIBILITY_MIGRATION'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] != 0:
+                    raise SDKException('Organization', '110',
+                                       'Error: {0}'.format(response.json()['error']['errorMessage']))
+                return True if 'applicableClients' in response.json() else False
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_owner_privacy(self):
+        """Enables the privacy option for client"""
+        if not self.is_privacy_enabled:
+            return
+
+        self.set_privacy(False)
+
+    def set_privacy(self, value):
+        """
+        Internal function to enable/disable privacy for client
+
+        Args:
+            value(bool): True/False to enable/disable the privacy
+
+        Raises:
+            SDKException:
+
+                if setting privacy for client fails
+
+                if response is empty
+
+                if response is not success
+        """
+        url = self._services['DISABLE_CLIENT_PRIVACY'] % self.client_id
+        if value:
+            url = self._services['ENABLE_CLIENT_PRIVACY'] % self.client_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', url
+        )
+
+        if flag:
+            if response and response.json():
+                error_string = response.json().get('errorString')
+                error_code = response.json().get('errorCode')
+                if error_code:
+                    raise SDKException('Client', '102', error_string)
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def change_company_for_client(self, destination_company_name):
+        """
+        Changes Company for Client
+
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Raises:
+            SDKException:
+                If Client is not eligible for migration
+
+                if response is empty
+
+                if response is not success
+        """
+        if not self.check_eligibility_for_migration(destination_company_name):
+            raise SDKException('Client', 102, f'Client [{self.client_name}] is Not Eligible For Migration')
+
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['MIGRATE_CLIENTS'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
 
 class _Readiness:
     """ Class for checking the connection details of a client """
@@ -5947,7 +6655,9 @@ class _Readiness:
             network=True,
             resource=False,
             disabled_clients=False,
-            cs_cc_network_check=False
+            cs_cc_network_check=False,
+            application_check=False,
+            additional_resources=False,
     ):
         """
         Performs readiness check on the client
@@ -5964,7 +6674,13 @@ class _Readiness:
 
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
-
+                
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                               Default: False
+                                                       
             Raises:
                 SDKException:
                     if response is empty
@@ -5978,7 +6694,9 @@ class _Readiness:
                 network,
                 resource,
                 disabled_clients,
-                cs_cc_network_check)
+                cs_cc_network_check,
+                application_check,
+                additional_resources)
         )
 
         if flag:
@@ -5992,7 +6710,8 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False):
+    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False,
+                 application_check=False, additional_resources=False):
         """Performs readiness check on the client
 
         Args:
@@ -6008,12 +6727,19 @@ class _Readiness:
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
 
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                         Default: False
+
         Returns:
 
             (bool)  - True if ready else False
 
         """
-        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check)
+        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check,
+                                        application_check, additional_resources)
         return self._status == "Ready."
 
     def __check_reason(self):

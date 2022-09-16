@@ -67,19 +67,31 @@ SQLServerInstance:
     _table_level_restore_request_json() --  returns a json to be sent to the server for
     table level restore job
 
-    mssql_instance_prop()           --  sets instance properties for the mssql instance
+    mssql_instance_prop()       --  sets instance properties for the mssql instance
+
+    vss_option()        --  enables or disables VSS option on SQL instance
+
+    vdi_timeout()       --  sets the SQL VDI timeout value on SQL instance
+
+    impersonation()     --  sets impersonation on SQL instance with local system account or provided credentials
+
+    _get_ag_groups()    --  gets available Availability Groups from the primary replica and returns it
+
+    _get_ag_group_replicas()    --  gets replicas list from the Availability Group and returns it
+
+    create_sql_ag()     --  creates a new SQL Availability Group client and instance
 
 SQLServerInstance Attributes:
 
-    ag_group_name           --  returns the Availability Group name for an AG instance
-
-    ag_primary_replica      --  returns the Availability Group primary replica for an AG instance
-
-    ag_replicas_list        --  returns the Availability Group replicas list for an AG instance
-
-    ag_listener_list        --  returns the Availability Group listener list for an AG instance
-
     mssql_instance_prop     --  returns the mssql instance properties
+
+    ag_group_name           --  returns the Availability Group Name
+
+    ag_primary_replica      --  returns the Availability Group Primary Replica
+
+    ag_replicas_list        --  returns the Availability Group Replicas List
+
+    ag_listener_list        --  returns the Availability Group Listener List
 
 """
 
@@ -112,8 +124,8 @@ class SQLServerInstance(Instance):
         super(SQLServerInstance, self)._get_instance_properties()
 
         self._ag_group_name = None
-        self._primary_replica = None
-        self._replica_list = []
+        self._ag_primary_replica = None
+        self._ag_replicas_list = []
         self._ag_group_listener_list = []
 
         self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
@@ -127,19 +139,21 @@ class SQLServerInstance(Instance):
                 self._mssql_instance_prop = response.json()['instanceProperties'][0]['mssqlInstance']
 
         if 'agProperties' in self._mssql_instance_prop:
-            self.ag_group_name = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('name')
-            self.ag_primary_replica = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('primaryReplicaServerName')
+            self._ag_group_name = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', {}).get('name')
+            self._ag_primary_replica = self.mssql_instance_prop.get(
+                'agProperties', {}).get('availabilityGroup', {}).get('primaryReplicaServerName')
 
             listener_list_tmp = []
             listener_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('availabilityGroup', [{}]).get('SQLAvailabilityGroupListenerList', {})
+                'agProperties', {}).get('availabilityGroup', {}).get('SQLAvailabilityGroupListenerList', {})
             for listener in listener_list:
-                self.ag_listener_list.append(listener['availabilityGroupListenerName'])
+                listener_list_tmp.append(listener['availabilityGroupListenerName'])
+            self._ag_listener_list = listener_list_tmp
 
+            replica_list_tmp = []
             replica_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('SQLAvailabilityReplicasList', [{}])
+                'agProperties', {}).get('SQLAvailabilityReplicasList', {})
             if replica_list:
                 for replica in replica_list['SQLAvailabilityReplicasList']:
                     replica_dict = {
@@ -147,7 +161,8 @@ class SQLServerInstance(Instance):
                         "clientId" : replica['replicaClient']['clientId'],
                         "clientName": replica['replicaClient']['clientName']
                     }
-                    self.ag_replicas_list.append(replica_dict)
+                    replica_list_tmp.append(replica_dict)
+                self._ag_replicas_list = replica_list_tmp
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this instance.
@@ -175,37 +190,17 @@ class SQLServerInstance(Instance):
     @property
     def ag_primary_replica(self):
         """Returns the Availability Group Primary Replica"""
-        return self._primary_replica
+        return self._ag_primary_replica
 
     @property
     def ag_replicas_list(self):
         """Returns the Availability Group Replicas List"""
-        return self._replica_list
+        return self._ag_replicas_list
 
     @property
     def ag_listener_list(self):
         """Returns the Availability Group Listener List"""
-        return self._ag_group_listener_list
-
-    @ag_group_name.setter
-    def ag_group_name(self, value):
-        """Sets the Availability Group Name"""
-        self._ag_group_name = value
-
-    @ag_primary_replica.setter
-    def ag_primary_replica(self, value):
-        """Sets the Availability Group Primary Replica"""
-        self._primary_replica = value
-
-    @ag_replicas_list.setter
-    def ag_replicas_list(self, value):
-        """Sets the Availability Group Replicas List"""
-        self._replica_list = value
-
-    @ag_listener_list.setter
-    def ag_listener_list(self, value):
-        """Sets the Availability Group Listener List"""
-        self._ag_group_listener_list = value
+        return self._ag_listener_list
 
     def _restore_request_json(
             self,
@@ -1290,50 +1285,228 @@ class SQLServerInstance(Instance):
 
         self._set_instance_properties("_mssql_instance_prop", request_json)
 
-    def impersonation(self, enable, username=None, password=None):
-        """Sets impersonation on SQL instance with local system account or provided user account.
+    def impersonation(self, enable, credentials=None):
+        """Sets impersonation on SQL instance with local system account or provided credentials.
 
             Args:
                 enable (bool)  --  boolean value whether to set impersonation
 
-                username (str, optional)   --  user to set for impersonation.
-                Defaults to local system account if enabled is True and username not provided.
-
-                password (str, optional)   --  password of user account
+                credentials (str, optional)   --  credentials to set for impersonation.
+                Defaults to local system account if enabled is True and credential name not provided.
 
         """
 
-        if enable and username is None:
+        if enable and credentials is None:
             impersonate_json = {
                 "overrideHigherLevelSettings": {
-                    "overrideGlobalAuthentication": enable,
+                    "overrideGlobalAuthentication": True,
                     "useLocalSystemAccount": True
                 }
             }
-        elif enable and username is not None:
-            if password is not None:
-                impersonate_json = {
-                    "overrideHigherLevelSettings": {
-                        "overrideGlobalAuthentication": enable,
-                        "useLocalSystemAccount": False,
-                        "userAccount": {
-                            "userName": username,
-                            "password": b64encode(password.encode()).decode()
-                        }
-                    }
+        elif enable and credentials is not None:
+            impersonate_json = {
+                "overrideHigherLevelSettings": {
+                    "overrideGlobalAuthentication": True,
+                    "useLocalSystemAccount": False
+                },
+                "MSSQLCredentialinfo": {
+                    "credentialName": credentials
                 }
-            else:
-                raise SDKException(
-                    'Instance',
-                    '102',
-                    'Please provide password to set impersonation for user [{0}]'.format(username)
-                )
+            }
         else:
             impersonate_json = {
                 "overrideHigherLevelSettings": {
-                    "overrideGlobalAuthentication": enable,
+                    "overrideGlobalAuthentication": True,
                     "useLocalSystemAccount": False
                 }
             }
 
         self._set_instance_properties("_mssql_instance_prop", impersonate_json)
+
+    def _get_ag_groups(self):
+        """Gets available Availability Groups from the primary replica and returns it.
+
+            Returns:
+                dict - dictionary consisting of the sql destination server options
+
+            Raises:
+                SDKException: if given AG group name does not exist for instance
+
+        """
+
+        instance_id = int(self.instance_id)
+        client_id = int(self.properties['instance']['clientId'])
+
+        webservice = self._commcell_object._services['SQL_AG_GROUPS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "GET", webservice %(client_id, instance_id)
+        )
+
+        if flag:
+            if response.json():
+                if 'SQLAvailabilityGroupList' in response.json():
+                    return response.json()['SQLAvailabilityGroupList']
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Instance', '102', 'No Availability Groups exist for given primary replica '
+                                                      'or SQL services are down on target server.')
+
+    def _get_ag_group_replicas(self, ag_group_name):
+        """Gets replicas list from the Availability Group and returns it.
+
+            Args:
+                ag_group_name (str)  --  name of the Availability Group
+
+            Returns:
+                dict - dictionary consisting of the replicas of the SQL AG group
+
+            Raises:
+                SDKException: if no replicas exist for given AG group
+
+        """
+
+        instance_id = int(self.instance_id)
+        client_id = int(self.properties['instance']['clientId'])
+
+        webservice = self._commcell_object._services['SQL_AG_GROUP_REPLICAS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            "GET", webservice %(client_id, instance_id, ag_group_name)
+        )
+
+        if flag:
+            if response.json():
+                if 'SQLAvailabilityReplicasList' in response.json():
+                    return response.json()
+                else:
+                    raise SDKException('Instance', '102', 'No replicas exist for given Availability Group '
+                                                          'or SQL services are down on target server.')
+            else:
+                raise SDKException('Response', '102')
+
+    def create_sql_ag(self, client_name, ag_group_name, credentials=None):
+        """Creates a new SQL Availability Group client and instance.
+
+            Args:
+                client_name (str)  --  name to use for Availability Group client
+
+                ag_group_name (str)   --  name of the Availability Group to create
+
+                credentials (str, optional)   --  name of credentials to use as impersonation
+                Default is no impersonation if credentials name is not provided.
+
+            Returns:
+                object - instance of the Instance class for the newly created Availability Group
+
+            Raises:
+                SDKException:
+                    if Availability Group for given primary replica does not exist
+                    if Availability Group client/instance fails to be created.
+                    if Credentials for impersonation does not exist
+
+        """
+        # If credentials passed, verify it exists
+        if credentials:
+            if not credentials in self._commcell_object.credentials.all_credentials:
+                raise SDKException(
+                    'Credential', '102', 'Credential name provided does not exist in the commcell.'
+                )
+
+        # Get the available AG groups configured on SQL Instance
+        ag_groups_resp = self._get_ag_groups()
+
+        # Verify the provided AG group exists from available AG groups on primary replica
+        if not any(ag['name'] == ag_group_name for ag in ag_groups_resp):
+            raise SDKException(
+                'Instance', '102', 'Availability Group with provided name does not exist for given replica.'
+            )
+        for ag_group in ag_groups_resp:
+            if ag_group['name'].lower() == ag_group_name.lower():
+                ag_group_endpointURL = ag_group['endpointURL']
+                ag_group_backupPref = ag_group['backupPreference']
+                ag_primary_replica_server = ag_group['primaryReplicaServerName']
+
+                ag_group_listener_list = []
+                if 'SQLAvailabilityGroupListenerList' in ag_group:
+                    for listener in ag_group['SQLAvailabilityGroupListenerList']:
+                        listener_details = {
+                            'availabilityGroupListenerName': listener['availabilityGroupListenerName']
+                        }
+                        ag_group_listener_list.append(listener_details)
+
+        # Get the replicas from the provided AG group
+        ag_group_replicas_resp = self._get_ag_group_replicas(ag_group_name)
+
+        request_json = {
+            "App_CreatePseudoClientRequest": {
+                "clientInfo": {
+                    "clientType": 20,
+                    "mssqlagClientProperties": {
+                        "SQLServerInstance": {
+                            "clientId": int(self.properties['instance']['clientId']),
+                            "instanceId": int(self.instance_id)
+                        },
+                        "availabilityGroup": {
+                            "name": ag_group_name,
+                            "primaryReplicaServerName": ag_primary_replica_server,
+                            "backupPreference": ag_group_backupPref,
+                            "endpointURL": ag_group_endpointURL
+                        },
+                        "SQLAvailabilityReplicasList": ag_group_replicas_resp,
+                    },
+                },
+                "entity": {
+                    "clientName": client_name
+                }
+            }
+        }
+        if ag_group_listener_list:
+            request_json['App_CreatePseudoClientRequest']['clientInfo']['mssqlagClientProperties']\
+            ['availabilityGroup']['SQLAvailabilityGroupListenerList'] = ag_group_listener_list
+
+        webservice = self._commcell_object._services['EXECUTE_QCOMMAND']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', webservice, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        self._commcell_object.refresh()
+
+                        # Get newly created AG instance
+                        ag_client = self._commcell_object.clients.get(
+                            response.json()['response']['entity']['clientName']
+                        )
+                        agent = ag_client.agents.get(self._agent_object.agent_name)
+                        if ag_group_listener_list:
+                            ag_instance_name = ag_group_listener_list[0]['availabilityGroupListenerName'] \
+                                               + '/' + ag_group_name
+                        else:
+                            ag_instance_name = ag_group_name
+                        ag_instance = agent.instances.get(ag_instance_name)
+                        if credentials is not None:
+                            ag_instance.impersonation(True, credentials)
+
+                        return ag_instance
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
