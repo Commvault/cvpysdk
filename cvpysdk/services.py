@@ -116,6 +116,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
+    'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
     'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
@@ -312,7 +313,8 @@ SERVICES_DICT_TEMPLATE = {
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
-    'CVDRBACKUP_REQUEST': '{0}cvdrbackup/requests',
+    'CVDRBACKUP_REQUEST': '{0}/cvdrbackup/requests',
+    'CVDRBACKUP_REQUEST_HISTORY': '{0}/cr/reportsplusengine/datasets/%s/data/?parameter.duration=%s',
 
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 

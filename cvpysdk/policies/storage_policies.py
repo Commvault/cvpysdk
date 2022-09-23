@@ -167,6 +167,8 @@ StoragePolicyCopy:
 
     set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
 
+    get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
@@ -234,7 +236,7 @@ class StoragePolicies(object):
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-
+        self._DELETE_POLICY =  self._commcell_object._services['DELETE_STORAGE_POLICY']
         self._policies = None
         self.refresh()
 
@@ -891,7 +893,8 @@ class StoragePolicies(object):
             raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
-            policy_delete_service = self._POLICY + '/{0}'.format(storage_policy_name)
+            storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+            policy_delete_service = self._DELETE_POLICY + '/{0}'.format(storagepolicy_id)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'DELETE', policy_delete_service
@@ -900,11 +903,12 @@ class StoragePolicies(object):
             if flag:
                 try:
                     if response.json():
-                        if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_message = response.json()['errorMessage']
-                            o_str = 'Failed to delete storage policy\nError: "{0}"'
+                        if 'error' in response.json():
+                            if 'errorCode' in response.json()['error'] and 'errorMessage' in response.json()['error']:
+                                error_message = response.json()['error']['errorMessage']
+                                o_str = 'Failed to delete storage policy\nError: "{0}"'
 
-                            raise SDKException('Storage', '102', o_str.format(error_message))
+                                raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
                         if 'errorCode' in response.text and 'errorMessage' in response.text:
@@ -2437,7 +2441,8 @@ class StoragePolicy(object):
                              copy_name,
                              ver_type,
                              ddb_ver_level,
-                             use_scalable=True):
+                             use_scalable=True,
+                             orphan_chunk_listing=False):
         """
         Runs DDB verification job
 
@@ -2452,6 +2457,8 @@ class StoragePolicy(object):
 
                 use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                             Default: True
+
+                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2470,7 +2477,9 @@ class StoragePolicy(object):
                 isinstance(ver_type, str) and
                 isinstance(ddb_ver_level, str)):
             raise SDKException('Storage', '101')
-
+        run_defrag = False
+        if ddb_ver_level == 'DDB_DEFRAGMENTATION':
+            run_defrag = True
         request = {
             "taskInfo": {
                 "associations": [
@@ -2508,7 +2517,9 @@ class StoragePolicy(object):
                                     "ddbVerificationLevel": ddb_ver_level,
                                     "jobsToVerify": 0,
                                     "allCopies": True,
-                                    "backupLevel": ver_type
+                                    "backupLevel": ver_type,
+                                    "ocl": orphan_chunk_listing,
+                                    "runDefrag": run_defrag
                                 }
                             }
                         }
@@ -3727,6 +3738,68 @@ class StoragePolicyCopy(object):
     def media_agent(self):
         """Gets the media agent name of the copy"""
         return self._media_agent.get('mediaAgentName')
+
+    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+        """Fetches the Details of jobs on Storage Policy Copy
+
+        Args:
+            from_date      (str): Start Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: from start]
+
+            to_date        (str): End Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: till date]
+
+            backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                    Valid values: 'full'/'incr'
+
+            retained_by    (int): Filter by retention type of jobs [default: 0]
+                                    Valid values:
+                                    1: basic retention
+                                    2: extended retention
+                                    4: manual retention
+
+            include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+            list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                                  [default: False]
+
+        Returns:
+            (list)  :   List of dict's with each dict containing details of a job
+        Raises:
+            SDKException:   if the response/fetch operation failed
+        """
+        command = f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'" \
+                  f" -si @i_copyName='{self.copy_name}'"
+        if from_date:
+            command = f"{command} -si @i_fromTime='{from_date}'"
+        if to_date:
+            command = f"{command} -si @i_toTime='{to_date}'"
+        if backup_type:
+            command = f"{command} -si @i_backupType='{backup_type.lower()}'"
+        if retained_by:
+            command = f"{command} -si @i_retention='{retained_by}'"
+        if include_to_be_copied_jobs:
+            command = f"{command} -si @i_includeToBeCopiedJobs='1'"
+        if list_partial_jobs_only:
+            command = f"{command} -si @i_includePartialJobsOnly='1'"
+
+        response = self._commcell_object.execute_qcommand(command)
+        if response.json():
+            json_response = response.json()
+            if json_response.get("ExecScriptOutput"):
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), list):
+                    return json_response.get("ExecScriptOutput").get("FieldValue")
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), dict):
+                    if json_response.get("ExecScriptOutput").get("FieldValue").get("@JobID"):
+                        return [json_response.get("ExecScriptOutput").get("FieldValue")]
+                return []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '102', response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def delete_job(self, job_id):
         """

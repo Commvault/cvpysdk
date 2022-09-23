@@ -57,8 +57,16 @@ KeyManagementServers:
 
     add_aws_kms()           --      configures AWS Key Management Server with key based authentication
     
-    _add_aws_kms_with_cred_file --  configures AWS KMS with credential file based authentication
+    _add_aws_kms_with_cred_file() --  configures AWS KMS with credential file based authentication
+    
+    _add_aws_kms_with_iam() --      configures AWS KMS with IAM based authentication
+    
+    _add_azure_key_vault_certificate_auth() -- Configure Azure Key Management Server with AD-app certificate based authentication
 
+    _add_azure_key_vault_iam_auth() -- Configure Azure Key Management Server with IAM managed identity based authentication
+    
+    _kms_api_call() --              call KMS API
+    
 
 KeyManagementServer:
 =================
@@ -95,9 +103,11 @@ class KeyManagementServerConstants(ABC):
 
         self._KMS_AUTHENTICATION_TYPE = {
             "AWS_KEYS": 0,
-            "AWS_IMA": 1
+            "AWS_IAM": 1,
+            "AWS_CREDENTIALS_FILE": 0,
+            "AZURE_KEY_VAULT_CERTIFICATE": 1,
+            "AZURE_KEY_VAULT_IAM": 3,
         }
-
 
 class KeyManagementServers(KeyManagementServerConstants):
     """Class for representing all the KMS in the commcell."""
@@ -331,6 +341,132 @@ class KeyManagementServers(KeyManagementServerConstants):
                 self._kms_api_call(payload)
                 self.refresh()
 
+
+    def _add_aws_kms_with_iam(self, kms_details):
+        """Configure AWS Key Management Server with IMA based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        """
+
+        if "ACCESS_NODE_NAME" in kms_details:
+
+            payload= {
+                        "keyProvider": {
+	                    "provider": {
+		                    "keyProviderName": kms_details["KMS_NAME"]
+			            },
+			        "encryptionType": 3,
+			        "keyProviderType": 3,
+			        "properties": {
+				        "accessNodes": [
+					        {
+						        "accessNode": {
+							        "clientName": kms_details["ACCESS_NODE_NAME"]
+						        },
+						        "awsCredential": {
+							    "amazonAuthenticationType":1
+						        }
+					        }
+				            ],
+				            "bringYourOwnKey": 0,
+				            "regionName": kms_details["AWS_REGION_NAME"]
+			            }
+
+		            }
+                    }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
+    def _add_azure_key_vault_certificate_auth(self, kms_details):
+        """Configure Azure Key Management Server with AD-app certificate based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        """
+        if "AZURE_KEY_VAULT_KEY_LENGTH" not in kms_details:
+            kms_details['AZURE_KEY_VAULT_KEY_LENGTH'] = 3072
+
+        payload = None
+
+        if "ACCESS_NODE_NAME" in kms_details:
+            payload = {
+                        "keyProvider": {
+                            "provider": {
+                            "keyProviderName": kms_details['KMS_NAME']
+                            },
+                            "encryptionKeyLength": kms_details['AZURE_KEY_VAULT_KEY_LENGTH'],
+                            "encryptionType": 1001,
+                            "keyProviderType": 4,
+                            "properties": {
+                                "accessNodes": [
+                                {
+                                    "keyVaultCredential": {
+                                    "certificate": kms_details['AZURE_CERTIFICATE_PATH'],
+                                    "resourceName": kms_details['AZURE_KEY_VAULT_NAME'],
+                                    "environment": "AzureCloud",
+                                    "certificateThumbprint": kms_details['AZURE_CERTIFICATE_THUMBPRINT'],
+                                    "tenantId": kms_details['AZURE_TENANT_ID'],
+                                    "authType": 1,
+                                    "applicationId": kms_details['AZURE_APP_ID'],
+                                    "endpoints": {
+                                        "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                                        "keyVaultEndpoint": "vault.azure.net"
+                                    },
+                                    "certPassword": kms_details['AZURE_CERTIFICATE_PASSWORD']
+                                    },
+                                    "accessNode": {
+                                        "clientName": kms_details['ACCESS_NODE_NAME']
+                                    }
+                                }
+                                ],
+                            "keyVaultCredential": {
+                                "resourceName": kms_details['AZURE_KEY_VAULT_NAME']
+                            },
+                            "bringYourOwnKey": 0
+                            }
+                        }
+                    }
+        else:
+            payload = {
+                        "keyProvider": {
+                            "provider": {
+                            "keyProviderName": kms_details['KMS_NAME']
+                            },
+                            "encryptionKeyLength": kms_details['AZURE_KEY_VAULT_KEY_LENGTH'],
+                            "encryptionType": 1001,
+                            "keyProviderType": 4,
+                            "properties": {
+                                    "keyVaultCredential": {
+                                    "certificate": kms_details['AZURE_CERTIFICATE_PATH'],
+                                    "resourceName": kms_details['AZURE_KEY_VAULT_NAME'],
+                                    "environment": "AzureCloud",
+                                    "certificateThumbprint": kms_details['AZURE_CERTIFICATE_THUMBPRINT'],
+                                    "tenantId": kms_details['AZURE_TENANT_ID'],
+                                    "authType": 1,
+                                    "applicationId":kms_details['AZURE_APP_ID'],
+                                    "endpoints": {
+                                        "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                                        "keyVaultEndpoint": "vault.azure.net"
+                                    }
+                                    },
+                            "bringYourOwnKey": 0,
+                            "sslPassPhrase": kms_details['AZURE_CERTIFICATE_PASSWORD']
+                            }
+                        }
+                      }
+
+        self._kms_api_call(payload)
+        self.refresh()
+
+
+
     def add(self, kms_details):
         """
         Method to add Key Management Server
@@ -348,7 +484,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS"
             }
 
-
         input dictionary for creating AWS KMS with access node ( key based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
@@ -357,9 +492,8 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KMS_NAME": "kms1"",
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS",
                 "AWS_ACCESS_KEY": "1234",
-                "AWS_SECRET_KEY": "1234"
+                "AWS_SECRET_KEY": "1234"     -- Base64 encoded
             }
-
 
         input dictionary for creating AWS KMS with access node ( credential template file based authentication )
             kms_details = {
@@ -370,7 +504,52 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_CREDENTIALS_FILE",
                 "AWS_CREDENTIALS_FILE_PROFILE_NAME": "AWSProfile1"
             }
-            
+
+        input dictionary for creating AWS KMS with access Node ( IAM based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "ACCESS_NODE_NAME": "MA1",
+                "KMS_NAME": "aws_kms_name",
+                "KEY_PROVIDER_AUTH_TYPE": "AWS_IAM"
+            }
+
+        input dictionary for creating Azure KMS with access Node ( certificate based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "ACCESS_NODE_NAME": "MediaAgent1",
+                "KMS_NAME": "Azure_KMS_1",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
+                "AZURE_KEY_VAULT_KEY_LENGTH":2048,     -- Optional Value. Default is 3072
+                "AZURE_KEY_VAULT_NAME":"MyCompanyKeyVault",
+                "AZURE_TENANT_ID":"123",
+                "AZURE_APP_ID":"456",
+                "AZURE_CERTIFICATE_PATH":"c:\\cert.pfx",
+                "AZURE_CERTIFICATE_THUMBPRINT":"789",
+                "AZURE_CERTIFICATE_PASSWORD": "password123",    -- Base64 encoded
+            }
+
+        input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "ACCESS_NODE_NAME": "ma1",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_IAM",
+                "AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
+            }
+
+        input dictionary for creating Azure KMS without access Node ( certificate based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
+                "AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
+                "AZURE_TENANT_ID": "1234",
+                "AZURE_APP_ID": "1234"",
+                "AZURE_CERTIFICATE_PATH": "c:\\cert.pfx",
+                "AZURE_CERTIFICATE_THUMBPRINT": "1234",
+                "AZURE_CERTIFICATE_PASSWORD": "1234XYZ==",    -- Base64 encoded
+            }
+
         """
         KeyManagementServers._validate_input(kms_details, dict)
 
@@ -379,6 +558,11 @@ class KeyManagementServers(KeyManagementServerConstants):
 
         if kms_details['KEY_PROVIDER_AUTH_TYPE'] not in self._KMS_AUTHENTICATION_TYPE:
             raise SDKException("KeyManagementServer", 105)
+
+        if "KMS_NAME" not in kms_details:
+            raise SDKException("KeyManagementServer", 106)
+
+
 
         if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_AWS_KMS":
             if "AWS_REGION_NAME" not in kms_details:
@@ -390,7 +574,18 @@ class KeyManagementServers(KeyManagementServerConstants):
             elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AWS_CREDENTIALS_FILE":
                 self._add_aws_kms_with_cred_file(kms_details)
 
+            elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AWS_IAM":
+                self._add_aws_kms_with_iam(kms_details)
+
+        if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_AZURE_KEY_VAULT":
+            if kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AZURE_KEY_VAULT_CERTIFICATE":
+                self._add_azure_key_vault_certificate_auth(kms_details)
+
+            elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AZURE_KEY_VAULT_IAM":
+                self._add_azure_key_vault_iam_auth(kms_details)
+
         return self.get(kms_details['KMS_NAME'])
+
 
     def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
         """Configure AWS Key Management Server

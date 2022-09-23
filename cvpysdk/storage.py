@@ -99,6 +99,7 @@ MediaAgent:
 
     set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
 
+    is_power_management_enabled() -- returns of power management is enabled or not
 
 Libraries:
 
@@ -990,6 +991,11 @@ class MediaAgent(object):
         """Treats the cache enabled value as a read-only attribute"""
         return self._index_cache_enabled
 
+    @property
+    def is_power_management_enabled(self):
+        """ Returns power management enable status"""
+        return self._is_power_management_enabled
+        
     @property
     def current_power_status(self):
         """
@@ -2105,8 +2111,10 @@ class RPStores(object):
         response = self._commcell.execute_qcommand("qoperation execute", xml)
 
         try:
-            return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]
-                    ["rpStoreId"] for library in response.json()["libraryList"]}
+            if response.json().get('libraryList'):
+                return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]
+                        ["rpStoreId"] for library in response.json()["libraryList"]}
+            return {}
         except (KeyError, ValueError):
             generic_msg = "Unable to fetch RPStore"
             err_msg = response.json().get("errorMessage", generic_msg) if response.status_code == 200 else generic_msg

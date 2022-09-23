@@ -210,6 +210,8 @@ class TeamsSubclient(CloudAppsSubclient):
             Args:
                 team                (str)   --  The email ID of the team that needs to be restored.
                 destination_team    (str)   --  The email ID of the team to be restored to.
+                kwargs              (dict)
+                    dest_subclient_object --    The subclient object of the destination client
 
             Returns:
                 obj   --  Instance of job.
@@ -451,7 +453,7 @@ class TeamsSubclient(CloudAppsSubclient):
             if isinstance(dest_subclient_obj, TeamsSubclient):
                 dest_details = dest_subclient_obj._json_restoreoptions_destination(kwargs.get("destination_team", None))
             else:
-                raise Exception("Wrongly supplied subclient object")
+                raise SDKException('Subclient', '102', "Wrongly supplied subclient object")
         else:
             dest_details = self._json_restoreoptions_destination(kwargs.get("destination_team", None))
         _restore_options = {

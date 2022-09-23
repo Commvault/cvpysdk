@@ -2150,6 +2150,8 @@ class Plan(object):
             'subTaskName'] = schedule_name
         request_json['schedule']['subTasks'][0]['pattern'] = pattern_json
         request_json['schedule']['subTasks'][0]['options']['adminOpts']['contentIndexingOption']['operationType'] = ops_type
+        if self._dc_plan_props['targetApps'][0] == TargetApps.FS.value:
+            request_json['schedule']['subTasks'][0]['subTask']['operationType'] = 5022
         self._update_plan_props(request_json)
 
     def edit_plan(self, **kwargs):
