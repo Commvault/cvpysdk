@@ -28,6 +28,7 @@ FailoverGroup:      Class for a failover group that gives us all the live sync p
 
 
 FailoverGroups:
+    FailoverGroupSourceTypes                    --  Enum to represent all type of sources for failover groups
     FailoverGroupTypes                          --  Enum to represent all types of failover groups
     DRReplicationTypes                          --  Enum to represent all live sync types
     __init__(commcell_object)                   --  Initialize the object of failovergroups class for commcell
@@ -65,11 +66,21 @@ FailoverGroup:
     _get_failover_group_properties()            --  Get the failover group properties
 
     ##### properties #####
+    failover_group_id                           --  The ID of the failover group
+
     failover_group_name                         --  The name of the failover group
+
+    replication_type                            --  The DRReplicationTypes key for replication of failover group
+
+    group_type                                  --  The FailoverGroupTypes for operation of failover group
+
+    source_type                                 --  The FailoverGroupSourceTypes of source of failover group
 
     is_client_group                             --  Whether the VM pairs are part of a client group or not
 
-    vm_pair_ids                                 --  The ID of the live sync pairs
+    replication_pairs                           --  The ReplicationPairs class for failover group
+
+    vm_pair_ids                                 --  The ID of the replication pairs
 
     vm_pairs                                    --  Returns the live sync pair objects for each VM pair of the group
                                                         as a mapping of source VM name and VM pair object
@@ -97,11 +108,16 @@ FailoverGroup:
 """
 from enum import Enum
 from ..exception import SDKException
-from .replication_pairs import ReplicationPair
+from .replication_pairs import ReplicationPairs
 
 
 class FailoverGroups:
     """Class for getting all the failover groups in commcell."""
+
+    class FailoverGroupSourceTypes(Enum):
+        BACKUP = 0
+        REPLICATION = 1
+        TEMPLATES = 2
 
     class FailoverGroupTypes(Enum):
         """ Enum to map Failover Group Types to integers"""
@@ -216,8 +232,18 @@ class FailoverGroups:
             Returns:
                 dict - consists of all failover groups
                     {
-                         "failover_group_name1": {id: '1', 'type': VSA_PERIODIC, 'operation_type': FAILOVER},
-                         "failover_group_name2": {id: '2', 'type': VSA_CONTINUOUS, 'operation_type': FAILOVER}
+                        "failover_group_name1": {
+                            'id': '1',
+                            'type': LIVE_SYNC,
+                            'operation_type': FAILOVER,
+                            'source_type': REPLICATION
+                        },
+                        "failover_group_name2": {
+                            'id': '2',
+                            'type': SNAP_ARRAY,
+                            'operation_type': TEST_FAILOVER
+                            'source_type': REPLICATION
+                        }
                     }
 
             Raises:
@@ -238,10 +264,12 @@ class FailoverGroups:
                     failover_group_name = failover_group.get('vAppEntity', {}).get('vAppName', '').lower()
                     operation_type = self.FailoverGroupTypes(int(failover_group.get('operationType', 16)))
                     replication_type = self.DRReplicationTypes(int(failover_group.get('replicationType', 0)))
+                    source_type = self.FailoverGroupSourceTypes(int(failover_group.get('source', 1)))
                     failover_groups[failover_group_name] = {
                         'id': failover_group_id,
                         'operation_type': operation_type,
-                        'type': replication_type
+                        'type': replication_type,
+                        'source_type': source_type
                     }
                 return failover_groups
             raise SDKException('Response', '102')
@@ -283,7 +311,7 @@ class FailoverGroup:
         self._source_instance = None
         self._destination_instance = None
 
-        self._vm_pairs = {}
+        self._replication_pairs = None
 
         self.refresh()
 
@@ -328,7 +356,7 @@ class FailoverGroup:
             'GET',
             (self._services['GET_FAILOVER_GROUP']
              if self._commcell_object.commserv_version > 30
-             else self._services['GET_DR_GROUP']) % str(self._failover_group_dict.get('id'))
+             else self._services['GET_DR_GROUP']) % str(self.failover_group_id)
         )
         if flag:
             if 'vApp' in response.json():
@@ -340,7 +368,12 @@ class FailoverGroup:
     def refresh(self):
         """ Refresh the failover group properties """
         self._failover_group_properties = self._get_failover_group_properties()
-        self._vm_pairs = None
+        self.replication_pairs.refresh()
+
+    @property
+    def failover_group_id(self):
+        """Returns: (str) The ID of the failover group"""
+        return self._failover_group_dict.get('id')
 
     @property
     def failover_group_name(self):
@@ -348,16 +381,41 @@ class FailoverGroup:
         return self._failover_group_name
 
     @property
+    def replication_type(self):
+        """Returns: (DRReplicationTypes) The type of replication"""
+        return self._failover_group_dict.get('type')
+
+    @property
+    def group_type(self):
+        """Returns: (FailoverGroupTypes) The type of failover group"""
+        return self._failover_group_dict.get('operation_type')
+
+    @property
+    def source_type(self):
+        """Returns: (FailoverGroupSourceTypes) The type of failover group's source"""
+        return self._failover_group_dict.get('source_type')
+
+    @property
     def is_client_group(self):
         """Returns: (bool) Whether this failover group has a client group or not"""
         return self._failover_group_properties.get('isClientGroup')
 
     @property
+    def replication_pairs(self):
+        """
+        Returns: (ReplicationPairs) Returns the ReplicationPairs object that belongs to this failover group
+        Note: Implemented only for live sync failover groups
+        """
+        if not self._replication_pairs:
+            if self.replication_type == FailoverGroups.DRReplicationTypes.LIVE_SYNC:
+                self._replication_pairs = ReplicationPairs(self._commcell_object,
+                                                           failover_group_id=self.failover_group_id)
+        return self._replication_pairs
+
+    @property
     def vm_pair_ids(self):
         """Returns: (List[str]) Returns the VM pair IDs that belong to this failover group"""
-        vm_sequence = (self._failover_group_properties.get('config', {}).get('vmGroups', [{}])[0]
-                       .get('vmSequence', []))
-        return [str(vm_info.get('replicationId')) for vm_info in vm_sequence if 'replicationId' in vm_info]
+        return list(self.replication_pairs.replication_pairs)
 
     @property
     def vm_pairs(self):
@@ -369,11 +427,12 @@ class FailoverGroup:
                     <source_vm2>: <Replication_pair_obj2>
                 }
         """
-        if not self._vm_pairs:
-            for replication_id in self.vm_pair_ids:
-                vm_pair = ReplicationPair(self._commcell_object, replication_id)
-                self._vm_pairs[vm_pair.source_vm] = vm_pair
-        return self._vm_pairs
+        replication_pair_objects = {}
+        for replication_pair_id, replication_pair_dict in self.replication_pairs.replication_pairs.items():
+            source_vm_name = replication_pair_dict.get('source_vm')
+            replication_pair_object = self.replication_pairs.get(replication_id=replication_pair_id)
+            replication_pair_objects[source_vm_name] = replication_pair_object
+        return replication_pair_objects
 
     @property
     def replication_groups(self):
@@ -438,6 +497,6 @@ class FailoverGroup:
     @property
     def user_for_approval(self):
         """Returns: user name set in failover group"""
-        user_name = (self._failover_group_properties.get('usersForApproval',[{}])[0]
-                     .get('userEntity',{}).get('userName',''))
+        user_name = (self._failover_group_properties.get('usersForApproval', [{}])[0]
+                     .get('userEntity', {}).get('userName', ''))
         return user_name

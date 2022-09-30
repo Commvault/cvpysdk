@@ -101,7 +101,16 @@ class CommServeCache(object):
 
             - Response is incorrect/empty
         """
-        response = self.commcell_object.get_gxglobalparam_value()
+        try:
+            response = self.commcell_object.get_gxglobalparam_value()
+        except Exception:
+            try:
+                response = self.commcell_object.get_gxglobalparam_value('Patch Directory')
+            except Exception:
+                raise SDKException('Response', '101', 'Failed to execute api for get_cs_cache_path')
+            if response == '':
+                raise SDKException('Response', '102')
+            return response
         if response['error']['errorCode'] != 0:
             error_message = "Failed with error: [{0}]".format(
                 response['error']['errorMessage']

@@ -504,6 +504,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
     'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
     'GET_REPLICATION_PAIR': '{0}Replications/Monitors/streaming?replicationPairId=%s',
+    'GET_REPLICATION_PAIRS': '{0}Replications/Monitors/streaming?',
 
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',

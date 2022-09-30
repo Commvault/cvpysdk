@@ -1449,7 +1449,9 @@ class Backupset(object):
                 "showDeletedFiles": options['show_deleted'],
                 "restoreIndex": options['restore_index'],
                 "vsDiskBrowse": options['vm_disk_browse'],
-                "vsFileBrowse": options.get('vs_file_browse', False)
+                "vsFileBrowse": options.get('vs_file_browse', False),
+                "includeMetadata": options.get('include_meta_data', False),
+                "hideUserHidden": options.get('hide_user_hidden', False)
             },
             "entity": {
                 "clientName": self._client_object.client_name,

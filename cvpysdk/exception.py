@@ -426,6 +426,11 @@ EXCEPTION_DICT = {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
     },
+    'ReplicationPairs': {
+        '101': 'Failed to get replication pairs information',
+        '102': 'Invalid response received for replication pairs',
+        '103': 'Replication Pair not found'
+    },
     'BLRPairs': {
         '101': 'Data type of the input(s) is not valid',
         '102': 'BLR Pair not found',

@@ -338,6 +338,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
             find_options['job_id'] = job_id
         if include_files:
             find_options['include_meta_data'] = True
+        else:
+            find_options['hide_user_hidden'] = True
 
         return self.find(find_options)
 

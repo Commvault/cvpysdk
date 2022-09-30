@@ -588,12 +588,17 @@ class DB2Instance(Instance):
             "databaseTableRstOptions"] = table_json
 
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"]["backupset"]["backupsetId"] = int(self.backupsets.get(aux_backupset_name).backupset_id)
+
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "browseOption"]["backupset"]["backupsetName"] = aux_backupset_name
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+            "restoreArchiveLogs"] = False
 
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "fileOption"]["filterItem"] = tables_path
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "fileOption"]["sourceItem"] = tables_path
-
         return self._process_restore_response(request_json)
 
