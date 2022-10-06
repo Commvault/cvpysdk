@@ -63,52 +63,63 @@ class nutanixsubclient(VirtualServerSubclient):
                                      power_on=True,
                                      copy_precedence=0,
                                      restore_option=None,
-                                     vcenter_client=None):
+                                     vcenter_client=None,
+                                     **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
-                    Args:
+            Args:
 
-                        vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the VM name to restore
 
-                        host                  (str)        -- ESX host for Vm to restore
+                host                  (str)        -- ESX host for Vm to restore
 
-                        container             (str)        -- provide the storage account to restore
+                container             (str)        -- provide the storage account to restore
 
-                        proxy_client          (str)        -- provide the proxy client to restore
+                proxy_client          (str)        -- provide the proxy client to restore
 
-                        restore_new_name      (str)        -- provide the new restore name
-                        overwrite
-                                default:False (bool)       --  overwrite the existing VM
+                restore_new_name      (str)        -- provide the new restore name
 
-                        poweron
-                                default:False (bool)       --  power on the  restored VM
+                overwrite               (bool)       --  overwrite the existing VM
+                                                        default: True
 
+                power_on                (bool)       --  power on the  restored VM
+                                                        default: True
 
-                        restore_option        (dict)       --  complete dictionary with
-                                                               all advanced option
+                copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
 
-                        vcenter_client        (str)        --  name of the vcenter client where the VM
-	                                                                should be restored
-                            default: {}
+                restore_option        (dict)       --  complete dictionary with
+                                                       all advanced option
 
-                    Returns:
-                        object - instance of the Job class for this restore job
+                vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                        should be restored
+                                                        default: {}
 
-                    Raises:
-                        SDKException:
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-                            if destination_path is not a string
+            Returns:
+                object - instance of the Job class for this restore job
 
-                            if failed to initialize job
+            Raises:
+                SDKException:
 
-                            if response is empty
+                    if destination_path is not a string
 
-                            if response is not success
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
                 """
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -141,21 +152,28 @@ class nutanixsubclient(VirtualServerSubclient):
                                  vm_to_restore=None,
                                  overwrite=True,
                                  power_on=True,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
             Args:
                 vm_to_restore          (list)      --  provide the VM name to restore
 
-                overwrite
-                        default:true   (bool)      --  overwrite the existing VM
+                overwrite               (bool)      --  overwrite the existing VM
+                                                        default: True
 
-                poweron
-                        default:true   (bool)      --  power on the  restored VM
+                power_on                (bool)      --  power on the  restored VM
+                                                        default: True
 
                 copy_precedence        (int)       -- storage policy copy precedence
                                                       from which browse has to be performed
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -170,7 +188,7 @@ class nutanixsubclient(VirtualServerSubclient):
 
                     if response is not success
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):

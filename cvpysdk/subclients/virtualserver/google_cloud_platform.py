@@ -60,14 +60,14 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             backupset_object, subclient_name, subclient_id)
         self.diskExtension = ["none"]
 
-
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -88,6 +88,12 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -102,7 +108,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -131,7 +137,8 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             public_ip=False,
             copy_precedence=0,
             project_id=None,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
 
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -156,6 +163,12 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -170,7 +183,9 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        if not restore_option:
+            restore_option = {}
+        restore_option["v2_details"] = kwargs.get("v2_details", None)
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]

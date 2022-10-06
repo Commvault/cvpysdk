@@ -279,6 +279,7 @@ class RecoveryTarget:
         self._create_public_ip = None
         self._restore_as_managed_vm = None
         self._test_virtual_network = None
+        self._test_security_group = None
         self._test_vm_size = None
 
         self._volume_type = None
@@ -327,8 +328,7 @@ class RecoveryTarget:
                 if self._policy_type == 1:
                     self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
                     self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
-                    # TODO: Encryption key support for SDK
-                    self._encryption_key = None
+                    self._encryption_key = self._recovery_target_properties.get('amazonPolicy', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
                     self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('name', None)
                     self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
                     self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
@@ -340,6 +340,7 @@ class RecoveryTarget:
                     elif expiry_days:
                         self._expiration_time = f'{expiry_days} days'
                     self._test_virtual_network = self._recovery_target_properties.get('networkInfo', [{}])[0].get('label', None)
+                    self._test_security_group = self._recovery_target_properties.get('testSecurityGroups', [{}])[0].get('name', '')
                     self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
                     
                 elif self._policy_type == 2:
@@ -568,6 +569,11 @@ class RecoveryTarget:
     def test_virtual_network(self):
         """Returns: (str) Azure: the destination VM virtual network for test failover"""
         return self._test_virtual_network
+
+    @property
+    def test_security_group(self):
+        """Returns: (str) AWS: the clone VM security group for test failover"""
+        return self._test_security_group
 
     @property
     def test_vm_size(self):

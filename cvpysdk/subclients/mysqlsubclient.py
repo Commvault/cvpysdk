@@ -393,7 +393,8 @@ class MYSQLSubclient(Subclient):
             clone_env=False,
             clone_options=None,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            browse_jobid=None):
         """Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
@@ -466,6 +467,10 @@ class MYSQLSubclient(Subclient):
 
                     default: None
 
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -511,5 +516,6 @@ class MYSQLSubclient(Subclient):
             clone_env=clone_env,
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid
         )

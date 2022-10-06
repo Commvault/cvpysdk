@@ -132,6 +132,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     eg:
                     media_agent         (basestring)   -- media agent
 
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -148,8 +151,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
-        restore_option["media_agent"] = kwargs.get("media_agent", None)
+        restore_option = {"media_agent": kwargs.get("media_agent", None), "v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -211,7 +213,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 vm_to_restore            (str)    --  VM that is to be restored
 
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      'delete' is appended to the original vm name
+                                                      'del' is appended to the original vm name
 
                 vcenter_client    (basestring)    --  name of the vcenter client where the VM
                                                       should be restored.
@@ -249,25 +251,29 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
-                                eg:
-                                source_ip           (basestring)    --  IP of the source VM
+                    eg:
+                    source_ip           (basestring)    --  IP of the source VM
 
-                                destination_ip      (basestring)    --  IP of the destination VM
+                    destination_ip      (basestring)    --  IP of the destination VM
 
-                                destComputerName  (basestring)    --  Hostname of the restored vm
+                    destComputerName  (basestring)    --  Hostname of the restored vm
 
-                                source_subnet  (basestring)    --  subnet of the source vm
+                    source_subnet  (basestring)    --  subnet of the source vm
 
-                                source_gateway  (basestring)    --  gateway of the source vm
+                    source_gateway  (basestring)    --  gateway of the source vm
 
-                                destination_subnet  (basestring)    --  subnet of the restored vm
+                    destination_subnet  (basestring)    --  subnet of the restored vm
 
-                                destination_gateway  (basestring)    --  gateway of the restored vm
+                    destination_gateway  (basestring)    --  gateway of the restored vm
 
-                                media_agent         (basestring)   --  media agent for restore
+                    media_agent         (basestring)   --  media agent for restore
 
-                                restore_option      (dict)     --  complete dictionary with all advanced options
-                                    default: {}
+                    restore_option      (dict)     --  complete dictionary with all advanced options
+                        default: {}
+
+                    v2_details          (dict)       -- details for v2 jobs
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -287,7 +293,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
-                         'destination_gateway', 'folder_path', 'media_agent']
+                         'destination_gateway', 'folder_path', 'media_agent', 'v2_details']
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]

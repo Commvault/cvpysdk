@@ -323,6 +323,74 @@ class Plans(object):
 
         """
         return self._plans
+    
+    def filter_plans(self, plan_type, company_name = None):
+        """
+        Returns the dictionary consisting of specified type and company plans.
+
+        Args:
+            plan_type (str)      --      Type of plan ['DLO', 'Server', 'Laptop', 'Database', 'FSServer', 'FSIBMiVTL', 'Snap', 'VSAServer', 'VSAReplication', 
+                                                        'ExchangeUser', 'ExchangeJournal', 'Office365', 'Dynamics365', 'DataClassification', 'Archiver']
+
+            company_name (str)    --     To filter plans based on company. For Commcell, company_name = "". Default will return all plans
+
+        Returns:
+            dict - consists of all the plans with specified types configured on the commcell
+
+                {
+                    "plan1_name": plan1_id,
+
+                    "plan2_name": plan2_id
+                }
+
+        Raises:
+            SDKException:
+                if input data type is not valid
+                
+                if invalid plan type is passed as parameter
+
+                if failed to get the response
+        """
+        plan_type_subtype = {
+                "dlo" : ("1", "16777223"),
+                "server" : ("2", "33554437"),
+                "laptop" : ("2", "33554439"),
+                "database" : ("2", "33579013"),
+                "fsserver" : ("3", "50331655"),
+                "fsibmivtl" : ("3", "50331653"),
+                "snap" : ("4", "67108869"),
+                "vsaserver" : ("5", "83886085"),
+                "vsareplication" : ("5", "83918853"),
+                "exchangeuser" : ("6", "100859907"),
+                "exchangejournal" : ("6", "100794372"),
+                "office365" : ("6", "100859937"),
+                "dynamics365" : ("6", "100794391"),
+                "dataclassification" : ("7", "117506053"),
+                "archiver" : ("9", "150994951")
+        }
+        
+        if not isinstance(plan_type, basestring):
+            raise SDKException('Plan', '101')
+        elif plan_type.lower() not in plan_type_subtype:
+            raise SDKException('Plan', '102', 'Invalid Plan Type Passed as Parameter')
+        else:
+            template_url = self._services['GET_PLANS'] % plan_type_subtype[plan_type.lower()]
+
+            flag, response = self._cvpysdk_object.make_request('GET', template_url)
+
+            if flag:
+                result = dict()
+                if 'plans' in response.json():
+                    for plan in response.json()['plans']:
+                        if company_name is None:
+                            result[plan['plan']['planName']] = plan['plan']['planId']
+                        else:
+                            if plan['plan']['entityInfo']['companyName'].lower() == company_name.lower():
+                                result[plan['plan']['planName']] = plan['plan']['planId'] 
+                return result
+            else:
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
 
     def has_plan(self, plan_name):
         """Checks if a plan exists in the commcell with the input plan name.
@@ -972,7 +1040,7 @@ class Plan(object):
                 self._plan_properties = response.json()['plan']
 
                 if 'planName' in self._plan_properties['summary']['plan']:
-                    self._plan_name = self._plan_properties['summary']['plan']['planName']
+                    self._plan_name = self._plan_properties['summary']['plan']['planName'].lower()
 
                 if 'slaInMinutes' in self._plan_properties['summary']:
                     self._sla_in_minutes = self._plan_properties['summary']['slaInMinutes']
@@ -986,8 +1054,12 @@ class Plan(object):
                 if 'storage' in self._plan_properties:
                     if 'copy' in self._plan_properties['storage']:
                         for copy in self._plan_properties['storage']['copy']:
+                            if 'useGlobalPolicy' in copy:
+                                storage_pool_name = copy['useGlobalPolicy']['storagePolicyName'].lower()
+                            else:
+                                storage_pool_name = copy['library']['libraryName'].lower()
                             self._storage_copies[copy['StoragePolicyCopy']['copyName']] = {
-                                'storagePool': copy['useGlobalPolicy']['storagePolicyName'].lower(),
+                                'storagePool': storage_pool_name,
                                 'retainBackupDataForDays': copy[
                                     'retentionRules']['retainBackupDataForDays'],
                                 'isDefault': False,
@@ -1089,13 +1161,17 @@ class Plan(object):
                     if 'detail' in ci_policy:
                         self._dc_plan_props['ciPolicy'] = ci_policy['detail']['ciPolicy']
 
+                if 'eDiscoveryInfo' in self._plan_properties:
+                    if 'analyticsIndexServer' in self._plan_properties['eDiscoveryInfo']:
+                        self._dc_plan_props['analyticsIndexServer'] = self._plan_properties['eDiscoveryInfo']['analyticsIndexServer']
+
                 if 'options' in self._plan_properties:
                     plan_options = self._plan_properties['options']
                     if 'targetApps' in plan_options:
                         self._dc_plan_props['targetApps'] = plan_options['targetApps']
 
                 if 'securityAssociations' in self._plan_properties:
-                    for association in self._plan_properties['securityAssociations']['associations']:
+                    for association in self._plan_properties['securityAssociations'].get('associations', []):
                         temp_key = None
                         if 'externalGroupName' in association['userOrGroup'][0]:
                             temp_key = '{0}\\{1}'.format(
@@ -2168,3 +2244,102 @@ class Plan(object):
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
         self._update_plan_props(request_json)
+        
+    def policy_subclient_ids(self):
+        """Returns Policy subclient IDs of the plan
+        
+        Returns:
+            dict : OS and its associated subclient ID
+        
+        example:
+            {
+                'Windows' : windows_subclient_policy_subclient_id,
+                'Linux' : linux_subclient_policy_subclient_id,
+                'Mac' : mac_subclient_policy_subclient_id
+            }
+        
+        """
+        result = dict()
+        for backupset_id in self.subclient_policy:
+            url = self._commcell_object._services['ADD_SUBCLIENT'] + '?clientId=2&applicationId=1030&backupsetid=' + str(backupset_id)
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request('GET', url)
+            if flag:
+                if response.json() and 'subClientProperties' in response.json():
+                    subclient_id = response.json()['subClientProperties'][0]['subClientEntity']['subclientId']
+                    backupset_name = response.json()['subClientProperties'][0]['subClientEntity']['backupsetName']
+                    os = backupset_name.split()[-3]
+                    result[os] = subclient_id
+                else:
+                    raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
+            else:
+                raise SDKException('Plan', 102, response.text)
+            
+        return result
+    
+    def update_backup_content(self, content, request_type = 'OVERWRITE'):
+        """
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example: 
+                content = {
+                    'Windows' : {
+                        'Content' : ['\\%Pictures%', '\\%Desktop%'],
+                        'Exclude' : ['\\%Documents%'],
+                        'Backup System State' : True
+                    },
+                    'Linux' : {
+                        'Content' : ['/%Pictures%'],
+                        'Exclude' : ['/%Documents%']
+                    },
+                    'Mac' : {
+                        'Content' : ['/%Pictures%'],
+                        'Exclude' : ['/%Documents%']
+                    }
+                    
+            request_type (str)      :  Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. 
+        }
+        """
+        
+        update_request_type = {
+            "OVERWRITE": 1,
+            "UPDATE": 2,
+            "DELETE": 3
+        }
+        
+        subclients = self.policy_subclient_ids()
+        
+        for os, value in content.items():
+            request_json = {
+                "subClientProperties": {
+                    "fsExcludeFilterOperationType": update_request_type.get(request_type, 1),
+                    "fsContentOperationType" : update_request_type.get(request_type, 1)
+                }
+            }
+            
+            request_url = self._commcell_object._services['SUBCLIENT'] % subclients[os]
+            
+            contents = list()
+            for key, val in value.items():
+                if key.lower() == 'content':
+                    for path in val: contents.append({"path" : path})
+                if key.lower() == 'exclude':
+                    for path in val: contents.append({"excludePath" : path})
+                if os == 'Windows' and key == 'Backup System State':
+                    request_json['subClientProperties']['fsSubClientProp'] = {'backupSystemState' : val}
+                    
+            if contents:
+                request_json['subClientProperties']['content'] = contents
+            
+            flag, response = self._commcell_object._cvpysdk_object.make_request('POST', request_url, request_json)
+                
+            if flag:
+                if response.json() and 'response' in response.json():
+                    errorCode = response.json()['response'][0].get('errorCode')
+                    if errorCode:
+                        raise SDKException('Plan', 102, 'Failed to Change Content of Plan.')
+                else:
+                    raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
+            else:
+                raise SDKException('Plan', 102, response.text)

@@ -33,7 +33,7 @@ from past.builtins import basestring
 from ..job import Job
 from ..exception import SDKException
 
-
+UNINSTALL_SELECTED_PACKAGES = 6
 class Uninstall(object):
     """"class for Uninstalling software packages"""
 
@@ -52,7 +52,7 @@ class Uninstall(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name, force_uninstall=True):
+    def uninstall_software(self, client_name, force_uninstall=True,client_composition=[]):
         """
         Performs readiness check on the client
 
@@ -60,6 +60,31 @@ class Uninstall(object):
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
 
                 client_name     (str): The client_name whose packages are to be uninstalled.
+
+                client_composition (list): The client_coposition will contain the list of components need to be uninstalled. 
+
+            Usage:
+                uninstall.uninstall_software(client_name="freezaclient",force_uninstall=False,client_composition=[{
+                                         "activateClient": True,
+                                         "packageDeliveryOption": 0,
+                                         "components": {
+                                             "componentInfo": [
+                                                 {
+                                                     "osType": "Windows",
+                                                     "ComponentName": "High Availability Computing"
+                                                 },
+                                                 {
+                                                     "osType": "Windows",
+                                                     "ComponentName": "Index Store"
+                                                 },
+                                                 {
+                                                     "osType": "Windows",
+                                                     "ComponentName": "Index Gateway"
+                                                 }
+                                             ]
+                                         }
+                                     }
+                                 ])
 
             Raises:
                 SDKException:
@@ -69,7 +94,9 @@ class Uninstall(object):
         """
         if not isinstance(client_name, basestring):
             raise SDKException('Uninstall', '101')
-
+        optype = 7 # default value to remove all the packages
+        if client_composition:
+            optype = UNINSTALL_SELECTED_PACKAGES
         request_json = {
             "taskInfo": {
                 "associations": [
@@ -100,12 +127,13 @@ class Uninstall(object):
                                     "discoveryType": 0,
                                     "installerOption": {
                                         "requestType": 0,
-                                        "Operationtype": 7,
+                                        "Operationtype": optype,
                                         "CommServeHostName": self._commcell_object.commserv_name,
                                         "RemoteClient": False,
                                         "User": {
                                             "userName": "admin"
-                                        }
+                                        },
+                                        "clientComposition":client_composition
                                     },
                                     "clientDetails": [
                                         {

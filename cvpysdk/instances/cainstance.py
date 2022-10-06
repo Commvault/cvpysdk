@@ -71,6 +71,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.amazon_instance import AmazonDynamoDBInstance
         from .cloudapps.dynamics365_instance import MSDynamics365Instance
         from .cloudapps.teams_instance import TeamsInstance
+        from .cloudapps.spanner_instance import GoogleSpannerInstance
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
@@ -91,6 +92,7 @@ class CloudAppsInstance(Instance):
             22: AmazonDynamoDBInstance, # Amazon DynamoDB
             35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
             36: TeamsInstance, # Office 365 Teams
+			37: GoogleSpannerInstance # Google Cloud Spanner Instance
         }
 
         commcell_object = agent_object._commcell_object

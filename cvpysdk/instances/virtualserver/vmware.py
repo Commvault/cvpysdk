@@ -113,7 +113,7 @@ class VMwareInstance(VirtualServerInstance):
     @property
     def _user_name(self):
         """getter for the username from the vmware vendor json"""
-        return self._vmwarvendor["userName"]
+        return self._vmwarvendor.get("userName", "")
 
     @property
     def server_name(self):

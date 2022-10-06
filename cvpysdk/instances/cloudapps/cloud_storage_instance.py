@@ -108,7 +108,7 @@ class CloudStorageInstance(CloudAppsInstance):
             instance_id)
 
     def _get_instance_properties(self):
-        """Gets the properties of this instance"""
+        """Gets the properties of this instance """
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if 'cloudAppsInstance' in self._properties:

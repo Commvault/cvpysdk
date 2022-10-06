@@ -113,6 +113,7 @@ Clients
 
     refresh()                             --  refresh the clients associated with the commcell
 
+
 Clients Attributes
 ------------------
 
@@ -242,6 +243,13 @@ Client
 
     disable_content_indexing()   --  Disables the v1 content indexing on the client
 
+    check_eligibility_for_migration()  --   Checks whether client is Eligible for Migration or not
+
+    change_company_for_client()        --   Migrates client to specified company
+
+    disable_owner_privacy()                 --  Disables the privacy option for client
+
+    enable_owner_privacy()                  --  Enables the privacy option for client
 
 Client Attributes
 -----------------
@@ -325,6 +333,9 @@ Client Attributes
 
     **vm_guid**                     -- returns guid of the vm client
 
+    **company_name**                 -- returns company name for the client
+
+    **is_privacy_enabled**          -- returns if client privacy is enabled
 """
 
 from __future__ import absolute_import
@@ -353,6 +364,7 @@ from .network_throttle import NetworkThrottle
 from .security.user import Users
 
 from .name_change import NameChange
+from .organization import Organizations
 
 
 class Clients(object):
@@ -392,7 +404,6 @@ class Clients(object):
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
-
         self.refresh()
 
     def __str__(self):
@@ -853,6 +864,7 @@ class Clients(object):
 
                     Available Values for client_type : "windows"
                                                        "unix"
+                                                       "unix cluster"
 
             Returns:
                 client object for the created client.
@@ -874,6 +886,9 @@ class Clients(object):
 
         if "unix" in client_type.lower():
             os_id = 1
+
+        if "unix cluster" in client_type.lower():
+            os_id = 11
 
         request_json = {
             'App_CreatePseudoClientRequest':
@@ -2063,14 +2078,16 @@ class Clients(object):
                                 }
                             ]
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureAppList"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureAppList"] = azure_app_dict
         else:
             azure_app_dict = {
                             "azureAppKeySecret": azure_app_key_secret,
                             "azureTenantName": azure_tenant_name,
                             "azureAppKeyID": azure_app_key_id
                         }
-            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"]["azureDetails"] = azure_app_dict
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureDetails"] = azure_app_dict
 
         if int(self._commcell_object.version.split(".")[1]) >= 25 and environment_type == 4:
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
@@ -2341,7 +2358,8 @@ class Clients(object):
                 raise SDKException('Client', '102', 'Missing inputs. Check db_options dictionary')
             request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
                 ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"] = {
-                "dbPort": str(db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
+                "dbPort": str(
+                    db_options.get("db_port", 1433 if db_options.get("db_type", None) == "SQLSERVER" else 5432)),
                 "dbEnabled": True,
                 "dbName": db_options.get("db_name"),
                 "dbType": db_options.get("db_type", "POSTGRESQL"),
@@ -2353,7 +2371,8 @@ class Clients(object):
             }
             if db_options.get('db_instance', None):
                 request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"] \
-                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options["db_instance"]
+                    ["salesforceInstance"]["defaultBackupsetProp"]["syncDatabase"]["db_instance"] = db_options[
+                    "db_instance"]
         self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
     def add_azure_client(self, client_name, access_node, azure_options):
@@ -2963,7 +2982,7 @@ class Clients(object):
 
             if self.has_client(name):
                 client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname:
+                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
             else:
                 raise SDKException(
@@ -3080,6 +3099,30 @@ class Clients(object):
 class Client(object):
     """Class for performing client operations for a specific client."""
 
+    def __new__(cls, commcell_object, client_name, client_id=None):
+        """Decides and creates which client object needs to be created
+            Args:
+                commcell_object (object)     --  instance of the Commcell class
+
+                client_name     (str)        --  name of the client
+
+                client_id       (str)        --  id of the client
+                    default: None
+
+            Returns:
+                object - instance of the Client class
+                """
+        from .clients.vmclient import VMClient
+        _client = commcell_object._services['CLIENT'] % (client_id)
+        flag, response = commcell_object._cvpysdk_object.make_request('GET', _client)
+        if flag:
+            if response.json() and 'clientProperties' in response.json():
+                if response.json().get('clientProperties', {})[0].get('vmStatusInfo', {}).get('vsaSubClientEntity',
+                                                                                              {}).get(
+                        'applicationId') == 106:
+                    return object.__new__(VMClient)
+        return object.__new__(cls)
+
     def __init__(self, commcell_object, client_name, client_id=None):
         """Initialise the Client class instance.
 
@@ -3127,9 +3170,7 @@ class Client(object):
         self._network = None
         self._network_throttle = None
         self._association_object = None
-
         self._properties = None
-
         self._os_info = None
         self._install_directory = None
         self._version = None
@@ -3149,10 +3190,11 @@ class Client(object):
         self._cvd_port = None
         self._job_start_time = None
         self._timezone = None
+        self._is_privacy_enabled = None
 
         self._readiness = None
-
         self._vm_guid = None
+        self._company_name = None
 
         self.refresh()
 
@@ -3209,6 +3251,10 @@ class Client(object):
                     'activityControl']['EnableDataManagement']
 
                 self._is_ci_enabled = client_props['activityControl']['EnableOnlineContentIndex']
+
+                self._is_privacy_enabled = client_props.get("clientSecurity", {}).get("enableDataSecurity")
+
+                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')
 
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
@@ -3846,6 +3892,11 @@ class Client(object):
     def is_intelli_snap_enabled(self):
         """Treats the is intelli snap enabled as a read-only attribute."""
         return self._is_intelli_snap_enabled
+
+    @property
+    def is_privacy_enabled(self):
+        """Returns if client privacy is enabled"""
+        return self._is_privacy_enabled
 
     @property
     def install_directory(self):
@@ -4839,8 +4890,8 @@ class Client(object):
 
         """
 
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_NETWORK_SUMMARY'].replace('%s',
-                                                                                                                self.client_id))
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_NETWORK_SUMMARY'].replace('%s', self.client_id))
         if flag:
             if "No Network Config found" in response.text:
                 return ""
@@ -5779,13 +5830,16 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def uninstall_software(self, force_uninstall=True):
+    def uninstall_software(self, force_uninstall=True,software_list=[]):
         """
         Performs readiness check on the client
 
             Args:
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
+                software_list (list): The client_composition will contain the list of components need to be uninstalled. 
 
+            Usage:
+                client_obj.uninstall_software(force_uninstall=False,software_list=["Index Store","File System"])
 
             Returns:
                 The job object of the uninstall software job
@@ -5798,8 +5852,42 @@ class Client(object):
         """
 
         uninstall = Uninstall(self._commcell_object)
+        client_composition = []
+        if software_list:
+            componentInfo = self.__get_componentInfo(software_list)
+            client_composition = [{"activateClient": True, "packageDeliveryOption": 0,
+                                "components": {
+                                    "componentInfo": componentInfo}
+                                }]
 
-        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall)
+        return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall,
+                                            client_composition=client_composition)
+
+    def __get_componentInfo(self, software_list):
+        """get the component info for the installed software
+
+        Args:
+            software_list (list): list of software to uninstall
+
+        Returns:
+            list: list of componetInfo for the software list.
+            [
+                {
+                    "osType": "Windows",
+                    "ComponentName": "High Availability Computing"
+                }
+            ]
+        """
+        componentInfo = []
+        os_type = "Windows" if "Windows" in self._os_info else "Unix"
+        for software in software_list:
+            componentInfo.append(
+                {
+                    "osType": os_type,
+                    "ComponentName": software
+                }
+            )
+        return componentInfo
 
     @property
     def job_start_time(self):
@@ -5850,7 +5938,8 @@ class Client(object):
 
     def get_needs_attention_details(self):
         """
-        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers for all the service commcells
+        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers
+        for all the service commcells
 
         example output:
             {
@@ -5870,7 +5959,8 @@ class Client(object):
         if flag:
             if response.json() and 'commcellEntityRespList' in response.json():
                 needs_attention_tile_dict = {}
-                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers', 'CountOfAnomalousJobs']
+                main_keys = ['CountOfAnomalousInfrastructureServers', 'CountOfAnomalousServers',
+                             'CountOfAnomalousJobs']
                 for key in main_keys:
                     tile = {}
                     for tile_info in response.json()['commcellEntityRespList']:
@@ -5882,7 +5972,7 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_mount_volumes(self, volume_names = None):
+    def get_mount_volumes(self, volume_names=None):
         """"Gets mount volumes information for client
             Args:
                 volume_names (list): List of volume names to be fetched (optional)
@@ -5929,6 +6019,148 @@ class Client(object):
         update_properties = self.properties
         update_properties['client']['EnableContentIndexing'] = 'false'
         self.update_properties(update_properties)
+
+    def enable_owner_privacy(self):
+        """Enables the privacy option for client"""
+
+        if self.is_privacy_enabled:
+            return
+
+        self.set_privacy(True)
+
+    @property
+    def company_name(self):
+        """Returns Company Name to which client belongs to, Returns Empty String, If client belongs to Commcell"""
+        return self._company_name
+
+    def check_eligibility_for_migration(self, destination_company_name):
+        """Checks whether Client is Eligible for migration
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Returns:
+            eligibility_status (bool)   --  True, If Clients are eligible for migration else False
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['CHECK_ELIGIBILITY_MIGRATION'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json() and response.json()['error']['errorCode'] != 0:
+                    raise SDKException('Organization', '110',
+                                       'Error: {0}'.format(response.json()['error']['errorMessage']))
+                return True if 'applicableClients' in response.json() else False
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_owner_privacy(self):
+        """Enables the privacy option for client"""
+        if not self.is_privacy_enabled:
+            return
+
+        self.set_privacy(False)
+
+    def set_privacy(self, value):
+        """
+        Internal function to enable/disable privacy for client
+
+        Args:
+            value(bool): True/False to enable/disable the privacy
+
+        Raises:
+            SDKException:
+
+                if setting privacy for client fails
+
+                if response is empty
+
+                if response is not success
+        """
+        url = self._services['DISABLE_CLIENT_PRIVACY'] % self.client_id
+        if value:
+            url = self._services['ENABLE_CLIENT_PRIVACY'] % self.client_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', url
+        )
+
+        if flag:
+            if response and response.json():
+                error_string = response.json().get('errorString')
+                error_code = response.json().get('errorCode')
+                if error_code:
+                    raise SDKException('Client', '102', error_string)
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def change_company_for_client(self, destination_company_name):
+        """
+        Changes Company for Client
+
+        Args:
+            destination_company_name (str)  --  Destination company name to which client is to be migrated
+
+        Raises:
+            SDKException:
+                If Client is not eligible for migration
+
+                if response is empty
+
+                if response is not success
+        """
+        if not self.check_eligibility_for_migration(destination_company_name):
+            raise SDKException('Client', 102, f'Client [{self.client_name}] is Not Eligible For Migration')
+
+        company_id = (int(Organizations(self._commcell_object).get(
+            destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
+        request_json = {
+            "entities": [
+                {
+                    "clientName": self._client_name,
+                    "clientId": int(self.client_id),
+                    "_type_": 3
+                }
+            ]
+        }
+        req_url = self._services['MIGRATE_CLIENTS'] % company_id
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(response.json()['errorMessage']))
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
 
 
 class _Readiness:

@@ -35,6 +35,8 @@ DB2Instance:
 
     restore_entire_database()       --      Restores the db2 database
 
+    restore_out_of_place()          --      runs the out of place restore for given backupset
+
 
 DB2Instance instance Attributes:
 ================================
@@ -278,3 +280,134 @@ class DB2Instance(Instance):
             "browseOption"]["backupset"]["backupsetName"] = dest_backupset_name
 
         return self._process_restore_response(request_json)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs):
+        """Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Destination DB restore path
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {'Storage Group Name': 'Redirect Path'}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {'Tablespace name': 'Redirect Path'}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        copy_precedence = kwargs.get('copy_precedence', None)
+        from_time = kwargs.get('from_time', None)
+        to_time = kwargs.get('to_time', None)
+        redirect_enabled = kwargs.get('redirect_enabled', False)
+        redirect_tablespace_path = kwargs.get('redirect_tablespace_path', None)
+        redirect_storage_group_path = kwargs.get('redirect_storage_group_path', None)
+        rollforward = kwargs.get('rollforward', True)
+        restoreArchiveLogs = kwargs.get('restoreArchiveLogs', False)
+        restore_incremental = kwargs.get('restore_incremental', True)
+
+        if redirect_enabled:
+            if not isinstance(redirect_tablespace_path, dict) and \
+                    not isinstance(redirect_storage_group_path, dict):
+                raise SDKException('Instance', '101')
+
+        request_json = self._restore_json(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_db=dest_backupset_name,
+            target_path=target_path,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            redirect=redirect_enabled,
+            redirect_storage_group_path=redirect_storage_group_path,
+            redirect_tablespace_path=redirect_tablespace_path,
+            rollforward_pending=rollforward,
+            restoreArchiveLogs=restoreArchiveLogs,
+            roll_forward=rollforward,
+            restore_incremental=restore_incremental,
+            storage_path=True)
+
+        if redirect_storage_group_path:
+            storagePaths = []
+            storageGroup = {"storageGroup": []}
+
+            for name, path in redirect_storage_group_path.items():
+                storagePaths.append(path)
+                if isinstance(path, str):
+                    storageGroup["storageGroup"].append({"groupName": name, "stoPaths": [path]})
+                else:
+                    storageGroup["storageGroup"].append({"groupName": name, "stoPaths": path})
+
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "storagePaths"] = storagePaths
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "storageGroupInfo"] = storageGroup
+
+        if redirect_tablespace_path:
+            redirect_info = []
+            for tablespace, path in redirect_tablespace_path.items():
+                table_string = "%s\t1\t%s\t6\t25600\t1\t1" % (tablespace, path)
+                redirect_info.append(table_string)
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
+                "redirectInfo"] = redirect_info
+
+        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"]["backupset"]["backupsetName"] = dest_backupset_name
+
+        return self._process_restore_response(request_json)
+

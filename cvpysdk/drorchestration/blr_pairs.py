@@ -112,6 +112,8 @@ BLRPair:
 
     _get_pair_properties()                      --  Returns the BLR pair properties
 """
+import time
+
 from cvpysdk.job import Job
 from cvpysdk.schedules import Schedules
 
@@ -872,6 +874,29 @@ class BLRPair:
             if response is not success
         """
         self._perform_action(self.PairOperationsStatus.SUSPEND)
+
+    def wait_for_pair_status(self, expected_status, timeout=30):
+        """
+        Waits for the BLR pair to reach the expected status
+            Args:
+                expected_status (enum or str): Enum of PairStatus or string value for pair status
+                timeout (int)                : The amount of time in minutes to wait for pair to
+                                                    reach status before exiting
+            Returns:
+                True, if the expected status is met
+                False, if the expected status was not met in given time
+        """
+        if isinstance(expected_status, str):
+            expected_status = BLRPairs.PairStatus(expected_status.upper())
+        start_time = time.time()
+        self.refresh()
+
+        while not self.pair_status == expected_status:
+            time.sleep(30)
+
+            if time.time() - start_time > timeout * 60:
+                break
+        return self.pair_status == expected_status
 
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         """Perform the DR operation for the BLR pair

@@ -35,6 +35,7 @@ Download
 
 from ..job import Job
 from ..exception import SDKException
+from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures
 
 
 class Install(object):
@@ -402,6 +403,13 @@ class Install(object):
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
 
+            db2_logs_location (dict) - dictionary of db2 logs location
+            Ex: db2_logs_location = {
+                                    "db2ArchivePath": "/opt/Archive/",
+                                    "db2RetrievePath": "/opt/Retrieve/",
+                                    "db2AuditErrorPath": "/opt/Audit/"
+                            }
+
         Returns:
                 object - instance of the Job class for this install_software job
 
@@ -439,13 +447,19 @@ class Install(object):
                     not both
 
         """
+        db2_install = False
         if windows_features:
             os_type = 0
+            if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
+                db2_install = True
             install_options = [{'osType': 'Windows', 'ComponentId': feature_id}
                                for feature_id in windows_features]
 
         elif unix_features:
             os_type = 1
+            if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
+                db2_install = True
+
             install_options = [{'osType': 'Unix', 'ComponentId': feature_id}
                                for feature_id in unix_features]
 
@@ -476,6 +490,7 @@ class Install(object):
                                       for client_group in client_group_name]
 
         install_flags = kwargs.get('install_flags')
+        db2_logs = kwargs.get('db2_logs_location', {})
 
         request_json = {
             "taskInfo": {
@@ -580,6 +595,10 @@ class Install(object):
                 ]
             }
         }
+
+        if db2_install and db2_logs:
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "clientComposition"][0]["components"]["db2"] = db2_logs
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

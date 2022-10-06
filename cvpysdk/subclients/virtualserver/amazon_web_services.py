@@ -82,7 +82,8 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             amazon_bucket=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0
+            copy_precedence=0,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
@@ -110,6 +111,12 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -125,7 +132,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -178,7 +185,8 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             amazon_options=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0
+            copy_precedence=0,
+            **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
             to the provided virtualization client along with the zone and instance type.
@@ -223,6 +231,11 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
 
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -238,7 +251,7 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {}
+        restore_option = {"v2_details": kwargs.get("v2_details", None)}
         if not amazon_options:
             amazon_options = {}
 
