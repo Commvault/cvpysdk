@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/download.py#L1-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/download.py#L1-L366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -101,6 +101,7 @@ class Download(object):
             service_pack=None,
             cu_number=0,
             sync_cache=True,
+            sync_cache_list=None,
             schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -116,6 +117,10 @@ class Download(object):
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
+                                                   
 
             Returns:
                 object - instance of the Job class for this download job
@@ -204,6 +209,13 @@ class Download(object):
         if os_list is None:
             os_list = [&#39;Windows(X64)&#39;]
 
+        client_groups = []
+        if sync_cache and sync_cache_list:
+            for cache in sync_cache_list:
+                client_groups.append({&#34;clientName&#34;: cache})
+        elif sync_cache and not sync_cache_list:
+            client_groups = [{&#34;_type_&#34;: 2}]
+
         request_json = {
             &#34;taskInfo&#34;: {
                 &#34;task&#34;: {
@@ -261,11 +273,7 @@ class Download(object):
                                         &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
                                         &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
                                     },
-                                    &#34;clientAndClientGroups&#34;: [
-                                        {
-                                            &#34;_type_&#34;: 2
-                                        }
-                                    ],
+                                    &#34;clientAndClientGroups&#34;: client_groups,
                                     &#34;downloadUpdatesJobOptions&#34;: {
                                         &#34;downloadSoftware&#34;: True
                                     }
@@ -422,7 +430,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/download.py#L39-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/download.py#L39-L366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -450,6 +458,7 @@ instance of the Commcell class</p>
             service_pack=None,
             cu_number=0,
             sync_cache=True,
+            sync_cache_list=None,
             schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -465,6 +474,10 @@ instance of the Commcell class</p>
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
+                                                   
 
             Returns:
                 object - instance of the Job class for this download job
@@ -553,6 +566,13 @@ instance of the Commcell class</p>
         if os_list is None:
             os_list = [&#39;Windows(X64)&#39;]
 
+        client_groups = []
+        if sync_cache and sync_cache_list:
+            for cache in sync_cache_list:
+                client_groups.append({&#34;clientName&#34;: cache})
+        elif sync_cache and not sync_cache_list:
+            client_groups = [{&#34;_type_&#34;: 2}]
+
         request_json = {
             &#34;taskInfo&#34;: {
                 &#34;task&#34;: {
@@ -610,11 +630,7 @@ instance of the Commcell class</p>
                                         &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
                                         &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
                                     },
-                                    &#34;clientAndClientGroups&#34;: [
-                                        {
-                                            &#34;_type_&#34;: 2
-                                        }
-                                    ],
+                                    &#34;clientAndClientGroups&#34;: client_groups,
                                     &#34;downloadUpdatesJobOptions&#34;: {
                                         &#34;downloadSoftware&#34;: True
                                     }
@@ -748,7 +764,7 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.download.Download.download_software"><code class="name flex">
-<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, schedule_pattern=None)</span>
+<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downloads the os packages on the commcell</p>
@@ -771,6 +787,10 @@ maintenance release number</p>
 &ndash;
 True if download and sync
 False only download</p>
+<p>sync_cache_list (list)
+&ndash;
+list of names of remote caches to sync
+use None to sync all caches</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this download job</p>
 <h2 id="raises">Raises</h2>
@@ -855,7 +875,7 @@ cu_number=42
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/download.py#L58-L262" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/download.py#L58-L270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
@@ -864,6 +884,7 @@ cu_number=42
         service_pack=None,
         cu_number=0,
         sync_cache=True,
+        sync_cache_list=None,
         schedule_pattern=None):
     &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -879,6 +900,10 @@ cu_number=42
 
             sync_cache (bool)              --  True if download and sync
                                                False only download
+            
+            sync_cache_list (list)         --  list of names of remote caches to sync
+                                               use None to sync all caches
+                                               
 
         Returns:
             object - instance of the Job class for this download job
@@ -967,6 +992,13 @@ cu_number=42
     if os_list is None:
         os_list = [&#39;Windows(X64)&#39;]
 
+    client_groups = []
+    if sync_cache and sync_cache_list:
+        for cache in sync_cache_list:
+            client_groups.append({&#34;clientName&#34;: cache})
+    elif sync_cache and not sync_cache_list:
+        client_groups = [{&#34;_type_&#34;: 2}]
+
     request_json = {
         &#34;taskInfo&#34;: {
             &#34;task&#34;: {
@@ -1024,11 +1056,7 @@ cu_number=42
                                     &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
                                     &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
                                 },
-                                &#34;clientAndClientGroups&#34;: [
-                                    {
-                                        &#34;_type_&#34;: 2
-                                    }
-                                ],
+                                &#34;clientAndClientGroups&#34;: client_groups,
                                 &#34;downloadUpdatesJobOptions&#34;: {
                                     &#34;downloadSoftware&#34;: True
                                 }
@@ -1088,7 +1116,7 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/download.py#L264-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/download.py#L272-L366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def sync_remote_cache(self, client_list=None):
     &#34;&#34;&#34;Syncs remote cache

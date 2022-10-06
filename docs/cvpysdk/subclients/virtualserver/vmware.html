@@ -47,7 +47,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L1-L986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L1-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -183,6 +183,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     eg:
                     media_agent         (basestring)   -- media agent
 
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -199,8 +202,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {}
-        restore_option[&#34;media_agent&#34;] = kwargs.get(&#34;media_agent&#34;, None)
+        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -262,7 +264,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 vm_to_restore            (str)    --  VM that is to be restored
 
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      &#39;delete&#39; is appended to the original vm name
+                                                      &#39;del&#39; is appended to the original vm name
 
                 vcenter_client    (basestring)    --  name of the vcenter client where the VM
                                                       should be restored.
@@ -300,25 +302,29 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
-                                eg:
-                                source_ip           (basestring)    --  IP of the source VM
+                    eg:
+                    source_ip           (basestring)    --  IP of the source VM
 
-                                destination_ip      (basestring)    --  IP of the destination VM
+                    destination_ip      (basestring)    --  IP of the destination VM
 
-                                destComputerName  (basestring)    --  Hostname of the restored vm
+                    destComputerName  (basestring)    --  Hostname of the restored vm
 
-                                source_subnet  (basestring)    --  subnet of the source vm
+                    source_subnet  (basestring)    --  subnet of the source vm
 
-                                source_gateway  (basestring)    --  gateway of the source vm
+                    source_gateway  (basestring)    --  gateway of the source vm
 
-                                destination_subnet  (basestring)    --  subnet of the restored vm
+                    destination_subnet  (basestring)    --  subnet of the restored vm
 
-                                destination_gateway  (basestring)    --  gateway of the restored vm
+                    destination_gateway  (basestring)    --  gateway of the restored vm
 
-                                media_agent         (basestring)   --  media agent for restore
+                    media_agent         (basestring)   --  media agent for restore
 
-                                restore_option      (dict)     --  complete dictionary with all advanced options
-                                    default: {}
+                    restore_option      (dict)     --  complete dictionary with all advanced options
+                        default: {}
+
+                    v2_details          (dict)       -- details for v2 jobs
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -338,7 +344,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -1063,7 +1069,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L51-L986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L51-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMWareVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -1149,6 +1155,9 @@ backupset class, subclient name, subclient id</p></div>
                     eg:
                     media_agent         (basestring)   -- media agent
 
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1165,8 +1174,7 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {}
-        restore_option[&#34;media_agent&#34;] = kwargs.get(&#34;media_agent&#34;, None)
+        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -1228,7 +1236,7 @@ backupset class, subclient name, subclient id</p></div>
                 vm_to_restore            (str)    --  VM that is to be restored
 
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                      &#39;delete&#39; is appended to the original vm name
+                                                      &#39;del&#39; is appended to the original vm name
 
                 vcenter_client    (basestring)    --  name of the vcenter client where the VM
                                                       should be restored.
@@ -1266,25 +1274,29 @@ backupset class, subclient name, subclient id</p></div>
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
-                                eg:
-                                source_ip           (basestring)    --  IP of the source VM
+                    eg:
+                    source_ip           (basestring)    --  IP of the source VM
 
-                                destination_ip      (basestring)    --  IP of the destination VM
+                    destination_ip      (basestring)    --  IP of the destination VM
 
-                                destComputerName  (basestring)    --  Hostname of the restored vm
+                    destComputerName  (basestring)    --  Hostname of the restored vm
 
-                                source_subnet  (basestring)    --  subnet of the source vm
+                    source_subnet  (basestring)    --  subnet of the source vm
 
-                                source_gateway  (basestring)    --  gateway of the source vm
+                    source_gateway  (basestring)    --  gateway of the source vm
 
-                                destination_subnet  (basestring)    --  subnet of the restored vm
+                    destination_subnet  (basestring)    --  subnet of the restored vm
 
-                                destination_gateway  (basestring)    --  gateway of the restored vm
+                    destination_gateway  (basestring)    --  gateway of the restored vm
 
-                                media_agent         (basestring)   --  media agent for restore
+                    media_agent         (basestring)   --  media agent for restore
 
-                                restore_option      (dict)     --  complete dictionary with all advanced options
-                                    default: {}
+                    restore_option      (dict)     --  complete dictionary with all advanced options
+                        default: {}
+
+                    v2_details          (dict)       -- details for v2 jobs
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1304,7 +1316,7 @@ backupset class, subclient name, subclient id</p></div>
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -2070,7 +2082,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L469-L580" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L475-L586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -2218,7 +2230,7 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L804-L872" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L810-L878" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
     &#34;&#34;&#34;
@@ -2354,7 +2366,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L340-L467" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L346-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -2549,7 +2561,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L582-L706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L588-L712" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -2730,7 +2742,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L874-L986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L880-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_googlecloud(
         self,
@@ -2898,7 +2910,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L709-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L715-L808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -3056,6 +3068,9 @@ eg:
 media_agent
 (basestring)
 &ndash; media agent</p>
+<pre><code>v2_details          (dict)       -- details for v2 subclient
+                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -3070,7 +3085,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L85-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L85-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -3122,6 +3137,9 @@ if response is not success
                 eg:
                 media_agent         (basestring)   -- media agent
 
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3138,8 +3156,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {}
-    restore_option[&#34;media_agent&#34;] = kwargs.get(&#34;media_agent&#34;, None)
+    restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # check input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -3194,7 +3211,7 @@ VM that is to be restored</p>
 (str)
 &ndash;
 new name of vm. If nothing is passed,
-'delete' is appended to the original vm name</p>
+'del' is appended to the original vm name</p>
 <p>vcenter_client
 (basestring)
 &ndash;
@@ -3259,22 +3276,25 @@ source_ip
 (basestring)
 &ndash;
 IP of the source VM</p>
-<pre><code>            destination_ip      (basestring)    --  IP of the destination VM
+<pre><code>destination_ip      (basestring)    --  IP of the destination VM
 
-            destComputerName  (basestring)    --  Hostname of the restored vm
+destComputerName  (basestring)    --  Hostname of the restored vm
 
-            source_subnet  (basestring)    --  subnet of the source vm
+source_subnet  (basestring)    --  subnet of the source vm
 
-            source_gateway  (basestring)    --  gateway of the source vm
+source_gateway  (basestring)    --  gateway of the source vm
 
-            destination_subnet  (basestring)    --  subnet of the restored vm
+destination_subnet  (basestring)    --  subnet of the restored vm
 
-            destination_gateway  (basestring)    --  gateway of the restored vm
+destination_gateway  (basestring)    --  gateway of the restored vm
 
-            media_agent         (basestring)   --  media agent for restore
+media_agent         (basestring)   --  media agent for restore
 
-            restore_option      (dict)     --  complete dictionary with all advanced options
-                default: {}
+restore_option      (dict)     --  complete dictionary with all advanced options
+    default: {}
+
+v2_details          (dict)       -- details for v2 jobs
+                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
@@ -3290,7 +3310,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/vmware.py#L189-L338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/vmware.py#L191-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -3317,7 +3337,7 @@ if response is not success
             vm_to_restore            (str)    --  VM that is to be restored
 
             restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                  &#39;delete&#39; is appended to the original vm name
+                                                  &#39;del&#39; is appended to the original vm name
 
             vcenter_client    (basestring)    --  name of the vcenter client where the VM
                                                   should be restored.
@@ -3355,25 +3375,29 @@ if response is not success
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
                                                  full_vm_restore_out_of_place
-                            eg:
-                            source_ip           (basestring)    --  IP of the source VM
+                eg:
+                source_ip           (basestring)    --  IP of the source VM
 
-                            destination_ip      (basestring)    --  IP of the destination VM
+                destination_ip      (basestring)    --  IP of the destination VM
 
-                            destComputerName  (basestring)    --  Hostname of the restored vm
+                destComputerName  (basestring)    --  Hostname of the restored vm
 
-                            source_subnet  (basestring)    --  subnet of the source vm
+                source_subnet  (basestring)    --  subnet of the source vm
 
-                            source_gateway  (basestring)    --  gateway of the source vm
+                source_gateway  (basestring)    --  gateway of the source vm
 
-                            destination_subnet  (basestring)    --  subnet of the restored vm
+                destination_subnet  (basestring)    --  subnet of the restored vm
 
-                            destination_gateway  (basestring)    --  gateway of the restored vm
+                destination_gateway  (basestring)    --  gateway of the restored vm
 
-                            media_agent         (basestring)   --  media agent for restore
+                media_agent         (basestring)   --  media agent for restore
 
-                            restore_option      (dict)     --  complete dictionary with all advanced options
-                                default: {}
+                restore_option      (dict)     --  complete dictionary with all advanced options
+                    default: {}
+
+                v2_details          (dict)       -- details for v2 jobs
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3393,7 +3417,7 @@ if response is not success
     restore_option = {}
     extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                      &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;]
+                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
     for key in extra_options:
         if key in kwargs:
             restore_option[key] = kwargs[key]

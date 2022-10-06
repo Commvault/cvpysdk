@@ -37,6 +37,8 @@ _restore_json()                 --      returns the JSON request to pass to the 
 the options selected by the user
 
 restore_entire_database()       --      Restores the db2 database
+
+restore_out_of_place()          --      runs the out of place restore for given backupset
 </code></pre>
 <h1 id="db2instance-instance-attributes">DB2Instance instance Attributes:</h1>
 <pre><code>**version**                         -- returns db2 version
@@ -54,7 +56,7 @@ restore_entire_database()       --      Restores the db2 database
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L1-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L1-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -92,6 +94,8 @@ DB2Instance:
     the options selected by the user
 
     restore_entire_database()       --      Restores the db2 database
+
+    restore_out_of_place()          --      runs the out of place restore for given backupset
 
 
 DB2Instance instance Attributes:
@@ -335,6 +339,136 @@ class DB2Instance(Instance):
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
 
+        return self._process_restore_response(request_json)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs):
+        &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Destination DB restore path
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        copy_precedence = kwargs.get(&#39;copy_precedence&#39;, None)
+        from_time = kwargs.get(&#39;from_time&#39;, None)
+        to_time = kwargs.get(&#39;to_time&#39;, None)
+        redirect_enabled = kwargs.get(&#39;redirect_enabled&#39;, False)
+        redirect_tablespace_path = kwargs.get(&#39;redirect_tablespace_path&#39;, None)
+        redirect_storage_group_path = kwargs.get(&#39;redirect_storage_group_path&#39;, None)
+        rollforward = kwargs.get(&#39;rollforward&#39;, True)
+        restoreArchiveLogs = kwargs.get(&#39;restoreArchiveLogs&#39;, False)
+        restore_incremental = kwargs.get(&#39;restore_incremental&#39;, True)
+
+        if redirect_enabled:
+            if not isinstance(redirect_tablespace_path, dict) and \
+                    not isinstance(redirect_storage_group_path, dict):
+                raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        request_json = self._restore_json(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_db=dest_backupset_name,
+            target_path=target_path,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            redirect=redirect_enabled,
+            redirect_storage_group_path=redirect_storage_group_path,
+            redirect_tablespace_path=redirect_tablespace_path,
+            rollforward_pending=rollforward,
+            restoreArchiveLogs=restoreArchiveLogs,
+            roll_forward=rollforward,
+            restore_incremental=restore_incremental,
+            storage_path=True)
+
+        if redirect_storage_group_path:
+            storagePaths = []
+            storageGroup = {&#34;storageGroup&#34;: []}
+
+            for name, path in redirect_storage_group_path.items():
+                storagePaths.append(path)
+                if isinstance(path, str):
+                    storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: [path]})
+                else:
+                    storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: path})
+
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;storagePaths&#34;] = storagePaths
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;storageGroupInfo&#34;] = storageGroup
+
+        if redirect_tablespace_path:
+            redirect_info = []
+            for tablespace, path in redirect_tablespace_path.items():
+                table_string = &#34;%s\t1\t%s\t6\t25600\t1\t1&#34; % (tablespace, path)
+                redirect_info.append(table_string)
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;redirectInfo&#34;] = redirect_info
+
+        request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+            &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -374,7 +508,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L59-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L61-L412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DB2Instance(Instance):
     &#34;&#34;&#34; Derived class from Instance Base class, representing a DB2 instance,
@@ -597,6 +731,136 @@ default: None</p>
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
 
+        return self._process_restore_response(request_json)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs):
+        &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Destination DB restore path
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        copy_precedence = kwargs.get(&#39;copy_precedence&#39;, None)
+        from_time = kwargs.get(&#39;from_time&#39;, None)
+        to_time = kwargs.get(&#39;to_time&#39;, None)
+        redirect_enabled = kwargs.get(&#39;redirect_enabled&#39;, False)
+        redirect_tablespace_path = kwargs.get(&#39;redirect_tablespace_path&#39;, None)
+        redirect_storage_group_path = kwargs.get(&#39;redirect_storage_group_path&#39;, None)
+        rollforward = kwargs.get(&#39;rollforward&#39;, True)
+        restoreArchiveLogs = kwargs.get(&#39;restoreArchiveLogs&#39;, False)
+        restore_incremental = kwargs.get(&#39;restore_incremental&#39;, True)
+
+        if redirect_enabled:
+            if not isinstance(redirect_tablespace_path, dict) and \
+                    not isinstance(redirect_storage_group_path, dict):
+                raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        request_json = self._restore_json(
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_backupset_name=dest_backupset_name,
+            target_db=dest_backupset_name,
+            target_path=target_path,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            redirect=redirect_enabled,
+            redirect_storage_group_path=redirect_storage_group_path,
+            redirect_tablespace_path=redirect_tablespace_path,
+            rollforward_pending=rollforward,
+            restoreArchiveLogs=restoreArchiveLogs,
+            roll_forward=rollforward,
+            restore_incremental=restore_incremental,
+            storage_path=True)
+
+        if redirect_storage_group_path:
+            storagePaths = []
+            storageGroup = {&#34;storageGroup&#34;: []}
+
+            for name, path in redirect_storage_group_path.items():
+                storagePaths.append(path)
+                if isinstance(path, str):
+                    storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: [path]})
+                else:
+                    storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: path})
+
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;storagePaths&#34;] = storagePaths
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;storageGroupInfo&#34;] = storageGroup
+
+        if redirect_tablespace_path:
+            redirect_info = []
+            for tablespace, path in redirect_tablespace_path.items():
+                table_string = &#34;%s\t1\t%s\t6\t25600\t1\t1&#34; % (tablespace, path)
+                redirect_info.append(table_string)
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+                &#34;redirectInfo&#34;] = redirect_info
+
+        request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+            &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -615,7 +879,7 @@ Command line sp name from db2 instance level</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L107-L116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L109-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def command_line_storage_policy(self):
@@ -637,7 +901,7 @@ def command_line_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L96-L105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L98-L107" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_backup_storage_policy(self):
@@ -659,7 +923,7 @@ def data_backup_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L73-L82" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L75-L84" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def home_directory(self):
@@ -682,7 +946,7 @@ def home_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L118-L128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L120-L130" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_backup_storage_policy(self):
@@ -706,7 +970,7 @@ def log_backup_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L84-L94" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L86-L96" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_name(self):
@@ -729,7 +993,7 @@ def user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L63-L71" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L65-L73" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -791,7 +1055,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/db2instance.py#L218-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L220-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_entire_database(
         self,
@@ -852,6 +1116,204 @@ if response is not success
         recover_db=recover_db,
         restore_incremental=restore_incremental,
     )
+    request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+        &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
+
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.db2instance.DB2Instance.restore_out_of_place"><code class="name flex">
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, dest_client_name, dest_instance_name, dest_backupset_name, target_path, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the DB2 data/log files specified in the input paths
+list to the same location.</p>
+<pre><code>Args:
+    dest_client_name        (str)   --  destination client name where files are to be
+    restored
+
+    dest_instance_name      (str)   --  destination db2 instance name of
+    destination client
+
+    dest_backupset_name     (str)   --  destination db2 backupset name of
+    destination client
+
+    target_path             (str)   --  Destination DB restore path
+
+    copy_precedence         (int)   --  copy precedence value of storage policy copy
+        default: None
+
+    from_time               (str)   --  time to retore the contents after
+        format: YYYY-MM-DD HH:MM:SS
+
+        default: None
+
+    to_time                 (str)   --  time to retore the contents before
+        format: YYYY-MM-DD HH:MM:SS
+
+        default: None
+
+    redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+    enabled
+
+        default: False
+
+    redirect_storage_group_path           (dict)   --  Path specified for each storage group
+    in advanced restore options in order to perform redirect restore
+        format: {'Storage Group Name': 'Redirect Path'}
+
+        default: None
+
+     redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+     restore options in order to perform redirect restore
+        format: {'Tablespace name': 'Redirect Path'}
+
+        default: None
+
+    destination_path        (str)   --  destinath path for restore
+        default: None
+
+Returns:
+    object - instance of the Job class for this restore job
+
+Raises:
+    SDKException:
+        if failed to initialize job
+
+        if response is empty
+
+        if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/db2instance.py#L284-L412" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_out_of_place(
+        self,
+        dest_client_name,
+        dest_instance_name,
+        dest_backupset_name,
+        target_path,
+        **kwargs):
+    &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+    list to the same location.
+
+        Args:
+            dest_client_name        (str)   --  destination client name where files are to be
+            restored
+
+            dest_instance_name      (str)   --  destination db2 instance name of
+            destination client
+
+            dest_backupset_name     (str)   --  destination db2 backupset name of
+            destination client
+
+            target_path             (str)   --  Destination DB restore path
+
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
+                default: None
+
+            from_time               (str)   --  time to retore the contents after
+                format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            to_time                 (str)   --  time to retore the contents before
+                format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+            enabled
+
+                default: False
+
+            redirect_storage_group_path           (dict)   --  Path specified for each storage group
+            in advanced restore options in order to perform redirect restore
+                format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                default: None
+
+             redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+             restore options in order to perform redirect restore
+                format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                default: None
+
+            destination_path        (str)   --  destinath path for restore
+                default: None
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    copy_precedence = kwargs.get(&#39;copy_precedence&#39;, None)
+    from_time = kwargs.get(&#39;from_time&#39;, None)
+    to_time = kwargs.get(&#39;to_time&#39;, None)
+    redirect_enabled = kwargs.get(&#39;redirect_enabled&#39;, False)
+    redirect_tablespace_path = kwargs.get(&#39;redirect_tablespace_path&#39;, None)
+    redirect_storage_group_path = kwargs.get(&#39;redirect_storage_group_path&#39;, None)
+    rollforward = kwargs.get(&#39;rollforward&#39;, True)
+    restoreArchiveLogs = kwargs.get(&#39;restoreArchiveLogs&#39;, False)
+    restore_incremental = kwargs.get(&#39;restore_incremental&#39;, True)
+
+    if redirect_enabled:
+        if not isinstance(redirect_tablespace_path, dict) and \
+                not isinstance(redirect_storage_group_path, dict):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+    request_json = self._restore_json(
+        dest_client_name=dest_client_name,
+        dest_instance_name=dest_instance_name,
+        dest_backupset_name=dest_backupset_name,
+        target_db=dest_backupset_name,
+        target_path=target_path,
+        copy_precedence=copy_precedence,
+        from_time=from_time,
+        to_time=to_time,
+        redirect=redirect_enabled,
+        redirect_storage_group_path=redirect_storage_group_path,
+        redirect_tablespace_path=redirect_tablespace_path,
+        rollforward_pending=rollforward,
+        restoreArchiveLogs=restoreArchiveLogs,
+        roll_forward=rollforward,
+        restore_incremental=restore_incremental,
+        storage_path=True)
+
+    if redirect_storage_group_path:
+        storagePaths = []
+        storageGroup = {&#34;storageGroup&#34;: []}
+
+        for name, path in redirect_storage_group_path.items():
+            storagePaths.append(path)
+            if isinstance(path, str):
+                storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: [path]})
+            else:
+                storageGroup[&#34;storageGroup&#34;].append({&#34;groupName&#34;: name, &#34;stoPaths&#34;: path})
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+            &#34;storagePaths&#34;] = storagePaths
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+            &#34;storageGroupInfo&#34;] = storageGroup
+
+    if redirect_tablespace_path:
+        redirect_info = []
+        for tablespace, path in redirect_tablespace_path.items():
+            table_string = &#34;%s\t1\t%s\t6\t25600\t1\t1&#34; % (tablespace, path)
+            redirect_info.append(table_string)
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+            &#34;redirectInfo&#34;] = redirect_info
+
     request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
         &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = dest_backupset_name
 
@@ -954,6 +1416,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.db2instance.DB2Instance.home_directory" href="#cvpysdk.instances.db2instance.DB2Instance.home_directory">home_directory</a></code></li>
 <li><code><a title="cvpysdk.instances.db2instance.DB2Instance.log_backup_storage_policy" href="#cvpysdk.instances.db2instance.DB2Instance.log_backup_storage_policy">log_backup_storage_policy</a></code></li>
 <li><code><a title="cvpysdk.instances.db2instance.DB2Instance.restore_entire_database" href="#cvpysdk.instances.db2instance.DB2Instance.restore_entire_database">restore_entire_database</a></code></li>
+<li><code><a title="cvpysdk.instances.db2instance.DB2Instance.restore_out_of_place" href="#cvpysdk.instances.db2instance.DB2Instance.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.instances.db2instance.DB2Instance.user_name" href="#cvpysdk.instances.db2instance.DB2Instance.user_name">user_name</a></code></li>
 <li><code><a title="cvpysdk.instances.db2instance.DB2Instance.version" href="#cvpysdk.instances.db2instance.DB2Instance.version">version</a></code></li>
 </ul>

@@ -42,7 +42,7 @@ function to run tape import operation.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell_migration.py#L1-L440" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L1-L490" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -105,7 +105,7 @@ class CommCellMigration(object):
         self._commcell_name = self._commcell_object.commserv_name
         self._path_type = 0
 
-    def commcell_export(self, export_location, client_list, options_dictionary=None):
+    def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
         &#34;&#34;&#34; Starts the Commcell Export job.
 
             Args:
@@ -126,6 +126,8 @@ class CommCellMigration(object):
 
                         &#34;password&#34;:&#34;User#####&#34;,
 
+                        &#34;otherSqlInstance&#34;: False,
+
                         &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
 
                         &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
@@ -136,8 +138,21 @@ class CommCellMigration(object):
 
                         &#34;captureMediaAgents&#34;:True,
 
+                        &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
+
+                        &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
+
                         &#34;autopickCluster&#34;:False
                     }
+                
+                other_entities      ( list )        --  list of other entities to be exporteddd
+                    [
+                        &#34;schedule_policies&#34;,
+
+                        &#34;users_and_user_groups&#34;,
+
+                        &#34;alerts&#34;
+                    ]   
 
             Returns:
                 CCM Export Job instance             --  returns the CCM Export job instance.
@@ -151,6 +166,11 @@ class CommCellMigration(object):
                     if invalid inputs are passed.
         &#34;&#34;&#34;
 
+        if client_list is None and other_entities is None:
+            raise SDKException(&#39;CommCellMigration&#39;, &#39;105&#39;)
+
+        options_dictionary = options_dictionary or {}
+
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
@@ -158,21 +178,25 @@ class CommCellMigration(object):
         sql_instance_name = options_dictionary.get(&#34;sqlInstanceName&#34;, &#34;&#34;)
         sql_user_name = options_dictionary.get(&#34;sqlUserName&#34;, &#34;&#34;)
         sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
-        database = options_dictionary.get(&#34;Database&#34;, &#34;commserv&#34;)
+        database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
         capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
         auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
+        cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
+        client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
 
-        if not (isinstance(path_type, basestring)
-                and isinstance(network_user_name, basestring)
-                and isinstance(network_user_password, basestring)
+        if not (isinstance(path_type, str)
+                and isinstance(network_user_name, str)
+                and isinstance(network_user_password, str)
                 and isinstance(other_sql_instance, bool)
-                and isinstance(sql_instance_name, basestring)
-                and isinstance(export_location, basestring)
-                and isinstance(sql_user_name, basestring)
-                and isinstance(sql_password, basestring)
-                and isinstance(database, basestring)
+                and isinstance(sql_instance_name, str)
+                and isinstance(export_location, str)
+                and isinstance(sql_user_name, str)
+                and isinstance(sql_password, str)
+                and isinstance(database, str)
                 and isinstance(capture_ma, bool)
-                and isinstance(auto_pick_cluster, bool)):
+                and isinstance(auto_pick_cluster, bool)
+                and isinstance(cs_name, str)
+                and isinstance(client_ids, list)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
         if path_type.lower() == &#39;local&#39;:
@@ -241,7 +265,7 @@ class CommCellMigration(object):
                                         &#34;copyDumpToRemoteCS&#34;: False,
                                         &#34;useJobResultsDirForExport&#34;: False,
                                         &#34;captureFromDB&#34;: {
-                                            &#34;csName&#34;: self._commcell_name,
+                                            &#34;csName&#34;: cs_name,
                                             &#34;csDbName&#34;: database
                                         },
                                         &#34;entities&#34;: [
@@ -261,9 +285,33 @@ class CommCellMigration(object):
         sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
             [&#39;captureOptions&#39;][&#39;entities&#39;]
 
-        for client in client_list:
-            temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
-            sub_dict.append(temp_dic)
+        if other_entities:
+            for entity in other_entities:
+                if entity == &#34;schedule_policies&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 34})
+
+                elif entity == &#34;users_and_user_groups&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 36})
+
+                elif entity == &#34;alerts&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 42})
+
+        if client_list:
+            if other_sql_instance:
+                if  not sql_instance_name \
+                        or not sql_user_name \
+                        or not sql_password \
+                        or not client_ids:
+                    raise SDKException(&#39;CommCellMigration&#39;, &#39;106&#39;)
+
+                for index, client in enumerate(client_list):
+                    temp_dic = {&#39;clientName&#39;: client, &#34;clientId&#34;: client_ids[index]}
+                    sub_dict.append(temp_dic)
+
+            else:
+                for client in client_list:
+                    temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
+                    sub_dict.append(temp_dic)
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;,
                                                            self._services[&#39;RESTORE&#39;],
@@ -287,11 +335,11 @@ class CommCellMigration(object):
 
                 options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
                     {
-                        &#34;pathType&#34;:&#34;Local&#34;,
-
-                        &#34;userName&#34;:&#34;sa&#34;
-
-                        &#34;password&#34;:&#34;password&#34;
+                        &#34;pathType&#34;: &#34;Network&#34;,
+                        &#34;userName&#34; : &#34;username&#34;,
+                        &#34;password&#34;: &#34;password&#34;,
+                        &#34;forceOverwrite&#34;: False,
+                        &#34;failIfEntityAlreadyExists&#34;: False
                     }
 
             Returns:
@@ -308,6 +356,8 @@ class CommCellMigration(object):
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
+        force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
+        fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
 
         if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
@@ -359,14 +409,14 @@ class CommCellMigration(object):
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
                                         &#34;deleteEntitiesNotPresent&#34;: False,
-                                        &#34;forceOverwrite&#34;: False,
+                                        &#34;forceOverwrite&#34;: force_overwrite,
                                         &#34;mergeHolidays&#34;: True,
                                         &#34;forceOverwriteSchedule&#34;: False,
                                         &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                         &#34;mergeActivityControl&#34;: True,
                                         &#34;fallbackMediaAgent&#34;: &#34;&#34;,
                                         &#34;mergeSchedules&#34;: True,
-                                        &#34;failIfEntityAlreadyExists&#34;: False,
+                                        &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                         &#34;fallbackLibrary&#34;: &#34;&#34;,
                                         &#34;skipConflictMedia&#34;: False,
                                         &#34;stagingPath&#34;: &#34;&#34;
@@ -509,7 +559,7 @@ class CommCellMigration(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell_migration.py#L42-L440" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L42-L490" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
     &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
@@ -531,7 +581,7 @@ class CommCellMigration(object):
         self._commcell_name = self._commcell_object.commserv_name
         self._path_type = 0
 
-    def commcell_export(self, export_location, client_list, options_dictionary=None):
+    def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
         &#34;&#34;&#34; Starts the Commcell Export job.
 
             Args:
@@ -552,6 +602,8 @@ class CommCellMigration(object):
 
                         &#34;password&#34;:&#34;User#####&#34;,
 
+                        &#34;otherSqlInstance&#34;: False,
+
                         &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
 
                         &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
@@ -562,8 +614,21 @@ class CommCellMigration(object):
 
                         &#34;captureMediaAgents&#34;:True,
 
+                        &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
+
+                        &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
+
                         &#34;autopickCluster&#34;:False
                     }
+                
+                other_entities      ( list )        --  list of other entities to be exporteddd
+                    [
+                        &#34;schedule_policies&#34;,
+
+                        &#34;users_and_user_groups&#34;,
+
+                        &#34;alerts&#34;
+                    ]   
 
             Returns:
                 CCM Export Job instance             --  returns the CCM Export job instance.
@@ -577,6 +642,11 @@ class CommCellMigration(object):
                     if invalid inputs are passed.
         &#34;&#34;&#34;
 
+        if client_list is None and other_entities is None:
+            raise SDKException(&#39;CommCellMigration&#39;, &#39;105&#39;)
+
+        options_dictionary = options_dictionary or {}
+
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
@@ -584,21 +654,25 @@ class CommCellMigration(object):
         sql_instance_name = options_dictionary.get(&#34;sqlInstanceName&#34;, &#34;&#34;)
         sql_user_name = options_dictionary.get(&#34;sqlUserName&#34;, &#34;&#34;)
         sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
-        database = options_dictionary.get(&#34;Database&#34;, &#34;commserv&#34;)
+        database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
         capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
         auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
+        cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
+        client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
 
-        if not (isinstance(path_type, basestring)
-                and isinstance(network_user_name, basestring)
-                and isinstance(network_user_password, basestring)
+        if not (isinstance(path_type, str)
+                and isinstance(network_user_name, str)
+                and isinstance(network_user_password, str)
                 and isinstance(other_sql_instance, bool)
-                and isinstance(sql_instance_name, basestring)
-                and isinstance(export_location, basestring)
-                and isinstance(sql_user_name, basestring)
-                and isinstance(sql_password, basestring)
-                and isinstance(database, basestring)
+                and isinstance(sql_instance_name, str)
+                and isinstance(export_location, str)
+                and isinstance(sql_user_name, str)
+                and isinstance(sql_password, str)
+                and isinstance(database, str)
                 and isinstance(capture_ma, bool)
-                and isinstance(auto_pick_cluster, bool)):
+                and isinstance(auto_pick_cluster, bool)
+                and isinstance(cs_name, str)
+                and isinstance(client_ids, list)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
         if path_type.lower() == &#39;local&#39;:
@@ -667,7 +741,7 @@ class CommCellMigration(object):
                                         &#34;copyDumpToRemoteCS&#34;: False,
                                         &#34;useJobResultsDirForExport&#34;: False,
                                         &#34;captureFromDB&#34;: {
-                                            &#34;csName&#34;: self._commcell_name,
+                                            &#34;csName&#34;: cs_name,
                                             &#34;csDbName&#34;: database
                                         },
                                         &#34;entities&#34;: [
@@ -687,9 +761,33 @@ class CommCellMigration(object):
         sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
             [&#39;captureOptions&#39;][&#39;entities&#39;]
 
-        for client in client_list:
-            temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
-            sub_dict.append(temp_dic)
+        if other_entities:
+            for entity in other_entities:
+                if entity == &#34;schedule_policies&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 34})
+
+                elif entity == &#34;users_and_user_groups&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 36})
+
+                elif entity == &#34;alerts&#34;:
+                    sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 42})
+
+        if client_list:
+            if other_sql_instance:
+                if  not sql_instance_name \
+                        or not sql_user_name \
+                        or not sql_password \
+                        or not client_ids:
+                    raise SDKException(&#39;CommCellMigration&#39;, &#39;106&#39;)
+
+                for index, client in enumerate(client_list):
+                    temp_dic = {&#39;clientName&#39;: client, &#34;clientId&#34;: client_ids[index]}
+                    sub_dict.append(temp_dic)
+
+            else:
+                for client in client_list:
+                    temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
+                    sub_dict.append(temp_dic)
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;,
                                                            self._services[&#39;RESTORE&#39;],
@@ -713,11 +811,11 @@ class CommCellMigration(object):
 
                 options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
                     {
-                        &#34;pathType&#34;:&#34;Local&#34;,
-
-                        &#34;userName&#34;:&#34;sa&#34;
-
-                        &#34;password&#34;:&#34;password&#34;
+                        &#34;pathType&#34;: &#34;Network&#34;,
+                        &#34;userName&#34; : &#34;username&#34;,
+                        &#34;password&#34;: &#34;password&#34;,
+                        &#34;forceOverwrite&#34;: False,
+                        &#34;failIfEntityAlreadyExists&#34;: False
                     }
 
             Returns:
@@ -734,6 +832,8 @@ class CommCellMigration(object):
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
+        force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
+        fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
 
         if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
@@ -785,14 +885,14 @@ class CommCellMigration(object):
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
                                         &#34;deleteEntitiesNotPresent&#34;: False,
-                                        &#34;forceOverwrite&#34;: False,
+                                        &#34;forceOverwrite&#34;: force_overwrite,
                                         &#34;mergeHolidays&#34;: True,
                                         &#34;forceOverwriteSchedule&#34;: False,
                                         &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                         &#34;mergeActivityControl&#34;: True,
                                         &#34;fallbackMediaAgent&#34;: &#34;&#34;,
                                         &#34;mergeSchedules&#34;: True,
-                                        &#34;failIfEntityAlreadyExists&#34;: False,
+                                        &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                         &#34;fallbackLibrary&#34;: &#34;&#34;,
                                         &#34;skipConflictMedia&#34;: False,
                                         &#34;stagingPath&#34;: &#34;&#34;
@@ -914,7 +1014,7 @@ class CommCellMigration(object):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.commcell_migration.CommCellMigration.commcell_export"><code class="name flex">
-<span>def <span class="ident">commcell_export</span></span>(<span>self, export_location, client_list, options_dictionary=None)</span>
+<span>def <span class="ident">commcell_export</span></span>(<span>self, export_location, client_list=None, options_dictionary=None, other_entities=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Starts the Commcell Export job.</p>
@@ -942,6 +1042,8 @@ Contains options used to perform CCM Export.
 
     "password":"User#####",
 
+    "otherSqlInstance": False,
+
     "sqlInstanceName":"SQLInstanceName",
 
     "sqlUserName":"SQLUserName",
@@ -952,8 +1054,23 @@ Contains options used to perform CCM Export.
 
     "captureMediaAgents":True,
 
+    "csName": "CommservName",  # host cs for using sql instance export
+
+    "clientIds": [client_id1, client_id2],  # required only when exporting clients using sql instance
+
     "autopickCluster":False
 }
+</code></pre>
+<p>other_entities
+( list )
+&ndash;
+list of other entities to be exporteddd
+[
+"schedule_policies",</p>
+<pre><code>    "users_and_user_groups",
+
+    "alerts"
+]
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>CCM Export Job instance
@@ -969,9 +1086,9 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell_migration.py#L62-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L62-L282" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def commcell_export(self, export_location, client_list, options_dictionary=None):
+<pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
     &#34;&#34;&#34; Starts the Commcell Export job.
 
         Args:
@@ -992,6 +1109,8 @@ if invalid inputs are passed.
 
                     &#34;password&#34;:&#34;User#####&#34;,
 
+                    &#34;otherSqlInstance&#34;: False,
+
                     &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
 
                     &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
@@ -1002,8 +1121,21 @@ if invalid inputs are passed.
 
                     &#34;captureMediaAgents&#34;:True,
 
+                    &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
+
+                    &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
+
                     &#34;autopickCluster&#34;:False
                 }
+            
+            other_entities      ( list )        --  list of other entities to be exporteddd
+                [
+                    &#34;schedule_policies&#34;,
+
+                    &#34;users_and_user_groups&#34;,
+
+                    &#34;alerts&#34;
+                ]   
 
         Returns:
             CCM Export Job instance             --  returns the CCM Export job instance.
@@ -1017,6 +1149,11 @@ if invalid inputs are passed.
                 if invalid inputs are passed.
     &#34;&#34;&#34;
 
+    if client_list is None and other_entities is None:
+        raise SDKException(&#39;CommCellMigration&#39;, &#39;105&#39;)
+
+    options_dictionary = options_dictionary or {}
+
     path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
     network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
     network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
@@ -1024,21 +1161,25 @@ if invalid inputs are passed.
     sql_instance_name = options_dictionary.get(&#34;sqlInstanceName&#34;, &#34;&#34;)
     sql_user_name = options_dictionary.get(&#34;sqlUserName&#34;, &#34;&#34;)
     sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
-    database = options_dictionary.get(&#34;Database&#34;, &#34;commserv&#34;)
+    database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
     capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
     auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
+    cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
+    client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
 
-    if not (isinstance(path_type, basestring)
-            and isinstance(network_user_name, basestring)
-            and isinstance(network_user_password, basestring)
+    if not (isinstance(path_type, str)
+            and isinstance(network_user_name, str)
+            and isinstance(network_user_password, str)
             and isinstance(other_sql_instance, bool)
-            and isinstance(sql_instance_name, basestring)
-            and isinstance(export_location, basestring)
-            and isinstance(sql_user_name, basestring)
-            and isinstance(sql_password, basestring)
-            and isinstance(database, basestring)
+            and isinstance(sql_instance_name, str)
+            and isinstance(export_location, str)
+            and isinstance(sql_user_name, str)
+            and isinstance(sql_password, str)
+            and isinstance(database, str)
             and isinstance(capture_ma, bool)
-            and isinstance(auto_pick_cluster, bool)):
+            and isinstance(auto_pick_cluster, bool)
+            and isinstance(cs_name, str)
+            and isinstance(client_ids, list)):
         raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
     if path_type.lower() == &#39;local&#39;:
@@ -1107,7 +1248,7 @@ if invalid inputs are passed.
                                     &#34;copyDumpToRemoteCS&#34;: False,
                                     &#34;useJobResultsDirForExport&#34;: False,
                                     &#34;captureFromDB&#34;: {
-                                        &#34;csName&#34;: self._commcell_name,
+                                        &#34;csName&#34;: cs_name,
                                         &#34;csDbName&#34;: database
                                     },
                                     &#34;entities&#34;: [
@@ -1127,9 +1268,33 @@ if invalid inputs are passed.
     sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
         [&#39;captureOptions&#39;][&#39;entities&#39;]
 
-    for client in client_list:
-        temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
-        sub_dict.append(temp_dic)
+    if other_entities:
+        for entity in other_entities:
+            if entity == &#34;schedule_policies&#34;:
+                sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 34})
+
+            elif entity == &#34;users_and_user_groups&#34;:
+                sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 36})
+
+            elif entity == &#34;alerts&#34;:
+                sub_dict.append({&#39;commCellName&#39;: self._commcell_name, &#34;_type_&#34;: 42})
+
+    if client_list:
+        if other_sql_instance:
+            if  not sql_instance_name \
+                    or not sql_user_name \
+                    or not sql_password \
+                    or not client_ids:
+                raise SDKException(&#39;CommCellMigration&#39;, &#39;106&#39;)
+
+            for index, client in enumerate(client_list):
+                temp_dic = {&#39;clientName&#39;: client, &#34;clientId&#34;: client_ids[index]}
+                sub_dict.append(temp_dic)
+
+        else:
+            for client in client_list:
+                temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
+                sub_dict.append(temp_dic)
 
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;,
                                                        self._services[&#39;RESTORE&#39;],
@@ -1161,12 +1326,12 @@ Location to import the generated dumps.</p>
 &ndash;
 Contains list of options used for CCMImport.
 {
-"pathType":"Local",</p>
-<pre><code>    "userName":"sa"
-
-    "password":"password"
-}
-</code></pre>
+"pathType": "Network",
+"userName" : "username",
+"password": "password",
+"forceOverwrite": False,
+"failIfEntityAlreadyExists": False
+}</p>
 <h2 id="returns">Returns</h2>
 <p>CCM Import Job instance
 &ndash;
@@ -1181,7 +1346,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell_migration.py#L236-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L284-L408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_import(self, import_location, options_dictionary):
     &#34;&#34;&#34; Starts the Commcell Import job.
@@ -1191,11 +1356,11 @@ if invalid inputs are passed.
 
             options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
                 {
-                    &#34;pathType&#34;:&#34;Local&#34;,
-
-                    &#34;userName&#34;:&#34;sa&#34;
-
-                    &#34;password&#34;:&#34;password&#34;
+                    &#34;pathType&#34;: &#34;Network&#34;,
+                    &#34;userName&#34; : &#34;username&#34;,
+                    &#34;password&#34;: &#34;password&#34;,
+                    &#34;forceOverwrite&#34;: False,
+                    &#34;failIfEntityAlreadyExists&#34;: False
                 }
 
         Returns:
@@ -1212,6 +1377,8 @@ if invalid inputs are passed.
     path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
     network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
     network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
+    force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
+    fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
 
     if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
         raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
@@ -1263,14 +1430,14 @@ if invalid inputs are passed.
                                     &#34;pruneImportedDump&#34;: False,
                                     &#34;alwaysUseFallbackDataPath&#34;: True,
                                     &#34;deleteEntitiesNotPresent&#34;: False,
-                                    &#34;forceOverwrite&#34;: False,
+                                    &#34;forceOverwrite&#34;: force_overwrite,
                                     &#34;mergeHolidays&#34;: True,
                                     &#34;forceOverwriteSchedule&#34;: False,
                                     &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                     &#34;mergeActivityControl&#34;: True,
                                     &#34;fallbackMediaAgent&#34;: &#34;&#34;,
                                     &#34;mergeSchedules&#34;: True,
-                                    &#34;failIfEntityAlreadyExists&#34;: False,
+                                    &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                     &#34;fallbackLibrary&#34;: &#34;&#34;,
                                     &#34;skipConflictMedia&#34;: False,
                                     &#34;stagingPath&#34;: &#34;&#34;
@@ -1331,7 +1498,7 @@ drive pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell_migration.py#L360-L440" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L410-L490" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
 

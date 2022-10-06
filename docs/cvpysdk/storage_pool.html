@@ -89,7 +89,7 @@ returns the storage pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L1-L812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L1-L845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -188,6 +188,7 @@ from past.builtins import basestring
 
 from .storage import DiskLibrary
 from .storage import MediaAgent
+from .security.security_association import SecurityAssociation
 
 
 class StoragePools:
@@ -902,7 +903,39 @@ class StoragePool(object):
 
     def refresh(self):
         &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
-        self._get_storage_pool_properties()</code></pre>
+        self._get_storage_pool_properties()
+
+    def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
+        &#34;&#34;&#34;
+        Adds the security association on the storage pool object
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            &#39;user_name&#39;: user1,
+                            &#39;role_name&#39;: role1
+                        },
+                        {
+                            &#39;user_name&#39;: user2,
+                            &#39;role_name&#39;: role2
+                        }
+                    ]
+ 
+            isUser (bool)           --    True or False. set isUser = False, If associations_list made up of user groups
+            request_type (str)      --    eg : &#39;OVERWRITE&#39; or &#39;UPDATE&#39; or &#39;DELETE&#39;, Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is being done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of List type
+        &#34;&#34;&#34;
+        if not isinstance(associations_list, list):
+            raise SDKException(&#39;StoragePool&#39;, &#39;101&#39;)
+
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                        user= isUser, request_type = request_type, externalGroup = externalGroup)</code></pre>
 </details>
 </section>
 <section>
@@ -936,7 +969,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L534-L812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L535-L845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePool(object):
     &#34;&#34;&#34;Class for individual storage pools&#34;&#34;&#34;
@@ -1216,7 +1249,39 @@ class StoragePool(object):
 
     def refresh(self):
         &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
-        self._get_storage_pool_properties()</code></pre>
+        self._get_storage_pool_properties()
+
+    def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
+        &#34;&#34;&#34;
+        Adds the security association on the storage pool object
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            &#39;user_name&#39;: user1,
+                            &#39;role_name&#39;: role1
+                        },
+                        {
+                            &#39;user_name&#39;: user2,
+                            &#39;role_name&#39;: role2
+                        }
+                    ]
+ 
+            isUser (bool)           --    True or False. set isUser = False, If associations_list made up of user groups
+            request_type (str)      --    eg : &#39;OVERWRITE&#39; or &#39;UPDATE&#39; or &#39;DELETE&#39;, Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is being done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of List type
+        &#34;&#34;&#34;
+        if not isinstance(associations_list, list):
+            raise SDKException(&#39;StoragePool&#39;, &#39;101&#39;)
+
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                        user= isUser, request_type = request_type, externalGroup = externalGroup)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1226,7 +1291,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L605-L608" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L606-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_policy_name(self):
@@ -1240,7 +1305,7 @@ def global_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L595-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L596-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_id(self):
@@ -1254,7 +1319,7 @@ def storage_pool_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L590-L593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L591-L594" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_name(self):
@@ -1268,7 +1333,7 @@ def storage_pool_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L600-L603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L601-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_properties(self):
@@ -1297,7 +1362,7 @@ if add nodes to an existing storage pool fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L610-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L611-L693" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_add_nodes(self, media_agents):
     &#34;&#34;&#34;
@@ -1397,7 +1462,7 @@ if reconfigure fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L694-L741" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L695-L742" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_reconfigure_storage_pool(self, storage_pool_name):
     &#34;&#34;&#34;
@@ -1464,7 +1529,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L743-L808" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L744-L809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_replace_disk(self, disk_id, media_agent, storage_pool_name):
     &#34;&#34;&#34;
@@ -1542,11 +1607,82 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L810-L812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L811-L813" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
     self._get_storage_pool_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.update_security_associations"><code class="name flex">
+<span>def <span class="ident">update_security_associations</span></span>(<span>self, associations_list, isUser=True, request_type=None, externalGroup=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds the security association on the storage pool object</p>
+<h2 id="args">Args</h2>
+<p>associations_list
+(list)
+&ndash;
+list of users to be associated
+Example:
+associations_list = [
+{
+'user_name': user1,
+'role_name': role1
+},
+{
+'user_name': user2,
+'role_name': role2
+}
+]</p>
+<p>isUser (bool)
+&ndash;
+True or False. set isUser = False, If associations_list made up of user groups
+request_type (str)
+&ndash;
+eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+externalGroup (bool)
+&ndash;
+True or False, set externalGroup = True. If Security associations is being done on External User Groups</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if association is not of List type</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L815-L845" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
+    &#34;&#34;&#34;
+    Adds the security association on the storage pool object
+
+    Args:
+        associations_list   (list)  --  list of users to be associated
+            Example:
+                associations_list = [
+                    {
+                        &#39;user_name&#39;: user1,
+                        &#39;role_name&#39;: role1
+                    },
+                    {
+                        &#39;user_name&#39;: user2,
+                        &#39;role_name&#39;: role2
+                    }
+                ]
+
+        isUser (bool)           --    True or False. set isUser = False, If associations_list made up of user groups
+        request_type (str)      --    eg : &#39;OVERWRITE&#39; or &#39;UPDATE&#39; or &#39;DELETE&#39;, Default will be OVERWRITE operation
+        externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is being done on External User Groups
+
+    Raises:
+        SDKException:
+            if association is not of List type
+    &#34;&#34;&#34;
+    if not isinstance(associations_list, list):
+        raise SDKException(&#39;StoragePool&#39;, &#39;101&#39;)
+
+    SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                    user= isUser, request_type = request_type, externalGroup = externalGroup)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1570,7 +1706,7 @@ instance of the StoragePools class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L100-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L101-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePools:
     &#34;&#34;&#34;Class for doing operations on Storage Pools, like get storage poo ID.&#34;&#34;&#34;
@@ -2024,7 +2160,7 @@ consists of all storage pools added to the commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L228-L242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L229-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_pools(self):
@@ -2077,7 +2213,7 @@ path where the DDB should be stored</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L350-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L351-L474" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
     &#34;&#34;&#34;
@@ -2228,7 +2364,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L475-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L476-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_pool_name):
     &#34;&#34;&#34;deletes the specified storage pool.
@@ -2306,7 +2442,7 @@ if no storage pool exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L256-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L257-L276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns the id of the storage pool for the given storage pool name.
@@ -2347,7 +2483,7 @@ boolean output whether the storage pool exists in the commcell or not</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L244-L254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L245-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_storage_pool(self, name):
     &#34;&#34;&#34;Checks if a storage pool exists in the Commcell with the input storage pool name.
@@ -2382,7 +2518,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L277-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L278-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_create_storage_pool(self, storage_pool_name, media_agents):
     &#34;&#34;&#34;
@@ -2466,7 +2602,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/storage_pool.py#L530-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L531-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;
@@ -2562,6 +2698,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_id" href="#cvpysdk.storage_pool.StoragePool.storage_pool_id">storage_pool_id</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_name" href="#cvpysdk.storage_pool.StoragePool.storage_pool_name">storage_pool_name</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_properties" href="#cvpysdk.storage_pool.StoragePool.storage_pool_properties">storage_pool_properties</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.update_security_associations" href="#cvpysdk.storage_pool.StoragePool.update_security_associations">update_security_associations</a></code></li>
 </ul>
 </li>
 <li>

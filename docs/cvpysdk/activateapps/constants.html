@@ -45,10 +45,16 @@ Maintains constants for Plan operations</p>
 <p>InventoryConstants
 -
 Maintains constants for Inventory Manager apps</p>
+<p>EdiscoveryConstants
+-
+Maintains constants for Ediscovery clients in activate</p>
+<p>RequestConstants
+-
+Maintains constants for request manager in Activate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L1-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L1-L952" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -84,9 +90,514 @@ PlanConstants                   -       Maintains constants for Plan operations
 
 InventoryConstants              -       Maintains constants for Inventory Manager apps
 
+EdiscoveryConstants             -       Maintains constants for Ediscovery clients in activate
+
+RequestConstants                -       Maintains constants for request manager in Activate
+
 &#34;&#34;&#34;
 import copy
 from enum import Enum
+
+
+class RequestConstants:
+    &#34;&#34;&#34;class to maintain constants for request manager&#34;&#34;&#34;
+    PROPERTY_REVIEW_CRIERIA = &#39;ReviewCriteria&#39;
+    PROPERTY_ENTITIES = &#39;Entities&#39;
+    PROPERTY_REQUEST_HANDLER_ID = &#39;RequestHandlerId&#39;
+    PROPERTY_REQUEST_HANDLER_NAME = &#39;RequestHandlerName&#39;
+    PROPERTY_REVIEW_SET_ID = &#39;ReviewSetId&#39;
+    SEARCH_QUERY_SELECTION_SET = {
+        &#34;entity_*&#34;,
+        &#34;count_entity_*&#34;,
+        &#34;Url&#34;,
+        &#34;contentid&#34;,
+        &#34;FileName&#34;,
+        &#34;Size&#34;,
+        &#34;data_source&#34;,
+        &#34;data_source_name&#34;,
+        &#34;entities_extracted&#34;,
+        &#34;RedactMode*&#34;,
+        &#34;CommentFor*&#34;,
+        &#34;ConsentFor*&#34;}
+
+    FACET_REVIEWED = &#39;_ConsentFor_%s_b_Reviewed&#39;
+    FACET_NOT_REVIEWED = &#39;_ConsentFor_%s_b_Not reviewed&#39;
+    FACET_ACCEPTED = &#39;_ConsentFor_%s_b_Accepted&#39;
+    FACET_DECLINED = &#39;_ConsentFor_%s_b_Declined&#39;
+    FACET_REDACTED = &#39;_RedactMode_%s_b_Redacted&#39;
+    FACET_NOT_REDACTED = &#39;_RedactMode_%s_b_Not redacted&#39;
+    FACET_COUNT = &#34;count&#34;
+    REQUEST_FEDERATED_FACET_SEARCH_QUERY = {&#34;searchParams&#34;: [{&#34;key&#34;: &#34;q&#34;,
+                                                              &#34;value&#34;: &#34;*:*&#34;},
+                                                             {&#34;key&#34;: &#34;wt&#34;,
+                                                              &#34;value&#34;: &#34;json&#34;},
+                                                             {&#34;key&#34;: &#34;rows&#34;,
+                                                              &#34;value&#34;: &#34;0&#34;},
+                                                             {&#34;key&#34;: &#34;defType&#34;,
+                                                              &#34;value&#34;: &#34;edismax&#34;},
+                                                             {&#34;key&#34;: &#34;facet&#34;,
+                                                              &#34;value&#34;: &#34;true&#34;},
+                                                             {&#34;key&#34;: &#34;json.facet&#34;,
+                                                              &#34;value&#34;: &#34;{\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Reviewed\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:*\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Not reviewed\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;contentid:* AND -(ConsentFor_&lt;rsidparam&gt;_b:*)\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Accepted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:true\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Declined\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:false\&#34;,\&#34;facet\&#34;:{}},\&#34;_RedactMode_&lt;rsidparam&gt;_b_Redacted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_RedactMode_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;RedactMode_&lt;rsidparam&gt;_b:true\&#34;,\&#34;facet\&#34;:{}},\&#34;_RedactMode_&lt;rsidparam&gt;_b_Not redacted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_RedactMode_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;RedactMode_&lt;rsidparam&gt;_b:false\&#34;,\&#34;facet\&#34;:{}},\&#34;FileExtension\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_FileExtension\&#34;,\&#34;tag_exclude_FileExtension\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;FileExtension\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}},\&#34;ReadAccessUserName\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_ReadAccessUserName\&#34;,\&#34;tag_exclude_ReadAccessUserName\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;ReadAccessUserName\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}},\&#34;data_source_name\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_data_source_name\&#34;,\&#34;tag_exclude_data_source_name\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;data_source_name\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}}}&#34;},
+                                                             {&#34;key&#34;: &#34;useDCubeReq&#34;,
+                                                              &#34;value&#34;: &#34;true&#34;}]}
+
+    FIELD_DOC_COUNT = &#34;TotalDocuments&#34;
+    FIELD_REVIEWED = &#34;ReviewedDocuments&#34;
+    FIELD_NOT_REVIEWED = &#34;Non-ReviewedDocuments&#34;
+    FIELD_ACCEPTED = &#39;AcceptedDocuments&#39;
+    FIELD_DECLINED = &#39;DeclinedDocuments&#39;
+    FIELD_REDACTED = &#39;RedactedDocuments&#39;
+    FIELD_NOT_REDACTED = &#39;Non-RedactedDocuments&#39;
+
+    class RequestStatus(Enum):
+        &#34;&#34;&#34;enum to specify different request status&#34;&#34;&#34;
+        TaskCreated = 1
+        TaskConfigured = 2
+        ReviewInProgress = 3
+        ReviewCompleted = 4
+        ApproveCompleted = 5
+        ExportCompleted = 6
+        DeleteCompleted = 7
+        TaskCompleted = 8
+        ApprovalRequested = 9
+        ActionInProgress = 10
+        CompletedWithErrors = 11
+        Failed = 12
+
+    class RequestType(Enum):
+        &#34;&#34;&#34;enum to maintain different request type&#34;&#34;&#34;
+        EXPORT = &#39;EXPORT&#39;
+        DELETE = &#39;DELETE&#39;
+
+
+class EdiscoveryConstants:
+    &#34;&#34;&#34;class to maintain constants for ediscovery clients&#34;&#34;&#34;
+
+    class CrawlType(Enum):
+        &#34;&#34;&#34;Crawl type for SDG/FSO jobs&#34;&#34;&#34;
+        LIVE = 1
+        BACKUP = 2
+        CONTENT_INDEXED = 3
+        FILE_LEVEL_ANALYTICS = 4
+        BACKUP_V2 = 5
+
+    class SourceType(Enum):
+        &#34;&#34;&#34;Source type of data for FSO/SDG app&#34;&#34;&#34;
+        SOURCE = 1
+        BACKUP = 2
+
+    class ReviewActions(Enum):
+        &#34;&#34;&#34;Review actions for documents on SDG/FSO app&#34;&#34;&#34;
+        DELETE = 1
+        MOVE = 4
+        RETENTION = 10
+        IGNORE = 11
+        ARCHIVE = 90
+        TAG = 98
+
+    class RiskTypes(Enum):
+        &#34;&#34;&#34;Different risk types for documents on SDG/FSO app&#34;&#34;&#34;
+        OPEN_ACCESS = 1
+        OLD_FILES = 2
+        FILE_MOVED = 3
+        MULTI_USER_ACCESS = 4
+        NO_RETENTION = 5
+        IS_PROTECTED = 6
+
+    FSO_SERVERS = &#34;FsoServers&#34;
+    FSO_SERVER_GROUPS = &#34;FsoServerGroups&#34;
+
+    SERVER_LEVEL_SCHEDULE_JSON = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 4,
+                &#34;taskFlags&#34;: {
+                    &#34;isEdiscovery&#34;: True
+                },
+                &#34;taskName&#34;: &#34;&#34;
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;operationType&#34;: 5025,
+                        &#34;subTaskType&#34;: 1,
+                        &#34;subTaskName&#34;: &#34;&#34;
+                    },
+                    &#34;pattern&#34;: {},
+                    &#34;options&#34;: {
+                        &#34;backupOpts&#34;: {
+                            &#34;backupLevel&#34;: 2,
+                            &#34;mediaOpt&#34;: {
+                                &#34;auxcopyJobOption&#34;: {
+                                    &#34;allCopies&#34;: True,
+                                    &#34;useMaximumStreams&#34;: True,
+                                    &#34;maxNumberOfStreams&#34;: 1
+                                }
+                            }
+                        },
+                        &#34;adminOpts&#34;: {
+                            &#34;contentIndexingOption&#34;: {
+                                &#34;idaType&#34;: 1,
+                                &#34;operationType&#34;: 2,
+                                &#34;fileAnalytics&#34;: False
+                            }
+                        }
+                    }
+                }
+            ],
+            &#34;associations&#34;: [
+                {
+                    &#34;clientId&#34;: 0,
+                    &#34;_type_&#34;: 3
+                }
+            ]
+        }
+    }
+
+    REVIEW_ACTION_FSO_SUPPORTED = [ReviewActions.DELETE.value, ReviewActions.MOVE.value, ReviewActions.ARCHIVE.value]
+
+    REVIEW_ACTION_SDG_SUPPORTED = [
+        ReviewActions.DELETE.value,
+        ReviewActions.MOVE.value,
+        ReviewActions.ARCHIVE.value,
+        ReviewActions.RETENTION.value,
+        ReviewActions.IGNORE.value]
+
+    CREATE_CLIENT_REQ_JSON = {
+        &#34;clientInfo&#34;: {
+            &#34;clientType&#34;: 19,
+            &#34;edgeDrivePseudoClientProperties&#34;: {
+                &#34;systemDriveType&#34;: 6,
+                &#34;edgeDriveAssociations&#34;: {},
+                &#34;eDiscoveryInfo&#34;: {
+                    &#34;eDiscoverySubType&#34;: 2,
+                    &#34;inventoryDataSource&#34;: {
+                        &#34;seaDataSourceId&#34;: 0
+                    }
+                }
+            },
+            &#34;plan&#34;: {
+                &#34;planId&#34;: 0
+            }
+        },
+        &#34;entity&#34;: {
+            &#34;clientName&#34;: &#34;&#34;,
+            &#34;_type_&#34;: 3
+        }
+    }
+
+    REVIEW_ACTION_DELETE_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.DELETE.value,
+        &#34;files&#34;: &#34;&#34;,
+        &#34;deleteFromBackup&#34;: False,
+        &#34;options&#34;: &#34;&#34;}
+
+    REVIEW_ACTION_MOVE_REQ_JSON = {&#34;operation&#34;: ReviewActions.MOVE.value, &#34;files&#34;: &#34;&#34;, &#34;options&#34;: &#34;&#34;}
+
+    REVIEW_ACTION_SET_RETENTION_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.RETENTION.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;handlerName&#34;: &#34;default&#34;,
+            &#34;isBulkOperation&#34;: False,
+            &#34;searchRequest&#34;: &#34;&#34;},
+        &#34;setRetentionReq&#34;: {&#34;numOfMonthsRemain&#34;: 0},
+    }
+
+    REVIEW_ACTION_IGNORE_FILES_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.IGNORE.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;handlerName&#34;: &#34;default&#34;,
+            &#34;isBulkOperation&#34;: False,
+            &#34;searchRequest&#34;: &#34;&#34;},
+        &#34;ignoreRisksReq&#34;: {&#34;ignoreAllRisks&#34;: False},
+    }
+
+    REVIEW_ACTION_TAG_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.TAG.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;isBulkOperation&#34;: False},
+        &#34;taggingRequest&#34;: {}}
+
+    REVIEW_ACTION_BULK_SEARCH_REQ = &#34;{\&#34;searchParams\&#34;:&#34; \
+                                    &#34;[{\&#34;key\&#34;:\&#34;q\&#34;,\&#34;value\&#34;:\&#34;*:*\&#34;},{\&#34;key\&#34;:\&#34;wt\&#34;,\&#34;value\&#34;:\&#34;json\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;rows\&#34;,\&#34;value\&#34;:\&#34;0\&#34;},{\&#34;key\&#34;:\&#34;defType\&#34;,\&#34;value\&#34;:\&#34;edismax\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fq\&#34;,\&#34;value\&#34;:\&#34;IsFile:\\\&#34;1\\\&#34;\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerLocation\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CountryCode\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileExtension\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;operatingSystem\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;IsProtected\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName_path\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Url\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ClientId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;DocumentType\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;contentid\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowListUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowModifyUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowWriteUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowExecuteUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowFullControlUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ExpiryDate\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CreatedTime\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source_name\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source_type\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entities_extracted\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ConsentFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;RedactFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;RedactMode_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CommentFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AppType\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ApplicationId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CVTurboGUID\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CommcellNumber\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AchiveFileId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ArchiveFileOffset\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Size\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Risk_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;LastAccessedBy\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;LastModifiedBy\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ModifiedTimeAsStr\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entity_doc_tags\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;TagIds\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Url\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Size\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entity_doc_tags\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;start\&#34;,\&#34;value\&#34;:\&#34;0\&#34;}]}&#34;
+
+    REVIEW_ACTION_SEARCH_FL_SET = {
+        &#34;FileName&#34;,
+        &#34;OwnerName&#34;,
+        &#34;OwnerLocation&#34;,
+        &#34;CountryCode&#34;,
+        &#34;FileExtension&#34;,
+        &#34;operatingSystem&#34;,
+        &#34;IsProtected&#34;,
+        &#34;FileName_path&#34;,
+        &#34;Url&#34;,
+        &#34;ClientId&#34;,
+        &#34;DocumentType&#34;,
+        &#34;contentid&#34;,
+        &#34;AllowListUsername&#34;,
+        &#34;AllowModifyUsername&#34;,
+        &#34;AllowWriteUsername&#34;,
+        &#34;AllowExecuteUsername&#34;,
+        &#34;AllowFullControlUsername&#34;,
+        &#34;ExpiryDate&#34;,
+        &#34;CreatedTime&#34;,
+        &#34;data_source&#34;,
+        &#34;data_source_name&#34;,
+        &#34;data_source_type&#34;,
+        &#34;entities_extracted&#34;,
+        &#34;ConsentFor_*&#34;,
+        &#34;RedactFor_*&#34;,
+        &#34;RedactMode_*&#34;,
+        &#34;CommentFor_*&#34;,
+        &#34;AppType&#34;,
+        &#34;ApplicationId&#34;,
+        &#34;CVTurboGUID&#34;,
+        &#34;CommcellNumber&#34;,
+        &#34;AchiveFileId&#34;,
+        &#34;ArchiveFileOffset&#34;,
+        &#34;Size&#34;,
+        &#34;Risk_*&#34;,
+        &#34;LastAccessedBy&#34;,
+        &#34;LastModifiedBy&#34;,
+        &#34;ModifiedTimeAsStr&#34;,
+        &#34;entity_doc_tags&#34;,
+        &#34;TagIds&#34;}
+
+    REVIEW_ACTION_IDA_SELECT_SET = {
+        5: {&#39;contentid&#39;, &#39;Url&#39;, &#39;ClientId&#39;, &#39;CreatedTime&#39;, &#39;FileName&#39;}}
+
+    FS_SERVER_HANDLER_NAME = &#39;GetFileServers&#39;
+    ADD_FS_REQ_JSON = {
+        &#34;datasourceId&#34;: 0,
+        &#34;indexServerClientId&#34;: 0,
+        &#34;followScheduleCrawl&#34;: False,
+        &#34;datasources&#34;: [
+            {
+                &#34;datasourceName&#34;: &#34;&#34;,
+                &#34;properties&#34;: [],
+                &#34;datasourceType&#34;: 5,
+                &#34;accessNodes&#34;: [
+                    {
+                        &#34;clientId&#34;: 0,
+                        &#34;clientName&#34;: &#34;&#34;
+                    }
+                ]
+            }
+        ]
+    }
+
+    FS_DEFAULT_EXPORT_FIELDS = {&#39;FileName&#39;, &#39;Url&#39;, &#39;Size&#39;, &#39;OwnerName&#39;, &#39;CreatedTime&#39;, &#39;AccessTime&#39;, &#39;ModifiedTime&#39;}
+    EXPORT_DOWNLOAD_REQ = {
+        &#34;appTypeId&#34;: 200,
+        &#34;responseFileName&#34;: &#34;&#34;,
+        &#34;fileParams&#34;: [
+            {
+                &#34;name&#34;: &#34;&#34;,
+                &#34;id&#34;: 2
+            },
+            {
+                &#34;name&#34;: &#34;zip&#34;,
+                &#34;id&#34;: 3
+            },
+            {
+                &#34;name&#34;: &#34;Streamed&#34;,
+                &#34;id&#34;: 10
+            }
+        ]
+    }
+
+    DATA_SOURCE_TYPES = {
+        0: &#39;NONE&#39;,
+        1: &#39;jdbc&#39;,
+        5: &#39;file&#39;,
+        9: &#39;ldap&#39;,
+        10: &#39;federated&#39;,
+        11: &#39;blank&#39;,
+        15: &#39;fla&#39;,
+        16: &#39;edge&#39;,
+        17: &#39;exchange&#39;,
+        18: &#39;reviewset&#39;,
+        22: &#39;nfs&#39;,
+        24: &#39;systemdefault&#39;,
+        26: &#39;onedrive&#39;,
+        27: &#39;sharepoint&#39;,
+        28: &#39;email&#39;,
+        29: &#39;dbanalysis&#39;,
+        30: &#39;cloudpaas&#39;,
+        31: &#39;googledrive&#39;,
+        32: &#39;gmail&#39;,
+        34: &#39;onedriveindex&#39;,
+        37: &#39;dynamic365&#39;
+    }
+
+    VIEW_CATEGORY_PERMISSION = {
+        &#34;permissionId&#34;: 31,
+        &#34;permissionName&#34;: &#34;View&#34;,
+        &#34;_type_&#34;: 122
+    }
+    EDIT_CATEGORY_PERMISSION = {
+        &#34;permissionId&#34;: 2,
+        &#34;permissionName&#34;: &#34;Agent Management&#34;,
+        &#34;_type_&#34;: 122
+    }
+
+    SHARE_REQUEST_JSON = {
+        &#34;entityAssociated&#34;: {
+            &#34;entity&#34;: [
+                {
+                    &#34;_type_&#34;: 3,
+                    &#34;clientId&#34;: 0
+                }
+            ]
+        },
+        &#34;securityAssociations&#34;: {
+            &#34;associationsOperationType&#34;: 1,
+            &#34;associations&#34;: [
+                {
+                    &#34;userOrGroup&#34;: [
+                        {
+                            &#34;userId&#34;: 0,
+                            &#34;_type_&#34;: 0,
+                            &#34;userName&#34;: &#34;&#34;
+                        }
+                    ],
+                    &#34;properties&#34;: {
+                        &#34;categoryPermission&#34;: {
+                            &#34;categoriesPermissionOperationType&#34;: 1,
+                            &#34;categoriesPermissionList&#34;: [
+                                VIEW_CATEGORY_PERMISSION
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    DS_FILE = &#39;file&#39;
+    DS_CLOUD_STORAGE = &#39;cloudstorage&#39;
+    FIELD_DATA_SOURCE_DISPLAY_NAME = &#39;datasourceDisplayName&#39;
+    FIELD_DISPLAY_NAME = &#39;displayName&#39;
+    FIELD_DATA_SOURCE_NAME = &#39;datasourceName&#39;
+    FIELD_DATA_SOURCE_ID_NON_SEA = &#39;datasourceId&#39;
+    FIELD_DOCUMENT_COUNT = &#39;documentCount&#39;
+    FIELD_DATA_SOURCE_TYPE = &#39;datasourceType&#39;
+    FIELD_DATA_SOURCE_ID = &#39;seaDataSourceId&#39;
+    FIELD_PLAN_ID = &#39;planId&#39;
+    FIELD_DC_PLAN_ID = &#39;dcplanid&#39;
+    FIELD_PSEDUCO_CLIENT_ID = &#39;pseudoclientid&#39;
+    FIELD_SUBCLIENT_ID = &#39;subclientid&#39;
+    FIELD_CRAWL_TYPE = &#39;crawltype&#39;
+    FIELD_DATA_SOURCE_NAME_SEA = &#39;seaDataSourceName&#39;
+    DYNAMIC_FEDERATED_SEARCH_PARAMS = {&#34;searchParams&#34;: []}
+
+    CRITERIA_EXTRACTED_DOCS = &#34;entities_extracted:*&#34;
+
+    TAGGING_ITEMS_REQUEST = {
+        &#34;entityType&#34;: &#34;SEA_DATASOURCE_ENTITY&#34;,
+        &#34;entityIds&#34;: [],
+        &#34;handler&#34;: &#34;default&#34;,
+        &#34;searchRequest&#34;: {},
+        &#34;opType&#34;: &#34;ADD&#34;,
+        &#34;tags&#34;: [],
+        &#34;isAsync&#34;: True}
+    TAGGING_ITEMS_REVIEW_REQUEST = {&#34;operation&#34;: ReviewActions.TAG.value, &#34;files&#34;: &#34;&#34;,
+                                    &#34;options&#34;: &#34;&#34;,
+                                    &#34;taggingInformation&#34;: {&#39;opType&#39;: &#39;ADD&#39;, &#34;tagIds&#34;: []}}
+
+    START_CRAWL_SERVER_REQUEST_JSON = {
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;clientId&#34;: 0,
+                    &#34;_type_&#34;: 3
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;taskName&#34;: &#34;&#34;,
+                &#34;taskFlags&#34;: {
+                    &#34;isEdiscovery&#34;: True
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;subTaskName&#34;: &#34;CVPYSDK_FSO_IMMEDIATE&#34;,
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 5025
+                    },
+                    &#34;options&#34;: {
+                        &#34;backupOpts&#34;: {
+                            &#34;backupLevel&#34;: 2,
+                            &#34;mediaOpt&#34;: {
+                                &#34;auxcopyJobOption&#34;: {
+                                    &#34;maxNumberOfStreams&#34;: 1,
+                                    &#34;allCopies&#34;: True,
+                                    &#34;useMaximumStreams&#34;: True
+                                }
+                            }
+                        },
+                        &#34;adminOpts&#34;: {
+                            &#34;contentIndexingOption&#34;: {
+                                &#34;fileAnalytics&#34;: False,
+                                &#34;idaType&#34;: 1,
+                                &#34;operationType&#34;: 2
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
 
 
 class InventoryConstants:
@@ -214,6 +725,7 @@ class InventoryConstants:
     }
 
     class AssetType(Enum):
+        &#34;&#34;&#34;Asset type for inventory&#34;&#34;&#34;
         NAME_SERVER = 61
         FILE_SERVER = 132
 
@@ -224,7 +736,8 @@ class PlanConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
+    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,&#34; \
+                                &#34;*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
     DEFAULT_EXCLUDE_LIST = [
         &#34;C:\\Program Files&#34;,
         &#34;C:\\Program Files (x86)&#34;,
@@ -514,7 +1027,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L351-L363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L858-L870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivateEntityConstants:
     &#34;&#34;&#34;Class to maintain all the Activate entity related constants&#34;&#34;&#34;
@@ -546,7 +1059,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L326-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L833-L855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ClassifierConstants:
     &#34;&#34;&#34;Class to maintain all the Classsifier related constants&#34;&#34;&#34;
@@ -580,6 +1093,632 @@ class TagConstants:
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants"><code class="flex name class">
+<span>class <span class="ident">EdiscoveryConstants</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>class to maintain constants for ediscovery clients</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L116-L542" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class EdiscoveryConstants:
+    &#34;&#34;&#34;class to maintain constants for ediscovery clients&#34;&#34;&#34;
+
+    class CrawlType(Enum):
+        &#34;&#34;&#34;Crawl type for SDG/FSO jobs&#34;&#34;&#34;
+        LIVE = 1
+        BACKUP = 2
+        CONTENT_INDEXED = 3
+        FILE_LEVEL_ANALYTICS = 4
+        BACKUP_V2 = 5
+
+    class SourceType(Enum):
+        &#34;&#34;&#34;Source type of data for FSO/SDG app&#34;&#34;&#34;
+        SOURCE = 1
+        BACKUP = 2
+
+    class ReviewActions(Enum):
+        &#34;&#34;&#34;Review actions for documents on SDG/FSO app&#34;&#34;&#34;
+        DELETE = 1
+        MOVE = 4
+        RETENTION = 10
+        IGNORE = 11
+        ARCHIVE = 90
+        TAG = 98
+
+    class RiskTypes(Enum):
+        &#34;&#34;&#34;Different risk types for documents on SDG/FSO app&#34;&#34;&#34;
+        OPEN_ACCESS = 1
+        OLD_FILES = 2
+        FILE_MOVED = 3
+        MULTI_USER_ACCESS = 4
+        NO_RETENTION = 5
+        IS_PROTECTED = 6
+
+    FSO_SERVERS = &#34;FsoServers&#34;
+    FSO_SERVER_GROUPS = &#34;FsoServerGroups&#34;
+
+    SERVER_LEVEL_SCHEDULE_JSON = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 4,
+                &#34;taskFlags&#34;: {
+                    &#34;isEdiscovery&#34;: True
+                },
+                &#34;taskName&#34;: &#34;&#34;
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;operationType&#34;: 5025,
+                        &#34;subTaskType&#34;: 1,
+                        &#34;subTaskName&#34;: &#34;&#34;
+                    },
+                    &#34;pattern&#34;: {},
+                    &#34;options&#34;: {
+                        &#34;backupOpts&#34;: {
+                            &#34;backupLevel&#34;: 2,
+                            &#34;mediaOpt&#34;: {
+                                &#34;auxcopyJobOption&#34;: {
+                                    &#34;allCopies&#34;: True,
+                                    &#34;useMaximumStreams&#34;: True,
+                                    &#34;maxNumberOfStreams&#34;: 1
+                                }
+                            }
+                        },
+                        &#34;adminOpts&#34;: {
+                            &#34;contentIndexingOption&#34;: {
+                                &#34;idaType&#34;: 1,
+                                &#34;operationType&#34;: 2,
+                                &#34;fileAnalytics&#34;: False
+                            }
+                        }
+                    }
+                }
+            ],
+            &#34;associations&#34;: [
+                {
+                    &#34;clientId&#34;: 0,
+                    &#34;_type_&#34;: 3
+                }
+            ]
+        }
+    }
+
+    REVIEW_ACTION_FSO_SUPPORTED = [ReviewActions.DELETE.value, ReviewActions.MOVE.value, ReviewActions.ARCHIVE.value]
+
+    REVIEW_ACTION_SDG_SUPPORTED = [
+        ReviewActions.DELETE.value,
+        ReviewActions.MOVE.value,
+        ReviewActions.ARCHIVE.value,
+        ReviewActions.RETENTION.value,
+        ReviewActions.IGNORE.value]
+
+    CREATE_CLIENT_REQ_JSON = {
+        &#34;clientInfo&#34;: {
+            &#34;clientType&#34;: 19,
+            &#34;edgeDrivePseudoClientProperties&#34;: {
+                &#34;systemDriveType&#34;: 6,
+                &#34;edgeDriveAssociations&#34;: {},
+                &#34;eDiscoveryInfo&#34;: {
+                    &#34;eDiscoverySubType&#34;: 2,
+                    &#34;inventoryDataSource&#34;: {
+                        &#34;seaDataSourceId&#34;: 0
+                    }
+                }
+            },
+            &#34;plan&#34;: {
+                &#34;planId&#34;: 0
+            }
+        },
+        &#34;entity&#34;: {
+            &#34;clientName&#34;: &#34;&#34;,
+            &#34;_type_&#34;: 3
+        }
+    }
+
+    REVIEW_ACTION_DELETE_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.DELETE.value,
+        &#34;files&#34;: &#34;&#34;,
+        &#34;deleteFromBackup&#34;: False,
+        &#34;options&#34;: &#34;&#34;}
+
+    REVIEW_ACTION_MOVE_REQ_JSON = {&#34;operation&#34;: ReviewActions.MOVE.value, &#34;files&#34;: &#34;&#34;, &#34;options&#34;: &#34;&#34;}
+
+    REVIEW_ACTION_SET_RETENTION_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.RETENTION.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;handlerName&#34;: &#34;default&#34;,
+            &#34;isBulkOperation&#34;: False,
+            &#34;searchRequest&#34;: &#34;&#34;},
+        &#34;setRetentionReq&#34;: {&#34;numOfMonthsRemain&#34;: 0},
+    }
+
+    REVIEW_ACTION_IGNORE_FILES_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.IGNORE.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;handlerName&#34;: &#34;default&#34;,
+            &#34;isBulkOperation&#34;: False,
+            &#34;searchRequest&#34;: &#34;&#34;},
+        &#34;ignoreRisksReq&#34;: {&#34;ignoreAllRisks&#34;: False},
+    }
+
+    REVIEW_ACTION_TAG_REQ_JSON = {
+        &#34;operation&#34;: ReviewActions.TAG.value,
+        &#34;remActionRequest&#34;: {
+            &#34;dataSourceId&#34;: 0,
+            &#34;isBulkOperation&#34;: False},
+        &#34;taggingRequest&#34;: {}}
+
+    REVIEW_ACTION_BULK_SEARCH_REQ = &#34;{\&#34;searchParams\&#34;:&#34; \
+                                    &#34;[{\&#34;key\&#34;:\&#34;q\&#34;,\&#34;value\&#34;:\&#34;*:*\&#34;},{\&#34;key\&#34;:\&#34;wt\&#34;,\&#34;value\&#34;:\&#34;json\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;rows\&#34;,\&#34;value\&#34;:\&#34;0\&#34;},{\&#34;key\&#34;:\&#34;defType\&#34;,\&#34;value\&#34;:\&#34;edismax\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fq\&#34;,\&#34;value\&#34;:\&#34;IsFile:\\\&#34;1\\\&#34;\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerLocation\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CountryCode\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileExtension\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;operatingSystem\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;IsProtected\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName_path\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Url\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ClientId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;DocumentType\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;contentid\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowListUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowModifyUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowWriteUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowExecuteUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AllowFullControlUsername\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ExpiryDate\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CreatedTime\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source_name\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;data_source_type\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entities_extracted\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ConsentFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;RedactFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;RedactMode_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CommentFor_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AppType\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ApplicationId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CVTurboGUID\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;CommcellNumber\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;AchiveFileId\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ArchiveFileOffset\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Size\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Risk_*\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;LastAccessedBy\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;LastModifiedBy\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;ModifiedTimeAsStr\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entity_doc_tags\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;TagIds\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;FileName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Url\&#34;},{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;Size\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;OwnerName\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;fl\&#34;,\&#34;value\&#34;:\&#34;entity_doc_tags\&#34;},&#34; \
+                                    &#34;{\&#34;key\&#34;:\&#34;start\&#34;,\&#34;value\&#34;:\&#34;0\&#34;}]}&#34;
+
+    REVIEW_ACTION_SEARCH_FL_SET = {
+        &#34;FileName&#34;,
+        &#34;OwnerName&#34;,
+        &#34;OwnerLocation&#34;,
+        &#34;CountryCode&#34;,
+        &#34;FileExtension&#34;,
+        &#34;operatingSystem&#34;,
+        &#34;IsProtected&#34;,
+        &#34;FileName_path&#34;,
+        &#34;Url&#34;,
+        &#34;ClientId&#34;,
+        &#34;DocumentType&#34;,
+        &#34;contentid&#34;,
+        &#34;AllowListUsername&#34;,
+        &#34;AllowModifyUsername&#34;,
+        &#34;AllowWriteUsername&#34;,
+        &#34;AllowExecuteUsername&#34;,
+        &#34;AllowFullControlUsername&#34;,
+        &#34;ExpiryDate&#34;,
+        &#34;CreatedTime&#34;,
+        &#34;data_source&#34;,
+        &#34;data_source_name&#34;,
+        &#34;data_source_type&#34;,
+        &#34;entities_extracted&#34;,
+        &#34;ConsentFor_*&#34;,
+        &#34;RedactFor_*&#34;,
+        &#34;RedactMode_*&#34;,
+        &#34;CommentFor_*&#34;,
+        &#34;AppType&#34;,
+        &#34;ApplicationId&#34;,
+        &#34;CVTurboGUID&#34;,
+        &#34;CommcellNumber&#34;,
+        &#34;AchiveFileId&#34;,
+        &#34;ArchiveFileOffset&#34;,
+        &#34;Size&#34;,
+        &#34;Risk_*&#34;,
+        &#34;LastAccessedBy&#34;,
+        &#34;LastModifiedBy&#34;,
+        &#34;ModifiedTimeAsStr&#34;,
+        &#34;entity_doc_tags&#34;,
+        &#34;TagIds&#34;}
+
+    REVIEW_ACTION_IDA_SELECT_SET = {
+        5: {&#39;contentid&#39;, &#39;Url&#39;, &#39;ClientId&#39;, &#39;CreatedTime&#39;, &#39;FileName&#39;}}
+
+    FS_SERVER_HANDLER_NAME = &#39;GetFileServers&#39;
+    ADD_FS_REQ_JSON = {
+        &#34;datasourceId&#34;: 0,
+        &#34;indexServerClientId&#34;: 0,
+        &#34;followScheduleCrawl&#34;: False,
+        &#34;datasources&#34;: [
+            {
+                &#34;datasourceName&#34;: &#34;&#34;,
+                &#34;properties&#34;: [],
+                &#34;datasourceType&#34;: 5,
+                &#34;accessNodes&#34;: [
+                    {
+                        &#34;clientId&#34;: 0,
+                        &#34;clientName&#34;: &#34;&#34;
+                    }
+                ]
+            }
+        ]
+    }
+
+    FS_DEFAULT_EXPORT_FIELDS = {&#39;FileName&#39;, &#39;Url&#39;, &#39;Size&#39;, &#39;OwnerName&#39;, &#39;CreatedTime&#39;, &#39;AccessTime&#39;, &#39;ModifiedTime&#39;}
+    EXPORT_DOWNLOAD_REQ = {
+        &#34;appTypeId&#34;: 200,
+        &#34;responseFileName&#34;: &#34;&#34;,
+        &#34;fileParams&#34;: [
+            {
+                &#34;name&#34;: &#34;&#34;,
+                &#34;id&#34;: 2
+            },
+            {
+                &#34;name&#34;: &#34;zip&#34;,
+                &#34;id&#34;: 3
+            },
+            {
+                &#34;name&#34;: &#34;Streamed&#34;,
+                &#34;id&#34;: 10
+            }
+        ]
+    }
+
+    DATA_SOURCE_TYPES = {
+        0: &#39;NONE&#39;,
+        1: &#39;jdbc&#39;,
+        5: &#39;file&#39;,
+        9: &#39;ldap&#39;,
+        10: &#39;federated&#39;,
+        11: &#39;blank&#39;,
+        15: &#39;fla&#39;,
+        16: &#39;edge&#39;,
+        17: &#39;exchange&#39;,
+        18: &#39;reviewset&#39;,
+        22: &#39;nfs&#39;,
+        24: &#39;systemdefault&#39;,
+        26: &#39;onedrive&#39;,
+        27: &#39;sharepoint&#39;,
+        28: &#39;email&#39;,
+        29: &#39;dbanalysis&#39;,
+        30: &#39;cloudpaas&#39;,
+        31: &#39;googledrive&#39;,
+        32: &#39;gmail&#39;,
+        34: &#39;onedriveindex&#39;,
+        37: &#39;dynamic365&#39;
+    }
+
+    VIEW_CATEGORY_PERMISSION = {
+        &#34;permissionId&#34;: 31,
+        &#34;permissionName&#34;: &#34;View&#34;,
+        &#34;_type_&#34;: 122
+    }
+    EDIT_CATEGORY_PERMISSION = {
+        &#34;permissionId&#34;: 2,
+        &#34;permissionName&#34;: &#34;Agent Management&#34;,
+        &#34;_type_&#34;: 122
+    }
+
+    SHARE_REQUEST_JSON = {
+        &#34;entityAssociated&#34;: {
+            &#34;entity&#34;: [
+                {
+                    &#34;_type_&#34;: 3,
+                    &#34;clientId&#34;: 0
+                }
+            ]
+        },
+        &#34;securityAssociations&#34;: {
+            &#34;associationsOperationType&#34;: 1,
+            &#34;associations&#34;: [
+                {
+                    &#34;userOrGroup&#34;: [
+                        {
+                            &#34;userId&#34;: 0,
+                            &#34;_type_&#34;: 0,
+                            &#34;userName&#34;: &#34;&#34;
+                        }
+                    ],
+                    &#34;properties&#34;: {
+                        &#34;categoryPermission&#34;: {
+                            &#34;categoriesPermissionOperationType&#34;: 1,
+                            &#34;categoriesPermissionList&#34;: [
+                                VIEW_CATEGORY_PERMISSION
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    DS_FILE = &#39;file&#39;
+    DS_CLOUD_STORAGE = &#39;cloudstorage&#39;
+    FIELD_DATA_SOURCE_DISPLAY_NAME = &#39;datasourceDisplayName&#39;
+    FIELD_DISPLAY_NAME = &#39;displayName&#39;
+    FIELD_DATA_SOURCE_NAME = &#39;datasourceName&#39;
+    FIELD_DATA_SOURCE_ID_NON_SEA = &#39;datasourceId&#39;
+    FIELD_DOCUMENT_COUNT = &#39;documentCount&#39;
+    FIELD_DATA_SOURCE_TYPE = &#39;datasourceType&#39;
+    FIELD_DATA_SOURCE_ID = &#39;seaDataSourceId&#39;
+    FIELD_PLAN_ID = &#39;planId&#39;
+    FIELD_DC_PLAN_ID = &#39;dcplanid&#39;
+    FIELD_PSEDUCO_CLIENT_ID = &#39;pseudoclientid&#39;
+    FIELD_SUBCLIENT_ID = &#39;subclientid&#39;
+    FIELD_CRAWL_TYPE = &#39;crawltype&#39;
+    FIELD_DATA_SOURCE_NAME_SEA = &#39;seaDataSourceName&#39;
+    DYNAMIC_FEDERATED_SEARCH_PARAMS = {&#34;searchParams&#34;: []}
+
+    CRITERIA_EXTRACTED_DOCS = &#34;entities_extracted:*&#34;
+
+    TAGGING_ITEMS_REQUEST = {
+        &#34;entityType&#34;: &#34;SEA_DATASOURCE_ENTITY&#34;,
+        &#34;entityIds&#34;: [],
+        &#34;handler&#34;: &#34;default&#34;,
+        &#34;searchRequest&#34;: {},
+        &#34;opType&#34;: &#34;ADD&#34;,
+        &#34;tags&#34;: [],
+        &#34;isAsync&#34;: True}
+    TAGGING_ITEMS_REVIEW_REQUEST = {&#34;operation&#34;: ReviewActions.TAG.value, &#34;files&#34;: &#34;&#34;,
+                                    &#34;options&#34;: &#34;&#34;,
+                                    &#34;taggingInformation&#34;: {&#39;opType&#39;: &#39;ADD&#39;, &#34;tagIds&#34;: []}}
+
+    START_CRAWL_SERVER_REQUEST_JSON = {
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;clientId&#34;: 0,
+                    &#34;_type_&#34;: 3
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;taskName&#34;: &#34;&#34;,
+                &#34;taskFlags&#34;: {
+                    &#34;isEdiscovery&#34;: True
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;subTaskName&#34;: &#34;CVPYSDK_FSO_IMMEDIATE&#34;,
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 5025
+                    },
+                    &#34;options&#34;: {
+                        &#34;backupOpts&#34;: {
+                            &#34;backupLevel&#34;: 2,
+                            &#34;mediaOpt&#34;: {
+                                &#34;auxcopyJobOption&#34;: {
+                                    &#34;maxNumberOfStreams&#34;: 1,
+                                    &#34;allCopies&#34;: True,
+                                    &#34;useMaximumStreams&#34;: True
+                                }
+                            }
+                        },
+                        &#34;adminOpts&#34;: {
+                            &#34;contentIndexingOption&#34;: {
+                                &#34;fileAnalytics&#34;: False,
+                                &#34;idaType&#34;: 1,
+                                &#34;operationType&#34;: 2
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_FS_REQ_JSON"><code class="name">var <span class="ident">ADD_FS_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON"><code class="name">var <span class="ident">CREATE_CLIENT_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS"><code class="name">var <span class="ident">CRITERIA_EXTRACTED_DOCS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType"><code class="name">var <span class="ident">CrawlType</span></code></dt>
+<dd>
+<div class="desc"><p>Crawl type for SDG/FSO jobs</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.DATA_SOURCE_TYPES"><code class="name">var <span class="ident">DATA_SOURCE_TYPES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_CLOUD_STORAGE"><code class="name">var <span class="ident">DS_CLOUD_STORAGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_FILE"><code class="name">var <span class="ident">DS_FILE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.DYNAMIC_FEDERATED_SEARCH_PARAMS"><code class="name">var <span class="ident">DYNAMIC_FEDERATED_SEARCH_PARAMS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION"><code class="name">var <span class="ident">EDIT_CATEGORY_PERMISSION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EXPORT_DOWNLOAD_REQ"><code class="name">var <span class="ident">EXPORT_DOWNLOAD_REQ</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CRAWL_TYPE"><code class="name">var <span class="ident">FIELD_CRAWL_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_DISPLAY_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_ID_NON_SEA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME_SEA"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_NAME_SEA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE"><code class="name">var <span class="ident">FIELD_DATA_SOURCE_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DC_PLAN_ID"><code class="name">var <span class="ident">FIELD_DC_PLAN_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DISPLAY_NAME"><code class="name">var <span class="ident">FIELD_DISPLAY_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DOCUMENT_COUNT"><code class="name">var <span class="ident">FIELD_DOCUMENT_COUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PLAN_ID"><code class="name">var <span class="ident">FIELD_PLAN_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PSEDUCO_CLIENT_ID"><code class="name">var <span class="ident">FIELD_PSEDUCO_CLIENT_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_SUBCLIENT_ID"><code class="name">var <span class="ident">FIELD_SUBCLIENT_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVERS"><code class="name">var <span class="ident">FSO_SERVERS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVER_GROUPS"><code class="name">var <span class="ident">FSO_SERVER_GROUPS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_DEFAULT_EXPORT_FIELDS"><code class="name">var <span class="ident">FS_DEFAULT_EXPORT_FIELDS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME"><code class="name">var <span class="ident">FS_SERVER_HANDLER_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ"><code class="name">var <span class="ident">REVIEW_ACTION_BULK_SEARCH_REQ</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON"><code class="name">var <span class="ident">REVIEW_ACTION_DELETE_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED"><code class="name">var <span class="ident">REVIEW_ACTION_FSO_SUPPORTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET"><code class="name">var <span class="ident">REVIEW_ACTION_IDA_SELECT_SET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IGNORE_FILES_REQ_JSON"><code class="name">var <span class="ident">REVIEW_ACTION_IGNORE_FILES_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_MOVE_REQ_JSON"><code class="name">var <span class="ident">REVIEW_ACTION_MOVE_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SDG_SUPPORTED"><code class="name">var <span class="ident">REVIEW_ACTION_SDG_SUPPORTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET"><code class="name">var <span class="ident">REVIEW_ACTION_SEARCH_FL_SET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SET_RETENTION_REQ_JSON"><code class="name">var <span class="ident">REVIEW_ACTION_SET_RETENTION_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_TAG_REQ_JSON"><code class="name">var <span class="ident">REVIEW_ACTION_TAG_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ReviewActions"><code class="name">var <span class="ident">ReviewActions</span></code></dt>
+<dd>
+<div class="desc"><p>Review actions for documents on SDG/FSO app</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.RiskTypes"><code class="name">var <span class="ident">RiskTypes</span></code></dt>
+<dd>
+<div class="desc"><p>Different risk types for documents on SDG/FSO app</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.SERVER_LEVEL_SCHEDULE_JSON"><code class="name">var <span class="ident">SERVER_LEVEL_SCHEDULE_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.SHARE_REQUEST_JSON"><code class="name">var <span class="ident">SHARE_REQUEST_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.START_CRAWL_SERVER_REQUEST_JSON"><code class="name">var <span class="ident">START_CRAWL_SERVER_REQUEST_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.SourceType"><code class="name">var <span class="ident">SourceType</span></code></dt>
+<dd>
+<div class="desc"><p>Source type of data for FSO/SDG app</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REQUEST"><code class="name">var <span class="ident">TAGGING_ITEMS_REQUEST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REVIEW_REQUEST"><code class="name">var <span class="ident">TAGGING_ITEMS_REVIEW_REQUEST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.VIEW_CATEGORY_PERMISSION"><code class="name">var <span class="ident">VIEW_CATEGORY_PERMISSION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.activateapps.constants.InventoryConstants"><code class="flex name class">
 <span>class <span class="ident">InventoryConstants</span></span>
 </code></dt>
@@ -588,7 +1727,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L40-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L545-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InventoryConstants:
     &#34;&#34;&#34;Class to maintain constants for inventory manager&#34;&#34;&#34;
@@ -715,6 +1854,7 @@ class TagConstants:
     }
 
     class AssetType(Enum):
+        &#34;&#34;&#34;Asset type for inventory&#34;&#34;&#34;
         NAME_SERVER = 61
         FILE_SERVER = 132</code></pre>
 </details>
@@ -746,7 +1886,7 @@ class TagConstants:
 </dd>
 <dt id="cvpysdk.activateapps.constants.InventoryConstants.AssetType"><code class="name">var <span class="ident">AssetType</span></code></dt>
 <dd>
-<div class="desc"><p>An enumeration.</p></div>
+<div class="desc"><p>Asset type for inventory</p></div>
 </dd>
 <dt id="cvpysdk.activateapps.constants.InventoryConstants.CRAWL_JOB_COMPLETE_ERROR_STATE"><code class="name">var <span class="ident">CRAWL_JOB_COMPLETE_ERROR_STATE</span></code></dt>
 <dd>
@@ -846,7 +1986,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L169-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L675-L811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PlanConstants:
     &#34;&#34;&#34;Class to maintain constants related to DC plan activate operations&#34;&#34;&#34;
@@ -854,7 +1994,8 @@ class TagConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
+    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,&#34; \
+                                &#34;*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
     DEFAULT_EXCLUDE_LIST = [
         &#34;C:\\Program Files&#34;,
         &#34;C:\\Program Files (x86)&#34;,
@@ -1025,6 +2166,183 @@ class TagConstants:
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants"><code class="flex name class">
+<span>class <span class="ident">RequestConstants</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>class to maintain constants for request manager</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L44-L113" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class RequestConstants:
+    &#34;&#34;&#34;class to maintain constants for request manager&#34;&#34;&#34;
+    PROPERTY_REVIEW_CRIERIA = &#39;ReviewCriteria&#39;
+    PROPERTY_ENTITIES = &#39;Entities&#39;
+    PROPERTY_REQUEST_HANDLER_ID = &#39;RequestHandlerId&#39;
+    PROPERTY_REQUEST_HANDLER_NAME = &#39;RequestHandlerName&#39;
+    PROPERTY_REVIEW_SET_ID = &#39;ReviewSetId&#39;
+    SEARCH_QUERY_SELECTION_SET = {
+        &#34;entity_*&#34;,
+        &#34;count_entity_*&#34;,
+        &#34;Url&#34;,
+        &#34;contentid&#34;,
+        &#34;FileName&#34;,
+        &#34;Size&#34;,
+        &#34;data_source&#34;,
+        &#34;data_source_name&#34;,
+        &#34;entities_extracted&#34;,
+        &#34;RedactMode*&#34;,
+        &#34;CommentFor*&#34;,
+        &#34;ConsentFor*&#34;}
+
+    FACET_REVIEWED = &#39;_ConsentFor_%s_b_Reviewed&#39;
+    FACET_NOT_REVIEWED = &#39;_ConsentFor_%s_b_Not reviewed&#39;
+    FACET_ACCEPTED = &#39;_ConsentFor_%s_b_Accepted&#39;
+    FACET_DECLINED = &#39;_ConsentFor_%s_b_Declined&#39;
+    FACET_REDACTED = &#39;_RedactMode_%s_b_Redacted&#39;
+    FACET_NOT_REDACTED = &#39;_RedactMode_%s_b_Not redacted&#39;
+    FACET_COUNT = &#34;count&#34;
+    REQUEST_FEDERATED_FACET_SEARCH_QUERY = {&#34;searchParams&#34;: [{&#34;key&#34;: &#34;q&#34;,
+                                                              &#34;value&#34;: &#34;*:*&#34;},
+                                                             {&#34;key&#34;: &#34;wt&#34;,
+                                                              &#34;value&#34;: &#34;json&#34;},
+                                                             {&#34;key&#34;: &#34;rows&#34;,
+                                                              &#34;value&#34;: &#34;0&#34;},
+                                                             {&#34;key&#34;: &#34;defType&#34;,
+                                                              &#34;value&#34;: &#34;edismax&#34;},
+                                                             {&#34;key&#34;: &#34;facet&#34;,
+                                                              &#34;value&#34;: &#34;true&#34;},
+                                                             {&#34;key&#34;: &#34;json.facet&#34;,
+                                                              &#34;value&#34;: &#34;{\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Reviewed\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:*\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Not reviewed\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;contentid:* AND -(ConsentFor_&lt;rsidparam&gt;_b:*)\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Accepted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:true\&#34;,\&#34;facet\&#34;:{}},\&#34;_ConsentFor_&lt;rsidparam&gt;_b_Declined\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_ConsentFor_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_ConsentFor_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;ConsentFor_&lt;rsidparam&gt;_b:false\&#34;,\&#34;facet\&#34;:{}},\&#34;_RedactMode_&lt;rsidparam&gt;_b_Redacted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_RedactMode_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;RedactMode_&lt;rsidparam&gt;_b:true\&#34;,\&#34;facet\&#34;:{}},\&#34;_RedactMode_&lt;rsidparam&gt;_b_Not redacted\&#34;:{\&#34;type\&#34;:\&#34;query\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_group_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_RedactMode_&lt;rsidparam&gt;_b\&#34;,\&#34;tag_exclude_RedactMode_&lt;rsidparam&gt;_b\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;q\&#34;:\&#34;RedactMode_&lt;rsidparam&gt;_b:false\&#34;,\&#34;facet\&#34;:{}},\&#34;FileExtension\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_FileExtension\&#34;,\&#34;tag_exclude_FileExtension\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;FileExtension\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}},\&#34;ReadAccessUserName\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_ReadAccessUserName\&#34;,\&#34;tag_exclude_ReadAccessUserName\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;ReadAccessUserName\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}},\&#34;data_source_name\&#34;:{\&#34;type\&#34;:\&#34;terms\&#34;,\&#34;domain\&#34;:{\&#34;excludeTags\&#34;:[\&#34;tag_data_source_name\&#34;,\&#34;tag_exclude_data_source_name\&#34;]},\&#34;numBuckets\&#34;:true,\&#34;mincount\&#34;:1,\&#34;field\&#34;:\&#34;data_source_name\&#34;,\&#34;limit\&#34;:-1,\&#34;facet\&#34;:{},\&#34;sort\&#34;:{\&#34;count\&#34;:\&#34;desc\&#34;}}}&#34;},
+                                                             {&#34;key&#34;: &#34;useDCubeReq&#34;,
+                                                              &#34;value&#34;: &#34;true&#34;}]}
+
+    FIELD_DOC_COUNT = &#34;TotalDocuments&#34;
+    FIELD_REVIEWED = &#34;ReviewedDocuments&#34;
+    FIELD_NOT_REVIEWED = &#34;Non-ReviewedDocuments&#34;
+    FIELD_ACCEPTED = &#39;AcceptedDocuments&#39;
+    FIELD_DECLINED = &#39;DeclinedDocuments&#39;
+    FIELD_REDACTED = &#39;RedactedDocuments&#39;
+    FIELD_NOT_REDACTED = &#39;Non-RedactedDocuments&#39;
+
+    class RequestStatus(Enum):
+        &#34;&#34;&#34;enum to specify different request status&#34;&#34;&#34;
+        TaskCreated = 1
+        TaskConfigured = 2
+        ReviewInProgress = 3
+        ReviewCompleted = 4
+        ApproveCompleted = 5
+        ExportCompleted = 6
+        DeleteCompleted = 7
+        TaskCompleted = 8
+        ApprovalRequested = 9
+        ActionInProgress = 10
+        CompletedWithErrors = 11
+        Failed = 12
+
+    class RequestType(Enum):
+        &#34;&#34;&#34;enum to maintain different request type&#34;&#34;&#34;
+        EXPORT = &#39;EXPORT&#39;
+        DELETE = &#39;DELETE&#39;</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_ACCEPTED"><code class="name">var <span class="ident">FACET_ACCEPTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_COUNT"><code class="name">var <span class="ident">FACET_COUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_DECLINED"><code class="name">var <span class="ident">FACET_DECLINED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REDACTED"><code class="name">var <span class="ident">FACET_NOT_REDACTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REVIEWED"><code class="name">var <span class="ident">FACET_NOT_REVIEWED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_REDACTED"><code class="name">var <span class="ident">FACET_REDACTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FACET_REVIEWED"><code class="name">var <span class="ident">FACET_REVIEWED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_ACCEPTED"><code class="name">var <span class="ident">FIELD_ACCEPTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_DECLINED"><code class="name">var <span class="ident">FIELD_DECLINED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_DOC_COUNT"><code class="name">var <span class="ident">FIELD_DOC_COUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REDACTED"><code class="name">var <span class="ident">FIELD_NOT_REDACTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REVIEWED"><code class="name">var <span class="ident">FIELD_NOT_REVIEWED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_REDACTED"><code class="name">var <span class="ident">FIELD_REDACTED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.FIELD_REVIEWED"><code class="name">var <span class="ident">FIELD_REVIEWED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_ENTITIES"><code class="name">var <span class="ident">PROPERTY_ENTITIES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_ID"><code class="name">var <span class="ident">PROPERTY_REQUEST_HANDLER_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_NAME"><code class="name">var <span class="ident">PROPERTY_REQUEST_HANDLER_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_CRIERIA"><code class="name">var <span class="ident">PROPERTY_REVIEW_CRIERIA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_SET_ID"><code class="name">var <span class="ident">PROPERTY_REVIEW_SET_ID</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY"><code class="name">var <span class="ident">REQUEST_FEDERATED_FACET_SEARCH_QUERY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.RequestStatus"><code class="name">var <span class="ident">RequestStatus</span></code></dt>
+<dd>
+<div class="desc"><p>enum to specify different request status</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.RequestType"><code class="name">var <span class="ident">RequestType</span></code></dt>
+<dd>
+<div class="desc"><p>enum to maintain different request type</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.RequestConstants.SEARCH_QUERY_SELECTION_SET"><code class="name">var <span class="ident">SEARCH_QUERY_SELECTION_SET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.activateapps.constants.TagConstants"><code class="flex name class">
 <span>class <span class="ident">TagConstants</span></span>
 </code></dt>
@@ -1033,7 +2351,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L366-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L873-L952" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TagConstants:
     &#34;&#34;&#34;class to maintain all the Tags related constants&#34;&#34;&#34;
@@ -1161,7 +2479,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L307-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L814-L819" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TargetApps(Enum):
     &#34;&#34;&#34;Class to maintain supported apps types in Activate&#34;&#34;&#34;
@@ -1203,7 +2521,7 @@ class TagConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/activateapps/constants.py#L315-L323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/constants.py#L822-L830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TrainingStatus(Enum):
     &#34;&#34;&#34;Class to maintain training status for classifier&#34;&#34;&#34;
@@ -1332,6 +2650,57 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
+<h4><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants" href="#cvpysdk.activateapps.constants.EdiscoveryConstants">EdiscoveryConstants</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_FS_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_FS_REQ_JSON">ADD_FS_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON">CREATE_CLIENT_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS">CRITERIA_EXTRACTED_DOCS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType">CrawlType</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DATA_SOURCE_TYPES" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DATA_SOURCE_TYPES">DATA_SOURCE_TYPES</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_CLOUD_STORAGE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DS_CLOUD_STORAGE">DS_CLOUD_STORAGE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_FILE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DS_FILE">DS_FILE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DYNAMIC_FEDERATED_SEARCH_PARAMS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DYNAMIC_FEDERATED_SEARCH_PARAMS">DYNAMIC_FEDERATED_SEARCH_PARAMS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION">EDIT_CATEGORY_PERMISSION</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXPORT_DOWNLOAD_REQ" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXPORT_DOWNLOAD_REQ">EXPORT_DOWNLOAD_REQ</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CRAWL_TYPE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CRAWL_TYPE">FIELD_CRAWL_TYPE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME">FIELD_DATA_SOURCE_DISPLAY_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID">FIELD_DATA_SOURCE_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA">FIELD_DATA_SOURCE_ID_NON_SEA</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME">FIELD_DATA_SOURCE_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME_SEA" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_NAME_SEA">FIELD_DATA_SOURCE_NAME_SEA</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE">FIELD_DATA_SOURCE_TYPE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DC_PLAN_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DC_PLAN_ID">FIELD_DC_PLAN_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DISPLAY_NAME" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DISPLAY_NAME">FIELD_DISPLAY_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DOCUMENT_COUNT" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_DOCUMENT_COUNT">FIELD_DOCUMENT_COUNT</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PLAN_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PLAN_ID">FIELD_PLAN_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PSEDUCO_CLIENT_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_PSEDUCO_CLIENT_ID">FIELD_PSEDUCO_CLIENT_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_SUBCLIENT_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_SUBCLIENT_ID">FIELD_SUBCLIENT_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVERS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVERS">FSO_SERVERS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVER_GROUPS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVER_GROUPS">FSO_SERVER_GROUPS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_DEFAULT_EXPORT_FIELDS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FS_DEFAULT_EXPORT_FIELDS">FS_DEFAULT_EXPORT_FIELDS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME">FS_SERVER_HANDLER_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ">REVIEW_ACTION_BULK_SEARCH_REQ</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON">REVIEW_ACTION_DELETE_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED">REVIEW_ACTION_FSO_SUPPORTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IDA_SELECT_SET">REVIEW_ACTION_IDA_SELECT_SET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IGNORE_FILES_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_IGNORE_FILES_REQ_JSON">REVIEW_ACTION_IGNORE_FILES_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_MOVE_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_MOVE_REQ_JSON">REVIEW_ACTION_MOVE_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SDG_SUPPORTED" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SDG_SUPPORTED">REVIEW_ACTION_SDG_SUPPORTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SEARCH_FL_SET">REVIEW_ACTION_SEARCH_FL_SET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SET_RETENTION_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_SET_RETENTION_REQ_JSON">REVIEW_ACTION_SET_RETENTION_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_TAG_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_TAG_REQ_JSON">REVIEW_ACTION_TAG_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ReviewActions" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ReviewActions">ReviewActions</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.RiskTypes" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.RiskTypes">RiskTypes</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.SERVER_LEVEL_SCHEDULE_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.SERVER_LEVEL_SCHEDULE_JSON">SERVER_LEVEL_SCHEDULE_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.SHARE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.SHARE_REQUEST_JSON">SHARE_REQUEST_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.START_CRAWL_SERVER_REQUEST_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.START_CRAWL_SERVER_REQUEST_JSON">START_CRAWL_SERVER_REQUEST_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.SourceType" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.SourceType">SourceType</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REQUEST" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REQUEST">TAGGING_ITEMS_REQUEST</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REVIEW_REQUEST" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.TAGGING_ITEMS_REVIEW_REQUEST">TAGGING_ITEMS_REVIEW_REQUEST</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.VIEW_CATEGORY_PERMISSION" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.VIEW_CATEGORY_PERMISSION">VIEW_CATEGORY_PERMISSION</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="cvpysdk.activateapps.constants.InventoryConstants" href="#cvpysdk.activateapps.constants.InventoryConstants">InventoryConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.activateapps.constants.InventoryConstants.ASSET_ADD_REQUEST_JSON" href="#cvpysdk.activateapps.constants.InventoryConstants.ASSET_ADD_REQUEST_JSON">ASSET_ADD_REQUEST_JSON</a></code></li>
@@ -1377,6 +2746,34 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_SCHEDULE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_SCHEDULE_REQUEST_JSON">PLAN_SCHEDULE_REQUEST_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_SHARE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_SHARE_REQUEST_JSON">PLAN_SHARE_REQUEST_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_UPDATE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_UPDATE_REQUEST_JSON">PLAN_UPDATE_REQUEST_JSON</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.activateapps.constants.RequestConstants" href="#cvpysdk.activateapps.constants.RequestConstants">RequestConstants</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_ACCEPTED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_ACCEPTED">FACET_ACCEPTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_COUNT" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_COUNT">FACET_COUNT</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_DECLINED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_DECLINED">FACET_DECLINED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REDACTED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REDACTED">FACET_NOT_REDACTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REVIEWED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_NOT_REVIEWED">FACET_NOT_REVIEWED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_REDACTED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_REDACTED">FACET_REDACTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FACET_REVIEWED" href="#cvpysdk.activateapps.constants.RequestConstants.FACET_REVIEWED">FACET_REVIEWED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_ACCEPTED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_ACCEPTED">FIELD_ACCEPTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_DECLINED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_DECLINED">FIELD_DECLINED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_DOC_COUNT" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_DOC_COUNT">FIELD_DOC_COUNT</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REDACTED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REDACTED">FIELD_NOT_REDACTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REVIEWED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_NOT_REVIEWED">FIELD_NOT_REVIEWED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_REDACTED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_REDACTED">FIELD_REDACTED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.FIELD_REVIEWED" href="#cvpysdk.activateapps.constants.RequestConstants.FIELD_REVIEWED">FIELD_REVIEWED</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_ENTITIES" href="#cvpysdk.activateapps.constants.RequestConstants.PROPERTY_ENTITIES">PROPERTY_ENTITIES</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_ID" href="#cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_ID">PROPERTY_REQUEST_HANDLER_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_NAME" href="#cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REQUEST_HANDLER_NAME">PROPERTY_REQUEST_HANDLER_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_CRIERIA" href="#cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_CRIERIA">PROPERTY_REVIEW_CRIERIA</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_SET_ID" href="#cvpysdk.activateapps.constants.RequestConstants.PROPERTY_REVIEW_SET_ID">PROPERTY_REVIEW_SET_ID</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY" href="#cvpysdk.activateapps.constants.RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY">REQUEST_FEDERATED_FACET_SEARCH_QUERY</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.RequestStatus" href="#cvpysdk.activateapps.constants.RequestConstants.RequestStatus">RequestStatus</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.RequestType" href="#cvpysdk.activateapps.constants.RequestConstants.RequestType">RequestType</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.RequestConstants.SEARCH_QUERY_SELECTION_SET" href="#cvpysdk.activateapps.constants.RequestConstants.SEARCH_QUERY_SELECTION_SET">SEARCH_QUERY_SELECTION_SET</a></code></li>
 </ul>
 </li>
 <li>

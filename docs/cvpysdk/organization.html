@@ -110,6 +110,9 @@ activate()                  --  To activate the organization
 
 deactivate()                --  To deactivate the organization
 
+verify_owner_assignment_config() --  Verifies that the ownership assignments settings are configured
+and set properly for company
+
 enable_auto_discover()      --  Enable autodiscover option for the oraganization
 
 disable_auto_discover()      --  Diable autodiscover option for the oraganization
@@ -127,6 +130,14 @@ get_alerts()                --  get all the alerts associated to organization
 add_client_association()        --  Associates a client to an organization
 
 remove_client_association()     --  Removes the client from an organization
+
+enable_company_data_privacy()   -- enable company privacy to prevent admin access to company data
+
+disable_company_data_privacy()  -- To disable company privacy to prevent admin access to company data
+
+enable_owner_data_privacy()     -- To enable company privacy to allow owner to enable data privacy
+
+disable_owner_data_privacy()    -- To disable company privacy to allow owner to enable data privacy
 
 update_security_associations()     -- Updates Security Associations for user or usergroup on Organisation
 
@@ -178,6 +189,12 @@ allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable /
 
      **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+    **is_backup_disabled**       -- returns the backup activity status for the Organization
+
+    **is_restore_disabled**      -- returns the restore activity status for the Organization
+
+    **is_login_disabled**        -- returns the Login activity status for the Organization
+
      **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
      **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
@@ -209,11 +226,16 @@ allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable /
     **isAuthrestoreEnabled**    -- Returns True - If Authrestore is enabled at Organisation level
 
     **isAllowUserstoEnablePasskeyEnabled** -- Returns True - If users have rights to enable passkey
+
+    **is_company_privacy_enabled**         -- Returns True if the privacy is enabled for organization
+
+    **is_owner_data_privacy_enabled**      -- Returns True if the privacy is enabled for owner of client in
+    organization
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1-L2418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1-L2761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -329,6 +351,9 @@ Organization
 
     deactivate()                --  To deactivate the organization
 
+    verify_owner_assignment_config() --  Verifies that the ownership assignments settings are configured
+    and set properly for company
+
     enable_auto_discover()      --  Enable autodiscover option for the oraganization
 
     disable_auto_discover()      --  Diable autodiscover option for the oraganization
@@ -347,6 +372,14 @@ Organization
 
     remove_client_association()     --  Removes the client from an organization
 
+    enable_company_data_privacy()   -- enable company privacy to prevent admin access to company data
+
+    disable_company_data_privacy()  -- To disable company privacy to prevent admin access to company data
+
+    enable_owner_data_privacy()     -- To enable company privacy to allow owner to enable data privacy
+
+    disable_owner_data_privacy()    -- To disable company privacy to allow owner to enable data privacy
+
     update_security_associations()     -- Updates Security Associations for user or usergroup on Organisation
 
     update_email_settings()            -- Updates Email settings for the organisation
@@ -355,7 +388,7 @@ Organization
 
     passkey()                          -- Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation
 
-    allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey 
+    allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey
 
 Organization Attributes
 -----------------------
@@ -399,6 +432,12 @@ Organization Attributes
 
          **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
+        **is_backup_disabled**       -- returns the backup activity status for the Organization
+
+        **is_restore_disabled**      -- returns the restore activity status for the Organization
+
+        **is_login_disabled**        -- returns the Login activity status for the Organization
+
          **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
          **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
@@ -431,6 +470,11 @@ Organization Attributes
 
         **isAllowUserstoEnablePasskeyEnabled** -- Returns True - If users have rights to enable passkey
 
+        **is_company_privacy_enabled**         -- Returns True if the privacy is enabled for organization
+
+        **is_owner_data_privacy_enabled**      -- Returns True if the privacy is enabled for owner of client in
+        organization
+
 &#34;&#34;&#34;
 
 import re
@@ -445,6 +489,7 @@ from .security.usergroup import UserGroup
 from .security.two_factor_authentication import TwoFactorAuthentication
 
 from base64 import b64encode
+
 
 class Organizations:
     &#34;&#34;&#34;Class for doing operations on Organizations like add / delete an organization, etc.&#34;&#34;&#34;
@@ -557,9 +602,50 @@ class Organizations:
                         &#39;GUID&#39;: organization_guid
                     }
 
+            self._get_associated_entities_count()
+
             return organizations
         response_string = self._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_associated_entities_count(self):
+        &#34;&#34;&#34;Gets all the organizations associated with the Commcell environment.
+
+            Returns:
+                dict    -   consists of all organizations added to the commcell
+
+                    {
+                        &#34;organization1_name&#34;: organization1_id,
+
+                        &#34;organization2_name&#34;: organization2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._organizations_api+&#34;?Fl=providers.associatedEntitiesCount,providers.shortName,providers.connectName&#34;)
+
+        if flag:
+            if response.json() and &#39;providers&#39; in response.json():
+                for provider in response.json().get(&#39;providers&#39;):
+                    name = provider.get(&#39;connectName&#39;).lower()
+                    organization_entites_count = provider.get(&#39;associatedEntitiesCount&#39;)
+                    if name:
+                        self._adv_config[name] = {
+                            &#39;count&#39;: organization_entites_count
+                        }
+
+                return
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
     def all_organizations(self):
@@ -743,8 +829,8 @@ class Organizations:
                             &#39;email&#39;: email
                         }
                     ],
-                    &#39;defaultPlans&#39;: plans_list
-                }
+                },
+                &#39;planDetails&#39;: plans_list
             }
         }
 
@@ -920,13 +1006,20 @@ class Organization:
         self._global_file_exceptions_enabled = False
         self._job_start_time = None
         self._client_groups = None
+        self._update_props = {}
         self._primary_domain = None
         self._additional_domain = None
         self._is_passkey_enabled = None
         self._is_authorise_for_restore_enabled = None
         self._is_allow_users_to_enable_passkey_enabled = None
+        self._company_privacy = None
+        self._owner_privacy = None
+        self._backup_disabled = None
+        self._restore_disabled = None
+        self._login_disabled = None
+        self._retire_laptops = None
 
-        self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
+        self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
     @property
@@ -974,7 +1067,7 @@ class Organization:
             value (int) -- id for the infrastructure type
 
             Rented storage = 0,
-            Own Storage = 1, 
+            Own Storage = 1,
             Rented and Own Storage  = 2
         &#34;&#34;&#34;
         self._update_properties_json({&#39;infrastructureType&#39;: value})
@@ -1073,7 +1166,9 @@ class Organization:
                 self._description = organization[&#39;description&#39;]
                 self._email_domain_names = organization.get(&#39;emailDomainNames&#39;)
                 self._domain_name = organization[&#39;shortName&#39;][&#39;domainName&#39;]
-
+                self._backup_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableBackup&#39;]
+                self._restore_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableRestore&#39;]
+                self._login_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableLogin&#39;]
                 self._is_auth_code_enabled = organization_properties[&#39;enableAuthCodeGen&#39;]
                 self._auth_code = organization_properties.get(&#39;authCode&#39;)
                 self._use_upn = organization_properties.get(&#39;useUPNForEmail&#39;)
@@ -1085,10 +1180,19 @@ class Organization:
                 self._global_file_exceptions_enabled = organization_properties.get(&#39;useCompanyGlobalFilter&#39;)
                 self._primary_domain = organization_properties.get(&#39;primaryDomain&#39;, &#39;&#39;)
                 self._additional_domain = organization_properties.get(&#39;additionalDomains&#39;, [])
-                self._is_passkey_enabled = True if organization_properties[&#39;advancedPrivacySettings&#39;][&#39;authType&#39;] == 2 else False
-                self._is_authorise_for_restore_enabled = organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
+                self._is_passkey_enabled = True if organization_properties[&#39;advancedPrivacySettings&#39;][
+                                                       &#39;authType&#39;] == 2 else False
+                self._is_authorise_for_restore_enabled = \
+                organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties[&#39;allowUsersToEnablePasskey&#39;]
+                self._owner_privacy = organization_properties.get(&#34;allowUsersToEnablePrivacy&#34;)
 
+                privacy = organization_properties.get(&#39;privacy&#39;)
+                if privacy:
+                    self._company_privacy = privacy.get(&#34;enableDataSecurity&#34;)
+
+                self._retire_laptops = organization_properties.get(&#39;autoRetireDevices&#39;, {})
+                
                 job_time_enabled = organization_properties.get(&#39;isJobStartTimeEnabled&#39;)
                 if job_time_enabled:
                     job_time_epoch = organization_properties.get(&#39;jobStartTime&#39;, None)
@@ -1098,7 +1202,8 @@ class Organization:
 
                 time_epoch = organization_properties.get(&#39;orgCreationDateTime&#39;)
                 time_string = (datetime.fromtimestamp(time_epoch).strftime(&#34;%b %#d&#34;) +
-                               (datetime.fromtimestamp(time_epoch).strftime(&#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
+                               (datetime.fromtimestamp(time_epoch).strftime(
+                                   &#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
                                datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M:%S %p&#34;))
                 self._org_creation_time = time_string
 
@@ -1130,7 +1235,7 @@ class Organization:
 
                 for file_filter in organization_properties[&#39;globalFiltersInfo&#39;][&#39;globalFiltersInfoList&#39;]:
                     os_type_map = {1: &#39;Windows&#39;, 2: &#39;Unix&#39;}
-                    self._file_exceptions[os_type_map[file_filter[&#39;operatingSystemType&#39;]]] =\
+                    self._file_exceptions[os_type_map[file_filter[&#39;operatingSystemType&#39;]]] = \
                         file_filter[&#39;globalFilters&#39;].get(&#39;filters&#39;, [])
 
                 return self._organization_info
@@ -1182,7 +1287,7 @@ class Organization:
         if flag:
             if response.json():
                 response = response.json()
-                security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;)
+                security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;, [])
                 for list_item in security_list:
                     name = list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userGroupName&#39;) or \
                            list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userName&#39;) or \
@@ -1209,7 +1314,7 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_security_associations(self, userOrGroupName, roleName, request_type = None,  isUserGroup = False):
+    def update_security_associations(self, userOrGroupName, roleName, request_type=None, isUserGroup=False):
         &#34;&#34;&#34;
         Updates Security Associations Of an Organisation
 
@@ -1249,14 +1354,14 @@ class Organization:
                 &#34;associationsOperationType&#34;: update_operator_request_type.get(request_type, 1),
                 &#34;associations&#34;: [{
                     &#34;userOrGroup&#34;: [
-                    {
-                        &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34; : userOrGroupName
-                    }
+                        {
+                            &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34;: userOrGroupName
+                        }
                     ],
                     &#34;properties&#34;: {
-                    &#34;role&#34;: {
-                        &#34;roleName&#34;: roleName
-                    }
+                        &#34;role&#34;: {
+                            &#34;roleName&#34;: roleName
+                        }
                     }
                 }
                 ]
@@ -1280,7 +1385,6 @@ class Organization:
 
         self.refresh()
 
-
     def _update_properties(self, update_plan_details=False):
         &#34;&#34;&#34;Executes the request on the server to update the properties of the organization.
 
@@ -1301,9 +1405,17 @@ class Organization:
         request_json = {
             &#39;organizationInfo&#39;: {
                 &#39;organization&#39;: self._properties.get(&#39;organization&#39;),
-                &#39;organizationProperties&#39;: self._properties.get(&#39;organizationProperties&#39;)
+                &#39;organizationProperties&#39;: self._update_props.get(&#39;organizationProperties&#39;, {})
             }
         }
+
+        domain_name = self._update_props.get(&#39;newAliasName&#39;)
+        if domain_name:
+            request_json[&#39;newAliasName&#39;] = domain_name
+
+        company_name = self._update_props.get(&#39;newCompanyName&#39;)
+        if company_name:
+            request_json[&#39;newCompanyName&#39;] = company_name
 
         if update_plan_details:
             request_json[&#39;organizationInfo&#39;][&#39;planDetailsOperationType&#39;] = self._properties.get(
@@ -1319,10 +1431,10 @@ class Organization:
         if response.json():
             if &#39;error&#39; in response.json():
                 error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
-                error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                error_message = response.json()[&#39;error&#39;].get(&#39;errorMessage&#39;, &#39;&#39;)
             else:
                 error_code = response.json()[&#39;errorCode&#39;]
-                error_message = response.json()[&#39;errorMessage&#39;]
+                error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
 
             if error_code != 0:
                 raise SDKException(
@@ -1343,7 +1455,7 @@ class Organization:
 
         &#34;&#34;&#34;
         for key in properties_dict:
-            self._properties[&#39;organizationProperties&#39;][key] = properties_dict[key]
+            self._update_props[&#39;organizationProperties&#39;][key] = properties_dict[key]
 
     @property
     def name(self):
@@ -1360,6 +1472,22 @@ class Organization:
         &#34;&#34;&#34;Returns the value of the name for this Organization.&#34;&#34;&#34;
         return self._organization_name.lower()
 
+    @organization_name.setter
+    def organization_name(self, value):
+        &#34;&#34;&#34;Method to set organization name
+
+        Args:
+
+            value (string): company name to be set
+        &#34;&#34;&#34;
+        req_json = {
+            &#34;newCompanyName&#34;: value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
+
     @property
     def description(self):
         &#34;&#34;&#34;Returns the description for this Organization.&#34;&#34;&#34;
@@ -1370,10 +1498,37 @@ class Organization:
         &#34;&#34;&#34;Returns the value of the email domain names for this Organization.&#34;&#34;&#34;
         return self._email_domain_names
 
+    @email_domain_names.setter
+    def email_domain_names(self, value):
+        &#34;&#34;&#34;Method to set supported smtp for this organization
+
+        Args:
+
+            value (list): list of supported smtp to be set
+        &#34;&#34;&#34;
+        self._properties[&#39;organization&#39;][&#39;emailDomainNames&#39;] = value
+        self._update_properties()
+
     @property
     def domain_name(self):
         &#34;&#34;&#34;Returns the value of the domain name for this Organization.&#34;&#34;&#34;
         return self._domain_name
+
+    @domain_name.setter
+    def domain_name(self, value):
+        &#34;&#34;&#34;Method to set domain name for this organization
+
+        Args:
+
+            value (basestring): company alias to be set
+        &#34;&#34;&#34;
+        req_json = {
+            &#34;newAliasName&#34;: value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
 
     @property
     def auth_code(self):
@@ -1389,6 +1544,21 @@ class Organization:
     def is_auto_discover_enabled(self):
         &#34;&#34;&#34;Returns boolen whether organization autodiscover attribute enabled for this organization.&#34;&#34;&#34;
         return self._properties[&#39;organizationProperties&#39;].get(&#39;enableAutoDiscovery&#39;, False)
+
+    @property
+    def is_backup_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether backup is disabled for this organisation&#34;&#34;&#34;
+        return self._backup_disabled
+
+    @property
+    def is_restore_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether restore is disabled for this organisation&#34;&#34;&#34;
+        return self._restore_disabled
+
+    @property
+    def is_login_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether login is disabled for this organisation&#34;&#34;&#34;
+        return self._login_disabled
 
     @property
     def shared_laptop(self):
@@ -1449,20 +1619,20 @@ class Organization:
         for user_name in user_names:
             user_list.append(
                 {
-                    &#39;user&#39; : {
+                    &#39;user&#39;: {
                         &#34;userName&#34;: user_name
                     }
                 }
             )
 
         req_json = {
-        &#34;primaryContactsOperationType&#34;: &#34;OVERWRITE&#34;,
-        &#34;primaryContacts&#34;: user_list
+            &#34;primaryContactsOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;primaryContacts&#34;: user_list
         }
 
         self._update_properties_json(req_json)
         self._update_properties()
-        
+
     @property
     def contacts_fullname(self):
         &#34;&#34;&#34; Returns Primary Contacts full name for the organization&#34;&#34;&#34;
@@ -1511,7 +1681,7 @@ class Organization:
             })
             self._update_properties()
             return
-        
+
         if not value:
             self._update_properties_json({&#39;defaultPlansOperationType&#39;: &#39;OVERWRITE&#39;})
             self._update_properties()
@@ -1553,7 +1723,7 @@ class Organization:
     @sender_name.setter
     def sender_name(self, sender_name):
         &#34;&#34;&#34;Sets the email Sender Name&#34;&#34;&#34;
-        self._update_properties_json({&#39;senderName&#39; : sender_name})
+        self._update_properties_json({&#39;senderName&#39;: sender_name})
         self._update_properties()
 
     @property
@@ -1564,7 +1734,7 @@ class Organization:
     @sender_email.setter
     def sender_email(self, sender_email):
         &#34;&#34;&#34;Sets Sender Email adress&#34;&#34;&#34;
-        self._update_properties_json({&#39;senderSmtp&#39; : sender_email})
+        self._update_properties_json({&#39;senderSmtp&#39;: sender_email})
         self._update_properties()
 
     def update_email_settings(self, email_settings):
@@ -1574,7 +1744,7 @@ class Organization:
         Args:
             email_settings (dict) -- Dictionary consisting of sender name and email
 
-            example: 
+            example:
             email_settings = {
                 &#39;sender_name&#39; : &#39;name&#39;,
                 &#39;sender_email&#39; : &#39;email&#39;
@@ -1590,8 +1760,8 @@ class Organization:
         if name is None or email is None:
             raise SDKException(&#39;Organization&#39;, 114, &#39;No configurable settings were set in the input&#39;)
         req_json = {
-                &#34;senderSmtp&#34;: email,
-                &#34;senderName&#34;: name
+            &#34;senderSmtp&#34;: email,
+            &#34;senderName&#34;: name
         }
         self._update_properties_json(req_json)
         self._update_properties()
@@ -1614,7 +1784,7 @@ class Organization:
     @file_exceptions.setter
     def file_exceptions(self, value):
         &#34;&#34;&#34;
-        This sets Global File Exceptions at Company Level, Individually File Exceptions for Windows or Unix can be set 
+        This sets Global File Exceptions at Company Level, Individually File Exceptions for Windows or Unix can be set
 
         file_exceptions = filters, &#39;OVERWRITE&#39;   It will overwrite with the keys which are present in filters dict.
         file_exceptions = filters, &#39;UPDATE&#39;      It will update the keys which are present in filters dict.
@@ -1622,7 +1792,7 @@ class Organization:
         Args:
             value (tuple)  --  (filters, Operation_Type)
 
-            eg : 
+            eg :
             filters = {
                 &#39;Windows&#39; : [&#39;*.py&#39;],  (optional)
                 &#39;Unix&#39; : [&#39;*.exe&#39;],    (optional)
@@ -1637,7 +1807,7 @@ class Organization:
                 If input tuple is not in this format (dict, str)
 
         &#34;&#34;&#34;
-        
+
         filter_list = list()
 
         if isinstance(value, tuple):
@@ -1645,10 +1815,10 @@ class Organization:
                 exceptions = value[0]
                 operation_type = value[1]
 
-                for os , filters in exceptions.items():
+                for os, filters in exceptions.items():
                     temp = {
-                        &#34;globalFilters&#34;:{
-                            &#34;opType&#34;:&#34;OVERWRITE&#34;,
+                        &#34;globalFilters&#34;: {
+                            &#34;opType&#34;: &#34;OVERWRITE&#34;,
                             &#34;filters&#34;: filters if operation_type == &#39;OVERWRITE&#39; else self.file_exceptions[os] + filters
                         },
                         &#34;operatingSystemType&#34;: &#39;WINDOWS_GLOBAL_FILTER&#39; if os == &#39;Windows&#39; else &#39;UNIX_GLOBAL_FILTER&#39;
@@ -1657,11 +1827,11 @@ class Organization:
                     filter_list.append(temp)
 
                 req_json = {
-                    &#34;globalFiltersInfo&#34;:{
-                    &#34;globalFiltersInfoList&#34;: filter_list
+                    &#34;globalFiltersInfo&#34;: {
+                        &#34;globalFiltersInfoList&#34;: filter_list
+                    }
                 }
-                }
-                
+
             else:
                 raise SDKException(&#39;Organization&#39;, 114, &#39;No configurable settings were set in the input&#39;)
         else:
@@ -1722,6 +1892,16 @@ class Organization:
         self._properties[&#39;planDetailsOperationType&#39;] = 1
         self._update_properties(update_plan_details=True)
 
+    @property
+    def is_company_privacy_enabled(self):
+        &#34;&#34;&#34;Returns true if company privacy is enabled&#34;&#34;&#34;
+        return self._company_privacy
+
+    @property
+    def is_owner_data_privacy_enabled(self):
+        &#34;&#34;&#34;Returns true if owner data privacy is enabled&#34;&#34;&#34;
+        return self._owner_privacy
+
     def dissociate_plans(self, value):
         &#34;&#34;&#34;disassociates plans from the organization
 
@@ -1763,6 +1943,7 @@ class Organization:
         self._default_plan = []
         self._contacts = {}
         self._plans = {}
+        self._update_props[&#39;organizationProperties&#39;] = {}
         self._properties = self._get_properties()
         self._user_groups = self._get_company_usergroup()
         self._tfa_obj.refresh()
@@ -2035,6 +2216,56 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def verify_owner_assignment_config(self, want_ownership_type):
+        &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly for company
+
+        Args:
+            want_ownership_type            (int)    -- Option number for ownership assignment type
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if ownership assignment is not correct
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._services[&#39;ORGANIZATION&#39;] % str(self.organization_id)
+        )
+
+        if flag:
+            if response and response.json():
+                if &#39;response&#39; in response.json():
+                    error_code = response.json()[&#39;response&#39;][&#39;errorCode&#39;]
+
+                    if error_code != 0:
+                        raise SDKException(
+                            &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(
+                                response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                            )
+                        )
+                elif &#39;errorMessage&#39; in response.json():
+                    raise SDKException(
+                        &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+                else:
+                    resp = response.json()
+                    got_ownership_type = resp.get(&#39;organizationInfo&#39;, {}).get(&#39;organizationProperties&#39;, {}).get(
+                        &#34;autoClientOwnerAssignmentType&#34;)
+
+                    if got_ownership_type != want_ownership_type:
+                        raise SDKException(
+                            &#39;Organization&#39;, &#39;102&#39;, f&#34;Error: autoClientOwnerAssignmentType value not set correctly. \
+                              Found: {got_ownership_type}, Expected: {want_ownership_type}&#34;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def enable_auto_discover(self):
         &#34;&#34;&#34;Enables autodiscover at company level..
@@ -2093,10 +2324,12 @@ class Organization:
                     &#34;entity&#34;: {
                         &#34;entityType&#34;: 194,
                         &#34;entityName&#34;:
-                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellName&#39;],
+                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                                &#39;commCellName&#39;],
                         &#34;_type_&#34;: 150,
                         &#34;entityId&#34;:
-                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellId&#39;]
+                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                                &#39;commCellId&#39;]
                     },
                     &#34;properties&#34;: {
                         &#34;role&#34;: {
@@ -2149,7 +2382,7 @@ class Organization:
         request_json = {
             &#34;organizationId&#34;: int(self.organization_id),
             &#34;associationsOperationType&#34;: 1
-            }
+        }
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;SERVICE_COMMCELL_ASSOC&#39;], request_json
@@ -2367,8 +2600,68 @@ class Organization:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def enable_company_data_privacy(self):
+        &#34;&#34;&#34; To enable company privacy to prevent admin access to company data
+        &#34;&#34;&#34;
+        if self._company_privacy:
+            return
 
-    def retire_offline_laptops(self, retire_days, delete_days = None):
+        self.set_company_data_privacy(True)
+
+    def disable_company_data_privacy(self):
+        &#34;&#34;&#34; To disable company privacy to prevent admin access to company data
+        &#34;&#34;&#34;
+        if not self._company_privacy:
+            return
+
+        self.set_company_data_privacy(False)
+
+    def set_company_data_privacy(self, value):
+        &#34;&#34;&#34;Method to set company data privacy
+
+        Args:
+            value (bool): True/False to enable/disable privacy
+        Raises:
+            SDKException:
+                if disable company data privacy to service commcell fails
+                if response is empty
+                if response is not success
+        &#34;&#34;&#34;
+        url = self._services[&#39;DISABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+        if value:
+            url = self._services[&#39;ENABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, url, {}
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def get_retire_laptop_properties(self):
+        &#34;&#34;&#34;
+        Returns:
+            dict -- Retire Laptop Properties of Organization
+
+            example: {
+                    &#34;retireDevicesAfterDays&#34;: 183,
+                    &#34;forceDeleteDevicesAfterDays&#34;: -1
+            }
+        &#34;&#34;&#34;
+        return self._retire_laptops
+
+    def retire_offline_laptops(self, retire_days, delete_days=None):
         &#34;&#34;&#34;
         The number of days specified to retire laptops must be less than or equal to the number of days specified to delete laptops
         If delete_days is not specified, It will be set to &#39;Never&#39;
@@ -2388,26 +2681,26 @@ class Organization:
         if delete_days != -1 and retire_days &gt; delete_days:
             raise SDKException(Organization, 101, &#39;The number of days specified to \
              retire laptops must be less than or equal to the number of days specified to delete laptops.&#39;)
-        
+
         req_json = {
-            &#39;autoRetireDevices&#39; : {
-                &#39;retireDevicesAfterDays&#39; : retire_days,
-                &#39;forceDeleteDevicesAfterDays&#39; : delete_days
+            &#39;autoRetireDevices&#39;: {
+                &#39;retireDevicesAfterDays&#39;: retire_days,
+                &#39;forceDeleteDevicesAfterDays&#39;: delete_days
             }
         }
-        
+
         self._update_properties_json(req_json)
         self._update_properties()
 
     @property
     def sites(self):
-        &#34;&#34;&#34; 
+        &#34;&#34;&#34;
         Gets the site information of organisation
 
         Returns:
-            sites (dict)  -- sites information of organisation        
+            sites (dict)  -- sites information of organisation
         &#34;&#34;&#34;
-        return {&#39;primary_site&#39; : self._primary_domain, &#39;additional_sites&#39; : self._additional_domain}
+        return {&#39;primary_site&#39;: self._primary_domain, &#39;additional_sites&#39;: self._additional_domain}
 
     @sites.setter
     def sites(self, sites):
@@ -2415,7 +2708,7 @@ class Organization:
         Updates Sites information for an Organisation
 
         Args:
-            sites (dict)   --  Consisting Of Primary and Additional sites information
+            sites (dict)   --  Consisting Of Primary and Additional sites information, Pass Empty dictionary to remove site information
 
             example:
             sites = {
@@ -2433,9 +2726,7 @@ class Organization:
         &#34;&#34;&#34;
 
         if isinstance(sites, dict):
-            primary_site = sites.get(&#39;primary_site&#39;, None)
-            if primary_site is None:
-                raise SDKException(&#39;Organization&#39;, 101, &#39;Primary Site name is missing.&#39;)
+            primary_site = sites.get(&#39;primary_site&#39;, &#34;&#34;)
 
             additional_sites = sites.get(&#39;additional_sites&#39;, [])
 
@@ -2443,7 +2734,7 @@ class Organization:
                 &#34;primaryDomain&#34;: primary_site,
                 &#34;additionalDomains&#34;: additional_sites,
                 &#34;additionalDomainsOperationType&#34;: &#34;OVERWRITE&#34;
-                })
+            })
             self._update_properties()
         else:
             raise SDKException(&#39;Organization&#39;, 101, &#39;Input Parameter should be dictionary&#39;)
@@ -2461,7 +2752,7 @@ class Organization:
                     if response is not success
         &#34;&#34;&#34;
         req_url = self._services[&#39;GET_ORGANIZATION_TAGS&#39;] % (self.organization_id)
-        flag , response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
 
         if flag:
             if response.json():
@@ -2474,7 +2765,6 @@ class Organization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-        
 
     @tags.setter
     def tags(self, tag_list):
@@ -2504,15 +2794,15 @@ class Organization:
         req_json = {
             &#34;entityTag&#34;: [
                 {
-                &#34;entityId&#34;: int(self.organization_id),
-                &#34;entityType&#34;: 61,
-                &#34;tag&#34;: tag_list
+                    &#34;entityId&#34;: int(self.organization_id),
+                    &#34;entityType&#34;: 61,
+                    &#34;tag&#34;: tag_list
                 }
             ]
         }
 
         req_url = self._services[&#39;ORGANIZATION_TAGS&#39;]
-        flag , response = self._cvpysdk_object.make_request(&#39;PUT&#39;, req_url, req_json)
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, req_url, req_json)
 
         if flag:
             if response.json():
@@ -2544,7 +2834,7 @@ class Organization:
         &#34;&#34;&#34;Returns True if it is enabled&#34;&#34;&#34;
         return self._is_allow_users_to_enable_passkey_enabled
 
-    def passkey(self, current_password, action, new_password = None):
+    def passkey(self, current_password, action, new_password=None):
         &#34;&#34;&#34;&#34;
         Updates Passkey properties of an Organisation
 
@@ -2568,39 +2858,39 @@ class Organization:
 
         if action.lower() == &#39;enable&#39;:
             req_json = {
-            &#34;currentPasskey&#34;: current_password,
+            &#34;newPasskey&#34;: current_password,
             &#34;confirmPasskey&#34;: current_password,
             &#34;passkeyOpType&#34;: &#34;CREATE&#34;
             }
 
         elif action.lower() == &#39;disable&#39;:
             req_json = {
-            &#34;currentPasskey&#34;: current_password,
-            &#34;confirmPasskey&#34;: current_password,
-            &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
+                &#34;currentPasskey&#34;: current_password,
+                &#34;confirmPasskey&#34;: current_password,
+                &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
             }
 
         elif action.lower() == &#39;change passkey&#39;:
             if new_password:
                 new_password = b64encode(new_password.encode()).decode()
                 req_json = {
-                &#34;currentPasskey&#34;: current_password,
-                &#34;newPasskey&#34;: new_password,
-                &#34;confirmPasskey&#34;: new_password,
-                &#34;passkeyOpType&#34;: &#34;EDIT&#34;
+                    &#34;currentPasskey&#34;: current_password,
+                    &#34;newPasskey&#34;: new_password,
+                    &#34;confirmPasskey&#34;: new_password,
+                    &#34;passkeyOpType&#34;: &#34;EDIT&#34;
                 }
             else:
                 raise SDKException(&#39;Organization&#39;, 102, &#39;New password is missing in input&#39;)
 
         elif action.lower() == &#39;authorise&#39;:
             req_json = {
-            &#34;passkey&#34;: current_password,
-            &#34;passkeySettings&#34;: {
-                &#34;enableAuthorizeForRestore&#34;: True,
-                &#34;passkeyExpirationInterval&#34;: {
-                &#34;toTime&#34;: 1800
+                &#34;passkey&#34;: current_password,
+                &#34;passkeySettings&#34;: {
+                    &#34;enableAuthorizeForRestore&#34;: True,
+                    &#34;passkeyExpirationInterval&#34;: {
+                        &#34;toTime&#34;: 1800
+                    }
                 }
-            }
             }
             req_url = self._services[&#39;COMPANY_AUTH_RESTORE&#39;] % (int(self.organization_id))
 
@@ -2624,6 +2914,22 @@ class Organization:
 
         self.refresh()
 
+    def enable_owner_data_privacy(self):
+        &#34;&#34;&#34; To enable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+        if self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: True})
+        self._update_properties()
+
+    def disable_owner_data_privacy(self):
+        &#34;&#34;&#34; To disable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+        if not self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: False})
+        self._update_properties()
+
     def allow_owners_to_enable_passkey(self, flag):
         &#34;&#34;&#34;
         Enable or Disable option to allow owners to enable privacy
@@ -2632,7 +2938,66 @@ class Organization:
             flag (boolean)   --  True (Enable Passkey) or False (Disable Passkey)
         &#34;&#34;&#34;
         self._update_properties_json({&#34;allowUsersToEnablePasskey&#34;: flag})
-        self._update_properties()</code></pre>
+        self._update_properties()
+
+    def update_general_settings(self, general_settings_dict):
+        &#34;&#34;&#34;Method to update properties of general settings in an organization
+
+        Args:
+                general_settings_dict (dict): general settings properties to be modified
+                Eg.
+                    properties_dict = {
+                        &#34;newName&#34;: &#34;string&#34;,
+                        &#34;general&#34;: {
+                            &#34;newAlias&#34;: &#34;string&#34;,
+                            &#34;emailSuffix&#34;: &#34;string&#34;,
+                            &#34;authcodeForInstallation&#34;: true,
+                            &#34;twoFactorAuth&#34;: {
+                                &#34;enable&#34;: true,
+                                &#34;all&#34;: true,
+                                &#34;userGroups&#34;: [
+                                    {
+                                        &#34;id&#34;: 0,
+                                        &#34;name&#34;: &#34;string&#34;
+                                    }
+                                ]
+                            },
+                            &#34;resellerMode&#34;: true,
+                            &#34;enableDataEncryption&#34;: true,
+                            &#34;autoDiscoverApp&#34;: true,
+                            &#34;infrastructureType&#34;: &#34;RENTED_STORAGE&#34;,
+                            &#34;supportedSolutions&#34;: [
+                                &#34;FILE_SERVER&#34;
+                            ],
+                            &#34;assignLaptopOwners&#34;: &#34;LOGGED_IN_ACTIVE_DIRECTORY_USERS&#34;,
+                        }
+                    }
+
+         Raises:
+                SDKException:
+
+                    if unable to update general settings
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._services[&#39;EDIT_COMPANY_DETAILS&#39;] % self.organization_id, general_settings_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -2672,7 +3037,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L645-L2418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L709-L2761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organization:
     &#34;&#34;&#34;Class for performing operations on an Organization.&#34;&#34;&#34;
@@ -2735,13 +3100,20 @@ instance of the Organization class</p></div>
         self._global_file_exceptions_enabled = False
         self._job_start_time = None
         self._client_groups = None
+        self._update_props = {}
         self._primary_domain = None
         self._additional_domain = None
         self._is_passkey_enabled = None
         self._is_authorise_for_restore_enabled = None
         self._is_allow_users_to_enable_passkey_enabled = None
+        self._company_privacy = None
+        self._owner_privacy = None
+        self._backup_disabled = None
+        self._restore_disabled = None
+        self._login_disabled = None
+        self._retire_laptops = None
 
-        self._tfa_obj = TwoFactorAuthentication(self._commcell_object,organization_id=self._organization_id)
+        self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
     @property
@@ -2789,7 +3161,7 @@ instance of the Organization class</p></div>
             value (int) -- id for the infrastructure type
 
             Rented storage = 0,
-            Own Storage = 1, 
+            Own Storage = 1,
             Rented and Own Storage  = 2
         &#34;&#34;&#34;
         self._update_properties_json({&#39;infrastructureType&#39;: value})
@@ -2888,7 +3260,9 @@ instance of the Organization class</p></div>
                 self._description = organization[&#39;description&#39;]
                 self._email_domain_names = organization.get(&#39;emailDomainNames&#39;)
                 self._domain_name = organization[&#39;shortName&#39;][&#39;domainName&#39;]
-
+                self._backup_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableBackup&#39;]
+                self._restore_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableRestore&#39;]
+                self._login_disabled = organization[&#39;deactivateOptions&#39;][&#39;disableLogin&#39;]
                 self._is_auth_code_enabled = organization_properties[&#39;enableAuthCodeGen&#39;]
                 self._auth_code = organization_properties.get(&#39;authCode&#39;)
                 self._use_upn = organization_properties.get(&#39;useUPNForEmail&#39;)
@@ -2900,10 +3274,19 @@ instance of the Organization class</p></div>
                 self._global_file_exceptions_enabled = organization_properties.get(&#39;useCompanyGlobalFilter&#39;)
                 self._primary_domain = organization_properties.get(&#39;primaryDomain&#39;, &#39;&#39;)
                 self._additional_domain = organization_properties.get(&#39;additionalDomains&#39;, [])
-                self._is_passkey_enabled = True if organization_properties[&#39;advancedPrivacySettings&#39;][&#39;authType&#39;] == 2 else False
-                self._is_authorise_for_restore_enabled = organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
+                self._is_passkey_enabled = True if organization_properties[&#39;advancedPrivacySettings&#39;][
+                                                       &#39;authType&#39;] == 2 else False
+                self._is_authorise_for_restore_enabled = \
+                organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties[&#39;allowUsersToEnablePasskey&#39;]
+                self._owner_privacy = organization_properties.get(&#34;allowUsersToEnablePrivacy&#34;)
 
+                privacy = organization_properties.get(&#39;privacy&#39;)
+                if privacy:
+                    self._company_privacy = privacy.get(&#34;enableDataSecurity&#34;)
+
+                self._retire_laptops = organization_properties.get(&#39;autoRetireDevices&#39;, {})
+                
                 job_time_enabled = organization_properties.get(&#39;isJobStartTimeEnabled&#39;)
                 if job_time_enabled:
                     job_time_epoch = organization_properties.get(&#39;jobStartTime&#39;, None)
@@ -2913,7 +3296,8 @@ instance of the Organization class</p></div>
 
                 time_epoch = organization_properties.get(&#39;orgCreationDateTime&#39;)
                 time_string = (datetime.fromtimestamp(time_epoch).strftime(&#34;%b %#d&#34;) +
-                               (datetime.fromtimestamp(time_epoch).strftime(&#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
+                               (datetime.fromtimestamp(time_epoch).strftime(
+                                   &#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
                                datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M:%S %p&#34;))
                 self._org_creation_time = time_string
 
@@ -2945,7 +3329,7 @@ instance of the Organization class</p></div>
 
                 for file_filter in organization_properties[&#39;globalFiltersInfo&#39;][&#39;globalFiltersInfoList&#39;]:
                     os_type_map = {1: &#39;Windows&#39;, 2: &#39;Unix&#39;}
-                    self._file_exceptions[os_type_map[file_filter[&#39;operatingSystemType&#39;]]] =\
+                    self._file_exceptions[os_type_map[file_filter[&#39;operatingSystemType&#39;]]] = \
                         file_filter[&#39;globalFilters&#39;].get(&#39;filters&#39;, [])
 
                 return self._organization_info
@@ -2997,7 +3381,7 @@ instance of the Organization class</p></div>
         if flag:
             if response.json():
                 response = response.json()
-                security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;)
+                security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;, [])
                 for list_item in security_list:
                     name = list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userGroupName&#39;) or \
                            list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userName&#39;) or \
@@ -3024,7 +3408,7 @@ instance of the Organization class</p></div>
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_security_associations(self, userOrGroupName, roleName, request_type = None,  isUserGroup = False):
+    def update_security_associations(self, userOrGroupName, roleName, request_type=None, isUserGroup=False):
         &#34;&#34;&#34;
         Updates Security Associations Of an Organisation
 
@@ -3064,14 +3448,14 @@ instance of the Organization class</p></div>
                 &#34;associationsOperationType&#34;: update_operator_request_type.get(request_type, 1),
                 &#34;associations&#34;: [{
                     &#34;userOrGroup&#34;: [
-                    {
-                        &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34; : userOrGroupName
-                    }
+                        {
+                            &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34;: userOrGroupName
+                        }
                     ],
                     &#34;properties&#34;: {
-                    &#34;role&#34;: {
-                        &#34;roleName&#34;: roleName
-                    }
+                        &#34;role&#34;: {
+                            &#34;roleName&#34;: roleName
+                        }
                     }
                 }
                 ]
@@ -3095,7 +3479,6 @@ instance of the Organization class</p></div>
 
         self.refresh()
 
-
     def _update_properties(self, update_plan_details=False):
         &#34;&#34;&#34;Executes the request on the server to update the properties of the organization.
 
@@ -3116,9 +3499,17 @@ instance of the Organization class</p></div>
         request_json = {
             &#39;organizationInfo&#39;: {
                 &#39;organization&#39;: self._properties.get(&#39;organization&#39;),
-                &#39;organizationProperties&#39;: self._properties.get(&#39;organizationProperties&#39;)
+                &#39;organizationProperties&#39;: self._update_props.get(&#39;organizationProperties&#39;, {})
             }
         }
+
+        domain_name = self._update_props.get(&#39;newAliasName&#39;)
+        if domain_name:
+            request_json[&#39;newAliasName&#39;] = domain_name
+
+        company_name = self._update_props.get(&#39;newCompanyName&#39;)
+        if company_name:
+            request_json[&#39;newCompanyName&#39;] = company_name
 
         if update_plan_details:
             request_json[&#39;organizationInfo&#39;][&#39;planDetailsOperationType&#39;] = self._properties.get(
@@ -3134,10 +3525,10 @@ instance of the Organization class</p></div>
         if response.json():
             if &#39;error&#39; in response.json():
                 error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
-                error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                error_message = response.json()[&#39;error&#39;].get(&#39;errorMessage&#39;, &#39;&#39;)
             else:
                 error_code = response.json()[&#39;errorCode&#39;]
-                error_message = response.json()[&#39;errorMessage&#39;]
+                error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
 
             if error_code != 0:
                 raise SDKException(
@@ -3158,7 +3549,7 @@ instance of the Organization class</p></div>
 
         &#34;&#34;&#34;
         for key in properties_dict:
-            self._properties[&#39;organizationProperties&#39;][key] = properties_dict[key]
+            self._update_props[&#39;organizationProperties&#39;][key] = properties_dict[key]
 
     @property
     def name(self):
@@ -3175,6 +3566,22 @@ instance of the Organization class</p></div>
         &#34;&#34;&#34;Returns the value of the name for this Organization.&#34;&#34;&#34;
         return self._organization_name.lower()
 
+    @organization_name.setter
+    def organization_name(self, value):
+        &#34;&#34;&#34;Method to set organization name
+
+        Args:
+
+            value (string): company name to be set
+        &#34;&#34;&#34;
+        req_json = {
+            &#34;newCompanyName&#34;: value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
+
     @property
     def description(self):
         &#34;&#34;&#34;Returns the description for this Organization.&#34;&#34;&#34;
@@ -3185,10 +3592,37 @@ instance of the Organization class</p></div>
         &#34;&#34;&#34;Returns the value of the email domain names for this Organization.&#34;&#34;&#34;
         return self._email_domain_names
 
+    @email_domain_names.setter
+    def email_domain_names(self, value):
+        &#34;&#34;&#34;Method to set supported smtp for this organization
+
+        Args:
+
+            value (list): list of supported smtp to be set
+        &#34;&#34;&#34;
+        self._properties[&#39;organization&#39;][&#39;emailDomainNames&#39;] = value
+        self._update_properties()
+
     @property
     def domain_name(self):
         &#34;&#34;&#34;Returns the value of the domain name for this Organization.&#34;&#34;&#34;
         return self._domain_name
+
+    @domain_name.setter
+    def domain_name(self, value):
+        &#34;&#34;&#34;Method to set domain name for this organization
+
+        Args:
+
+            value (basestring): company alias to be set
+        &#34;&#34;&#34;
+        req_json = {
+            &#34;newAliasName&#34;: value
+        }
+
+        self._update_props = req_json
+        self._update_properties()
+
 
     @property
     def auth_code(self):
@@ -3204,6 +3638,21 @@ instance of the Organization class</p></div>
     def is_auto_discover_enabled(self):
         &#34;&#34;&#34;Returns boolen whether organization autodiscover attribute enabled for this organization.&#34;&#34;&#34;
         return self._properties[&#39;organizationProperties&#39;].get(&#39;enableAutoDiscovery&#39;, False)
+
+    @property
+    def is_backup_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether backup is disabled for this organisation&#34;&#34;&#34;
+        return self._backup_disabled
+
+    @property
+    def is_restore_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether restore is disabled for this organisation&#34;&#34;&#34;
+        return self._restore_disabled
+
+    @property
+    def is_login_disabled(self):
+        &#34;&#34;&#34;Returns boolean whether login is disabled for this organisation&#34;&#34;&#34;
+        return self._login_disabled
 
     @property
     def shared_laptop(self):
@@ -3264,20 +3713,20 @@ instance of the Organization class</p></div>
         for user_name in user_names:
             user_list.append(
                 {
-                    &#39;user&#39; : {
+                    &#39;user&#39;: {
                         &#34;userName&#34;: user_name
                     }
                 }
             )
 
         req_json = {
-        &#34;primaryContactsOperationType&#34;: &#34;OVERWRITE&#34;,
-        &#34;primaryContacts&#34;: user_list
+            &#34;primaryContactsOperationType&#34;: &#34;OVERWRITE&#34;,
+            &#34;primaryContacts&#34;: user_list
         }
 
         self._update_properties_json(req_json)
         self._update_properties()
-        
+
     @property
     def contacts_fullname(self):
         &#34;&#34;&#34; Returns Primary Contacts full name for the organization&#34;&#34;&#34;
@@ -3326,7 +3775,7 @@ instance of the Organization class</p></div>
             })
             self._update_properties()
             return
-        
+
         if not value:
             self._update_properties_json({&#39;defaultPlansOperationType&#39;: &#39;OVERWRITE&#39;})
             self._update_properties()
@@ -3368,7 +3817,7 @@ instance of the Organization class</p></div>
     @sender_name.setter
     def sender_name(self, sender_name):
         &#34;&#34;&#34;Sets the email Sender Name&#34;&#34;&#34;
-        self._update_properties_json({&#39;senderName&#39; : sender_name})
+        self._update_properties_json({&#39;senderName&#39;: sender_name})
         self._update_properties()
 
     @property
@@ -3379,7 +3828,7 @@ instance of the Organization class</p></div>
     @sender_email.setter
     def sender_email(self, sender_email):
         &#34;&#34;&#34;Sets Sender Email adress&#34;&#34;&#34;
-        self._update_properties_json({&#39;senderSmtp&#39; : sender_email})
+        self._update_properties_json({&#39;senderSmtp&#39;: sender_email})
         self._update_properties()
 
     def update_email_settings(self, email_settings):
@@ -3389,7 +3838,7 @@ instance of the Organization class</p></div>
         Args:
             email_settings (dict) -- Dictionary consisting of sender name and email
 
-            example: 
+            example:
             email_settings = {
                 &#39;sender_name&#39; : &#39;name&#39;,
                 &#39;sender_email&#39; : &#39;email&#39;
@@ -3405,8 +3854,8 @@ instance of the Organization class</p></div>
         if name is None or email is None:
             raise SDKException(&#39;Organization&#39;, 114, &#39;No configurable settings were set in the input&#39;)
         req_json = {
-                &#34;senderSmtp&#34;: email,
-                &#34;senderName&#34;: name
+            &#34;senderSmtp&#34;: email,
+            &#34;senderName&#34;: name
         }
         self._update_properties_json(req_json)
         self._update_properties()
@@ -3429,7 +3878,7 @@ instance of the Organization class</p></div>
     @file_exceptions.setter
     def file_exceptions(self, value):
         &#34;&#34;&#34;
-        This sets Global File Exceptions at Company Level, Individually File Exceptions for Windows or Unix can be set 
+        This sets Global File Exceptions at Company Level, Individually File Exceptions for Windows or Unix can be set
 
         file_exceptions = filters, &#39;OVERWRITE&#39;   It will overwrite with the keys which are present in filters dict.
         file_exceptions = filters, &#39;UPDATE&#39;      It will update the keys which are present in filters dict.
@@ -3437,7 +3886,7 @@ instance of the Organization class</p></div>
         Args:
             value (tuple)  --  (filters, Operation_Type)
 
-            eg : 
+            eg :
             filters = {
                 &#39;Windows&#39; : [&#39;*.py&#39;],  (optional)
                 &#39;Unix&#39; : [&#39;*.exe&#39;],    (optional)
@@ -3452,7 +3901,7 @@ instance of the Organization class</p></div>
                 If input tuple is not in this format (dict, str)
 
         &#34;&#34;&#34;
-        
+
         filter_list = list()
 
         if isinstance(value, tuple):
@@ -3460,10 +3909,10 @@ instance of the Organization class</p></div>
                 exceptions = value[0]
                 operation_type = value[1]
 
-                for os , filters in exceptions.items():
+                for os, filters in exceptions.items():
                     temp = {
-                        &#34;globalFilters&#34;:{
-                            &#34;opType&#34;:&#34;OVERWRITE&#34;,
+                        &#34;globalFilters&#34;: {
+                            &#34;opType&#34;: &#34;OVERWRITE&#34;,
                             &#34;filters&#34;: filters if operation_type == &#39;OVERWRITE&#39; else self.file_exceptions[os] + filters
                         },
                         &#34;operatingSystemType&#34;: &#39;WINDOWS_GLOBAL_FILTER&#39; if os == &#39;Windows&#39; else &#39;UNIX_GLOBAL_FILTER&#39;
@@ -3472,11 +3921,11 @@ instance of the Organization class</p></div>
                     filter_list.append(temp)
 
                 req_json = {
-                    &#34;globalFiltersInfo&#34;:{
-                    &#34;globalFiltersInfoList&#34;: filter_list
+                    &#34;globalFiltersInfo&#34;: {
+                        &#34;globalFiltersInfoList&#34;: filter_list
+                    }
                 }
-                }
-                
+
             else:
                 raise SDKException(&#39;Organization&#39;, 114, &#39;No configurable settings were set in the input&#39;)
         else:
@@ -3537,6 +3986,16 @@ instance of the Organization class</p></div>
         self._properties[&#39;planDetailsOperationType&#39;] = 1
         self._update_properties(update_plan_details=True)
 
+    @property
+    def is_company_privacy_enabled(self):
+        &#34;&#34;&#34;Returns true if company privacy is enabled&#34;&#34;&#34;
+        return self._company_privacy
+
+    @property
+    def is_owner_data_privacy_enabled(self):
+        &#34;&#34;&#34;Returns true if owner data privacy is enabled&#34;&#34;&#34;
+        return self._owner_privacy
+
     def dissociate_plans(self, value):
         &#34;&#34;&#34;disassociates plans from the organization
 
@@ -3578,6 +4037,7 @@ instance of the Organization class</p></div>
         self._default_plan = []
         self._contacts = {}
         self._plans = {}
+        self._update_props[&#39;organizationProperties&#39;] = {}
         self._properties = self._get_properties()
         self._user_groups = self._get_company_usergroup()
         self._tfa_obj.refresh()
@@ -3850,6 +4310,56 @@ instance of the Organization class</p></div>
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+        self.refresh()
+
+    def verify_owner_assignment_config(self, want_ownership_type):
+        &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly for company
+
+        Args:
+            want_ownership_type            (int)    -- Option number for ownership assignment type
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if ownership assignment is not correct
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._services[&#39;ORGANIZATION&#39;] % str(self.organization_id)
+        )
+
+        if flag:
+            if response and response.json():
+                if &#39;response&#39; in response.json():
+                    error_code = response.json()[&#39;response&#39;][&#39;errorCode&#39;]
+
+                    if error_code != 0:
+                        raise SDKException(
+                            &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(
+                                response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                            )
+                        )
+                elif &#39;errorMessage&#39; in response.json():
+                    raise SDKException(
+                        &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+                else:
+                    resp = response.json()
+                    got_ownership_type = resp.get(&#39;organizationInfo&#39;, {}).get(&#39;organizationProperties&#39;, {}).get(
+                        &#34;autoClientOwnerAssignmentType&#34;)
+
+                    if got_ownership_type != want_ownership_type:
+                        raise SDKException(
+                            &#39;Organization&#39;, &#39;102&#39;, f&#34;Error: autoClientOwnerAssignmentType value not set correctly. \
+                              Found: {got_ownership_type}, Expected: {want_ownership_type}&#34;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def enable_auto_discover(self):
         &#34;&#34;&#34;Enables autodiscover at company level..
@@ -3908,10 +4418,12 @@ instance of the Organization class</p></div>
                     &#34;entity&#34;: {
                         &#34;entityType&#34;: 194,
                         &#34;entityName&#34;:
-                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellName&#39;],
+                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                                &#39;commCellName&#39;],
                         &#34;_type_&#34;: 150,
                         &#34;entityId&#34;:
-                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellId&#39;]
+                            self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                                &#39;commCellId&#39;]
                     },
                     &#34;properties&#34;: {
                         &#34;role&#34;: {
@@ -3964,7 +4476,7 @@ instance of the Organization class</p></div>
         request_json = {
             &#34;organizationId&#34;: int(self.organization_id),
             &#34;associationsOperationType&#34;: 1
-            }
+        }
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;SERVICE_COMMCELL_ASSOC&#39;], request_json
@@ -4182,8 +4694,68 @@ instance of the Organization class</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def enable_company_data_privacy(self):
+        &#34;&#34;&#34; To enable company privacy to prevent admin access to company data
+        &#34;&#34;&#34;
+        if self._company_privacy:
+            return
 
-    def retire_offline_laptops(self, retire_days, delete_days = None):
+        self.set_company_data_privacy(True)
+
+    def disable_company_data_privacy(self):
+        &#34;&#34;&#34; To disable company privacy to prevent admin access to company data
+        &#34;&#34;&#34;
+        if not self._company_privacy:
+            return
+
+        self.set_company_data_privacy(False)
+
+    def set_company_data_privacy(self, value):
+        &#34;&#34;&#34;Method to set company data privacy
+
+        Args:
+            value (bool): True/False to enable/disable privacy
+        Raises:
+            SDKException:
+                if disable company data privacy to service commcell fails
+                if response is empty
+                if response is not success
+        &#34;&#34;&#34;
+        url = self._services[&#39;DISABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+        if value:
+            url = self._services[&#39;ENABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, url, {}
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def get_retire_laptop_properties(self):
+        &#34;&#34;&#34;
+        Returns:
+            dict -- Retire Laptop Properties of Organization
+
+            example: {
+                    &#34;retireDevicesAfterDays&#34;: 183,
+                    &#34;forceDeleteDevicesAfterDays&#34;: -1
+            }
+        &#34;&#34;&#34;
+        return self._retire_laptops
+
+    def retire_offline_laptops(self, retire_days, delete_days=None):
         &#34;&#34;&#34;
         The number of days specified to retire laptops must be less than or equal to the number of days specified to delete laptops
         If delete_days is not specified, It will be set to &#39;Never&#39;
@@ -4203,26 +4775,26 @@ instance of the Organization class</p></div>
         if delete_days != -1 and retire_days &gt; delete_days:
             raise SDKException(Organization, 101, &#39;The number of days specified to \
              retire laptops must be less than or equal to the number of days specified to delete laptops.&#39;)
-        
+
         req_json = {
-            &#39;autoRetireDevices&#39; : {
-                &#39;retireDevicesAfterDays&#39; : retire_days,
-                &#39;forceDeleteDevicesAfterDays&#39; : delete_days
+            &#39;autoRetireDevices&#39;: {
+                &#39;retireDevicesAfterDays&#39;: retire_days,
+                &#39;forceDeleteDevicesAfterDays&#39;: delete_days
             }
         }
-        
+
         self._update_properties_json(req_json)
         self._update_properties()
 
     @property
     def sites(self):
-        &#34;&#34;&#34; 
+        &#34;&#34;&#34;
         Gets the site information of organisation
 
         Returns:
-            sites (dict)  -- sites information of organisation        
+            sites (dict)  -- sites information of organisation
         &#34;&#34;&#34;
-        return {&#39;primary_site&#39; : self._primary_domain, &#39;additional_sites&#39; : self._additional_domain}
+        return {&#39;primary_site&#39;: self._primary_domain, &#39;additional_sites&#39;: self._additional_domain}
 
     @sites.setter
     def sites(self, sites):
@@ -4230,7 +4802,7 @@ instance of the Organization class</p></div>
         Updates Sites information for an Organisation
 
         Args:
-            sites (dict)   --  Consisting Of Primary and Additional sites information
+            sites (dict)   --  Consisting Of Primary and Additional sites information, Pass Empty dictionary to remove site information
 
             example:
             sites = {
@@ -4248,9 +4820,7 @@ instance of the Organization class</p></div>
         &#34;&#34;&#34;
 
         if isinstance(sites, dict):
-            primary_site = sites.get(&#39;primary_site&#39;, None)
-            if primary_site is None:
-                raise SDKException(&#39;Organization&#39;, 101, &#39;Primary Site name is missing.&#39;)
+            primary_site = sites.get(&#39;primary_site&#39;, &#34;&#34;)
 
             additional_sites = sites.get(&#39;additional_sites&#39;, [])
 
@@ -4258,7 +4828,7 @@ instance of the Organization class</p></div>
                 &#34;primaryDomain&#34;: primary_site,
                 &#34;additionalDomains&#34;: additional_sites,
                 &#34;additionalDomainsOperationType&#34;: &#34;OVERWRITE&#34;
-                })
+            })
             self._update_properties()
         else:
             raise SDKException(&#39;Organization&#39;, 101, &#39;Input Parameter should be dictionary&#39;)
@@ -4276,7 +4846,7 @@ instance of the Organization class</p></div>
                     if response is not success
         &#34;&#34;&#34;
         req_url = self._services[&#39;GET_ORGANIZATION_TAGS&#39;] % (self.organization_id)
-        flag , response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
 
         if flag:
             if response.json():
@@ -4289,7 +4859,6 @@ instance of the Organization class</p></div>
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-        
 
     @tags.setter
     def tags(self, tag_list):
@@ -4319,15 +4888,15 @@ instance of the Organization class</p></div>
         req_json = {
             &#34;entityTag&#34;: [
                 {
-                &#34;entityId&#34;: int(self.organization_id),
-                &#34;entityType&#34;: 61,
-                &#34;tag&#34;: tag_list
+                    &#34;entityId&#34;: int(self.organization_id),
+                    &#34;entityType&#34;: 61,
+                    &#34;tag&#34;: tag_list
                 }
             ]
         }
 
         req_url = self._services[&#39;ORGANIZATION_TAGS&#39;]
-        flag , response = self._cvpysdk_object.make_request(&#39;PUT&#39;, req_url, req_json)
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, req_url, req_json)
 
         if flag:
             if response.json():
@@ -4359,7 +4928,7 @@ instance of the Organization class</p></div>
         &#34;&#34;&#34;Returns True if it is enabled&#34;&#34;&#34;
         return self._is_allow_users_to_enable_passkey_enabled
 
-    def passkey(self, current_password, action, new_password = None):
+    def passkey(self, current_password, action, new_password=None):
         &#34;&#34;&#34;&#34;
         Updates Passkey properties of an Organisation
 
@@ -4383,39 +4952,39 @@ instance of the Organization class</p></div>
 
         if action.lower() == &#39;enable&#39;:
             req_json = {
-            &#34;currentPasskey&#34;: current_password,
+            &#34;newPasskey&#34;: current_password,
             &#34;confirmPasskey&#34;: current_password,
             &#34;passkeyOpType&#34;: &#34;CREATE&#34;
             }
 
         elif action.lower() == &#39;disable&#39;:
             req_json = {
-            &#34;currentPasskey&#34;: current_password,
-            &#34;confirmPasskey&#34;: current_password,
-            &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
+                &#34;currentPasskey&#34;: current_password,
+                &#34;confirmPasskey&#34;: current_password,
+                &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
             }
 
         elif action.lower() == &#39;change passkey&#39;:
             if new_password:
                 new_password = b64encode(new_password.encode()).decode()
                 req_json = {
-                &#34;currentPasskey&#34;: current_password,
-                &#34;newPasskey&#34;: new_password,
-                &#34;confirmPasskey&#34;: new_password,
-                &#34;passkeyOpType&#34;: &#34;EDIT&#34;
+                    &#34;currentPasskey&#34;: current_password,
+                    &#34;newPasskey&#34;: new_password,
+                    &#34;confirmPasskey&#34;: new_password,
+                    &#34;passkeyOpType&#34;: &#34;EDIT&#34;
                 }
             else:
                 raise SDKException(&#39;Organization&#39;, 102, &#39;New password is missing in input&#39;)
 
         elif action.lower() == &#39;authorise&#39;:
             req_json = {
-            &#34;passkey&#34;: current_password,
-            &#34;passkeySettings&#34;: {
-                &#34;enableAuthorizeForRestore&#34;: True,
-                &#34;passkeyExpirationInterval&#34;: {
-                &#34;toTime&#34;: 1800
+                &#34;passkey&#34;: current_password,
+                &#34;passkeySettings&#34;: {
+                    &#34;enableAuthorizeForRestore&#34;: True,
+                    &#34;passkeyExpirationInterval&#34;: {
+                        &#34;toTime&#34;: 1800
+                    }
                 }
-            }
             }
             req_url = self._services[&#39;COMPANY_AUTH_RESTORE&#39;] % (int(self.organization_id))
 
@@ -4439,6 +5008,22 @@ instance of the Organization class</p></div>
 
         self.refresh()
 
+    def enable_owner_data_privacy(self):
+        &#34;&#34;&#34; To enable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+        if self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: True})
+        self._update_properties()
+
+    def disable_owner_data_privacy(self):
+        &#34;&#34;&#34; To disable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+        if not self.is_owner_data_privacy_enabled:
+            return
+
+        self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: False})
+        self._update_properties()
+
     def allow_owners_to_enable_passkey(self, flag):
         &#34;&#34;&#34;
         Enable or Disable option to allow owners to enable privacy
@@ -4447,7 +5032,66 @@ instance of the Organization class</p></div>
             flag (boolean)   --  True (Enable Passkey) or False (Disable Passkey)
         &#34;&#34;&#34;
         self._update_properties_json({&#34;allowUsersToEnablePasskey&#34;: flag})
-        self._update_properties()</code></pre>
+        self._update_properties()
+
+    def update_general_settings(self, general_settings_dict):
+        &#34;&#34;&#34;Method to update properties of general settings in an organization
+
+        Args:
+                general_settings_dict (dict): general settings properties to be modified
+                Eg.
+                    properties_dict = {
+                        &#34;newName&#34;: &#34;string&#34;,
+                        &#34;general&#34;: {
+                            &#34;newAlias&#34;: &#34;string&#34;,
+                            &#34;emailSuffix&#34;: &#34;string&#34;,
+                            &#34;authcodeForInstallation&#34;: true,
+                            &#34;twoFactorAuth&#34;: {
+                                &#34;enable&#34;: true,
+                                &#34;all&#34;: true,
+                                &#34;userGroups&#34;: [
+                                    {
+                                        &#34;id&#34;: 0,
+                                        &#34;name&#34;: &#34;string&#34;
+                                    }
+                                ]
+                            },
+                            &#34;resellerMode&#34;: true,
+                            &#34;enableDataEncryption&#34;: true,
+                            &#34;autoDiscoverApp&#34;: true,
+                            &#34;infrastructureType&#34;: &#34;RENTED_STORAGE&#34;,
+                            &#34;supportedSolutions&#34;: [
+                                &#34;FILE_SERVER&#34;
+                            ],
+                            &#34;assignLaptopOwners&#34;: &#34;LOGGED_IN_ACTIVE_DIRECTORY_USERS&#34;,
+                        }
+                    }
+
+         Raises:
+                SDKException:
+
+                    if unable to update general settings
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._services[&#39;EDIT_COMPANY_DETAILS&#39;] % self.organization_id, general_settings_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -4457,7 +5101,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1161-L1164" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1294-L1297" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auth_code(self):
@@ -4471,7 +5115,7 @@ def auth_code(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L766-L769" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L837-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_laptop_owners_enabled(self):
@@ -4496,7 +5140,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2077-L2120" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2288-L2331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_groups(self):
@@ -4550,7 +5194,7 @@ def client_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1205-L1208" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1353-L1356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts(self):
@@ -4564,7 +5208,7 @@ def contacts(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1249-L1252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1397-L1400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts_fullname(self):
@@ -4578,7 +5222,7 @@ def contacts_fullname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1254-L1257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1402-L1405" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_plan(self):
@@ -4592,7 +5236,7 @@ def default_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1146-L1149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1252-L1255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -4606,7 +5250,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1156-L1159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1273-L1276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -4620,7 +5264,7 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1151-L1154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1257-L1260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email_domain_names(self):
@@ -4634,12 +5278,42 @@ def email_domain_names(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1392-L1395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1540-L1543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_exceptions(self):
     &#34;&#34;&#34; Returns the file exceptions for a company &#34;&#34;&#34;
     return self._file_exceptions</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.get_retire_laptop_properties"><code class="name">var <span class="ident">get_retire_laptop_properties</span></code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns</h2>
+<p>dict &ndash; Retire Laptop Properties of Organization</p>
+<dl>
+<dt><code>example</code></dt>
+<dd>{
+"retireDevicesAfterDays": 183,
+"forceDeleteDevicesAfterDays": -1</dd>
+</dl>
+<p>}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2412-L2423" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def get_retire_laptop_properties(self):
+    &#34;&#34;&#34;
+    Returns:
+        dict -- Retire Laptop Properties of Organization
+
+        example: {
+                &#34;retireDevicesAfterDays&#34;: 183,
+                &#34;forceDeleteDevicesAfterDays&#34;: -1
+        }
+    &#34;&#34;&#34;
+    return self._retire_laptops</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.infrastructure_type"><code class="name">var <span class="ident">infrastructure_type</span></code></dt>
@@ -4648,7 +5322,7 @@ def file_exceptions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L747-L750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L818-L821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def infrastructure_type(self):
@@ -4662,7 +5336,7 @@ def infrastructure_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2325-L2328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2593-L2596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAllowUsersToEnablePasskeyEnabled(self):
@@ -4676,7 +5350,7 @@ def isAllowUsersToEnablePasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2320-L2323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2588-L2591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAuthrestoreEnabled(self):
@@ -4690,7 +5364,7 @@ def isAuthrestoreEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2315-L2318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2583-L2586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isPasskeyEnabled(self):
@@ -4704,7 +5378,7 @@ def isPasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1166-L1169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1299-L1302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auth_code_enabled(self):
@@ -4718,12 +5392,40 @@ def is_auth_code_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1171-L1174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1304-L1307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auto_discover_enabled(self):
     &#34;&#34;&#34;Returns boolen whether organization autodiscover attribute enabled for this organization.&#34;&#34;&#34;
     return self._properties[&#39;organizationProperties&#39;].get(&#39;enableAutoDiscovery&#39;, False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.is_backup_disabled"><code class="name">var <span class="ident">is_backup_disabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean whether backup is disabled for this organisation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1309-L1312" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_backup_disabled(self):
+    &#34;&#34;&#34;Returns boolean whether backup is disabled for this organisation&#34;&#34;&#34;
+    return self._backup_disabled</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.is_company_privacy_enabled"><code class="name">var <span class="ident">is_company_privacy_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns true if company privacy is enabled</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1656-L1659" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_company_privacy_enabled(self):
+    &#34;&#34;&#34;Returns true if company privacy is enabled&#34;&#34;&#34;
+    return self._company_privacy</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.is_data_encryption_enabled"><code class="name">var <span class="ident">is_data_encryption_enabled</span></code></dt>
@@ -4732,7 +5434,7 @@ def is_auto_discover_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L737-L740" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L808-L811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_encryption_enabled(self):
@@ -4746,12 +5448,54 @@ def is_data_encryption_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1456-L1459" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1604-L1607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_global_file_exceptions_enabled(self):
     &#34;&#34;&#34; Returns if file exception is enabled &#34;&#34;&#34;
     return self._global_file_exceptions_enabled</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.is_login_disabled"><code class="name">var <span class="ident">is_login_disabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean whether login is disabled for this organisation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1319-L1322" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_login_disabled(self):
+    &#34;&#34;&#34;Returns boolean whether login is disabled for this organisation&#34;&#34;&#34;
+    return self._login_disabled</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.is_owner_data_privacy_enabled"><code class="name">var <span class="ident">is_owner_data_privacy_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns true if owner data privacy is enabled</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1661-L1664" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_owner_data_privacy_enabled(self):
+    &#34;&#34;&#34;Returns true if owner data privacy is enabled&#34;&#34;&#34;
+    return self._owner_privacy</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.is_restore_disabled"><code class="name">var <span class="ident">is_restore_disabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean whether restore is disabled for this organisation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1314-L1317" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_restore_disabled(self):
+    &#34;&#34;&#34;Returns boolean whether restore is disabled for this organisation&#34;&#34;&#34;
+    return self._restore_disabled</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.is_tfa_enabled"><code class="name">var <span class="ident">is_tfa_enabled</span></code></dt>
@@ -4760,7 +5504,7 @@ def is_global_file_exceptions_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2046-L2049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2257-L2260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -4774,7 +5518,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L715-L718" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L786-L789" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_using_upn(self):
@@ -4788,7 +5532,7 @@ def is_using_upn(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L803-L806" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L874-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_start_time(self):
@@ -4802,7 +5546,7 @@ def job_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1195-L1198" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1343-L1346" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def machine_count(self):
@@ -4816,7 +5560,7 @@ def machine_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1131-L1134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1221-L1224" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4830,7 +5574,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1703-L1706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1862-L1865" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operator_role(self):
@@ -4844,7 +5588,7 @@ def operator_role(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1387-L1390" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1535-L1538" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_created_on(self):
@@ -4858,7 +5602,7 @@ def organization_created_on(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1136-L1139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1226-L1229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self):
@@ -4872,7 +5616,7 @@ def organization_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1141-L1144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1231-L1234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_name(self):
@@ -4886,7 +5630,7 @@ def organization_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1321-L1324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1469-L1472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_details(self):
@@ -4900,7 +5644,7 @@ def plan_details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1316-L1319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1464-L1467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plans(self):
@@ -4914,7 +5658,7 @@ def plans(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L726-L729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L797-L800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reseller_enabled(self):
@@ -4928,7 +5672,7 @@ def reseller_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1342-L1345" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1490-L1493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_email(self):
@@ -4942,7 +5686,7 @@ def sender_email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1331-L1334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1479-L1482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_name(self):
@@ -4956,7 +5700,7 @@ def sender_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1326-L1329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1474-L1477" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_count(self):
@@ -4970,7 +5714,7 @@ def server_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1176-L1179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1324-L1327" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def shared_laptop(self):
@@ -4987,17 +5731,17 @@ def shared_laptop(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2185-L2193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2456-L2464" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sites(self):
-    &#34;&#34;&#34; 
+    &#34;&#34;&#34;
     Gets the site information of organisation
 
     Returns:
-        sites (dict)  -- sites information of organisation        
+        sites (dict)  -- sites information of organisation
     &#34;&#34;&#34;
-    return {&#39;primary_site&#39; : self._primary_domain, &#39;additional_sites&#39; : self._additional_domain}</code></pre>
+    return {&#39;primary_site&#39;: self._primary_domain, &#39;additional_sites&#39;: self._additional_domain}</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.supported_solutions"><code class="name">var <span class="ident">supported_solutions</span></code></dt>
@@ -5007,7 +5751,7 @@ supported solution from API is a integer value and it needs to be changed to a l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L786-L791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L857-L862" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def supported_solutions(self):
@@ -5030,7 +5774,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2234-L2259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2503-L2528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self):
@@ -5045,7 +5789,7 @@ def tags(self):
                 if response is not success
     &#34;&#34;&#34;
     req_url = self._services[&#39;GET_ORGANIZATION_TAGS&#39;] % (self.organization_id)
-    flag , response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, req_url)
 
     if flag:
         if response.json():
@@ -5066,7 +5810,7 @@ def tags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1622-L1635" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1781-L1794" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tenant_operator(self):
@@ -5090,7 +5834,7 @@ def tenant_operator(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2051-L2054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2262-L2265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tfa_enabled_user_groups(self):
@@ -5104,7 +5848,7 @@ def tfa_enabled_user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1200-L1203" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1348-L1351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_count(self):
@@ -5118,7 +5862,7 @@ def user_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1382-L1385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1530-L1533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_groups(self):
@@ -5148,7 +5892,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1726-L1763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1885-L1922" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def activate(self):
     &#34;&#34;&#34;
@@ -5209,7 +5953,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1954-L1998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2165-L2209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_client_association(self, client_name):
     &#34;&#34;&#34;To associate a client to an organization
@@ -5278,7 +6022,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1842-L1909" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2051-L2120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_service_commcell_associations(self, name, service_commcell):
     &#34;&#34;&#34;To add organization on service commcell
@@ -5317,10 +6061,12 @@ if response is not success
                 &#34;entity&#34;: {
                     &#34;entityType&#34;: 194,
                     &#34;entityName&#34;:
-                        self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellName&#39;],
+                        self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                            &#39;commCellName&#39;],
                     &#34;_type_&#34;: 150,
                     &#34;entityId&#34;:
-                        self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][&#39;commCellId&#39;]
+                        self._commcell_object.registered_routing_commcells[service_commcell][&#39;commCell&#39;][
+                            &#39;commCellId&#39;]
                 },
                 &#34;properties&#34;: {
                     &#34;role&#34;: {
@@ -5367,7 +6113,7 @@ security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1637-L1667" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1796-L1826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user_groups_as_operator(self, user_group_list, request_type):
     &#34;&#34;&#34;Update the local user_group as tenant operator of the company
@@ -5418,7 +6164,7 @@ OVERWRITE user security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1669-L1701" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1828-L1860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_users_as_operator(self, user_list, request_type):
     &#34;&#34;&#34;Update the local user as tenant operator of the company
@@ -5467,7 +6213,7 @@ True (Enable Passkey) or False (Disable Passkey)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2410-L2418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2694-L2702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def allow_owners_to_enable_passkey(self, flag):
     &#34;&#34;&#34;
@@ -5509,7 +6255,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1765-L1820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1924-L1980" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deactivate(self,
                disable_backup=True,
@@ -5566,7 +6312,8 @@ if response is not success
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         response_string = self._update_response_(response.text)
-        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+    self.refresh()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.disable_auth_code"><code class="name flex">
@@ -5589,7 +6336,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1597-L1620" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1756-L1779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to disable Auth Code Generation for the Organization.
@@ -5628,7 +6375,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1832-L1840" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2041-L2049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auto_discover(self):
     &#34;&#34;&#34;Disables autodiscover at company level..
@@ -5638,6 +6385,44 @@ if failed to update enableAutoDiscovery property</p></div>
                 if failed to update enableAutoDiscovery property
     &#34;&#34;&#34;
     self._update_properties_json({&#39;enableAutoDiscovery&#39;: False})
+    self._update_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.disable_company_data_privacy"><code class="name flex">
+<span>def <span class="ident">disable_company_data_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>To disable company privacy to prevent admin access to company data</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2372-L2378" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable_company_data_privacy(self):
+    &#34;&#34;&#34; To disable company privacy to prevent admin access to company data
+    &#34;&#34;&#34;
+    if not self._company_privacy:
+        return
+
+    self.set_company_data_privacy(False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.disable_owner_data_privacy"><code class="name flex">
+<span>def <span class="ident">disable_owner_data_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>To disable company privacy to allow owner to enable data privacy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2686-L2692" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable_owner_data_privacy(self):
+    &#34;&#34;&#34; To disable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+    if not self.is_owner_data_privacy_enabled:
+        return
+
+    self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: False})
     self._update_properties()</code></pre>
 </details>
 </dd>
@@ -5651,7 +6436,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2068-L2075" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2279-L2286" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -5678,7 +6463,7 @@ list of plans</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1508-L1542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1666-L1700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def dissociate_plans(self, value):
     &#34;&#34;&#34;disassociates plans from the organization
@@ -5739,7 +6524,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1553-L1595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1712-L1754" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to enable Auth Code Generation for the Organization.
@@ -5797,7 +6582,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1822-L1830" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2031-L2039" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover(self):
     &#34;&#34;&#34;Enables autodiscover at company level..
@@ -5807,6 +6592,44 @@ if failed to update enableAutoDiscovery property</p></div>
                 if failed to update enableAutoDiscovery property
     &#34;&#34;&#34;
     self._update_properties_json({&#39;enableAutoDiscovery&#39;: True})
+    self._update_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.enable_company_data_privacy"><code class="name flex">
+<span>def <span class="ident">enable_company_data_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>To enable company privacy to prevent admin access to company data</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2364-L2370" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_company_data_privacy(self):
+    &#34;&#34;&#34; To enable company privacy to prevent admin access to company data
+    &#34;&#34;&#34;
+    if self._company_privacy:
+        return
+
+    self.set_company_data_privacy(True)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.enable_owner_data_privacy"><code class="name flex">
+<span>def <span class="ident">enable_owner_data_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>To enable company privacy to allow owner to enable data privacy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2678-L2684" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_owner_data_privacy(self):
+    &#34;&#34;&#34; To enable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
+    if self.is_owner_data_privacy_enabled:
+        return
+
+    self._update_properties_json({&#39;allowUsersToEnablePrivacy&#39;: True})
     self._update_properties()</code></pre>
 </details>
 </dd>
@@ -5825,7 +6648,7 @@ list of user group names for which tfa needs to be enabled.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2056-L2066" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2267-L2277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self, user_groups=None):
     &#34;&#34;&#34;
@@ -5855,7 +6678,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2122-L2151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2333-L2362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_alerts(self):
     &#34;&#34;&#34;
@@ -5908,7 +6731,7 @@ Returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L946-L993" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1029-L1076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_security_associations(self):
     &#34;&#34;&#34; Get the security associations for a organization
@@ -5932,7 +6755,7 @@ Returns: (dict)
     if flag:
         if response.json():
             response = response.json()
-            security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;)
+            security_list = response.get(&#39;securityAssociations&#39;)[0].get(&#39;securityAssociations&#39;).get(&#39;associations&#39;, [])
             for list_item in security_list:
                 name = list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userGroupName&#39;) or \
                        list_item.get(&#39;userOrGroup&#39;)[0].get(&#39;userName&#39;) or \
@@ -5985,9 +6808,9 @@ if new password is missing while changing passkey
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2330-L2408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2598-L2676" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def passkey(self, current_password, action, new_password = None):
+<pre><code class="python">def passkey(self, current_password, action, new_password=None):
     &#34;&#34;&#34;&#34;
     Updates Passkey properties of an Organisation
 
@@ -6011,39 +6834,39 @@ if new password is missing while changing passkey
 
     if action.lower() == &#39;enable&#39;:
         req_json = {
-        &#34;currentPasskey&#34;: current_password,
+        &#34;newPasskey&#34;: current_password,
         &#34;confirmPasskey&#34;: current_password,
         &#34;passkeyOpType&#34;: &#34;CREATE&#34;
         }
 
     elif action.lower() == &#39;disable&#39;:
         req_json = {
-        &#34;currentPasskey&#34;: current_password,
-        &#34;confirmPasskey&#34;: current_password,
-        &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
+            &#34;currentPasskey&#34;: current_password,
+            &#34;confirmPasskey&#34;: current_password,
+            &#34;passkeyOpType&#34;: &#34;DISABLE&#34;
         }
 
     elif action.lower() == &#39;change passkey&#39;:
         if new_password:
             new_password = b64encode(new_password.encode()).decode()
             req_json = {
-            &#34;currentPasskey&#34;: current_password,
-            &#34;newPasskey&#34;: new_password,
-            &#34;confirmPasskey&#34;: new_password,
-            &#34;passkeyOpType&#34;: &#34;EDIT&#34;
+                &#34;currentPasskey&#34;: current_password,
+                &#34;newPasskey&#34;: new_password,
+                &#34;confirmPasskey&#34;: new_password,
+                &#34;passkeyOpType&#34;: &#34;EDIT&#34;
             }
         else:
             raise SDKException(&#39;Organization&#39;, 102, &#39;New password is missing in input&#39;)
 
     elif action.lower() == &#39;authorise&#39;:
         req_json = {
-        &#34;passkey&#34;: current_password,
-        &#34;passkeySettings&#34;: {
-            &#34;enableAuthorizeForRestore&#34;: True,
-            &#34;passkeyExpirationInterval&#34;: {
-            &#34;toTime&#34;: 1800
+            &#34;passkey&#34;: current_password,
+            &#34;passkeySettings&#34;: {
+                &#34;enableAuthorizeForRestore&#34;: True,
+                &#34;passkeyExpirationInterval&#34;: {
+                    &#34;toTime&#34;: 1800
+                }
             }
-        }
         }
         req_url = self._services[&#39;COMPANY_AUTH_RESTORE&#39;] % (int(self.organization_id))
 
@@ -6076,13 +6899,14 @@ if new password is missing while changing passkey
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1544-L1551" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1702-L1710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Organization.&#34;&#34;&#34;
     self._default_plan = []
     self._contacts = {}
     self._plans = {}
+    self._update_props[&#39;organizationProperties&#39;] = {}
     self._properties = self._get_properties()
     self._user_groups = self._get_company_usergroup()
     self._tfa_obj.refresh()</code></pre>
@@ -6107,7 +6931,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2000-L2044" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2211-L2255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_client_association(self, client_name):
     &#34;&#34;&#34;To de-associate a client to an organization
@@ -6175,7 +6999,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1911-L1952" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2122-L2163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_service_commcell_associations(self, name):
     &#34;&#34;&#34; To delete the organization association for service commcell
@@ -6201,7 +7025,7 @@ if response is not success
     request_json = {
         &#34;organizationId&#34;: int(self.organization_id),
         &#34;associationsOperationType&#34;: 1
-        }
+    }
 
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;SERVICE_COMMCELL_ASSOC&#39;], request_json
@@ -6238,9 +7062,9 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L2154-L2183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2425-L2454" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def retire_offline_laptops(self, retire_days, delete_days = None):
+<pre><code class="python">def retire_offline_laptops(self, retire_days, delete_days=None):
     &#34;&#34;&#34;
     The number of days specified to retire laptops must be less than or equal to the number of days specified to delete laptops
     If delete_days is not specified, It will be set to &#39;Never&#39;
@@ -6260,14 +7084,14 @@ If retire days is more than delete days</p></div>
     if delete_days != -1 and retire_days &gt; delete_days:
         raise SDKException(Organization, 101, &#39;The number of days specified to \
          retire laptops must be less than or equal to the number of days specified to delete laptops.&#39;)
-    
+
     req_json = {
-        &#39;autoRetireDevices&#39; : {
-            &#39;retireDevicesAfterDays&#39; : retire_days,
-            &#39;forceDeleteDevicesAfterDays&#39; : delete_days
+        &#39;autoRetireDevices&#39;: {
+            &#39;retireDevicesAfterDays&#39;: retire_days,
+            &#39;forceDeleteDevicesAfterDays&#39;: delete_days
         }
     }
-    
+
     self._update_properties_json(req_json)
     self._update_properties()</code></pre>
 </details>
@@ -6287,7 +7111,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L771-L784" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L842-L855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_auto_laptop_owners(self, client_assign_type, client_assign_value=None):
     &#34;&#34;&#34; Sets the property in company to assign owners to laptop automatically
@@ -6305,6 +7129,59 @@ If retire days is more than delete days</p></div>
     self._update_properties()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.organization.Organization.set_company_data_privacy"><code class="name flex">
+<span>def <span class="ident">set_company_data_privacy</span></span>(<span>self, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to set company data privacy</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True/False to enable/disable privacy</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if disable company data privacy to service commcell fails
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2380-L2410" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_company_data_privacy(self, value):
+    &#34;&#34;&#34;Method to set company data privacy
+
+    Args:
+        value (bool): True/False to enable/disable privacy
+    Raises:
+        SDKException:
+            if disable company data privacy to service commcell fails
+            if response is empty
+            if response is not success
+    &#34;&#34;&#34;
+    url = self._services[&#39;DISABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+    if value:
+        url = self._services[&#39;ENABLE_PRIVACY_COMPANY_DATA&#39;] % self.organization_id
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, url, {}
+    )
+
+    if flag:
+        if response and response.json():
+            error_message = response.json().get(&#39;errorMessage&#39;)
+            if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+            self.refresh()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.organization.Organization.set_data_encryption_enabled"><code class="name flex">
 <span>def <span class="ident">set_data_encryption_enabled</span></span>(<span>self, value)</span>
 </code></dt>
@@ -6313,7 +7190,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L742-L745" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L813-L816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_data_encryption_enabled(self, value):
     &#34;&#34;&#34; Sets property to allow owners to enable data encryption &#34;&#34;&#34;
@@ -6328,11 +7205,8 @@ If retire days is more than delete days</p></div>
 <div class="desc"><p>Updates Email Settings of an organisation</p>
 <h2 id="args">Args</h2>
 <p>email_settings (dict) &ndash; Dictionary consisting of sender name and email</p>
-<dl>
-<dt><strong><code>example</code></strong></dt>
-<dd>&nbsp;</dd>
-</dl>
-<p>email_settings = {
+<p>example:
+email_settings = {
 'sender_name' : 'name',
 'sender_email' : 'email'
 }</p>
@@ -6342,7 +7216,7 @@ if sender_name or sender_email is missing in inputs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L1353-L1380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1501-L1528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_email_settings(self, email_settings):
     &#34;&#34;&#34;
@@ -6351,7 +7225,7 @@ if sender_name or sender_email is missing in inputs</p></div>
     Args:
         email_settings (dict) -- Dictionary consisting of sender name and email
 
-        example: 
+        example:
         email_settings = {
             &#39;sender_name&#39; : &#39;name&#39;,
             &#39;sender_email&#39; : &#39;email&#39;
@@ -6367,11 +7241,121 @@ if sender_name or sender_email is missing in inputs</p></div>
     if name is None or email is None:
         raise SDKException(&#39;Organization&#39;, 114, &#39;No configurable settings were set in the input&#39;)
     req_json = {
-            &#34;senderSmtp&#34;: email,
-            &#34;senderName&#34;: name
+        &#34;senderSmtp&#34;: email,
+        &#34;senderName&#34;: name
     }
     self._update_properties_json(req_json)
     self._update_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.update_general_settings"><code class="name flex">
+<span>def <span class="ident">update_general_settings</span></span>(<span>self, general_settings_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to update properties of general settings in an organization</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>general_settings_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>general settings properties to be modified</dd>
+</dl>
+<p>Eg.
+properties_dict = {
+"newName": "string",
+"general": {
+"newAlias": "string",
+"emailSuffix": "string",
+"authcodeForInstallation": true,
+"twoFactorAuth": {
+"enable": true,
+"all": true,
+"userGroups": [
+{
+"id": 0,
+"name": "string"
+}
+]
+},
+"resellerMode": true,
+"enableDataEncryption": true,
+"autoDiscoverApp": true,
+"infrastructureType": "RENTED_STORAGE",
+"supportedSolutions": [
+"FILE_SERVER"
+],
+"assignLaptopOwners": "LOGGED_IN_ACTIVE_DIRECTORY_USERS",
+}
+}
+Raises:
+SDKException:</p>
+<pre><code>        if unable to update general settings
+
+        if response is empty
+
+        if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L2704-L2761" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_general_settings(self, general_settings_dict):
+    &#34;&#34;&#34;Method to update properties of general settings in an organization
+
+    Args:
+            general_settings_dict (dict): general settings properties to be modified
+            Eg.
+                properties_dict = {
+                    &#34;newName&#34;: &#34;string&#34;,
+                    &#34;general&#34;: {
+                        &#34;newAlias&#34;: &#34;string&#34;,
+                        &#34;emailSuffix&#34;: &#34;string&#34;,
+                        &#34;authcodeForInstallation&#34;: true,
+                        &#34;twoFactorAuth&#34;: {
+                            &#34;enable&#34;: true,
+                            &#34;all&#34;: true,
+                            &#34;userGroups&#34;: [
+                                {
+                                    &#34;id&#34;: 0,
+                                    &#34;name&#34;: &#34;string&#34;
+                                }
+                            ]
+                        },
+                        &#34;resellerMode&#34;: true,
+                        &#34;enableDataEncryption&#34;: true,
+                        &#34;autoDiscoverApp&#34;: true,
+                        &#34;infrastructureType&#34;: &#34;RENTED_STORAGE&#34;,
+                        &#34;supportedSolutions&#34;: [
+                            &#34;FILE_SERVER&#34;
+                        ],
+                        &#34;assignLaptopOwners&#34;: &#34;LOGGED_IN_ACTIVE_DIRECTORY_USERS&#34;,
+                    }
+                }
+
+     Raises:
+            SDKException:
+
+                if unable to update general settings
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;PUT&#39;, self._services[&#39;EDIT_COMPANY_DETAILS&#39;] % self.organization_id, general_settings_dict
+    )
+
+    if flag:
+        if response and response.json():
+            error_message = response.json().get(&#39;errorMessage&#39;)
+            if response.json().get(&#39;errorCode&#39;, -1) != 0:
+                raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+            self.refresh()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.update_security_associations"><code class="name flex">
@@ -6402,9 +7386,9 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L995-L1064" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1078-L1147" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_security_associations(self, userOrGroupName, roleName, request_type = None,  isUserGroup = False):
+<pre><code class="python">def update_security_associations(self, userOrGroupName, roleName, request_type=None, isUserGroup=False):
     &#34;&#34;&#34;
     Updates Security Associations Of an Organisation
 
@@ -6444,14 +7428,14 @@ if response is empty
             &#34;associationsOperationType&#34;: update_operator_request_type.get(request_type, 1),
             &#34;associations&#34;: [{
                 &#34;userOrGroup&#34;: [
-                {
-                    &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34; : userOrGroupName
-                }
+                    {
+                        &#34;userGroupName&#34; if isUserGroup else &#34;userName&#34;: userOrGroupName
+                    }
                 ],
                 &#34;properties&#34;: {
-                &#34;role&#34;: {
-                    &#34;roleName&#34;: roleName
-                }
+                    &#34;role&#34;: {
+                        &#34;roleName&#34;: roleName
+                    }
                 }
             }
             ]
@@ -6476,6 +7460,77 @@ if response is empty
     self.refresh()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.organization.Organization.verify_owner_assignment_config"><code class="name flex">
+<span>def <span class="ident">verify_owner_assignment_config</span></span>(<span>self, want_ownership_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Verifies that the ownership assignments settings are configured and set properly for company</p>
+<h2 id="args">Args</h2>
+<p>want_ownership_type
+(int)
+&ndash; Option number for ownership assignment type</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+
+if ownership assignment is not correct
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L1982-L2029" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def verify_owner_assignment_config(self, want_ownership_type):
+    &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly for company
+
+    Args:
+        want_ownership_type            (int)    -- Option number for ownership assignment type
+
+    Raises:
+        SDKException:
+            if response is empty
+
+            if response is not success
+
+            if ownership assignment is not correct
+
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._services[&#39;ORGANIZATION&#39;] % str(self.organization_id)
+    )
+
+    if flag:
+        if response and response.json():
+            if &#39;response&#39; in response.json():
+                error_code = response.json()[&#39;response&#39;][&#39;errorCode&#39;]
+
+                if error_code != 0:
+                    raise SDKException(
+                        &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(
+                            response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                        )
+                    )
+            elif &#39;errorMessage&#39; in response.json():
+                raise SDKException(
+                    &#39;Organization&#39;, &#39;102&#39;, &#39;Error: &#34;{0}&#34;&#39;.format(response.json()[&#39;errorMessage&#39;])
+                )
+            else:
+                resp = response.json()
+                got_ownership_type = resp.get(&#39;organizationInfo&#39;, {}).get(&#39;organizationProperties&#39;, {}).get(
+                    &#34;autoClientOwnerAssignmentType&#34;)
+
+                if got_ownership_type != want_ownership_type:
+                    raise SDKException(
+                        &#39;Organization&#39;, &#39;102&#39;, f&#34;Error: autoClientOwnerAssignmentType value not set correctly. \
+                          Found: {got_ownership_type}, Expected: {want_ownership_type}&#34;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="cvpysdk.organization.Organizations"><code class="flex name class">
@@ -6497,7 +7552,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L232-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L255-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organizations:
     &#34;&#34;&#34;Class for doing operations on Organizations like add / delete an organization, etc.&#34;&#34;&#34;
@@ -6610,9 +7665,50 @@ instance of the Organizations class</p></div>
                         &#39;GUID&#39;: organization_guid
                     }
 
+            self._get_associated_entities_count()
+
             return organizations
         response_string = self._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_associated_entities_count(self):
+        &#34;&#34;&#34;Gets all the organizations associated with the Commcell environment.
+
+            Returns:
+                dict    -   consists of all organizations added to the commcell
+
+                    {
+                        &#34;organization1_name&#34;: organization1_id,
+
+                        &#34;organization2_name&#34;: organization2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._organizations_api+&#34;?Fl=providers.associatedEntitiesCount,providers.shortName,providers.connectName&#34;)
+
+        if flag:
+            if response.json() and &#39;providers&#39; in response.json():
+                for provider in response.json().get(&#39;providers&#39;):
+                    name = provider.get(&#39;connectName&#39;).lower()
+                    organization_entites_count = provider.get(&#39;associatedEntitiesCount&#39;)
+                    if name:
+                        self._adv_config[name] = {
+                            &#39;count&#39;: organization_entites_count
+                        }
+
+                return
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
     def all_organizations(self):
@@ -6796,8 +7892,8 @@ instance of the Organizations class</p></div>
                             &#39;email&#39;: email
                         }
                     ],
-                    &#39;defaultPlans&#39;: plans_list
-                }
+                },
+                &#39;planDetails&#39;: plans_list
             }
         }
 
@@ -6926,7 +8022,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L347-L360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L411-L424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations(self):
@@ -6963,7 +8059,7 @@ def all_organizations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L362-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L426-L445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations_props(self):
@@ -7061,7 +8157,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L402-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L466-L630" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         name,
@@ -7190,8 +8286,8 @@ if response is not success
                         &#39;email&#39;: email
                     }
                 ],
-                &#39;defaultPlans&#39;: plans_list
-            }
+            },
+            &#39;planDetails&#39;: plans_list
         }
     }
 
@@ -7256,7 +8352,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L593-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L657-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, name):
     &#34;&#34;&#34;Deletes the organization with the given name from the Commcell.
@@ -7327,7 +8423,7 @@ if type of the organization name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L568-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L632-L655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns an instance of the Organization class for the given organization name.
@@ -7375,7 +8471,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L383-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L447-L464" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_organization(self, name):
     &#34;&#34;&#34;Checks if an organization exists in the Commcell with the input organization name.
@@ -7405,7 +8501,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/organization.py#L639-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/organization.py#L703-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of organizations associated to the Commcell.&#34;&#34;&#34;
@@ -7511,15 +8607,20 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.Organization.description" href="#cvpysdk.organization.Organization.description">description</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.disable_auth_code" href="#cvpysdk.organization.Organization.disable_auth_code">disable_auth_code</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.disable_auto_discover" href="#cvpysdk.organization.Organization.disable_auto_discover">disable_auto_discover</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.disable_company_data_privacy" href="#cvpysdk.organization.Organization.disable_company_data_privacy">disable_company_data_privacy</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.disable_owner_data_privacy" href="#cvpysdk.organization.Organization.disable_owner_data_privacy">disable_owner_data_privacy</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.disable_tfa" href="#cvpysdk.organization.Organization.disable_tfa">disable_tfa</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.dissociate_plans" href="#cvpysdk.organization.Organization.dissociate_plans">dissociate_plans</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.domain_name" href="#cvpysdk.organization.Organization.domain_name">domain_name</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.email_domain_names" href="#cvpysdk.organization.Organization.email_domain_names">email_domain_names</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.enable_auth_code" href="#cvpysdk.organization.Organization.enable_auth_code">enable_auth_code</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.enable_auto_discover" href="#cvpysdk.organization.Organization.enable_auto_discover">enable_auto_discover</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.enable_company_data_privacy" href="#cvpysdk.organization.Organization.enable_company_data_privacy">enable_company_data_privacy</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.enable_owner_data_privacy" href="#cvpysdk.organization.Organization.enable_owner_data_privacy">enable_owner_data_privacy</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.enable_tfa" href="#cvpysdk.organization.Organization.enable_tfa">enable_tfa</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.file_exceptions" href="#cvpysdk.organization.Organization.file_exceptions">file_exceptions</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.get_alerts" href="#cvpysdk.organization.Organization.get_alerts">get_alerts</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.get_retire_laptop_properties" href="#cvpysdk.organization.Organization.get_retire_laptop_properties">get_retire_laptop_properties</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.get_security_associations" href="#cvpysdk.organization.Organization.get_security_associations">get_security_associations</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.infrastructure_type" href="#cvpysdk.organization.Organization.infrastructure_type">infrastructure_type</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.isAllowUsersToEnablePasskeyEnabled" href="#cvpysdk.organization.Organization.isAllowUsersToEnablePasskeyEnabled">isAllowUsersToEnablePasskeyEnabled</a></code></li>
@@ -7527,8 +8628,13 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.Organization.isPasskeyEnabled" href="#cvpysdk.organization.Organization.isPasskeyEnabled">isPasskeyEnabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_auth_code_enabled" href="#cvpysdk.organization.Organization.is_auth_code_enabled">is_auth_code_enabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_auto_discover_enabled" href="#cvpysdk.organization.Organization.is_auto_discover_enabled">is_auto_discover_enabled</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.is_backup_disabled" href="#cvpysdk.organization.Organization.is_backup_disabled">is_backup_disabled</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.is_company_privacy_enabled" href="#cvpysdk.organization.Organization.is_company_privacy_enabled">is_company_privacy_enabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_data_encryption_enabled" href="#cvpysdk.organization.Organization.is_data_encryption_enabled">is_data_encryption_enabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_global_file_exceptions_enabled" href="#cvpysdk.organization.Organization.is_global_file_exceptions_enabled">is_global_file_exceptions_enabled</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.is_login_disabled" href="#cvpysdk.organization.Organization.is_login_disabled">is_login_disabled</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.is_owner_data_privacy_enabled" href="#cvpysdk.organization.Organization.is_owner_data_privacy_enabled">is_owner_data_privacy_enabled</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.is_restore_disabled" href="#cvpysdk.organization.Organization.is_restore_disabled">is_restore_disabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_tfa_enabled" href="#cvpysdk.organization.Organization.is_tfa_enabled">is_tfa_enabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.is_using_upn" href="#cvpysdk.organization.Organization.is_using_upn">is_using_upn</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.job_start_time" href="#cvpysdk.organization.Organization.job_start_time">job_start_time</a></code></li>
@@ -7550,6 +8656,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.Organization.sender_name" href="#cvpysdk.organization.Organization.sender_name">sender_name</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.server_count" href="#cvpysdk.organization.Organization.server_count">server_count</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.set_auto_laptop_owners" href="#cvpysdk.organization.Organization.set_auto_laptop_owners">set_auto_laptop_owners</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.set_company_data_privacy" href="#cvpysdk.organization.Organization.set_company_data_privacy">set_company_data_privacy</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.set_data_encryption_enabled" href="#cvpysdk.organization.Organization.set_data_encryption_enabled">set_data_encryption_enabled</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.shared_laptop" href="#cvpysdk.organization.Organization.shared_laptop">shared_laptop</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.sites" href="#cvpysdk.organization.Organization.sites">sites</a></code></li>
@@ -7558,9 +8665,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.Organization.tenant_operator" href="#cvpysdk.organization.Organization.tenant_operator">tenant_operator</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.tfa_enabled_user_groups" href="#cvpysdk.organization.Organization.tfa_enabled_user_groups">tfa_enabled_user_groups</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.update_email_settings" href="#cvpysdk.organization.Organization.update_email_settings">update_email_settings</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.update_general_settings" href="#cvpysdk.organization.Organization.update_general_settings">update_general_settings</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.update_security_associations" href="#cvpysdk.organization.Organization.update_security_associations">update_security_associations</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.user_count" href="#cvpysdk.organization.Organization.user_count">user_count</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.user_groups" href="#cvpysdk.organization.Organization.user_groups">user_groups</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.verify_owner_assignment_config" href="#cvpysdk.organization.Organization.verify_owner_assignment_config">verify_owner_assignment_config</a></code></li>
 </ul>
 </li>
 <li>

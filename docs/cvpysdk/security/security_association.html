@@ -52,7 +52,7 @@ checks if specified role exists on commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/security/security_association.py#L1-L325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/security/security_association.py#L1-L382" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -123,6 +123,24 @@ class SecurityAssociation(object):
                 &#34;entity&#34;: [{
                     &#34;clientId&#34;: int(class_object.client_id),
                     &#34;_type_&#34;: 3
+                }]
+            }
+
+        from ..storage_pool import StoragePool
+        if isinstance(class_object, StoragePool):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;storagePolicyId&#34;: int(class_object.storage_pool_id),
+                    &#34;_type_&#34;: 17
+                }]
+            }
+            
+        from ..plan import Plan
+        if isinstance(class_object, Plan):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;planId&#34;: int(class_object.plan_id),
+                    &#34;_type_&#34;: 158
                 }]
             }
 
@@ -296,8 +314,46 @@ class SecurityAssociation(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _add_security_association(self, association_list, user=False):
-        &#34;&#34;&#34;Adds the security association on the specified class object&#34;&#34;&#34;
+    def _add_security_association(self, association_list, user= True, request_type = None, externalGroup = False):
+        &#34;&#34;&#34;
+        Adds the security association on the specified class object
+
+        Supported Types : Client, Storage Pool class objects.
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            &#39;user_name&#39;: user1,
+                            &#39;role_name&#39;: role1
+                        },
+                        {
+                            &#39;user_name&#39;: user2,
+                            &#39;role_name&#39;: role2
+                        }
+                    ]
+ 
+            user (bool)             --    True or False. set user = False, If associations_list made up of user groups
+            request_type (str)      --    eg : &#39;OVERWRITE&#39; or &#39;UPDATE&#39; or &#39;DELETE&#39;, Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is to be done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of dict type
+                if role doesnot exists on Commcell
+                if request fails
+        &#34;&#34;&#34;
+
+        update_operator_request_type = {
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3
+        }
+
+        if request_type:
+            request_type = request_type.upper()
+
         security_association_list = []
         for association in association_list:
             if not isinstance(association, dict):
@@ -310,10 +366,11 @@ class SecurityAssociation(object):
 
             user_or_group = {}
             if user:
-                user_or_group = {
-                    &#34;_type_&#34;: 13,
-                    &#39;userName&#39;: association[&#39;user_name&#39;]
-                }
+                user_or_group = {&#39;userName&#39;: association[&#39;user_name&#39;]}
+            elif externalGroup:
+                user_or_group = {&#39;externalGroupName&#39;: association[&#39;user_name&#39;]}
+            else:
+                user_or_group = {&#39;userGroupName&#39;: association[&#39;user_name&#39;]}  
 
             temp = {
                 &#34;userOrGroup&#34;: [
@@ -332,7 +389,7 @@ class SecurityAssociation(object):
         request_json = {
             &#34;entityAssociated&#34;: self._entity_list,
             &#34;securityAssociations&#34;: {
-                &#34;associationsOperationType&#34;: 1,
+                &#34;associationsOperationType&#34;: update_operator_request_type.get(request_type, 1),
                 &#34;associations&#34;: security_association_list,
                 &#34;ownerAssociations&#34;: {
                     &#34;ownersOperationType&#34;: 1
@@ -409,7 +466,7 @@ manage security operations</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/security/security_association.py#L50-L324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/security/security_association.py#L50-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SecurityAssociation(object):
     &#34;&#34;&#34;Class for managing the security associations roles on the commcell&#34;&#34;&#34;
@@ -431,6 +488,24 @@ manage security operations</p></div>
                 &#34;entity&#34;: [{
                     &#34;clientId&#34;: int(class_object.client_id),
                     &#34;_type_&#34;: 3
+                }]
+            }
+
+        from ..storage_pool import StoragePool
+        if isinstance(class_object, StoragePool):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;storagePolicyId&#34;: int(class_object.storage_pool_id),
+                    &#34;_type_&#34;: 17
+                }]
+            }
+            
+        from ..plan import Plan
+        if isinstance(class_object, Plan):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;planId&#34;: int(class_object.plan_id),
+                    &#34;_type_&#34;: 158
                 }]
             }
 
@@ -604,8 +679,46 @@ manage security operations</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _add_security_association(self, association_list, user=False):
-        &#34;&#34;&#34;Adds the security association on the specified class object&#34;&#34;&#34;
+    def _add_security_association(self, association_list, user= True, request_type = None, externalGroup = False):
+        &#34;&#34;&#34;
+        Adds the security association on the specified class object
+
+        Supported Types : Client, Storage Pool class objects.
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            &#39;user_name&#39;: user1,
+                            &#39;role_name&#39;: role1
+                        },
+                        {
+                            &#39;user_name&#39;: user2,
+                            &#39;role_name&#39;: role2
+                        }
+                    ]
+ 
+            user (bool)             --    True or False. set user = False, If associations_list made up of user groups
+            request_type (str)      --    eg : &#39;OVERWRITE&#39; or &#39;UPDATE&#39; or &#39;DELETE&#39;, Default will be OVERWRITE operation
+            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is to be done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of dict type
+                if role doesnot exists on Commcell
+                if request fails
+        &#34;&#34;&#34;
+
+        update_operator_request_type = {
+            &#34;OVERWRITE&#34;: 1,
+            &#34;UPDATE&#34;: 2,
+            &#34;DELETE&#34;: 3
+        }
+
+        if request_type:
+            request_type = request_type.upper()
+
         security_association_list = []
         for association in association_list:
             if not isinstance(association, dict):
@@ -618,10 +731,11 @@ manage security operations</p></div>
 
             user_or_group = {}
             if user:
-                user_or_group = {
-                    &#34;_type_&#34;: 13,
-                    &#39;userName&#39;: association[&#39;user_name&#39;]
-                }
+                user_or_group = {&#39;userName&#39;: association[&#39;user_name&#39;]}
+            elif externalGroup:
+                user_or_group = {&#39;externalGroupName&#39;: association[&#39;user_name&#39;]}
+            else:
+                user_or_group = {&#39;userGroupName&#39;: association[&#39;user_name&#39;]}  
 
             temp = {
                 &#34;userOrGroup&#34;: [
@@ -640,7 +754,7 @@ manage security operations</p></div>
         request_json = {
             &#34;entityAssociated&#34;: self._entity_list,
             &#34;securityAssociations&#34;: {
-                &#34;associationsOperationType&#34;: 1,
+                &#34;associationsOperationType&#34;: update_operator_request_type.get(request_type, 1),
                 &#34;associations&#34;: security_association_list,
                 &#34;ownerAssociations&#34;: {
                     &#34;ownersOperationType&#34;: 1
@@ -704,7 +818,7 @@ security association properties of entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/security/security_association.py#L156-L213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/security/security_association.py#L174-L231" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def fetch_security_association(security_dict):
@@ -786,7 +900,7 @@ True if role with specified name exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/security/security_association.py#L312-L324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/security/security_association.py#L369-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if role with specified name exists

@@ -59,10 +59,16 @@ unlinking on commvault side</p>
 <p>_get_eligible_metallic_commcells()
 &ndash;
 gets the eligible metallic commcells for the logged in user</p>
+<p>Metallic instance Attributes:</p>
+<pre><code>**cloudservices_details**       --  returns cloudServices details if metallic service is registered in
+                                    onprem/ MSP commcell
+
+**cloud_hostname**              --  returns cloud commcell hostname
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L1-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L1-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -112,6 +118,13 @@ Metallic:
     _get_eligible_metallic_commcells()     --  gets the eligible metallic commcells for the logged in user
 
 
+Metallic instance Attributes:
+
+    **cloudservices_details**       --  returns cloudServices details if metallic service is registered in
+                                        onprem/ MSP commcell
+
+    **cloud_hostname**              --  returns cloud commcell hostname
+
 &#34;&#34;&#34;
 
 from past.builtins import basestring
@@ -139,6 +152,7 @@ class Metallic(object):
         self._metallic_details = None
         self._metallic_web_url = None
         self._metallic_obj = None
+        self._cloudservices_details = None
 
     def _metallic_commcell_object(self, cloud_webconsole_hostname, cloud_username, cloud_password):
         &#34;&#34;&#34;Gets the metallic commcell object.
@@ -354,13 +368,14 @@ class Metallic(object):
         )
 
         if flag:
-            if response.json() and &#39;cloudServices&#39; in response.json():
-                if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
-                    self._metallic_web_url = \
-                        response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
-                    return True
-                else:
-                    return False
+            if response.json():
+                if &#39;cloudServices&#39; in response.json():
+                    if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
+                        self._metallic_web_url = \
+                            response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
+                        self._cloudservices_details = response.json()
+                        return True
+                return False
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -553,7 +568,38 @@ class Metallic(object):
     @cloud_hostname.setter
     def cloud_hostname(self, value):
         &#34;&#34;&#34; Sets cloud hostname &#34;&#34;&#34;
-        self._cloud_hostname = value</code></pre>
+        self._cloud_hostname = value
+
+    @property
+    def cloudservices_details(self):
+        &#34;&#34;&#34;
+        Get cloudServices details if metallic service is registered in onprem/ MSP commcell
+
+        Returns:
+             cloudservices_details (dict) --
+                {
+                &#39;cloudServices&#39;:
+                    [
+                        {
+                        &#39;associatedCompany&#39;:
+                            {
+                                &#39;companyAlias&#39;: &#39; &#39;,
+                                &#39;GUID&#39;: &#39; &#39;
+                            },
+                        &#39;cloudService&#39;:
+                            {
+                                &#39;redirectUrl&#39;: &#39; &#39;,
+                                &#39;commcellName&#39;: &#39; &#39;
+                            }
+                        }
+                    ]
+                }
+
+        &#34;&#34;&#34;
+        if self._cloudservices_details is None:
+            self._commserv_metadata = self.is_metallic_registered()
+
+        return self._cloudservices_details</code></pre>
 </details>
 </section>
 <section>
@@ -579,7 +625,7 @@ class Metallic(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L58-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L65-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Metallic(object):
     &#34;&#34;&#34;Class for representing Metallic related operations.&#34;&#34;&#34;
@@ -599,6 +645,7 @@ class Metallic(object):
         self._metallic_details = None
         self._metallic_web_url = None
         self._metallic_obj = None
+        self._cloudservices_details = None
 
     def _metallic_commcell_object(self, cloud_webconsole_hostname, cloud_username, cloud_password):
         &#34;&#34;&#34;Gets the metallic commcell object.
@@ -814,13 +861,14 @@ class Metallic(object):
         )
 
         if flag:
-            if response.json() and &#39;cloudServices&#39; in response.json():
-                if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
-                    self._metallic_web_url = \
-                        response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
-                    return True
-                else:
-                    return False
+            if response.json():
+                if &#39;cloudServices&#39; in response.json():
+                    if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
+                        self._metallic_web_url = \
+                            response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
+                        self._cloudservices_details = response.json()
+                        return True
+                return False
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1013,7 +1061,38 @@ class Metallic(object):
     @cloud_hostname.setter
     def cloud_hostname(self, value):
         &#34;&#34;&#34; Sets cloud hostname &#34;&#34;&#34;
-        self._cloud_hostname = value</code></pre>
+        self._cloud_hostname = value
+
+    @property
+    def cloudservices_details(self):
+        &#34;&#34;&#34;
+        Get cloudServices details if metallic service is registered in onprem/ MSP commcell
+
+        Returns:
+             cloudservices_details (dict) --
+                {
+                &#39;cloudServices&#39;:
+                    [
+                        {
+                        &#39;associatedCompany&#39;:
+                            {
+                                &#39;companyAlias&#39;: &#39; &#39;,
+                                &#39;GUID&#39;: &#39; &#39;
+                            },
+                        &#39;cloudService&#39;:
+                            {
+                                &#39;redirectUrl&#39;: &#39; &#39;,
+                                &#39;commcellName&#39;: &#39; &#39;
+                            }
+                        }
+                    ]
+                }
+
+        &#34;&#34;&#34;
+        if self._cloudservices_details is None:
+            self._commserv_metadata = self.is_metallic_registered()
+
+        return self._cloudservices_details</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1023,12 +1102,71 @@ class Metallic(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L482-L485" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L491-L494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_hostname(self):
     &#34;&#34;&#34; Returns cloudhostname&#34;&#34;&#34;
     return self._cloud_hostname</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.metallic.Metallic.cloudservices_details"><code class="name">var <span class="ident">cloudservices_details</span></code></dt>
+<dd>
+<div class="desc"><p>Get cloudServices details if metallic service is registered in onprem/ MSP commcell</p>
+<h2 id="returns">Returns</h2>
+<p>cloudservices_details (dict) &ndash;
+{
+'cloudServices':
+[
+{
+'associatedCompany':
+{
+'companyAlias': ' ',
+'GUID': ' '
+},
+'cloudService':
+{
+'redirectUrl': ' ',
+'commcellName': ' '
+}
+}
+]
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L501-L530" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def cloudservices_details(self):
+    &#34;&#34;&#34;
+    Get cloudServices details if metallic service is registered in onprem/ MSP commcell
+
+    Returns:
+         cloudservices_details (dict) --
+            {
+            &#39;cloudServices&#39;:
+                [
+                    {
+                    &#39;associatedCompany&#39;:
+                        {
+                            &#39;companyAlias&#39;: &#39; &#39;,
+                            &#39;GUID&#39;: &#39; &#39;
+                        },
+                    &#39;cloudService&#39;:
+                        {
+                            &#39;redirectUrl&#39;: &#39; &#39;,
+                            &#39;commcellName&#39;: &#39; &#39;
+                        }
+                    }
+                ]
+            }
+
+    &#34;&#34;&#34;
+    if self._cloudservices_details is None:
+        self._commserv_metadata = self.is_metallic_registered()
+
+    return self._cloudservices_details</code></pre>
 </details>
 </dd>
 </dl>
@@ -1054,7 +1192,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L267-L302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L275-L311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def is_metallic_registered(self):
     &#34;&#34;&#34;This function says whether metallic is registered for a user or not.
@@ -1080,13 +1218,14 @@ if response is not success
     )
 
     if flag:
-        if response.json() and &#39;cloudServices&#39; in response.json():
-            if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
-                self._metallic_web_url = \
-                    response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
-                return True
-            else:
-                return False
+        if response.json():
+            if &#39;cloudServices&#39; in response.json():
+                if response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {}):
+                    self._metallic_web_url = \
+                        response.json().get(&#39;cloudServices&#39;, [])[0].get(&#39;cloudService&#39;, {}).get(&#39;redirectUrl&#39;, {})
+                    self._cloudservices_details = response.json()
+                    return True
+            return False
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
@@ -1110,7 +1249,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L304-L331" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L313-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_completed_solutions(self):
     &#34;&#34;&#34;This function returns the completed solutions for metallic.
@@ -1167,7 +1306,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L107-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L115-L222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_subscribe(self, cloud_webconsole_hostname, cloud_username, cloud_password, msp_company_name=None):
     &#34;&#34;&#34;Adds a new Monitoring Policy to the Commcell.
@@ -1295,7 +1434,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/metallic.py#L333-L388" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/metallic.py#L342-L397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_unsubscribe(self):
     &#34;&#34;&#34;This function is for unsubscribing metallic
@@ -1429,6 +1568,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.metallic.Metallic" href="#cvpysdk.metallic.Metallic">Metallic</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.metallic.Metallic.cloud_hostname" href="#cvpysdk.metallic.Metallic.cloud_hostname">cloud_hostname</a></code></li>
+<li><code><a title="cvpysdk.metallic.Metallic.cloudservices_details" href="#cvpysdk.metallic.Metallic.cloudservices_details">cloudservices_details</a></code></li>
 <li><code><a title="cvpysdk.metallic.Metallic.is_metallic_registered" href="#cvpysdk.metallic.Metallic.is_metallic_registered">is_metallic_registered</a></code></li>
 <li><code><a title="cvpysdk.metallic.Metallic.metallic_completed_solutions" href="#cvpysdk.metallic.Metallic.metallic_completed_solutions">metallic_completed_solutions</a></code></li>
 <li><code><a title="cvpysdk.metallic.Metallic.metallic_subscribe" href="#cvpysdk.metallic.Metallic.metallic_subscribe">metallic_subscribe</a></code></li>

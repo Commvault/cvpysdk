@@ -74,11 +74,14 @@ _restore_mysql_option_json()    -- setter for MySQL restore option property in r
 **is_xtrabackup_enabled**           -- Returns the MySQL Server xtrabackup enabled flag
 
 **proxy_options**                   -- Returns the MySQL Server proxy options
+
+**mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
+details
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L1-L581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L1-L640" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -158,6 +161,9 @@ MYSQLInstance instance Attributes:
     **is_xtrabackup_enabled**           -- Returns the MySQL Server xtrabackup enabled flag
 
     **proxy_options**                   -- Returns the MySQL Server proxy options
+
+    **mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
+    details
 
 
 &#34;&#34;&#34;
@@ -358,6 +364,36 @@ class MYSQLInstance(Instance):
             &#34;clientName&#34;: proxy_settings.get(&#39;proxyInstance&#39;, {}).get(&#39;clientName&#39;, None)}
         return proxy_opt
 
+    @property
+    def mysql_enterprise_backup_binary_path(self):
+        &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+
+            Return Type: dict
+
+        &#34;&#34;&#34;
+        meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
+        return meb_settings
+
+    @mysql_enterprise_backup_binary_path.setter
+    def mysql_enterprise_backup_binary_path(self, value):
+        &#34;&#34;&#34; Setter for MySQL Enterprise backup binary path
+
+            Args:
+
+                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
+                in MySQL Instance property
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        meb_bin_path_update = {
+            &#34;enableMEB&#34;: False if value == &#39;&#39; else True,
+            &#34;mebBinPath&#34;: value
+        }
+        properties[&#39;mySqlInstance&#39;][&#39;mebSettings&#39;] = meb_bin_path_update
+        self.update_properties(properties)
+
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
 
@@ -430,7 +466,8 @@ class MYSQLInstance(Instance):
             clone_env=False,
             clone_options=None,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            browse_jobid=None):
         &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
@@ -517,6 +554,10 @@ class MYSQLInstance(Instance):
 
                     default: None
 
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -560,7 +601,8 @@ class MYSQLInstance(Instance):
             clone_env=clone_env,
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid)
 
         return self._process_restore_response(request_json)
 
@@ -574,6 +616,13 @@ class MYSQLInstance(Instance):
             &#34;clientName&#34;: self._agent_object._client_object.client_name,
             &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;
         }
+
+        if value.get(&#34;browse_jobid&#34;):
+            self._browse_restore_json[&#39;browseJobId&#39;] = value.get(&#34;browse_jobid&#34;)
+
+        if value.get(&#34;from_time&#34;) and value.get(&#34;to_time&#34;):
+            self._browse_restore_json[&#34;timeRange&#34;] = {&#34;fromTime&#34; : value.get(&#34;from_time&#34;),
+                                                      &#34;toTime&#34; : value.get(&#34;to_time&#34;)}
 
     def _restore_common_options_json(self, value):
         &#34;&#34;&#34;setter for the Common options in restore JSON&#34;&#34;&#34;
@@ -642,7 +691,7 @@ class MYSQLInstance(Instance):
             &#34;dataStagingLocation&#34;: &#34;&#34;,
             &#34;logRestoreType&#34;: 0,
             &#34;tableLevelRestore&#34;: value.get(&#34;table_level_restore&#34;, False),
-            &#34;pointofTime&#34;: False,
+            &#34;pointofTime&#34;: True if value.get(&#34;to_time&#34;) else False,
             &#34;instanceRestore&#34;: True,
             &#34;isCloneRestore&#34;: value.get(&#34;clone_env&#34;, False),
             &#34;fromTime&#34;: value.get(&#34;from_time&#34;, {}),
@@ -660,7 +709,20 @@ class MYSQLInstance(Instance):
 
         if value.get(&#34;redirect_path&#34;):
             self.mysql_restore_json[&#34;redirectEnabled&#34;] = True
-            self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]</code></pre>
+            self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]
+
+        if value.get(&#34;from_time&#34;):
+            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;to_time&#34;):
+            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;to_time&#34;):
+            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;dest_instance_name&#34;):
+            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(
+                &#34;dest_instance_name&#34;)}</code></pre>
 </details>
 </section>
 <section>
@@ -699,7 +761,7 @@ id of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L88-L581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L91-L640" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MYSQLInstance(Instance):
     &#34;&#34;&#34;
@@ -892,6 +954,36 @@ id of the instance</p>
             &#34;clientName&#34;: proxy_settings.get(&#39;proxyInstance&#39;, {}).get(&#39;clientName&#39;, None)}
         return proxy_opt
 
+    @property
+    def mysql_enterprise_backup_binary_path(self):
+        &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+
+            Return Type: dict
+
+        &#34;&#34;&#34;
+        meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
+        return meb_settings
+
+    @mysql_enterprise_backup_binary_path.setter
+    def mysql_enterprise_backup_binary_path(self, value):
+        &#34;&#34;&#34; Setter for MySQL Enterprise backup binary path
+
+            Args:
+
+                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
+                in MySQL Instance property
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        meb_bin_path_update = {
+            &#34;enableMEB&#34;: False if value == &#39;&#39; else True,
+            &#34;mebBinPath&#34;: value
+        }
+        properties[&#39;mySqlInstance&#39;][&#39;mebSettings&#39;] = meb_bin_path_update
+        self.update_properties(properties)
+
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
 
@@ -964,7 +1056,8 @@ id of the instance</p>
             clone_env=False,
             clone_options=None,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            browse_jobid=None):
         &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
 
             Args:
@@ -1051,6 +1144,10 @@ id of the instance</p>
 
                     default: None
 
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+
+                    default: None
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1094,7 +1191,8 @@ id of the instance</p>
             clone_env=clone_env,
             clone_options=clone_options,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid)
 
         return self._process_restore_response(request_json)
 
@@ -1108,6 +1206,13 @@ id of the instance</p>
             &#34;clientName&#34;: self._agent_object._client_object.client_name,
             &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;
         }
+
+        if value.get(&#34;browse_jobid&#34;):
+            self._browse_restore_json[&#39;browseJobId&#39;] = value.get(&#34;browse_jobid&#34;)
+
+        if value.get(&#34;from_time&#34;) and value.get(&#34;to_time&#34;):
+            self._browse_restore_json[&#34;timeRange&#34;] = {&#34;fromTime&#34; : value.get(&#34;from_time&#34;),
+                                                      &#34;toTime&#34; : value.get(&#34;to_time&#34;)}
 
     def _restore_common_options_json(self, value):
         &#34;&#34;&#34;setter for the Common options in restore JSON&#34;&#34;&#34;
@@ -1176,7 +1281,7 @@ id of the instance</p>
             &#34;dataStagingLocation&#34;: &#34;&#34;,
             &#34;logRestoreType&#34;: 0,
             &#34;tableLevelRestore&#34;: value.get(&#34;table_level_restore&#34;, False),
-            &#34;pointofTime&#34;: False,
+            &#34;pointofTime&#34;: True if value.get(&#34;to_time&#34;) else False,
             &#34;instanceRestore&#34;: True,
             &#34;isCloneRestore&#34;: value.get(&#34;clone_env&#34;, False),
             &#34;fromTime&#34;: value.get(&#34;from_time&#34;, {}),
@@ -1194,7 +1299,20 @@ id of the instance</p>
 
         if value.get(&#34;redirect_path&#34;):
             self.mysql_restore_json[&#34;redirectEnabled&#34;] = True
-            self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]</code></pre>
+            self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]
+
+        if value.get(&#34;from_time&#34;):
+            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;to_time&#34;):
+            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;to_time&#34;):
+            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+
+        if value.get(&#34;dest_instance_name&#34;):
+            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(
+                &#34;dest_instance_name&#34;)}</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1213,7 +1331,7 @@ False if auto discovery not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L224-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L227-L236" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def autodiscovery_enabled(self):
@@ -1237,7 +1355,7 @@ MySql server binary directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L158-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L161-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def binary_directory(self):
@@ -1260,7 +1378,7 @@ MySql server commnadline storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L205-L222" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L208-L225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def command_line_sp_details(self):
@@ -1292,7 +1410,7 @@ MySql server config file location</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L148-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L151-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def config_file(self):
@@ -1316,7 +1434,7 @@ False if xtrabackup is not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L247-L258" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L250-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_xtrabackup_enabled(self):
@@ -1342,7 +1460,7 @@ MySql server log backup storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L188-L203" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L191-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_backup_sp_details(self):
@@ -1372,7 +1490,7 @@ MySql server log directory path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L178-L186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L181-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_data_directory(self):
@@ -1385,6 +1503,26 @@ def log_data_directory(self):
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;LogDataDirectory&#39;, None)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path"><code class="name">var <span class="ident">mysql_enterprise_backup_binary_path</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the MySQL Enterprise backup binary path detail</p>
+<p>Return Type: dict</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L282-L290" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def mysql_enterprise_backup_binary_path(self):
+    &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+
+        Return Type: dict
+
+    &#34;&#34;&#34;
+    meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
+    return meb_settings</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username"><code class="name">var <span class="ident">mysql_username</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the MySQL Server username.</p>
@@ -1395,7 +1533,7 @@ MySql server SA username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L128-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L131-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mysql_username(self):
@@ -1418,7 +1556,7 @@ MySql server NT username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L138-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L141-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def nt_username(self):
@@ -1441,7 +1579,7 @@ MySql server port number</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L118-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L121-L129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def port(self):
@@ -1464,7 +1602,7 @@ MySql server proxy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L260-L277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L263-L280" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_options(self):
@@ -1496,7 +1634,7 @@ MySql server version</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L168-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L171-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -1519,7 +1657,7 @@ MySql server xtrabackup binary path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L235-L245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L238-L248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def xtrabackup_bin_path(self):
@@ -1538,7 +1676,7 @@ def xtrabackup_bin_path(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, path=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, path=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None, browse_jobid=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the mysql data/log files specified in the input paths list to the same location.</p>
@@ -1658,6 +1796,12 @@ Path specified in advanced restore options
 in order to perform redirect restore</p>
 <pre><code>default: None
 </code></pre>
+<p>browse_jobid
+(int)
+&ndash;
+Browse jobid to browse and restore from</p>
+<pre><code>default: None
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -1672,7 +1816,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/mysqlinstance.py#L334-L483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/mysqlinstance.py#L367-L522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1691,7 +1835,8 @@ if response is not success
         clone_env=False,
         clone_options=None,
         redirect_enabled=False,
-        redirect_path=None):
+        redirect_path=None,
+        browse_jobid=None):
     &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
 
         Args:
@@ -1778,6 +1923,10 @@ if response is not success
 
                 default: None
 
+            browse_jobid           (int)   --  Browse jobid to browse and restore from
+
+                default: None
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -1821,7 +1970,8 @@ if response is not success
         clone_env=clone_env,
         clone_options=clone_options,
         redirect_enabled=redirect_enabled,
-        redirect_path=redirect_path)
+        redirect_path=redirect_path,
+        browse_jobid=browse_jobid)
 
     return self._process_restore_response(request_json)</code></pre>
 </details>
@@ -1924,6 +2074,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.is_xtrabackup_enabled" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.is_xtrabackup_enabled">is_xtrabackup_enabled</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details">log_backup_sp_details</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory">log_data_directory</a></code></li>
+<li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path">mysql_enterprise_backup_binary_path</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username">mysql_username</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username">nt_username</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.port" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.port">port</a></code></li>

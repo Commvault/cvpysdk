@@ -70,7 +70,7 @@ proxy passing explicit credentials of destination cloud</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L1-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L1-L790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -182,60 +182,65 @@ class CloudStorageInstance(CloudAppsInstance):
             instance_id)
 
     def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the properties of this instance &#34;&#34;&#34;
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if &#39;cloudAppsInstance&#39; in self._properties:
-            cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
+            cloud_apps_instance = self._properties.get(&#39;cloudAppsInstance&#39;, {})
             self._ca_instance_type = cloud_apps_instance[&#39;instanceType&#39;]
 
             if &#39;s3Instance&#39; in cloud_apps_instance:
-                s3instance = cloud_apps_instance[&#39;s3Instance&#39;]
+                s3instance = cloud_apps_instance.get(&#39;s3Instance&#39;, {})
 
-                self._host_url = s3instance[&#39;hostURL&#39;]
-                self._access_keyid = s3instance[&#39;accessKeyId&#39;]
+                self._host_url = s3instance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_keyid = s3instance.get(&#39;accessKeyId&#39;, &#39;&#39;)
 
             if &#39;azureInstance&#39; in cloud_apps_instance:
-                azureinstance = cloud_apps_instance[&#39;azureInstance&#39;]
+                azureinstance = cloud_apps_instance.get(&#39;azureInstance&#39;, {})
 
-                self._host_url = azureinstance[&#39;hostURL&#39;]
-                self._account_name = azureinstance[&#39;accountName&#39;]
-                self._access_key = azureinstance[&#39;accessKey&#39;]
+                self._host_url = azureinstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._account_name = azureinstance.get(&#39;accountName&#39;, &#39;&#39;)
+                self._access_key = azureinstance.get(&#39;accessKey&#39;, &#39;&#39;)
 
             if &#39;openStackInstance&#39; in cloud_apps_instance:
+                openstackinstance = cloud_apps_instance.get(&#39;openStackInstance&#39;, {})
 
-                self._server_name = cloud_apps_instance[&#39;openStackInstance&#39;][&#39;serverName&#39;]
-                self._username = cloud_apps_instance[&#39;openStackInstance&#39;][&#39;credentials&#39;][
-                    &#39;userName&#39;]
+                self._server_name = openstackinstance.get(&#39;serverName&#39;, &#39;&#39;)
+                self._username = openstackinstance.get(&#39;credentials&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             if &#39;oraCloudInstance&#39; in cloud_apps_instance:
-                oraclecloudinstance = cloud_apps_instance[&#39;oraCloudInstance&#39;]
+                oraclecloudinstance = cloud_apps_instance.get(&#39;oraCloudInstance&#39;)
 
-                self._endpointurl = oraclecloudinstance[&#39;endpointURL&#39;]
-                self._username = oraclecloudinstance[&#39;user&#39;][&#39;userName&#39;]
+                self._endpointurl = oraclecloudinstance.get(&#39;endpointURL&#39;, &#39;&#39;)
+                self._username = oraclecloudinstance.get(&#39;user&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             # Google Cloud Instance porperties
             if &#39;googleCloudInstance&#39; in cloud_apps_instance:
-                self._google_host_url = cloud_apps_instance[&#39;googleCloudInstance&#39;][&#39;serverName&#39;]
-                self._google_access_key = cloud_apps_instance[
-                    &#39;googleCloudInstance&#39;][&#39;credentials&#39;][&#39;userName&#39;]
+                googlecloudinstance = cloud_apps_instance.get(&#39;googleCloudInstance&#39;, {})
 
+                self._google_host_url = googlecloudinstance.get(&#39;serverName&#39;, &#39;&#39;)
+                self._google_access_key = googlecloudinstance.get(&#39;credentials&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             # Ali Cloud
             if &#39;alibabaInstance&#39; in cloud_apps_instance:
-                self._host_url = cloud_apps_instance[&#39;alibabaInstance&#39;][&#39;hostURL&#39;]
-                self._access_key = cloud_apps_instance[&#39;alibabaInstance&#39;][&#39;accessKey&#39;]
+                alibabainstance = cloud_apps_instance.get(&#39;alibabaInstance&#39;, {})
 
+                self._host_url = alibabainstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_key = alibabainstance.get(&#39;accessKey&#39;, &#39;&#39;)
 
-            #IBM Cloud
+            # IBM Cloud
             if &#39;ibmCosInstance&#39; in cloud_apps_instance:
-                self._host_url = cloud_apps_instance[&#39;ibmCosInstance&#39;][&#39;hostURL&#39;]
-                self._access_key = cloud_apps_instance[&#39;ibmCosInstance&#39;][&#39;credentials&#39;][&#39;username&#39;]
+                ibminstance = cloud_apps_instance.get(&#39;ibmCosInstance&#39;, {})
 
+                self._host_url = ibminstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_key = ibminstance.get(&#39;credentials&#39;, {}).get(&#39;username&#39;, &#39;&#39;)
 
             if &#39;generalCloudProperties&#39; in cloud_apps_instance:
-                self._access_node = cloud_apps_instance[
-                    &#39;generalCloudProperties&#39;][&#39;proxyServers&#39;][0][&#39;clientName&#39;]
+                self._access_node = cloud_apps_instance.get(
+                    &#39;generalCloudProperties&#39;, {}).get(
+                    &#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;, cloud_apps_instance.get(
+                    &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
+                    0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
 
     @property
     def google_host_url(self):
@@ -894,7 +899,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L64-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L64-L790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudStorageInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the cloud storage instance type.&#34;&#34;&#34;
@@ -943,60 +948,65 @@ default: None</p>
             instance_id)
 
     def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the properties of this instance &#34;&#34;&#34;
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if &#39;cloudAppsInstance&#39; in self._properties:
-            cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
+            cloud_apps_instance = self._properties.get(&#39;cloudAppsInstance&#39;, {})
             self._ca_instance_type = cloud_apps_instance[&#39;instanceType&#39;]
 
             if &#39;s3Instance&#39; in cloud_apps_instance:
-                s3instance = cloud_apps_instance[&#39;s3Instance&#39;]
+                s3instance = cloud_apps_instance.get(&#39;s3Instance&#39;, {})
 
-                self._host_url = s3instance[&#39;hostURL&#39;]
-                self._access_keyid = s3instance[&#39;accessKeyId&#39;]
+                self._host_url = s3instance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_keyid = s3instance.get(&#39;accessKeyId&#39;, &#39;&#39;)
 
             if &#39;azureInstance&#39; in cloud_apps_instance:
-                azureinstance = cloud_apps_instance[&#39;azureInstance&#39;]
+                azureinstance = cloud_apps_instance.get(&#39;azureInstance&#39;, {})
 
-                self._host_url = azureinstance[&#39;hostURL&#39;]
-                self._account_name = azureinstance[&#39;accountName&#39;]
-                self._access_key = azureinstance[&#39;accessKey&#39;]
+                self._host_url = azureinstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._account_name = azureinstance.get(&#39;accountName&#39;, &#39;&#39;)
+                self._access_key = azureinstance.get(&#39;accessKey&#39;, &#39;&#39;)
 
             if &#39;openStackInstance&#39; in cloud_apps_instance:
+                openstackinstance = cloud_apps_instance.get(&#39;openStackInstance&#39;, {})
 
-                self._server_name = cloud_apps_instance[&#39;openStackInstance&#39;][&#39;serverName&#39;]
-                self._username = cloud_apps_instance[&#39;openStackInstance&#39;][&#39;credentials&#39;][
-                    &#39;userName&#39;]
+                self._server_name = openstackinstance.get(&#39;serverName&#39;, &#39;&#39;)
+                self._username = openstackinstance.get(&#39;credentials&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             if &#39;oraCloudInstance&#39; in cloud_apps_instance:
-                oraclecloudinstance = cloud_apps_instance[&#39;oraCloudInstance&#39;]
+                oraclecloudinstance = cloud_apps_instance.get(&#39;oraCloudInstance&#39;)
 
-                self._endpointurl = oraclecloudinstance[&#39;endpointURL&#39;]
-                self._username = oraclecloudinstance[&#39;user&#39;][&#39;userName&#39;]
+                self._endpointurl = oraclecloudinstance.get(&#39;endpointURL&#39;, &#39;&#39;)
+                self._username = oraclecloudinstance.get(&#39;user&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             # Google Cloud Instance porperties
             if &#39;googleCloudInstance&#39; in cloud_apps_instance:
-                self._google_host_url = cloud_apps_instance[&#39;googleCloudInstance&#39;][&#39;serverName&#39;]
-                self._google_access_key = cloud_apps_instance[
-                    &#39;googleCloudInstance&#39;][&#39;credentials&#39;][&#39;userName&#39;]
+                googlecloudinstance = cloud_apps_instance.get(&#39;googleCloudInstance&#39;, {})
 
+                self._google_host_url = googlecloudinstance.get(&#39;serverName&#39;, &#39;&#39;)
+                self._google_access_key = googlecloudinstance.get(&#39;credentials&#39;, {}).get(&#39;userName&#39;, &#39;&#39;)
 
             # Ali Cloud
             if &#39;alibabaInstance&#39; in cloud_apps_instance:
-                self._host_url = cloud_apps_instance[&#39;alibabaInstance&#39;][&#39;hostURL&#39;]
-                self._access_key = cloud_apps_instance[&#39;alibabaInstance&#39;][&#39;accessKey&#39;]
+                alibabainstance = cloud_apps_instance.get(&#39;alibabaInstance&#39;, {})
 
+                self._host_url = alibabainstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_key = alibabainstance.get(&#39;accessKey&#39;, &#39;&#39;)
 
-            #IBM Cloud
+            # IBM Cloud
             if &#39;ibmCosInstance&#39; in cloud_apps_instance:
-                self._host_url = cloud_apps_instance[&#39;ibmCosInstance&#39;][&#39;hostURL&#39;]
-                self._access_key = cloud_apps_instance[&#39;ibmCosInstance&#39;][&#39;credentials&#39;][&#39;username&#39;]
+                ibminstance = cloud_apps_instance.get(&#39;ibmCosInstance&#39;, {})
 
+                self._host_url = ibminstance.get(&#39;hostURL&#39;, &#39;&#39;)
+                self._access_key = ibminstance.get(&#39;credentials&#39;, {}).get(&#39;username&#39;, &#39;&#39;)
 
             if &#39;generalCloudProperties&#39; in cloud_apps_instance:
-                self._access_node = cloud_apps_instance[
-                    &#39;generalCloudProperties&#39;][&#39;proxyServers&#39;][0][&#39;clientName&#39;]
+                self._access_node = cloud_apps_instance.get(
+                    &#39;generalCloudProperties&#39;, {}).get(
+                    &#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;, cloud_apps_instance.get(
+                    &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
+                    0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
 
     @property
     def google_host_url(self):
@@ -1632,7 +1642,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L196-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L201-L204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_key(self):
@@ -1646,7 +1656,7 @@ def access_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L206-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L211-L214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_keyid(self):
@@ -1660,7 +1670,7 @@ def access_keyid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L238-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L243-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node(self):
@@ -1674,7 +1684,7 @@ def access_node(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L201-L204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L206-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def account_name(self):
@@ -1688,7 +1698,7 @@ def account_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L186-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L191-L194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1705,7 +1715,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L227-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L232-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -1725,7 +1735,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L222-L225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L227-L230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def endpointurl(self):
@@ -1743,7 +1753,7 @@ string representing google cloud account access key</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L176-L184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L181-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_access_key(self):
@@ -1766,7 +1776,7 @@ string representing host URL of goole cloud</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L166-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L171-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_host_url(self):
@@ -1785,7 +1795,7 @@ def google_host_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L191-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L196-L199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def host_url(self):
@@ -1799,7 +1809,7 @@ def host_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L212-L215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L217-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):
@@ -1813,7 +1823,7 @@ def server_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L217-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L222-L225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def username(self):
@@ -1863,7 +1873,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L285-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L290-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1976,7 +1986,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L337-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L342-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -2107,7 +2117,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L410-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L415-L485" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_fs(
         self,
@@ -2264,7 +2274,7 @@ destination_cloud = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L656-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L661-L790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_using_proxy(self,
                         paths,

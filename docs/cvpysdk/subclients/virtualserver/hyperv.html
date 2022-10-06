@@ -51,7 +51,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L1-L678" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L1-L692" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -100,7 +100,6 @@ from enum import Enum
 from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-# from .vmware import VMWareVirtualServerSubclient
 
 
 class HyperVVirtualServerSubclient(VirtualServerSubclient):
@@ -269,7 +268,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                      restored_vm_name=None,
                                      restore_option=None,
                                      snap_proxy=None,
-                                     media_agent=None):
+                                     media_agent=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -299,6 +299,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                 snap_proxy          (strig)     -- Snap proxy to be used for restore
 
                 media_agent          (string)    -- Media Agent to be used for Browse
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -354,6 +360,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -407,7 +414,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                  power_on=True,
                                  copy_precedence=0,
                                  add_to_failover=False,
-                                 snap_proxy=None):
+                                 snap_proxy=None,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -427,6 +435,12 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                     restores from snap
                     default :proxy in instance or subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -440,7 +454,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool) and
@@ -760,7 +774,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L51-L678" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L50-L692" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -928,7 +942,8 @@ backupset class, subclient name, subclient id</p></div>
                                      restored_vm_name=None,
                                      restore_option=None,
                                      snap_proxy=None,
-                                     media_agent=None):
+                                     media_agent=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -958,6 +973,12 @@ backupset class, subclient name, subclient id</p></div>
                 snap_proxy          (strig)     -- Snap proxy to be used for restore
 
                 media_agent          (string)    -- Media Agent to be used for Browse
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         value:
             preserve_level           (int)    -  set the preserve level in restore
@@ -1013,6 +1034,7 @@ backupset class, subclient name, subclient id</p></div>
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -1066,7 +1088,8 @@ backupset class, subclient name, subclient id</p></div>
                                  power_on=True,
                                  copy_precedence=0,
                                  add_to_failover=False,
-                                 snap_proxy=None):
+                                 snap_proxy=None,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -1086,6 +1109,12 @@ backupset class, subclient name, subclient id</p></div>
                                                     restores from snap
                     default :proxy in instance or subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1099,7 +1128,7 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool) and
@@ -1454,7 +1483,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L90-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L89-L201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1634,7 +1663,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L554-L678" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L568-L692" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -1831,7 +1860,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L420-L552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L434-L566" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -1969,7 +1998,7 @@ if inputs are not of correct type as per definition</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.hyperv.HyperVVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, add_to_failover=False, snap_proxy=None)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, add_to_failover=False, snap_proxy=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2002,6 +2031,14 @@ Add the Restored VM to Failover Cluster</p>
 &ndash; proxy need to be used for disk
 restores from snap
 default :proxy in instance or subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -2015,7 +2052,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L349-L418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L356-L432" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2023,7 +2060,8 @@ if response is not success
                              power_on=True,
                              copy_precedence=0,
                              add_to_failover=False,
-                             snap_proxy=None):
+                             snap_proxy=None,
+                             **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         to the location same as source .
 
@@ -2043,6 +2081,12 @@ if response is not success
                                                 restores from snap
                 default :proxy in instance or subclient
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -2056,7 +2100,7 @@ if response is not success
                 if response is not success
     &#34;&#34;&#34;
 
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
     # check mandatory input parameters are correct
     if not (isinstance(overwrite, bool) and
             isinstance(power_on, bool) and
@@ -2090,7 +2134,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.hyperv.HyperVVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, destination_client=None, proxy_client=None, destination_path=None, vm_to_restore=None, overwrite=False, power_on=False, copy_precedence=0, add_to_failover=False, network=None, restored_vm_name=None, restore_option=None, snap_proxy=None, media_agent=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, destination_client=None, proxy_client=None, destination_path=None, vm_to_restore=None, overwrite=False, power_on=False, copy_precedence=0, add_to_failover=False, network=None, restored_vm_name=None, restore_option=None, snap_proxy=None, media_agent=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2123,6 +2167,12 @@ at the specified destination location.</p>
     snap_proxy          (strig)     -- Snap proxy to be used for restore
 
     media_agent          (string)    -- Media Agent to be used for Browse
+
+    **kwargs                         : Arbitrary keyword arguments Properties as of
+                                         full_vm_restore_out_of_place
+        eg:
+        v2_details          (dict)       -- details for v2 subclient
+                                        eg: check clients.vmclient.VMClient._child_job_subclient_details
 </code></pre>
 <p>value:
 preserve_level
@@ -2181,7 +2231,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/hyperv.py#L204-L347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L203-L354" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  destination_client=None,
@@ -2196,7 +2246,8 @@ Raises:
                                  restored_vm_name=None,
                                  restore_option=None,
                                  snap_proxy=None,
-                                 media_agent=None):
+                                 media_agent=None,
+                                 **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
 
@@ -2226,6 +2277,12 @@ Raises:
             snap_proxy          (strig)     -- Snap proxy to be used for restore
 
             media_agent          (string)    -- Media Agent to be used for Browse
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
     value:
         preserve_level           (int)    -  set the preserve level in restore
@@ -2281,6 +2338,7 @@ Raises:
     # restore options
     if restore_option is None:
         restore_option = {}
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)

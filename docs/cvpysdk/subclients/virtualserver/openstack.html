@@ -46,7 +46,7 @@ Openstack project or tenant</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L1-L518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L1-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -131,7 +131,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             source_ip=None,
             destination_ip=None,
             datacenter = None,
-            cluster = None):
+            cluster = None,
+            **kwargs):
             # vm_to_restore=None,
             # overwrite=True,
             # power_on=True,
@@ -159,6 +160,12 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -174,8 +181,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {}
-
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -226,7 +232,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             destination_ip=None,
             datacenter = None,
             cluster = None,
-            securityGroups = None
+            securityGroups = None,
+            **kwargs
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -264,7 +271,11 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
                 destination_ip      (basestring)    --  IP of the destination VM
 
-
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -281,7 +292,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:
@@ -594,7 +605,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L49-L518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L49-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OpenStackVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -631,7 +642,8 @@ backupset class, subclient name, subclient id</p></div>
             source_ip=None,
             destination_ip=None,
             datacenter = None,
-            cluster = None):
+            cluster = None,
+            **kwargs):
             # vm_to_restore=None,
             # overwrite=True,
             # power_on=True,
@@ -659,6 +671,12 @@ backupset class, subclient name, subclient id</p></div>
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -674,8 +692,7 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {}
-
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -726,7 +743,8 @@ backupset class, subclient name, subclient id</p></div>
             destination_ip=None,
             datacenter = None,
             cluster = None,
-            securityGroups = None
+            securityGroups = None,
+            **kwargs
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -764,7 +782,11 @@ backupset class, subclient name, subclient id</p></div>
 
                 destination_ip      (basestring)    --  IP of the destination VM
 
-
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -781,7 +803,7 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:
@@ -1135,7 +1157,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L407-L518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L418-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -1314,7 +1336,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L279-L405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L290-L416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1446,7 +1468,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.openstack.OpenStackVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, destination_client=None, esx_host=None, esx_server=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, source_ip=None, destination_ip=None, datacenter=None, cluster=None)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, destination_client=None, esx_host=None, esx_server=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, source_ip=None, destination_ip=None, datacenter=None, cluster=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -1478,6 +1500,14 @@ default: 0</p>
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -1492,7 +1522,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L68-L160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L68-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -1510,7 +1540,8 @@ if response is not success
         source_ip=None,
         destination_ip=None,
         datacenter = None,
-        cluster = None):
+        cluster = None,
+        **kwargs):
         # vm_to_restore=None,
         # overwrite=True,
         # power_on=True,
@@ -1538,6 +1569,12 @@ if response is not success
             proxy_client          (basestring)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -1553,8 +1590,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {}
-
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
     # check input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -1590,7 +1626,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.openstack.OpenStackVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, destination_client=None, esx_host=None, esx_server=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, source_ip=None, destination_ip=None, datacenter=None, cluster=None, securityGroups=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, vcenter_client=None, destination_client=None, esx_host=None, esx_server=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, source_ip=None, destination_ip=None, datacenter=None, cluster=None, securityGroups=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -1651,6 +1687,14 @@ IP of the source VM</p>
 (basestring)
 &ndash;
 IP of the destination VM</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -1665,7 +1709,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/openstack.py#L162-L277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L168-L288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -1684,7 +1728,8 @@ if response is not success
         destination_ip=None,
         datacenter = None,
         cluster = None,
-        securityGroups = None
+        securityGroups = None,
+        **kwargs
 ):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
@@ -1722,7 +1767,11 @@ if response is not success
 
             destination_ip      (basestring)    --  IP of the destination VM
 
-
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         Returns:
             object - instance of the Job class for this restore job
@@ -1739,7 +1788,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # check mandatory input parameters are correct
     for vm in vm_to_restore:

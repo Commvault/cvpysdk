@@ -33,7 +33,7 @@ uninstall_software                 --  Uninstalls all the packages of the select
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/uninstall.py#L1-L137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/uninstall.py#L1-L165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -70,7 +70,7 @@ from past.builtins import basestring
 from ..job import Job
 from ..exception import SDKException
 
-
+UNINSTALL_SELECTED_PACKAGES = 6
 class Uninstall(object):
     &#34;&#34;&#34;&#34;class for Uninstalling software packages&#34;&#34;&#34;
 
@@ -89,7 +89,7 @@ class Uninstall(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name, force_uninstall=True):
+    def uninstall_software(self, client_name, force_uninstall=True,client_composition=[]):
         &#34;&#34;&#34;
         Performs readiness check on the client
 
@@ -97,6 +97,31 @@ class Uninstall(object):
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
 
                 client_name     (str): The client_name whose packages are to be uninstalled.
+
+                client_composition (list): The client_coposition will contain the list of components need to be uninstalled. 
+
+            Usage:
+                uninstall.uninstall_software(client_name=&#34;freezaclient&#34;,force_uninstall=False,client_composition=[{
+                                         &#34;activateClient&#34;: True,
+                                         &#34;packageDeliveryOption&#34;: 0,
+                                         &#34;components&#34;: {
+                                             &#34;componentInfo&#34;: [
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;High Availability Computing&#34;
+                                                 },
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;Index Store&#34;
+                                                 },
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;Index Gateway&#34;
+                                                 }
+                                             ]
+                                         }
+                                     }
+                                 ])
 
             Raises:
                 SDKException:
@@ -106,7 +131,9 @@ class Uninstall(object):
         &#34;&#34;&#34;
         if not isinstance(client_name, basestring):
             raise SDKException(&#39;Uninstall&#39;, &#39;101&#39;)
-
+        optype = 7 # default value to remove all the packages
+        if client_composition:
+            optype = UNINSTALL_SELECTED_PACKAGES
         request_json = {
             &#34;taskInfo&#34;: {
                 &#34;associations&#34;: [
@@ -137,12 +164,13 @@ class Uninstall(object):
                                     &#34;discoveryType&#34;: 0,
                                     &#34;installerOption&#34;: {
                                         &#34;requestType&#34;: 0,
-                                        &#34;Operationtype&#34;: 7,
+                                        &#34;Operationtype&#34;: optype,
                                         &#34;CommServeHostName&#34;: self._commcell_object.commserv_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;User&#34;: {
                                             &#34;userName&#34;: &#34;admin&#34;
-                                        }
+                                        },
+                                        &#34;clientComposition&#34;:client_composition
                                     },
                                     &#34;clientDetails&#34;: [
                                         {
@@ -199,7 +227,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/uninstall.py#L37-L137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/uninstall.py#L37-L165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Uninstall(object):
     &#34;&#34;&#34;&#34;class for Uninstalling software packages&#34;&#34;&#34;
@@ -219,7 +247,7 @@ instance of the Commcell class</p>
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name, force_uninstall=True):
+    def uninstall_software(self, client_name, force_uninstall=True,client_composition=[]):
         &#34;&#34;&#34;
         Performs readiness check on the client
 
@@ -227,6 +255,31 @@ instance of the Commcell class</p>
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
 
                 client_name     (str): The client_name whose packages are to be uninstalled.
+
+                client_composition (list): The client_coposition will contain the list of components need to be uninstalled. 
+
+            Usage:
+                uninstall.uninstall_software(client_name=&#34;freezaclient&#34;,force_uninstall=False,client_composition=[{
+                                         &#34;activateClient&#34;: True,
+                                         &#34;packageDeliveryOption&#34;: 0,
+                                         &#34;components&#34;: {
+                                             &#34;componentInfo&#34;: [
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;High Availability Computing&#34;
+                                                 },
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;Index Store&#34;
+                                                 },
+                                                 {
+                                                     &#34;osType&#34;: &#34;Windows&#34;,
+                                                     &#34;ComponentName&#34;: &#34;Index Gateway&#34;
+                                                 }
+                                             ]
+                                         }
+                                     }
+                                 ])
 
             Raises:
                 SDKException:
@@ -236,7 +289,9 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         if not isinstance(client_name, basestring):
             raise SDKException(&#39;Uninstall&#39;, &#39;101&#39;)
-
+        optype = 7 # default value to remove all the packages
+        if client_composition:
+            optype = UNINSTALL_SELECTED_PACKAGES
         request_json = {
             &#34;taskInfo&#34;: {
                 &#34;associations&#34;: [
@@ -267,12 +322,13 @@ instance of the Commcell class</p>
                                     &#34;discoveryType&#34;: 0,
                                     &#34;installerOption&#34;: {
                                         &#34;requestType&#34;: 0,
-                                        &#34;Operationtype&#34;: 7,
+                                        &#34;Operationtype&#34;: optype,
                                         &#34;CommServeHostName&#34;: self._commcell_object.commserv_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;User&#34;: {
                                             &#34;userName&#34;: &#34;admin&#34;
-                                        }
+                                        },
+                                        &#34;clientComposition&#34;:client_composition
                                     },
                                     &#34;clientDetails&#34;: [
                                         {
@@ -306,7 +362,7 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.uninstall.Uninstall.uninstall_software"><code class="name flex">
-<span>def <span class="ident">uninstall_software</span></span>(<span>self, client_name, force_uninstall=True)</span>
+<span>def <span class="ident">uninstall_software</span></span>(<span>self, client_name, force_uninstall=True, client_composition=[])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Performs readiness check on the client</p>
@@ -314,6 +370,31 @@ instance of the Commcell class</p>
     force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
 
     client_name     (str): The client_name whose packages are to be uninstalled.
+
+    client_composition (list): The client_coposition will contain the list of components need to be uninstalled.
+
+Usage:
+    uninstall.uninstall_software(client_name="freezaclient",force_uninstall=False,client_composition=[{
+                             "activateClient": True,
+                             "packageDeliveryOption": 0,
+                             "components": {
+                                 "componentInfo": [
+                                     {
+                                         "osType": "Windows",
+                                         "ComponentName": "High Availability Computing"
+                                     },
+                                     {
+                                         "osType": "Windows",
+                                         "ComponentName": "Index Store"
+                                     },
+                                     {
+                                         "osType": "Windows",
+                                         "ComponentName": "Index Gateway"
+                                     }
+                                 ]
+                             }
+                         }
+                     ])
 
 Raises:
     SDKException:
@@ -324,9 +405,9 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/deployment/uninstall.py#L55-L137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/uninstall.py#L55-L165" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def uninstall_software(self, client_name, force_uninstall=True):
+<pre><code class="python">def uninstall_software(self, client_name, force_uninstall=True,client_composition=[]):
     &#34;&#34;&#34;
     Performs readiness check on the client
 
@@ -334,6 +415,31 @@ Raises:
             force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
 
             client_name     (str): The client_name whose packages are to be uninstalled.
+
+            client_composition (list): The client_coposition will contain the list of components need to be uninstalled. 
+
+        Usage:
+            uninstall.uninstall_software(client_name=&#34;freezaclient&#34;,force_uninstall=False,client_composition=[{
+                                     &#34;activateClient&#34;: True,
+                                     &#34;packageDeliveryOption&#34;: 0,
+                                     &#34;components&#34;: {
+                                         &#34;componentInfo&#34;: [
+                                             {
+                                                 &#34;osType&#34;: &#34;Windows&#34;,
+                                                 &#34;ComponentName&#34;: &#34;High Availability Computing&#34;
+                                             },
+                                             {
+                                                 &#34;osType&#34;: &#34;Windows&#34;,
+                                                 &#34;ComponentName&#34;: &#34;Index Store&#34;
+                                             },
+                                             {
+                                                 &#34;osType&#34;: &#34;Windows&#34;,
+                                                 &#34;ComponentName&#34;: &#34;Index Gateway&#34;
+                                             }
+                                         ]
+                                     }
+                                 }
+                             ])
 
         Raises:
             SDKException:
@@ -343,7 +449,9 @@ Raises:
     &#34;&#34;&#34;
     if not isinstance(client_name, basestring):
         raise SDKException(&#39;Uninstall&#39;, &#39;101&#39;)
-
+    optype = 7 # default value to remove all the packages
+    if client_composition:
+        optype = UNINSTALL_SELECTED_PACKAGES
     request_json = {
         &#34;taskInfo&#34;: {
             &#34;associations&#34;: [
@@ -374,12 +482,13 @@ Raises:
                                 &#34;discoveryType&#34;: 0,
                                 &#34;installerOption&#34;: {
                                     &#34;requestType&#34;: 0,
-                                    &#34;Operationtype&#34;: 7,
+                                    &#34;Operationtype&#34;: optype,
                                     &#34;CommServeHostName&#34;: self._commcell_object.commserv_name,
                                     &#34;RemoteClient&#34;: False,
                                     &#34;User&#34;: {
                                         &#34;userName&#34;: &#34;admin&#34;
-                                    }
+                                    },
+                                    &#34;clientComposition&#34;:client_composition
                                 },
                                 &#34;clientDetails&#34;: [
                                     {

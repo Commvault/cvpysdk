@@ -39,7 +39,7 @@ full_vm_restore_in_place()                      --  restores the VM specified by
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L1-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -106,52 +106,63 @@ class nutanixsubclient(VirtualServerSubclient):
                                      power_on=True,
                                      copy_precedence=0,
                                      restore_option=None,
-                                     vcenter_client=None):
+                                     vcenter_client=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
-                    Args:
+            Args:
 
-                        vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the VM name to restore
 
-                        host                  (str)        -- ESX host for Vm to restore
+                host                  (str)        -- ESX host for Vm to restore
 
-                        container             (str)        -- provide the storage account to restore
+                container             (str)        -- provide the storage account to restore
 
-                        proxy_client          (str)        -- provide the proxy client to restore
+                proxy_client          (str)        -- provide the proxy client to restore
 
-                        restore_new_name      (str)        -- provide the new restore name
-                        overwrite
-                                default:False (bool)       --  overwrite the existing VM
+                restore_new_name      (str)        -- provide the new restore name
 
-                        poweron
-                                default:False (bool)       --  power on the  restored VM
+                overwrite               (bool)       --  overwrite the existing VM
+                                                        default: True
 
+                power_on                (bool)       --  power on the  restored VM
+                                                        default: True
 
-                        restore_option        (dict)       --  complete dictionary with
-                                                               all advanced option
+                copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
 
-                        vcenter_client        (str)        --  name of the vcenter client where the VM
-                                                                        should be restored
-                            default: {}
+                restore_option        (dict)       --  complete dictionary with
+                                                       all advanced option
 
-                    Returns:
-                        object - instance of the Job class for this restore job
+                vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                        should be restored
+                                                        default: {}
 
-                    Raises:
-                        SDKException:
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-                            if destination_path is not a string
+            Returns:
+                object - instance of the Job class for this restore job
 
-                            if failed to initialize job
+            Raises:
+                SDKException:
 
-                            if response is empty
+                    if destination_path is not a string
 
-                            if response is not success
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
                 &#34;&#34;&#34;
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -184,21 +195,28 @@ class nutanixsubclient(VirtualServerSubclient):
                                  vm_to_restore=None,
                                  overwrite=True,
                                  power_on=True,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
             Args:
                 vm_to_restore          (list)      --  provide the VM name to restore
 
-                overwrite
-                        default:true   (bool)      --  overwrite the existing VM
+                overwrite               (bool)      --  overwrite the existing VM
+                                                        default: True
 
-                poweron
-                        default:true   (bool)      --  power on the  restored VM
+                power_on                (bool)      --  power on the  restored VM
+                                                        default: True
 
                 copy_precedence        (int)       -- storage policy copy precedence
                                                       from which browse has to be performed
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -213,7 +231,7 @@ class nutanixsubclient(VirtualServerSubclient):
 
                     if response is not success
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
@@ -383,7 +401,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L41-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class nutanixsubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -410,52 +428,63 @@ backupset class, subclient name, subclient id</p></div>
                                      power_on=True,
                                      copy_precedence=0,
                                      restore_option=None,
-                                     vcenter_client=None):
+                                     vcenter_client=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                     at the specified destination location.
 
-                    Args:
+            Args:
 
-                        vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the VM name to restore
 
-                        host                  (str)        -- ESX host for Vm to restore
+                host                  (str)        -- ESX host for Vm to restore
 
-                        container             (str)        -- provide the storage account to restore
+                container             (str)        -- provide the storage account to restore
 
-                        proxy_client          (str)        -- provide the proxy client to restore
+                proxy_client          (str)        -- provide the proxy client to restore
 
-                        restore_new_name      (str)        -- provide the new restore name
-                        overwrite
-                                default:False (bool)       --  overwrite the existing VM
+                restore_new_name      (str)        -- provide the new restore name
 
-                        poweron
-                                default:False (bool)       --  power on the  restored VM
+                overwrite               (bool)       --  overwrite the existing VM
+                                                        default: True
 
+                power_on                (bool)       --  power on the  restored VM
+                                                        default: True
 
-                        restore_option        (dict)       --  complete dictionary with
-                                                               all advanced option
+                copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
 
-                        vcenter_client        (str)        --  name of the vcenter client where the VM
-                                                                        should be restored
-                            default: {}
+                restore_option        (dict)       --  complete dictionary with
+                                                       all advanced option
 
-                    Returns:
-                        object - instance of the Job class for this restore job
+                vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                        should be restored
+                                                        default: {}
 
-                    Raises:
-                        SDKException:
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-                            if destination_path is not a string
+            Returns:
+                object - instance of the Job class for this restore job
 
-                            if failed to initialize job
+            Raises:
+                SDKException:
 
-                            if response is empty
+                    if destination_path is not a string
 
-                            if response is not success
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
                 &#34;&#34;&#34;
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -488,21 +517,28 @@ backupset class, subclient name, subclient id</p></div>
                                  vm_to_restore=None,
                                  overwrite=True,
                                  power_on=True,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
             Args:
                 vm_to_restore          (list)      --  provide the VM name to restore
 
-                overwrite
-                        default:true   (bool)      --  overwrite the existing VM
+                overwrite               (bool)      --  overwrite the existing VM
+                                                        default: True
 
-                poweron
-                        default:true   (bool)      --  power on the  restored VM
+                power_on                (bool)      --  power on the  restored VM
+                                                        default: True
 
                 copy_precedence        (int)       -- storage policy copy precedence
                                                       from which browse has to be performed
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -517,7 +553,7 @@ backupset class, subclient name, subclient id</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
@@ -735,7 +771,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L191-L313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L209-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -863,7 +899,7 @@ if inputs are not of correct type as per definition</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -876,20 +912,28 @@ to the location same as source .</p>
 &ndash;
 provide the VM name to restore</p>
 <p>overwrite
-default:true
 (bool)
 &ndash;
-overwrite the existing VM</p>
-<p>poweron
-default:true
+overwrite the existing VM
+default: True</p>
+<p>power_on
 (bool)
 &ndash;
 power on the
-restored VM</p>
+restored VM
+default: True</p>
 <p>copy_precedence
 (int)
 &ndash; storage policy copy precedence
 from which browse has to be performed</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -903,27 +947,34 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L140-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L151-L207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
                              overwrite=True,
                              power_on=True,
-                             copy_precedence=0):
+                             copy_precedence=0,
+                             **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         to the location same as source .
 
         Args:
             vm_to_restore          (list)      --  provide the VM name to restore
 
-            overwrite
-                    default:true   (bool)      --  overwrite the existing VM
+            overwrite               (bool)      --  overwrite the existing VM
+                                                    default: True
 
-            poweron
-                    default:true   (bool)      --  power on the  restored VM
+            power_on                (bool)      --  power on the  restored VM
+                                                    default: True
 
             copy_precedence        (int)       -- storage policy copy precedence
                                                   from which browse has to be performed
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
         Returns:
@@ -938,7 +989,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
     # check mandatory input parameters are correct
     if not (isinstance(overwrite, bool) and
             isinstance(power_on, bool)):
@@ -958,7 +1009,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.nutanix_ahv.nutanixsubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, host=None, container=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, copy_precedence=0, restore_option=None, vcenter_client=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, host=None, container=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, copy_precedence=0, restore_option=None, vcenter_client=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -981,16 +1032,23 @@ provide the VM name to restore</p>
 &ndash; provide the proxy client to restore</p>
 <p>restore_new_name
 (str)
-&ndash; provide the new restore name
-overwrite
-default:False (bool)
+&ndash; provide the new restore name</p>
+<p>overwrite
+(bool)
 &ndash;
-overwrite the existing VM</p>
-<p>poweron
-default:False (bool)
+overwrite the existing VM
+default: True</p>
+<p>power_on
+(bool)
 &ndash;
 power on the
-restored VM</p>
+restored VM
+default: True</p>
+<p>copy_precedence
+(int)
+&ndash;
+copy precedence value
+default: 0</p>
 <p>restore_option
 (dict)
 &ndash;
@@ -1002,6 +1060,14 @@ all advanced option</p>
 name of the vcenter client where the VM
 should be restored
 default: {}</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -1017,7 +1083,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/nutanix_ahv.py#L56-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -1029,52 +1095,63 @@ if response is not success
                                  power_on=True,
                                  copy_precedence=0,
                                  restore_option=None,
-                                 vcenter_client=None):
+                                 vcenter_client=None,
+                                 **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
                 at the specified destination location.
 
-                Args:
+        Args:
 
-                    vm_to_restore         (list)       --  provide the VM name to restore
+            vm_to_restore         (list)       --  provide the VM name to restore
 
-                    host                  (str)        -- ESX host for Vm to restore
+            host                  (str)        -- ESX host for Vm to restore
 
-                    container             (str)        -- provide the storage account to restore
+            container             (str)        -- provide the storage account to restore
 
-                    proxy_client          (str)        -- provide the proxy client to restore
+            proxy_client          (str)        -- provide the proxy client to restore
 
-                    restore_new_name      (str)        -- provide the new restore name
-                    overwrite
-                            default:False (bool)       --  overwrite the existing VM
+            restore_new_name      (str)        -- provide the new restore name
 
-                    poweron
-                            default:False (bool)       --  power on the  restored VM
+            overwrite               (bool)       --  overwrite the existing VM
+                                                    default: True
 
+            power_on                (bool)       --  power on the  restored VM
+                                                    default: True
 
-                    restore_option        (dict)       --  complete dictionary with
-                                                           all advanced option
+            copy_precedence       (int)         --  copy precedence value
+                                                    default: 0
 
-                    vcenter_client        (str)        --  name of the vcenter client where the VM
-                                                                    should be restored
-                        default: {}
+            restore_option        (dict)       --  complete dictionary with
+                                                   all advanced option
 
-                Returns:
-                    object - instance of the Job class for this restore job
+            vcenter_client        (str)        --  name of the vcenter client where the VM
+                                                    should be restored
+                                                    default: {}
 
-                Raises:
-                    SDKException:
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
-                        if destination_path is not a string
+        Returns:
+            object - instance of the Job class for this restore job
 
-                        if failed to initialize job
+        Raises:
+            SDKException:
 
-                        if response is empty
+                if destination_path is not a string
 
-                        if response is not success
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
             &#34;&#34;&#34;
     # restore options
     if restore_option is None:
         restore_option = {}
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
     # check input parameters are correct
     if bool(restore_option):

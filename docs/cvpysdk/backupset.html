@@ -134,7 +134,7 @@ of the Backupset class
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1-L2329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1-L2332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -329,30 +329,6 @@ class Backupsets(object):
         self._BACKUPSETS = self._services[&#39;GET_ALL_BACKUPSETS&#39;] % (self._client_object.client_id)
         if self._agent_object:
             self._BACKUPSETS += &#39;&amp;applicationId=&#39; + self._agent_object.agent_id
-        from .backupsets.fsbackupset import FSBackupset
-        from .backupsets.nasbackupset import NASBackupset
-        from .backupsets.hanabackupset import HANABackupset
-        from .backupsets.cabackupset import CloudAppsBackupset
-        from .backupsets.postgresbackupset import PostgresBackupset
-        from .backupsets.adbackupset import ADBackupset
-        from .backupsets.db2backupset import DB2Backupset
-        from .backupsets.vsbackupset import VSBackupset
-        from .backupsets.aadbackupset import AzureAdBackupset
-        from .backupsets.sharepointbackupset import SharepointBackupset
-
-        self._backupsets_dict = {
-            &#39;file system&#39;: FSBackupset,
-            &#39;nas&#39;: NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASBackupset,       # SP12 and above honors NDMP as the Agent Name
-            &#39;sap hana&#39;: HANABackupset,
-            &#39;cloud apps&#39;: CloudAppsBackupset,
-            &#39;postgresql&#39;: PostgresBackupset,
-            &#34;active directory&#34; : ADBackupset,
-            &#39;db2&#39;: DB2Backupset,
-            &#39;virtual server&#39;: VSBackupset,
-            &#34;azure ad&#34; : AzureAdBackupset,
-            &#39;sharepoint server&#39;: SharepointBackupset
-        }
 
         if self._agent_object.agent_name in [&#39;cloud apps&#39;, &#39;sql server&#39;, &#39;sap hana&#39;]:
             self._BACKUPSETS += &#39;&amp;excludeHidden=0&#39;
@@ -488,7 +464,7 @@ class Backupsets(object):
 
                 return return_dict
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return {}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -1079,19 +1055,11 @@ request_json[&#39;backupSetInfo&#39;].update({
                     self._instance_object = self._agent_object.instances.get(
                         self._backupsets[backupset_name][&#39;instance&#39;]
                     )
-
-                if self._agent_object.agent_name in self._backupsets_dict.keys():
-                    return self._backupsets_dict[self._agent_object.agent_name](
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name][&#34;id&#34;]
-                    )
-                else:
-                    return Backupset(
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name][&#34;id&#34;]
-                    )
+                return Backupset(
+                    self._instance_object,
+                    backupset_name,
+                    self._backupsets[backupset_name][&#34;id&#34;]
+                )
 
             raise SDKException(
                 &#39;Backupset&#39;, &#39;102&#39;, &#39;No backupset exists with name: &#34;{0}&#34;&#39;.format(backupset_name)
@@ -1176,6 +1144,41 @@ request_json[&#39;backupSetInfo&#39;].update({
 
 class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
+
+    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+        &#34;&#34;&#34;Class composition for CV backupsets&#34;&#34;&#34;
+        from .backupsets.fsbackupset import FSBackupset
+        from .backupsets.nasbackupset import NASBackupset
+        from .backupsets.hanabackupset import HANABackupset
+        from .backupsets.cabackupset import CloudAppsBackupset
+        from .backupsets.postgresbackupset import PostgresBackupset
+        from .backupsets.adbackupset import ADBackupset
+        from .backupsets.db2backupset import DB2Backupset
+        from .backupsets.vsbackupset import VSBackupset
+        from .backupsets.aadbackupset import AzureAdBackupset
+        from .backupsets.sharepointbackupset import SharepointBackupset
+
+        _backupsets_dict = {
+            &#39;file system&#39;: FSBackupset,
+            &#39;nas&#39;: NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASBackupset,       # SP12 and above honors NDMP as the Agent Name
+            &#39;sap hana&#39;: HANABackupset,
+            &#39;cloud apps&#39;: CloudAppsBackupset,
+            &#39;postgresql&#39;: PostgresBackupset,
+            &#34;active directory&#34;: ADBackupset,
+            &#39;db2&#39;: DB2Backupset,
+            &#39;virtual server&#39;: VSBackupset,
+            &#34;azure ad&#34;: AzureAdBackupset,
+            &#39;sharepoint server&#39;: SharepointBackupset
+        }
+
+        if instance_object._agent_object.agent_name in _backupsets_dict.keys():
+            _class = _backupsets_dict.get(instance_object._agent_object.agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, instance_object, backupset_name, backupset_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, instance_object, backupset_name, backupset_id=None):
         &#34;&#34;&#34;Initialise the backupset object.
@@ -2502,10 +2505,45 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1039-L2329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1007-L2332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
+
+    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+        &#34;&#34;&#34;Class composition for CV backupsets&#34;&#34;&#34;
+        from .backupsets.fsbackupset import FSBackupset
+        from .backupsets.nasbackupset import NASBackupset
+        from .backupsets.hanabackupset import HANABackupset
+        from .backupsets.cabackupset import CloudAppsBackupset
+        from .backupsets.postgresbackupset import PostgresBackupset
+        from .backupsets.adbackupset import ADBackupset
+        from .backupsets.db2backupset import DB2Backupset
+        from .backupsets.vsbackupset import VSBackupset
+        from .backupsets.aadbackupset import AzureAdBackupset
+        from .backupsets.sharepointbackupset import SharepointBackupset
+
+        _backupsets_dict = {
+            &#39;file system&#39;: FSBackupset,
+            &#39;nas&#39;: NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASBackupset,       # SP12 and above honors NDMP as the Agent Name
+            &#39;sap hana&#39;: HANABackupset,
+            &#39;cloud apps&#39;: CloudAppsBackupset,
+            &#39;postgresql&#39;: PostgresBackupset,
+            &#34;active directory&#34;: ADBackupset,
+            &#39;db2&#39;: DB2Backupset,
+            &#39;virtual server&#39;: VSBackupset,
+            &#34;azure ad&#34;: AzureAdBackupset,
+            &#39;sharepoint server&#39;: SharepointBackupset
+        }
+
+        if instance_object._agent_object.agent_name in _backupsets_dict.keys():
+            _class = _backupsets_dict.get(instance_object._agent_object.agent_name, cls)
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, instance_object, backupset_name, backupset_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, instance_object, backupset_name, backupset_id=None):
         &#34;&#34;&#34;Initialise the backupset object.
@@ -3816,7 +3854,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1818-L1821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1821-L1824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -3830,7 +3868,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1823-L1826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1826-L1829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -3844,7 +3882,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1828-L1831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1831-L1834" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3858,7 +3896,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1854-L1861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1857-L1864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -3876,7 +3914,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1833-L1836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1836-L1839" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_backupset(self):
@@ -3890,7 +3928,7 @@ def is_default_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1838-L1841" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1841-L1844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_backupset(self):
@@ -3904,7 +3942,7 @@ def is_on_demand_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1813-L1816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1816-L1819" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3918,7 +3956,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1843-L1852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1846-L1855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -3938,7 +3976,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1808-L1811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1811-L1814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3958,7 +3996,7 @@ of all the subclients of the given backupset.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2314-L2329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2317-L2332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backed_up_files_count(self):
     &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
@@ -4003,7 +4041,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2023-L2058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2026-L2061" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, **kwargs):
     &#34;&#34;&#34;Runs backup job for all subclients in this backupset.
@@ -4087,7 +4125,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2060-L2111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2063-L2114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -4160,7 +4198,7 @@ If fail to create subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2195-L2214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2198-L2217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_subclient(self, subclient, storagepolicyname, description):
 
@@ -4204,7 +4242,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2216-L2242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2219-L2245" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data(self, paths):
     &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -4291,7 +4329,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2113-L2193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2116-L2196" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the backupset,
@@ -4416,7 +4454,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2244-L2305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2247-L2308" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
@@ -4490,7 +4528,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2307-L2312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2310-L2315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
@@ -4512,7 +4550,7 @@ if failed to set this as the default backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L2002-L2021" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2005-L2024" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_backupset(self):
     &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
@@ -4560,7 +4598,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1764-L1806" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1767-L1809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the backupset properties
@@ -4631,7 +4669,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L153-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L153-L1004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupsets(object):
     &#34;&#34;&#34;Class for getting all the backupsets associated with a client.&#34;&#34;&#34;
@@ -4674,30 +4712,6 @@ if class object is not an instance of the Agent / Instance class</p></div>
         self._BACKUPSETS = self._services[&#39;GET_ALL_BACKUPSETS&#39;] % (self._client_object.client_id)
         if self._agent_object:
             self._BACKUPSETS += &#39;&amp;applicationId=&#39; + self._agent_object.agent_id
-        from .backupsets.fsbackupset import FSBackupset
-        from .backupsets.nasbackupset import NASBackupset
-        from .backupsets.hanabackupset import HANABackupset
-        from .backupsets.cabackupset import CloudAppsBackupset
-        from .backupsets.postgresbackupset import PostgresBackupset
-        from .backupsets.adbackupset import ADBackupset
-        from .backupsets.db2backupset import DB2Backupset
-        from .backupsets.vsbackupset import VSBackupset
-        from .backupsets.aadbackupset import AzureAdBackupset
-        from .backupsets.sharepointbackupset import SharepointBackupset
-
-        self._backupsets_dict = {
-            &#39;file system&#39;: FSBackupset,
-            &#39;nas&#39;: NASBackupset,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASBackupset,       # SP12 and above honors NDMP as the Agent Name
-            &#39;sap hana&#39;: HANABackupset,
-            &#39;cloud apps&#39;: CloudAppsBackupset,
-            &#39;postgresql&#39;: PostgresBackupset,
-            &#34;active directory&#34; : ADBackupset,
-            &#39;db2&#39;: DB2Backupset,
-            &#39;virtual server&#39;: VSBackupset,
-            &#34;azure ad&#34; : AzureAdBackupset,
-            &#39;sharepoint server&#39;: SharepointBackupset
-        }
 
         if self._agent_object.agent_name in [&#39;cloud apps&#39;, &#39;sql server&#39;, &#39;sap hana&#39;]:
             self._BACKUPSETS += &#39;&amp;excludeHidden=0&#39;
@@ -4833,7 +4847,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 
                 return return_dict
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return {}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -5424,19 +5438,11 @@ request_json[&#39;backupSetInfo&#39;].update({
                     self._instance_object = self._agent_object.instances.get(
                         self._backupsets[backupset_name][&#39;instance&#39;]
                     )
-
-                if self._agent_object.agent_name in self._backupsets_dict.keys():
-                    return self._backupsets_dict[self._agent_object.agent_name](
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name][&#34;id&#34;]
-                    )
-                else:
-                    return Backupset(
-                        self._instance_object,
-                        backupset_name,
-                        self._backupsets[backupset_name][&#34;id&#34;]
-                    )
+                return Backupset(
+                    self._instance_object,
+                    backupset_name,
+                    self._backupsets[backupset_name][&#34;id&#34;]
+                )
 
             raise SDKException(
                 &#39;Backupset&#39;, &#39;102&#39;, &#39;No backupset exists with name: &#34;{0}&#34;&#39;.format(backupset_name)
@@ -5537,7 +5543,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L357-L373" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L333-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_backupsets(self):
@@ -5564,7 +5570,7 @@ def all_backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1033-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1001-L1004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_backup_set(self):
@@ -5617,7 +5623,7 @@ if backupset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L442-L579" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L418-L555" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         &#34;&#34;&#34;Adds a new backup set to the agent.
@@ -5787,7 +5793,7 @@ if archiveset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L581-L699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L557-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
     &#34;&#34;&#34; 
@@ -5964,7 +5970,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L812-L917" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L788-L893" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_backupset(
         self,
@@ -6127,7 +6133,7 @@ Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L701-L810" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L677-L786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_v1_sharepoint_client(
         self,
@@ -6264,7 +6270,7 @@ if no backupset exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L962-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L930-L995" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, backupset_name):
     &#34;&#34;&#34;Deletes the backup set from the agent.
@@ -6353,7 +6359,7 @@ if type of the backupset name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L919-L960" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L895-L928" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, backupset_name):
     &#34;&#34;&#34;Returns a backupset object of the specified backupset name.
@@ -6380,19 +6386,11 @@ if type of the backupset name argument is not string</p>
                 self._instance_object = self._agent_object.instances.get(
                     self._backupsets[backupset_name][&#39;instance&#39;]
                 )
-
-            if self._agent_object.agent_name in self._backupsets_dict.keys():
-                return self._backupsets_dict[self._agent_object.agent_name](
-                    self._instance_object,
-                    backupset_name,
-                    self._backupsets[backupset_name][&#34;id&#34;]
-                )
-            else:
-                return Backupset(
-                    self._instance_object,
-                    backupset_name,
-                    self._backupsets[backupset_name][&#34;id&#34;]
-                )
+            return Backupset(
+                self._instance_object,
+                backupset_name,
+                self._backupsets[backupset_name][&#34;id&#34;]
+            )
 
         raise SDKException(
             &#39;Backupset&#39;, &#39;102&#39;, &#39;No backupset exists with name: &#34;{0}&#34;&#39;.format(backupset_name)
@@ -6416,7 +6414,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L375-L391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L351-L367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_backupset(self, backupset_name):
     &#34;&#34;&#34;Checks if a backupset exists for the agent with the input backupset name.
@@ -6445,7 +6443,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupset.py#L1029-L1031" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L997-L999" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the backupsets associated with the Agent / Instance.&#34;&#34;&#34;

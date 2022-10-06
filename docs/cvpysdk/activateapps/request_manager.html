@@ -1,0 +1,3175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.activateapps.request_manager API documentation</title>
+<meta name="description" content="Main file for performing operations on request manager App under Activate …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.activateapps.request_manager</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing operations on request manager App under Activate.</p>
+<p>'Requests' &amp; 'Request' are 2 classes defined in this file</p>
+<p>Requests:
+Class to represent all requests in the commcell</p>
+<p>Request:
+Class to represent single request in the commcell</p>
+<h2 id="requests">Requests</h2>
+<p><strong>init</strong>()
+&ndash;
+initialise object of the Requests class</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
+<p>_get_all_requests()
+&ndash;
+gets all the requests from the commcell</p>
+<p>refresh()
+&ndash;
+refresh the requests with the commcell</p>
+<p>has_request()
+&ndash;
+checks whether request with given name exists or not</p>
+<p>get()
+&ndash;
+returns Request object for given request name</p>
+<p>delete()
+&ndash;
+deletes the request</p>
+<p>add()
+&ndash;
+Add request</p>
+<h2 id="request">Request</h2>
+<p><strong>init</strong>()
+&ndash;
+initialise object of the Request class</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
+<p>_get_request_properties()
+&ndash;
+returns the properties of the request</p>
+<p>_get_property_value()
+&ndash;
+returns the property value for given property name in request</p>
+<p>_get_valid_projects()
+&ndash;
+returns valid projects for this request</p>
+<p>refresh()
+&ndash;
+refresh the request details</p>
+<p>configure()
+&ndash;
+configures created request with details provided</p>
+<p>review_stats()
+&ndash;
+returns the stats of the review request</p>
+<p>review_document()
+&ndash;
+marks review for the document</p>
+<p>get_document_details()
+&ndash;
+returns the document details for this request</p>
+<p>mark_review_complete()
+&ndash;
+marks request as review complete</p>
+<p>request_approval()
+&ndash;
+Request approval for this review request</p>
+<p>give_approval()
+&ndash;
+Approves the review request</p>
+<h2 id="request-attributes">Request Attributes:</h2>
+<pre><code>**request_id**      --  returns the id of the request
+
+**review_set_id**   --  returns the request's review set id
+
+**request_app**     --  returns the app type for this request
+
+**request_name**    --  returns the name of the request
+
+**owner**           -- returns owner name of the request
+
+**request_props**   --  returns the request properties
+
+**reviewers**       --  returns the reviewers list
+
+**approvers**       --  returns the approvers list
+
+**criteria**        --  returns the review request criteria
+
+**status**          --  returns the request status
+
+**requestor**       --  returns the requestor mail id who requested this review
+
+**request_type**    --  returns the type of request
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L1-L924" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing operations on request manager App under Activate.
+
+&#39;Requests&#39; &amp; &#39;Request&#39; are 2 classes defined in this file
+
+Requests:   Class to represent all requests in the commcell
+
+Request:    Class to represent single request in the commcell
+
+
+Requests:
+
+    __init__()                          --  initialise object of the Requests class
+
+     _response_not_success()            --  parses through the exception response, and raises SDKException
+
+     _get_all_requests()                --  gets all the requests from the commcell
+
+     refresh()                          --  refresh the requests with the commcell
+
+     has_request()                      --  checks whether request with given name exists or not
+
+     get()                              --  returns Request object for given request name
+
+     delete()                           --  deletes the request
+
+     add()                              --  Add request
+
+Request:
+
+    __init__()                          --  initialise object of the Request class
+
+     _response_not_success()            --  parses through the exception response, and raises SDKException
+
+     _get_request_properties()          --  returns the properties of the request
+
+     _get_property_value()              --  returns the property value for given property name in request
+
+     _get_valid_projects()              --  returns valid projects for this request
+
+     refresh()                          --  refresh the request details
+
+     configure()                        --  configures created request with details provided
+
+     review_stats()                     --  returns the stats of the review request
+
+     review_document()                  --  marks review for the document
+
+     get_document_details()             --  returns the document details for this request
+
+     mark_review_complete()             --  marks request as review complete
+
+     request_approval()                 --  Request approval for this review request
+
+     give_approval()                    --  Approves the review request
+
+Request Attributes:
+--------------------
+
+    **request_id**      --  returns the id of the request
+
+    **review_set_id**   --  returns the request&#39;s review set id
+
+    **request_app**     --  returns the app type for this request
+
+    **request_name**    --  returns the name of the request
+
+    **owner**           -- returns owner name of the request
+
+    **request_props**   --  returns the request properties
+
+    **reviewers**       --  returns the reviewers list
+
+    **approvers**       --  returns the approvers list
+
+    **criteria**        --  returns the review request criteria
+
+    **status**          --  returns the request status
+
+    **requestor**       --  returns the requestor mail id who requested this review
+
+    **request_type**    --  returns the type of request
+
+&#34;&#34;&#34;
+import copy
+
+from ..exception import SDKException
+from ..activateapps.constants import RequestConstants, TargetApps
+from ..activateapps.ediscovery_utils import EdiscoveryClientOperations
+
+
+class Requests:
+    &#34;&#34;&#34;Class for representing all requests in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the Requests class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the Requests class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._requests = None
+        self._API_GET_REQUESTS = self._services[&#39;EDISCOVERY_REQUESTS&#39;]
+        self._API_REQ_DELETE = self._services[&#39;EDISCOVERY_REQUEST_DETAILS&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_all_requests(self):
+        &#34;&#34;&#34;gets all the requests from the commcell
+
+            Args:
+                None
+
+            Returns:
+
+                dict    --  containing request details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch requests details
+
+         &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_REQUESTS)
+        output = {}
+        if flag:
+            if response.json() and &#39;requests&#39; in response.json():
+                for node in response.json()[&#39;requests&#39;]:
+                    if &#39;name&#39; in node:
+                        output[node[&#39;name&#39;].lower()] = node
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;103&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the requests with the commcell.&#34;&#34;&#34;
+        self._requests = self._get_all_requests()
+
+    def has_request(self, req_name):
+        &#34;&#34;&#34;Checks if a request exists in the commcell with the input name or not
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                bool - boolean output to specify whether the request exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the request name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(req_name, str):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        return self._requests and req_name.lower() in self._requests
+
+    def get(self, req_name):
+        &#34;&#34;&#34;Returns the Instance of Request class for given request name
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                obj --  Instance of Request class
+
+            Raises:
+                SDKException:
+                    if type of the request name argument is not string
+
+                    if failed to find request
+
+        &#34;&#34;&#34;
+        if not self.has_request(req_name):
+            raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+        return Request(commcell_object=self._commcell_object, req_name=req_name.lower(),
+                       req_id=self._requests[req_name.lower()][&#39;id&#39;])
+
+    def delete(self, req_name):
+        &#34;&#34;&#34;deletes the request for given request name
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+
+                    if type of the request name argument is not string
+
+                    if failed to find request
+
+                    if failed to delete request
+
+        &#34;&#34;&#34;
+        if not self.has_request(req_name):
+            raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, self._API_REQ_DELETE % self._requests[req_name.lower()].get(&#39;id&#39;))
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Delete request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+                self.refresh()
+                return
+            raise SDKException(&#39;RequestManager&#39;, &#39;106&#39;)
+        self._response_not_success(response)
+
+    def add(self, req_name, req_type, requestor, criteria, **kwargs):
+        &#34;&#34;&#34;adds request to request manager app
+
+            Args:
+
+                req_name            (str)       --  Name of request
+
+                req_type            (enum)      --  Request type enum(Refer to RequestManagerConstants.RequestType)
+
+                requestor           (str)       --  Mail id of requestor
+
+                criteria            (dict)      --  containing criteria for request
+
+                                                        Example : {&#39;entity_email&#39;: [xxx@yy.com]}
+
+                Kwargs Arguement:
+
+                    redaction           (bool)      --  Enable redaction for export type request
+                                                                Default:False
+
+                    chaining            (bool)      --  Enable document chaining for export type request
+                                                                Default:False
+
+                    delete_backup       (bool)      --  Specifies whether to delete data from backup or not
+                                                                            for delete type request
+                                                                Default:False
+
+                Returns:
+
+                    obj --  Instance of Request class
+
+                Raises:
+
+                    SDKException:
+
+                            if input is not valid
+
+                            if failed to create request
+
+        &#34;&#34;&#34;
+        if not isinstance(
+                criteria,
+                dict) or not isinstance(
+                req_name,
+                str) or not isinstance(
+                req_type,
+                RequestConstants.RequestType) or not isinstance(
+                    requestor,
+                str):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        entities = []
+        for key, value in criteria.items():
+            entities.append({
+                &#39;name&#39;: key,
+                &#39;values&#39;: value
+            })
+        req_json = {&#34;name&#34;: req_name,
+                    &#34;type&#34;: req_type.name,
+                    &#34;deleteFromBackup&#34;: kwargs.get(&#39;delete_backup&#39;, False),
+                    &#34;enableRedaction&#34;: kwargs.get(&#39;redaction&#39;, False),
+                    &#34;enableDocumentChaining&#34;: kwargs.get(&#39;chaining&#39;, False),
+                    &#34;requestor&#34;: requestor,
+                    &#34;entities&#34;: entities}
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._API_GET_REQUESTS, req_json)
+        if flag:
+            if response.json():
+                if &#39;name&#39; in response.json():
+                    self.refresh()
+                    return Request(commcell_object=self._commcell_object, req_name=response.json()[&#39;name&#39;],
+                                   req_id=response.json().get(&#39;id&#39;))
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Add request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+            raise SDKException(&#39;RequestManager&#39;, &#39;107&#39;)
+        self._response_not_success(response)
+
+
+class Request:
+    &#34;&#34;&#34;Class to represent single request in the commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, req_name, req_id=None):
+        &#34;&#34;&#34;Initializes an instance of the Request class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                req_name            (str)       --  Name of the request
+
+                req_id             (int)        --  request id
+
+            Returns:
+                object  -   instance of the Request class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._req_name = req_name
+        self._req_id = None
+        self._req_props = None
+        self._req_owner_id = None
+        self._req_approvers = None
+        self._req_reviewers = None
+        self._req_criteria = None
+        self._req_status = None
+        self._requestor = None
+        self._req_type = None
+        self._req_app = None
+        self._review_set_id = None
+        self._req_client_type = 9515
+        self._API_REQ_DETAILS = self._services[&#39;EDISCOVERY_REQUEST_DETAILS&#39;]
+        self._API_VALID_PROJECTS = self._services[&#39;EDISCOVERY_REQUEST_PROJECTS&#39;]
+        self._API_REQ_CONFIGURE = self._services[&#39;EDISCOVERY_REQUEST_CONFIGURE&#39;]
+        self._API_REQ_FEDERATED = self._services[&#39;EDISCOVERY_REQUEST_FEDERATED&#39;]
+        self._API_REQ_DYN_FEDERATED = self._services[&#39;EDISCOVERY_DYNAMIC_FEDERATED&#39;]
+        if req_id:
+            self._req_id = req_id
+        else:
+            self._req_id = self._commcell_object.activate.request_manager().get(req_name).request_id
+        self.refresh()
+        self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_property_value(self, req_properties, prop_name):
+        &#34;&#34;&#34;parses request properties and returns value for given property name
+
+            Args:
+
+                prop_name       (str)       --  name of property
+
+                req_properties  (list(dict))--  list of request properties
+
+            Returns:
+
+                str     -- property value
+        &#34;&#34;&#34;
+        for prop in req_properties:
+            if &#39;name&#39; in prop and prop[&#39;name&#39;].lower() == prop_name.lower():
+                return prop[&#39;value&#39;] if &#34;value&#34; in prop else prop.get(&#39;values&#39;)
+        return None
+
+    def _get_request_properties(self):
+        &#34;&#34;&#34;returns the properties of the request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict        --  Containing properties of request
+
+            Raises:
+
+                SDKException:
+
+                        if failed to find request details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_REQ_DETAILS % self._req_id)
+        if flag:
+            if response.json():
+                self._req_owner_id = response.json().get(&#39;owner&#39;).get(&#39;id&#39;, 0)
+                self._req_approvers = response.json().get(&#39;approvers&#39;)
+                self._req_reviewers = response.json().get(&#39;reviewers&#39;)
+                self._req_name = response.json().get(&#39;name&#39;)
+                self._req_criteria = self._get_property_value(req_properties=response.json().get(
+                    &#39;properties&#39;, []), prop_name=RequestConstants.PROPERTY_REVIEW_CRIERIA)
+                if not self._req_criteria:
+                    # SDG request based on entities
+                    self._req_criteria = self._get_property_value(
+                        req_properties=response.json().get(
+                            &#39;properties&#39;, []), prop_name=RequestConstants.PROPERTY_ENTITIES)
+                self._review_set_id = self._get_property_value(
+                    req_properties=response.json().get(
+                        &#39;properties&#39;, []),
+                    prop_name=RequestConstants.PROPERTY_REVIEW_SET_ID)
+                if not self._review_set_id:
+                    self._review_set_id = self._req_id
+                self._req_status = response.json().get(&#39;status&#39;)
+                self._requestor = response.json().get(&#39;requestor&#39;)
+                self._req_type = response.json().get(&#39;type&#39;)
+                self._req_app = response.json().get(&#39;application&#39;)
+                return response.json()
+            raise SDKException(&#39;RequestManager&#39;, &#39;104&#39;)
+        self._response_not_success(response)
+
+    def _get_valid_projects(self):
+        &#34;&#34;&#34;returns list of valid projects for this request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  containing valid project details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to get project details
+
+        &#34;&#34;&#34;
+        output = {}
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_VALID_PROJECTS % self._req_id)
+        if flag:
+            if response.json() and &#39;projects&#39; in response.json():
+                projects = response.json()[&#39;projects&#39;]
+                for project in projects:
+                    if &#39;status&#39; in project and project[&#39;status&#39;] == &#39;VALID&#39;:
+                        output[project[&#39;name&#39;].lower()] = project
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#34;Failed to get valid project details&#34;)
+        self._response_not_success(response)
+
+    def configure(self, projects, reviewers, approvers):
+        &#34;&#34;&#34;configure created request with provided details
+
+            Args:
+
+                projects        (list)      --  list of project names to associate
+
+                reviewers       (list)      --  list of reviewers user names
+
+                approvers       (list)      --  list of approvers user names
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to configure request
+
+                    if input is not valid
+
+                    if reviewers/approvers doesn&#39;t exists
+        &#34;&#34;&#34;
+        if self.status != RequestConstants.RequestStatus.TaskCreated.name:
+            raise SDKException(
+                &#39;RequestManager&#39;,
+                &#39;102&#39;,
+                f&#34;Request is not in created state. Current state - {self.status}&#34;)
+        if self.request_app != TargetApps.SDG.name:
+            raise SDKException(
+                &#39;RequestManager&#39;,
+                &#39;102&#39;,
+                f&#34;Configuring Request is supported only for SDG App request&#34;)
+        if not isinstance(projects, list) or not isinstance(reviewers, list) or not isinstance(approvers, list):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        valid_projects = self._get_valid_projects()
+        project_ids = []
+        sdg_obj = self._commcell_object.activate.sensitive_data_governance()
+        for project in projects:
+            if project.lower() not in valid_projects:
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Not a valid project {project} to associate to request&#34;)
+            project_ids.append(int(sdg_obj.get(project).project_id))
+
+        # reviewer
+        reviewers_list = []
+        for user in reviewers:
+            if not self._commcell_object.users.has_user((user)):
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find reviewer user : {user}&#34;)
+            user_obj = self._commcell_object.users.get(user)
+            reviewers_list.append({&#34;id&#34;: user_obj.user_id,
+                                   &#34;name&#34;: user_obj.user_name
+                                   })
+
+        # approvers
+        approvers_list = []
+        for user in approvers:
+            if not self._commcell_object.users.has_user((user)):
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find approver user : {user}&#34;)
+            user_obj = self._commcell_object.users.get(user)
+            approvers_list.append({&#34;id&#34;: user_obj.user_id,
+                                   &#34;name&#34;: user_obj.user_name
+                                   })
+        req_json = {&#34;projectIds&#34;: project_ids,
+                    &#34;reviewers&#34;: reviewers_list,
+                    &#34;approvers&#34;: approvers_list}
+
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._API_REQ_CONFIGURE % self._req_id, req_json)
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Configure request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+                self.refresh()
+                return
+            raise SDKException(&#39;RequestManager&#39;, &#39;108&#39;)
+        self._response_not_success(response)
+
+    def get_document_details(self, criteria=None, attr_list=None, query=&#34;*:*&#34;, start=0, rows=10):
+        &#34;&#34;&#34;Returns the document details for this request
+
+            Args:
+
+                criteria        (str)      --  containing criteria for query
+
+                                                    Example :
+
+                                                        Size:[10 TO 1024]
+                                                        FileName:09_23*
+
+                attr_list       (set)      --  Column names to be returned in results.
+                                                     Acts as &#39;fl&#39; in query
+
+                start           (int)      --  Specifies start index for fetching documents
+
+                rows            (int)      --  No of document details to fetch
+
+                query           (str)      --   query to be performed (acts as q param in query)
+                                                    default:None (Means *:*)
+
+            Returns:
+
+                dict        --  Containing document details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to perform search
+        &#34;&#34;&#34;
+        if not attr_list:
+            attr_list = RequestConstants.SEARCH_QUERY_SELECTION_SET
+        else:
+            attr_list = attr_list.union(RequestConstants.SEARCH_QUERY_SELECTION_SET)
+        api = self._API_REQ_FEDERATED % (self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+            self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+        if self.request_app == TargetApps.FSO.name:
+            api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+        payload = self._ediscovery_client_ops.form_search_params(
+            query=query, criteria=criteria, attr_list=attr_list, params={
+                &#39;start&#39;: f&#34;{start}&#34;, &#39;rows&#39;: f&#34;{rows}&#34;})
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    return response.json()[&#39;response&#39;][&#39;docs&#39;]
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
+        self._response_not_success(response)
+
+    def review_stats(self):
+        &#34;&#34;&#34;returns review statistics for this request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  Containing review stats
+
+                            Example : {
+                                            &#39;TotalDocuments&#39;: 5,
+                                            &#39;ReviewedDocuments&#39;: 5,
+                                            &#39;Non-ReviewedDocuments&#39;: 0,
+                                            &#39;AcceptedDocuments&#39;: 5,
+                                            &#39;DeclinedDocuments&#39;: 0,
+                                            &#39;RedactedDocuments&#39;: 0,
+                                            &#39;Non-RedactedDocuments&#39;: 0
+                                        }
+
+            Raises:
+
+                SDKException:
+
+                        if failed to get stats info
+        &#34;&#34;&#34;
+        api = self._API_REQ_FEDERATED % (self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+            self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+        review_set_id = self._review_set_id
+        if self.request_app == TargetApps.FSO.name:
+            api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+            review_set_id = f&#34;FSO_{self._req_id}&#34;  # for fso, we have prefix in consent as FSO_
+        payload = copy.deepcopy(RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY)
+        for param in payload[&#39;searchParams&#39;]:
+            param[&#39;value&#39;] = param[&#39;value&#39;].replace(&#34;&lt;rsidparam&gt;&#34;, review_set_id)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+        output = {}
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    output[RequestConstants.FIELD_DOC_COUNT] = response.json()[&#39;response&#39;][&#39;numFound&#39;]
+                if &#39;facets&#39; in response.json():
+                    facets = response.json()[&#39;facets&#39;]
+                    output[RequestConstants.FIELD_REVIEWED] = facets[RequestConstants.FACET_REVIEWED %
+                                                                     review_set_id][RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_NOT_REVIEWED] = facets[RequestConstants.FACET_NOT_REVIEWED %
+                                                                         review_set_id][RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_ACCEPTED] = facets[RequestConstants.FACET_ACCEPTED % review_set_id][
+                        RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_DECLINED] = facets[RequestConstants.FACET_DECLINED % review_set_id][
+                        RequestConstants.FACET_COUNT]
+                    if self.request_type == RequestConstants.RequestType.EXPORT.value:
+                        output[RequestConstants.FIELD_REDACTED] = facets[RequestConstants.FACET_REDACTED %
+                                                                         review_set_id][RequestConstants.FACET_COUNT]
+                        output[RequestConstants.FIELD_NOT_REDACTED] = facets[RequestConstants.FACET_NOT_REDACTED %
+                                                                             review_set_id][RequestConstants.FACET_COUNT]
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get review stats for this request&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the request details from the commcell.&#34;&#34;&#34;
+        self._req_props = self._get_request_properties()
+
+    def mark_review_complete(self):
+        &#34;&#34;&#34;Marks review request as review complete
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+
+                        if failed to mark review complete
+        &#34;&#34;&#34;
+        stats = self.review_stats()
+        if int(stats[RequestConstants.FIELD_DOC_COUNT]) != int(stats[RequestConstants.FIELD_REVIEWED]):
+            raise SDKException(&#39;RequestManager&#39;, &#39;109&#39;)
+        task_prop = [
+            {
+                &#34;attrVal&#34;: &#34;ReviewCompleted&#34;,
+                &#34;attrName&#34;: &#34;progress&#34;
+            }
+        ]
+        self._ediscovery_client_ops.configure_task(task_props=task_prop)
+        self.refresh()
+
+    def request_approval(self):
+        &#34;&#34;&#34;Invokes workflow job requesting approval for this request
+
+            Args:
+                None
+
+            Returns:
+
+                str --  Workflow job id
+
+            Raises:
+
+                SDKException:
+
+                    if failed to invoke workflow
+        &#34;&#34;&#34;
+        if self.status != RequestConstants.RequestStatus.ReviewCompleted.name:
+            raise SDKException(&#39;RequestManager&#39;, &#39;110&#39;)
+        job_id = self._ediscovery_client_ops.task_workflow_operation()
+        self.refresh()
+        return job_id
+
+    def review_document(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
+        &#34;&#34;&#34;does document review update for consent/comment on this request
+            Args:
+
+                doc_id          (str)       --  Document id (Mandatory in case of SDG)
+
+                comment         (str)       --  User comment
+
+                ds_id           (int)       --  Data SourceId (Mandatory in case of SDG)
+
+                consent         (bool)      --  Accept or Decline (Default:True)
+
+                redact          (bool)      --  Redact ON or OFF (only in case of export)
+                                                        (Default:False)
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to update document
+
+                    if input is not valid
+        &#34;&#34;&#34;
+        return self._ediscovery_client_ops.do_document_task(doc_id=doc_id, comment=comment,
+                                                            consent=consent, redact=redact, ds_id=ds_id)
+
+    def give_approval(self, workflow_job_id, action=&#34;Approve&#34;):
+        &#34;&#34;&#34;Gives approval for the review request
+
+                Args:
+
+                    action              (str)       --  Approval action status
+                                                            Default : Approve
+                                                            Supported Values : [Approve,Deny]
+
+
+                    workflow_job_id     (int)       --  Workflow job id
+
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if failed to give approval
+
+                                if failed to find workflow job
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_job_id, int):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        interaction_props = self._commcell_object.workflows.get_interaction_properties(
+            interaction_id=None, workflow_job_id=workflow_job_id)
+        self._commcell_object.workflows.submit_interaction(interaction=interaction_props, input_xml=&#34;&#34;, action=action)
+
+    @property
+    def request_id(self):
+        &#34;&#34;&#34;returns the id of the request
+
+            Returns:
+
+                int     --  Request id
+
+        &#34;&#34;&#34;
+        return int(self._req_id)
+
+    @property
+    def review_set_id(self):
+        &#34;&#34;&#34;returns the id of the request&#39;s reviewset
+
+            Returns:
+
+                int     --  Request review set id
+
+        &#34;&#34;&#34;
+        return int(self._review_set_id)
+
+    @property
+    def request_name(self):
+        &#34;&#34;&#34;returns the name of the request
+
+            Returns:
+
+                str     --  Request name
+
+        &#34;&#34;&#34;
+        return self._req_name
+
+    @property
+    def owner(self):
+        &#34;&#34;&#34;returns the name of the request owner
+
+            Returns:
+
+                str     --  Request owner&#39;s name
+
+        &#34;&#34;&#34;
+        users_obj = self._commcell_object.users
+        for key, value in users_obj.all_users.items():
+            if value == self._req_owner_id:
+                return key
+
+    @property
+    def request_props(self):
+        &#34;&#34;&#34;returns the properties of the request
+
+            Returns:
+
+                list(dict)     --  Request properties
+
+        &#34;&#34;&#34;
+        return self._req_props[&#39;properties&#39;]
+
+    @property
+    def reviewers(self):
+        &#34;&#34;&#34;returns the reviewers for this request
+
+            Returns:
+
+                list(dict)      --  Reviewer user details
+        &#34;&#34;&#34;
+        return self._req_reviewers
+
+    @property
+    def approvers(self):
+        &#34;&#34;&#34;returns the approvers for this request
+
+            Returns:
+
+                list(dict)      --  Approver user details
+        &#34;&#34;&#34;
+        return self._req_approvers
+
+    @property
+    def criteria(self):
+        &#34;&#34;&#34;returns the criteria value for this request
+
+            Returns:
+
+                str --  Request criteria
+
+        &#34;&#34;&#34;
+        return self._req_criteria
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;returns the status for this request
+
+            Returns:
+
+                str --  Request status
+
+        &#34;&#34;&#34;
+        return self._req_status
+
+    @property
+    def request_app(self):
+        &#34;&#34;&#34;returns the app used for this request
+
+            Returns:
+
+                str --  Activate app name
+
+        &#34;&#34;&#34;
+        return self._req_app
+
+    @property
+    def request_type(self):
+        &#34;&#34;&#34;returns the type for this request
+
+            Returns:
+
+                str --  Request type
+
+        &#34;&#34;&#34;
+        return self._req_type
+
+    @property
+    def requestor(self):
+        &#34;&#34;&#34;returns the requestor mail id for this request
+
+            Returns:
+
+                str --  Requestor mail id
+
+        &#34;&#34;&#34;
+        return self._requestor</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.activateapps.request_manager.Request"><code class="flex name class">
+<span>class <span class="ident">Request</span></span>
+<span>(</span><span>commcell_object, req_name, req_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to represent single request in the commcell</p>
+<p>Initializes an instance of the Request class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<p>req_name
+(str)
+&ndash;
+Name of the request</p>
+<p>req_id
+(int)
+&ndash;
+request id</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Request class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L328-L924" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Request:
+    &#34;&#34;&#34;Class to represent single request in the commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, req_name, req_id=None):
+        &#34;&#34;&#34;Initializes an instance of the Request class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                req_name            (str)       --  Name of the request
+
+                req_id             (int)        --  request id
+
+            Returns:
+                object  -   instance of the Request class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._req_name = req_name
+        self._req_id = None
+        self._req_props = None
+        self._req_owner_id = None
+        self._req_approvers = None
+        self._req_reviewers = None
+        self._req_criteria = None
+        self._req_status = None
+        self._requestor = None
+        self._req_type = None
+        self._req_app = None
+        self._review_set_id = None
+        self._req_client_type = 9515
+        self._API_REQ_DETAILS = self._services[&#39;EDISCOVERY_REQUEST_DETAILS&#39;]
+        self._API_VALID_PROJECTS = self._services[&#39;EDISCOVERY_REQUEST_PROJECTS&#39;]
+        self._API_REQ_CONFIGURE = self._services[&#39;EDISCOVERY_REQUEST_CONFIGURE&#39;]
+        self._API_REQ_FEDERATED = self._services[&#39;EDISCOVERY_REQUEST_FEDERATED&#39;]
+        self._API_REQ_DYN_FEDERATED = self._services[&#39;EDISCOVERY_DYNAMIC_FEDERATED&#39;]
+        if req_id:
+            self._req_id = req_id
+        else:
+            self._req_id = self._commcell_object.activate.request_manager().get(req_name).request_id
+        self.refresh()
+        self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_property_value(self, req_properties, prop_name):
+        &#34;&#34;&#34;parses request properties and returns value for given property name
+
+            Args:
+
+                prop_name       (str)       --  name of property
+
+                req_properties  (list(dict))--  list of request properties
+
+            Returns:
+
+                str     -- property value
+        &#34;&#34;&#34;
+        for prop in req_properties:
+            if &#39;name&#39; in prop and prop[&#39;name&#39;].lower() == prop_name.lower():
+                return prop[&#39;value&#39;] if &#34;value&#34; in prop else prop.get(&#39;values&#39;)
+        return None
+
+    def _get_request_properties(self):
+        &#34;&#34;&#34;returns the properties of the request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict        --  Containing properties of request
+
+            Raises:
+
+                SDKException:
+
+                        if failed to find request details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_REQ_DETAILS % self._req_id)
+        if flag:
+            if response.json():
+                self._req_owner_id = response.json().get(&#39;owner&#39;).get(&#39;id&#39;, 0)
+                self._req_approvers = response.json().get(&#39;approvers&#39;)
+                self._req_reviewers = response.json().get(&#39;reviewers&#39;)
+                self._req_name = response.json().get(&#39;name&#39;)
+                self._req_criteria = self._get_property_value(req_properties=response.json().get(
+                    &#39;properties&#39;, []), prop_name=RequestConstants.PROPERTY_REVIEW_CRIERIA)
+                if not self._req_criteria:
+                    # SDG request based on entities
+                    self._req_criteria = self._get_property_value(
+                        req_properties=response.json().get(
+                            &#39;properties&#39;, []), prop_name=RequestConstants.PROPERTY_ENTITIES)
+                self._review_set_id = self._get_property_value(
+                    req_properties=response.json().get(
+                        &#39;properties&#39;, []),
+                    prop_name=RequestConstants.PROPERTY_REVIEW_SET_ID)
+                if not self._review_set_id:
+                    self._review_set_id = self._req_id
+                self._req_status = response.json().get(&#39;status&#39;)
+                self._requestor = response.json().get(&#39;requestor&#39;)
+                self._req_type = response.json().get(&#39;type&#39;)
+                self._req_app = response.json().get(&#39;application&#39;)
+                return response.json()
+            raise SDKException(&#39;RequestManager&#39;, &#39;104&#39;)
+        self._response_not_success(response)
+
+    def _get_valid_projects(self):
+        &#34;&#34;&#34;returns list of valid projects for this request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  containing valid project details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to get project details
+
+        &#34;&#34;&#34;
+        output = {}
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_VALID_PROJECTS % self._req_id)
+        if flag:
+            if response.json() and &#39;projects&#39; in response.json():
+                projects = response.json()[&#39;projects&#39;]
+                for project in projects:
+                    if &#39;status&#39; in project and project[&#39;status&#39;] == &#39;VALID&#39;:
+                        output[project[&#39;name&#39;].lower()] = project
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#34;Failed to get valid project details&#34;)
+        self._response_not_success(response)
+
+    def configure(self, projects, reviewers, approvers):
+        &#34;&#34;&#34;configure created request with provided details
+
+            Args:
+
+                projects        (list)      --  list of project names to associate
+
+                reviewers       (list)      --  list of reviewers user names
+
+                approvers       (list)      --  list of approvers user names
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to configure request
+
+                    if input is not valid
+
+                    if reviewers/approvers doesn&#39;t exists
+        &#34;&#34;&#34;
+        if self.status != RequestConstants.RequestStatus.TaskCreated.name:
+            raise SDKException(
+                &#39;RequestManager&#39;,
+                &#39;102&#39;,
+                f&#34;Request is not in created state. Current state - {self.status}&#34;)
+        if self.request_app != TargetApps.SDG.name:
+            raise SDKException(
+                &#39;RequestManager&#39;,
+                &#39;102&#39;,
+                f&#34;Configuring Request is supported only for SDG App request&#34;)
+        if not isinstance(projects, list) or not isinstance(reviewers, list) or not isinstance(approvers, list):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        valid_projects = self._get_valid_projects()
+        project_ids = []
+        sdg_obj = self._commcell_object.activate.sensitive_data_governance()
+        for project in projects:
+            if project.lower() not in valid_projects:
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Not a valid project {project} to associate to request&#34;)
+            project_ids.append(int(sdg_obj.get(project).project_id))
+
+        # reviewer
+        reviewers_list = []
+        for user in reviewers:
+            if not self._commcell_object.users.has_user((user)):
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find reviewer user : {user}&#34;)
+            user_obj = self._commcell_object.users.get(user)
+            reviewers_list.append({&#34;id&#34;: user_obj.user_id,
+                                   &#34;name&#34;: user_obj.user_name
+                                   })
+
+        # approvers
+        approvers_list = []
+        for user in approvers:
+            if not self._commcell_object.users.has_user((user)):
+                raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find approver user : {user}&#34;)
+            user_obj = self._commcell_object.users.get(user)
+            approvers_list.append({&#34;id&#34;: user_obj.user_id,
+                                   &#34;name&#34;: user_obj.user_name
+                                   })
+        req_json = {&#34;projectIds&#34;: project_ids,
+                    &#34;reviewers&#34;: reviewers_list,
+                    &#34;approvers&#34;: approvers_list}
+
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._API_REQ_CONFIGURE % self._req_id, req_json)
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Configure request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+                self.refresh()
+                return
+            raise SDKException(&#39;RequestManager&#39;, &#39;108&#39;)
+        self._response_not_success(response)
+
+    def get_document_details(self, criteria=None, attr_list=None, query=&#34;*:*&#34;, start=0, rows=10):
+        &#34;&#34;&#34;Returns the document details for this request
+
+            Args:
+
+                criteria        (str)      --  containing criteria for query
+
+                                                    Example :
+
+                                                        Size:[10 TO 1024]
+                                                        FileName:09_23*
+
+                attr_list       (set)      --  Column names to be returned in results.
+                                                     Acts as &#39;fl&#39; in query
+
+                start           (int)      --  Specifies start index for fetching documents
+
+                rows            (int)      --  No of document details to fetch
+
+                query           (str)      --   query to be performed (acts as q param in query)
+                                                    default:None (Means *:*)
+
+            Returns:
+
+                dict        --  Containing document details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to perform search
+        &#34;&#34;&#34;
+        if not attr_list:
+            attr_list = RequestConstants.SEARCH_QUERY_SELECTION_SET
+        else:
+            attr_list = attr_list.union(RequestConstants.SEARCH_QUERY_SELECTION_SET)
+        api = self._API_REQ_FEDERATED % (self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+            self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+        if self.request_app == TargetApps.FSO.name:
+            api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+        payload = self._ediscovery_client_ops.form_search_params(
+            query=query, criteria=criteria, attr_list=attr_list, params={
+                &#39;start&#39;: f&#34;{start}&#34;, &#39;rows&#39;: f&#34;{rows}&#34;})
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    return response.json()[&#39;response&#39;][&#39;docs&#39;]
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
+        self._response_not_success(response)
+
+    def review_stats(self):
+        &#34;&#34;&#34;returns review statistics for this request
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  Containing review stats
+
+                            Example : {
+                                            &#39;TotalDocuments&#39;: 5,
+                                            &#39;ReviewedDocuments&#39;: 5,
+                                            &#39;Non-ReviewedDocuments&#39;: 0,
+                                            &#39;AcceptedDocuments&#39;: 5,
+                                            &#39;DeclinedDocuments&#39;: 0,
+                                            &#39;RedactedDocuments&#39;: 0,
+                                            &#39;Non-RedactedDocuments&#39;: 0
+                                        }
+
+            Raises:
+
+                SDKException:
+
+                        if failed to get stats info
+        &#34;&#34;&#34;
+        api = self._API_REQ_FEDERATED % (self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+            self._get_property_value(
+            req_properties=self.request_props,
+            prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+        review_set_id = self._review_set_id
+        if self.request_app == TargetApps.FSO.name:
+            api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+            review_set_id = f&#34;FSO_{self._req_id}&#34;  # for fso, we have prefix in consent as FSO_
+        payload = copy.deepcopy(RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY)
+        for param in payload[&#39;searchParams&#39;]:
+            param[&#39;value&#39;] = param[&#39;value&#39;].replace(&#34;&lt;rsidparam&gt;&#34;, review_set_id)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+        output = {}
+        if flag:
+            if response.json():
+                if &#39;response&#39; in response.json():
+                    output[RequestConstants.FIELD_DOC_COUNT] = response.json()[&#39;response&#39;][&#39;numFound&#39;]
+                if &#39;facets&#39; in response.json():
+                    facets = response.json()[&#39;facets&#39;]
+                    output[RequestConstants.FIELD_REVIEWED] = facets[RequestConstants.FACET_REVIEWED %
+                                                                     review_set_id][RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_NOT_REVIEWED] = facets[RequestConstants.FACET_NOT_REVIEWED %
+                                                                         review_set_id][RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_ACCEPTED] = facets[RequestConstants.FACET_ACCEPTED % review_set_id][
+                        RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_DECLINED] = facets[RequestConstants.FACET_DECLINED % review_set_id][
+                        RequestConstants.FACET_COUNT]
+                    if self.request_type == RequestConstants.RequestType.EXPORT.value:
+                        output[RequestConstants.FIELD_REDACTED] = facets[RequestConstants.FACET_REDACTED %
+                                                                         review_set_id][RequestConstants.FACET_COUNT]
+                        output[RequestConstants.FIELD_NOT_REDACTED] = facets[RequestConstants.FACET_NOT_REDACTED %
+                                                                             review_set_id][RequestConstants.FACET_COUNT]
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get review stats for this request&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the request details from the commcell.&#34;&#34;&#34;
+        self._req_props = self._get_request_properties()
+
+    def mark_review_complete(self):
+        &#34;&#34;&#34;Marks review request as review complete
+
+            Args:
+                None
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+
+                        if failed to mark review complete
+        &#34;&#34;&#34;
+        stats = self.review_stats()
+        if int(stats[RequestConstants.FIELD_DOC_COUNT]) != int(stats[RequestConstants.FIELD_REVIEWED]):
+            raise SDKException(&#39;RequestManager&#39;, &#39;109&#39;)
+        task_prop = [
+            {
+                &#34;attrVal&#34;: &#34;ReviewCompleted&#34;,
+                &#34;attrName&#34;: &#34;progress&#34;
+            }
+        ]
+        self._ediscovery_client_ops.configure_task(task_props=task_prop)
+        self.refresh()
+
+    def request_approval(self):
+        &#34;&#34;&#34;Invokes workflow job requesting approval for this request
+
+            Args:
+                None
+
+            Returns:
+
+                str --  Workflow job id
+
+            Raises:
+
+                SDKException:
+
+                    if failed to invoke workflow
+        &#34;&#34;&#34;
+        if self.status != RequestConstants.RequestStatus.ReviewCompleted.name:
+            raise SDKException(&#39;RequestManager&#39;, &#39;110&#39;)
+        job_id = self._ediscovery_client_ops.task_workflow_operation()
+        self.refresh()
+        return job_id
+
+    def review_document(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
+        &#34;&#34;&#34;does document review update for consent/comment on this request
+            Args:
+
+                doc_id          (str)       --  Document id (Mandatory in case of SDG)
+
+                comment         (str)       --  User comment
+
+                ds_id           (int)       --  Data SourceId (Mandatory in case of SDG)
+
+                consent         (bool)      --  Accept or Decline (Default:True)
+
+                redact          (bool)      --  Redact ON or OFF (only in case of export)
+                                                        (Default:False)
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to update document
+
+                    if input is not valid
+        &#34;&#34;&#34;
+        return self._ediscovery_client_ops.do_document_task(doc_id=doc_id, comment=comment,
+                                                            consent=consent, redact=redact, ds_id=ds_id)
+
+    def give_approval(self, workflow_job_id, action=&#34;Approve&#34;):
+        &#34;&#34;&#34;Gives approval for the review request
+
+                Args:
+
+                    action              (str)       --  Approval action status
+                                                            Default : Approve
+                                                            Supported Values : [Approve,Deny]
+
+
+                    workflow_job_id     (int)       --  Workflow job id
+
+
+                Returns:
+
+                    None
+
+                Raises:
+
+                    SDKException:
+
+                                if failed to give approval
+
+                                if failed to find workflow job
+
+        &#34;&#34;&#34;
+        if not isinstance(workflow_job_id, int):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        interaction_props = self._commcell_object.workflows.get_interaction_properties(
+            interaction_id=None, workflow_job_id=workflow_job_id)
+        self._commcell_object.workflows.submit_interaction(interaction=interaction_props, input_xml=&#34;&#34;, action=action)
+
+    @property
+    def request_id(self):
+        &#34;&#34;&#34;returns the id of the request
+
+            Returns:
+
+                int     --  Request id
+
+        &#34;&#34;&#34;
+        return int(self._req_id)
+
+    @property
+    def review_set_id(self):
+        &#34;&#34;&#34;returns the id of the request&#39;s reviewset
+
+            Returns:
+
+                int     --  Request review set id
+
+        &#34;&#34;&#34;
+        return int(self._review_set_id)
+
+    @property
+    def request_name(self):
+        &#34;&#34;&#34;returns the name of the request
+
+            Returns:
+
+                str     --  Request name
+
+        &#34;&#34;&#34;
+        return self._req_name
+
+    @property
+    def owner(self):
+        &#34;&#34;&#34;returns the name of the request owner
+
+            Returns:
+
+                str     --  Request owner&#39;s name
+
+        &#34;&#34;&#34;
+        users_obj = self._commcell_object.users
+        for key, value in users_obj.all_users.items():
+            if value == self._req_owner_id:
+                return key
+
+    @property
+    def request_props(self):
+        &#34;&#34;&#34;returns the properties of the request
+
+            Returns:
+
+                list(dict)     --  Request properties
+
+        &#34;&#34;&#34;
+        return self._req_props[&#39;properties&#39;]
+
+    @property
+    def reviewers(self):
+        &#34;&#34;&#34;returns the reviewers for this request
+
+            Returns:
+
+                list(dict)      --  Reviewer user details
+        &#34;&#34;&#34;
+        return self._req_reviewers
+
+    @property
+    def approvers(self):
+        &#34;&#34;&#34;returns the approvers for this request
+
+            Returns:
+
+                list(dict)      --  Approver user details
+        &#34;&#34;&#34;
+        return self._req_approvers
+
+    @property
+    def criteria(self):
+        &#34;&#34;&#34;returns the criteria value for this request
+
+            Returns:
+
+                str --  Request criteria
+
+        &#34;&#34;&#34;
+        return self._req_criteria
+
+    @property
+    def status(self):
+        &#34;&#34;&#34;returns the status for this request
+
+            Returns:
+
+                str --  Request status
+
+        &#34;&#34;&#34;
+        return self._req_status
+
+    @property
+    def request_app(self):
+        &#34;&#34;&#34;returns the app used for this request
+
+            Returns:
+
+                str --  Activate app name
+
+        &#34;&#34;&#34;
+        return self._req_app
+
+    @property
+    def request_type(self):
+        &#34;&#34;&#34;returns the type for this request
+
+            Returns:
+
+                str --  Request type
+
+        &#34;&#34;&#34;
+        return self._req_type
+
+    @property
+    def requestor(self):
+        &#34;&#34;&#34;returns the requestor mail id for this request
+
+            Returns:
+
+                str --  Requestor mail id
+
+        &#34;&#34;&#34;
+        return self._requestor</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.activateapps.request_manager.Request.approvers"><code class="name">var <span class="ident">approvers</span></code></dt>
+<dd>
+<div class="desc"><p>returns the approvers for this request</p>
+<h2 id="returns">Returns</h2>
+<p>list(dict)
+&ndash;
+Approver user details</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L861-L869" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def approvers(self):
+    &#34;&#34;&#34;returns the approvers for this request
+
+        Returns:
+
+            list(dict)      --  Approver user details
+    &#34;&#34;&#34;
+    return self._req_approvers</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.criteria"><code class="name">var <span class="ident">criteria</span></code></dt>
+<dd>
+<div class="desc"><p>returns the criteria value for this request</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Request criteria</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L871-L880" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def criteria(self):
+    &#34;&#34;&#34;returns the criteria value for this request
+
+        Returns:
+
+            str --  Request criteria
+
+    &#34;&#34;&#34;
+    return self._req_criteria</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.owner"><code class="name">var <span class="ident">owner</span></code></dt>
+<dd>
+<div class="desc"><p>returns the name of the request owner</p>
+<h2 id="returns">Returns</h2>
+<p>str
+&ndash;
+Request owner's name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L826-L838" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def owner(self):
+    &#34;&#34;&#34;returns the name of the request owner
+
+        Returns:
+
+            str     --  Request owner&#39;s name
+
+    &#34;&#34;&#34;
+    users_obj = self._commcell_object.users
+    for key, value in users_obj.all_users.items():
+        if value == self._req_owner_id:
+            return key</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_app"><code class="name">var <span class="ident">request_app</span></code></dt>
+<dd>
+<div class="desc"><p>returns the app used for this request</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Activate app name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L893-L902" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def request_app(self):
+    &#34;&#34;&#34;returns the app used for this request
+
+        Returns:
+
+            str --  Activate app name
+
+    &#34;&#34;&#34;
+    return self._req_app</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_id"><code class="name">var <span class="ident">request_id</span></code></dt>
+<dd>
+<div class="desc"><p>returns the id of the request</p>
+<h2 id="returns">Returns</h2>
+<p>int
+&ndash;
+Request id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L793-L802" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def request_id(self):
+    &#34;&#34;&#34;returns the id of the request
+
+        Returns:
+
+            int     --  Request id
+
+    &#34;&#34;&#34;
+    return int(self._req_id)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_name"><code class="name">var <span class="ident">request_name</span></code></dt>
+<dd>
+<div class="desc"><p>returns the name of the request</p>
+<h2 id="returns">Returns</h2>
+<p>str
+&ndash;
+Request name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L815-L824" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def request_name(self):
+    &#34;&#34;&#34;returns the name of the request
+
+        Returns:
+
+            str     --  Request name
+
+    &#34;&#34;&#34;
+    return self._req_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_props"><code class="name">var <span class="ident">request_props</span></code></dt>
+<dd>
+<div class="desc"><p>returns the properties of the request</p>
+<h2 id="returns">Returns</h2>
+<p>list(dict)
+&ndash;
+Request properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L840-L849" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def request_props(self):
+    &#34;&#34;&#34;returns the properties of the request
+
+        Returns:
+
+            list(dict)     --  Request properties
+
+    &#34;&#34;&#34;
+    return self._req_props[&#39;properties&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_type"><code class="name">var <span class="ident">request_type</span></code></dt>
+<dd>
+<div class="desc"><p>returns the type for this request</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Request type</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L904-L913" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def request_type(self):
+    &#34;&#34;&#34;returns the type for this request
+
+        Returns:
+
+            str --  Request type
+
+    &#34;&#34;&#34;
+    return self._req_type</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.requestor"><code class="name">var <span class="ident">requestor</span></code></dt>
+<dd>
+<div class="desc"><p>returns the requestor mail id for this request</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Requestor mail id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L915-L924" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def requestor(self):
+    &#34;&#34;&#34;returns the requestor mail id for this request
+
+        Returns:
+
+            str --  Requestor mail id
+
+    &#34;&#34;&#34;
+    return self._requestor</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.review_set_id"><code class="name">var <span class="ident">review_set_id</span></code></dt>
+<dd>
+<div class="desc"><p>returns the id of the request's reviewset</p>
+<h2 id="returns">Returns</h2>
+<p>int
+&ndash;
+Request review set id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L804-L813" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def review_set_id(self):
+    &#34;&#34;&#34;returns the id of the request&#39;s reviewset
+
+        Returns:
+
+            int     --  Request review set id
+
+    &#34;&#34;&#34;
+    return int(self._review_set_id)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.reviewers"><code class="name">var <span class="ident">reviewers</span></code></dt>
+<dd>
+<div class="desc"><p>returns the reviewers for this request</p>
+<h2 id="returns">Returns</h2>
+<p>list(dict)
+&ndash;
+Reviewer user details</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L851-L859" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def reviewers(self):
+    &#34;&#34;&#34;returns the reviewers for this request
+
+        Returns:
+
+            list(dict)      --  Reviewer user details
+    &#34;&#34;&#34;
+    return self._req_reviewers</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.status"><code class="name">var <span class="ident">status</span></code></dt>
+<dd>
+<div class="desc"><p>returns the status for this request</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Request status</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L882-L891" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def status(self):
+    &#34;&#34;&#34;returns the status for this request
+
+        Returns:
+
+            str --  Request status
+
+    &#34;&#34;&#34;
+    return self._req_status</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.activateapps.request_manager.Request.configure"><code class="name flex">
+<span>def <span class="ident">configure</span></span>(<span>self, projects, reviewers, approvers)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>configure created request with provided details</p>
+<h2 id="args">Args</h2>
+<p>projects
+(list)
+&ndash;
+list of project names to associate</p>
+<p>reviewers
+(list)
+&ndash;
+list of reviewers user names</p>
+<p>approvers
+(list)
+&ndash;
+list of approvers user names</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to configure request
+
+if input is not valid
+
+if reviewers/approvers doesn't exists
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L478-L557" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def configure(self, projects, reviewers, approvers):
+    &#34;&#34;&#34;configure created request with provided details
+
+        Args:
+
+            projects        (list)      --  list of project names to associate
+
+            reviewers       (list)      --  list of reviewers user names
+
+            approvers       (list)      --  list of approvers user names
+
+        Returns:
+
+            None
+
+        Raises:
+
+            SDKException:
+
+                if failed to configure request
+
+                if input is not valid
+
+                if reviewers/approvers doesn&#39;t exists
+    &#34;&#34;&#34;
+    if self.status != RequestConstants.RequestStatus.TaskCreated.name:
+        raise SDKException(
+            &#39;RequestManager&#39;,
+            &#39;102&#39;,
+            f&#34;Request is not in created state. Current state - {self.status}&#34;)
+    if self.request_app != TargetApps.SDG.name:
+        raise SDKException(
+            &#39;RequestManager&#39;,
+            &#39;102&#39;,
+            f&#34;Configuring Request is supported only for SDG App request&#34;)
+    if not isinstance(projects, list) or not isinstance(reviewers, list) or not isinstance(approvers, list):
+        raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+    valid_projects = self._get_valid_projects()
+    project_ids = []
+    sdg_obj = self._commcell_object.activate.sensitive_data_governance()
+    for project in projects:
+        if project.lower() not in valid_projects:
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Not a valid project {project} to associate to request&#34;)
+        project_ids.append(int(sdg_obj.get(project).project_id))
+
+    # reviewer
+    reviewers_list = []
+    for user in reviewers:
+        if not self._commcell_object.users.has_user((user)):
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find reviewer user : {user}&#34;)
+        user_obj = self._commcell_object.users.get(user)
+        reviewers_list.append({&#34;id&#34;: user_obj.user_id,
+                               &#34;name&#34;: user_obj.user_name
+                               })
+
+    # approvers
+    approvers_list = []
+    for user in approvers:
+        if not self._commcell_object.users.has_user((user)):
+            raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, f&#34;Unable to find approver user : {user}&#34;)
+        user_obj = self._commcell_object.users.get(user)
+        approvers_list.append({&#34;id&#34;: user_obj.user_id,
+                               &#34;name&#34;: user_obj.user_name
+                               })
+    req_json = {&#34;projectIds&#34;: project_ids,
+                &#34;reviewers&#34;: reviewers_list,
+                &#34;approvers&#34;: approvers_list}
+
+    flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._API_REQ_CONFIGURE % self._req_id, req_json)
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(
+                    &#39;RequestManager&#39;,
+                    &#39;102&#39;,
+                    f&#34;Configure request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+            self.refresh()
+            return
+        raise SDKException(&#39;RequestManager&#39;, &#39;108&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.get_document_details"><code class="name flex">
+<span>def <span class="ident">get_document_details</span></span>(<span>self, criteria=None, attr_list=None, query='*:*', start=0, rows=10)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the document details for this request</p>
+<h2 id="args">Args</h2>
+<p>criteria
+(str)
+&ndash;
+containing criteria for query</p>
+<pre><code>                                Example :
+
+                                    Size:[10 TO 1024]
+                                    FileName:09_23*
+</code></pre>
+<p>attr_list
+(set)
+&ndash;
+Column names to be returned in results.
+Acts as 'fl' in query</p>
+<p>start
+(int)
+&ndash;
+Specifies start index for fetching documents</p>
+<p>rows
+(int)
+&ndash;
+No of document details to fetch</p>
+<p>query
+(str)
+&ndash;
+query to be performed (acts as q param in query)
+default:None (Means <em>:</em>)</p>
+<h2 id="returns">Returns</h2>
+<p>dict
+&ndash;
+Containing document details</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to perform search
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L559-L612" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_document_details(self, criteria=None, attr_list=None, query=&#34;*:*&#34;, start=0, rows=10):
+    &#34;&#34;&#34;Returns the document details for this request
+
+        Args:
+
+            criteria        (str)      --  containing criteria for query
+
+                                                Example :
+
+                                                    Size:[10 TO 1024]
+                                                    FileName:09_23*
+
+            attr_list       (set)      --  Column names to be returned in results.
+                                                 Acts as &#39;fl&#39; in query
+
+            start           (int)      --  Specifies start index for fetching documents
+
+            rows            (int)      --  No of document details to fetch
+
+            query           (str)      --   query to be performed (acts as q param in query)
+                                                default:None (Means *:*)
+
+        Returns:
+
+            dict        --  Containing document details
+
+        Raises:
+
+            SDKException:
+
+                if failed to perform search
+    &#34;&#34;&#34;
+    if not attr_list:
+        attr_list = RequestConstants.SEARCH_QUERY_SELECTION_SET
+    else:
+        attr_list = attr_list.union(RequestConstants.SEARCH_QUERY_SELECTION_SET)
+    api = self._API_REQ_FEDERATED % (self._get_property_value(
+        req_properties=self.request_props,
+        prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+        self._get_property_value(
+        req_properties=self.request_props,
+        prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+    if self.request_app == TargetApps.FSO.name:
+        api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+    payload = self._ediscovery_client_ops.form_search_params(
+        query=query, criteria=criteria, attr_list=attr_list, params={
+            &#39;start&#39;: f&#34;{start}&#34;, &#39;rows&#39;: f&#34;{rows}&#34;})
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+    if flag:
+        if response.json():
+            if &#39;response&#39; in response.json():
+                return response.json()[&#39;response&#39;][&#39;docs&#39;]
+        raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.give_approval"><code class="name flex">
+<span>def <span class="ident">give_approval</span></span>(<span>self, workflow_job_id, action='Approve')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gives approval for the review request</p>
+<h2 id="args">Args</h2>
+<p>action
+(str)
+&ndash;
+Approval action status
+Default : Approve
+Supported Values : [Approve,Deny]</p>
+<p>workflow_job_id
+(int)
+&ndash;
+Workflow job id</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>        if failed to give approval
+
+        if failed to find workflow job
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L761-L791" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def give_approval(self, workflow_job_id, action=&#34;Approve&#34;):
+    &#34;&#34;&#34;Gives approval for the review request
+
+            Args:
+
+                action              (str)       --  Approval action status
+                                                        Default : Approve
+                                                        Supported Values : [Approve,Deny]
+
+
+                workflow_job_id     (int)       --  Workflow job id
+
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                            if failed to give approval
+
+                            if failed to find workflow job
+
+    &#34;&#34;&#34;
+    if not isinstance(workflow_job_id, int):
+        raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+    interaction_props = self._commcell_object.workflows.get_interaction_properties(
+        interaction_id=None, workflow_job_id=workflow_job_id)
+    self._commcell_object.workflows.submit_interaction(interaction=interaction_props, input_xml=&#34;&#34;, action=action)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.mark_review_complete"><code class="name flex">
+<span>def <span class="ident">mark_review_complete</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Marks review request as review complete</p>
+<h2 id="args">Args</h2>
+<p>None</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>    if failed to mark review complete
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L683-L707" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def mark_review_complete(self):
+    &#34;&#34;&#34;Marks review request as review complete
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+
+                    if failed to mark review complete
+    &#34;&#34;&#34;
+    stats = self.review_stats()
+    if int(stats[RequestConstants.FIELD_DOC_COUNT]) != int(stats[RequestConstants.FIELD_REVIEWED]):
+        raise SDKException(&#39;RequestManager&#39;, &#39;109&#39;)
+    task_prop = [
+        {
+            &#34;attrVal&#34;: &#34;ReviewCompleted&#34;,
+            &#34;attrName&#34;: &#34;progress&#34;
+        }
+    ]
+    self._ediscovery_client_ops.configure_task(task_props=task_prop)
+    self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the request details from the commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L679-L681" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the request details from the commcell.&#34;&#34;&#34;
+    self._req_props = self._get_request_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.request_approval"><code class="name flex">
+<span>def <span class="ident">request_approval</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Invokes workflow job requesting approval for this request</p>
+<h2 id="args">Args</h2>
+<p>None</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash;
+Workflow job id</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to invoke workflow
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L709-L729" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def request_approval(self):
+    &#34;&#34;&#34;Invokes workflow job requesting approval for this request
+
+        Args:
+            None
+
+        Returns:
+
+            str --  Workflow job id
+
+        Raises:
+
+            SDKException:
+
+                if failed to invoke workflow
+    &#34;&#34;&#34;
+    if self.status != RequestConstants.RequestStatus.ReviewCompleted.name:
+        raise SDKException(&#39;RequestManager&#39;, &#39;110&#39;)
+    job_id = self._ediscovery_client_ops.task_workflow_operation()
+    self.refresh()
+    return job_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.review_document"><code class="name flex">
+<span>def <span class="ident">review_document</span></span>(<span>self, comment, doc_id=None, ds_id=None, consent=True, redact=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>does document review update for consent/comment on this request</p>
+<h2 id="args">Args</h2>
+<p>doc_id
+(str)
+&ndash;
+Document id (Mandatory in case of SDG)</p>
+<p>comment
+(str)
+&ndash;
+User comment</p>
+<p>ds_id
+(int)
+&ndash;
+Data SourceId (Mandatory in case of SDG)</p>
+<p>consent
+(bool)
+&ndash;
+Accept or Decline (Default:True)</p>
+<p>redact
+(bool)
+&ndash;
+Redact ON or OFF (only in case of export)
+(Default:False)</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to update document
+
+if input is not valid
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L731-L759" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def review_document(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
+    &#34;&#34;&#34;does document review update for consent/comment on this request
+        Args:
+
+            doc_id          (str)       --  Document id (Mandatory in case of SDG)
+
+            comment         (str)       --  User comment
+
+            ds_id           (int)       --  Data SourceId (Mandatory in case of SDG)
+
+            consent         (bool)      --  Accept or Decline (Default:True)
+
+            redact          (bool)      --  Redact ON or OFF (only in case of export)
+                                                    (Default:False)
+
+        Returns:
+
+            None
+
+        Raises:
+
+            SDKException:
+
+                if failed to update document
+
+                if input is not valid
+    &#34;&#34;&#34;
+    return self._ediscovery_client_ops.do_document_task(doc_id=doc_id, comment=comment,
+                                                        consent=consent, redact=redact, ds_id=ds_id)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Request.review_stats"><code class="name flex">
+<span>def <span class="ident">review_stats</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>returns review statistics for this request</p>
+<h2 id="args">Args</h2>
+<p>None</p>
+<h2 id="returns">Returns</h2>
+<p>dict
+&ndash;
+Containing review stats</p>
+<dl>
+<dt><code>
+Example </code></dt>
+<dd>{
+'TotalDocuments': 5,
+'ReviewedDocuments': 5,
+'Non-ReviewedDocuments': 0,
+'AcceptedDocuments': 5,
+'DeclinedDocuments': 0,
+'RedactedDocuments': 0,
+'Non-RedactedDocuments': 0
+}</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>    if failed to get stats info
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L614-L677" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def review_stats(self):
+    &#34;&#34;&#34;returns review statistics for this request
+
+        Args:
+
+            None
+
+        Returns:
+
+            dict    --  Containing review stats
+
+                        Example : {
+                                        &#39;TotalDocuments&#39;: 5,
+                                        &#39;ReviewedDocuments&#39;: 5,
+                                        &#39;Non-ReviewedDocuments&#39;: 0,
+                                        &#39;AcceptedDocuments&#39;: 5,
+                                        &#39;DeclinedDocuments&#39;: 0,
+                                        &#39;RedactedDocuments&#39;: 0,
+                                        &#39;Non-RedactedDocuments&#39;: 0
+                                    }
+
+        Raises:
+
+            SDKException:
+
+                    if failed to get stats info
+    &#34;&#34;&#34;
+    api = self._API_REQ_FEDERATED % (self._get_property_value(
+        req_properties=self.request_props,
+        prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_ID),
+        self._get_property_value(
+        req_properties=self.request_props,
+        prop_name=RequestConstants.PROPERTY_REQUEST_HANDLER_NAME))
+    review_set_id = self._review_set_id
+    if self.request_app == TargetApps.FSO.name:
+        api = self._API_REQ_DYN_FEDERATED % (self._req_client_type, self._req_id)
+        review_set_id = f&#34;FSO_{self._req_id}&#34;  # for fso, we have prefix in consent as FSO_
+    payload = copy.deepcopy(RequestConstants.REQUEST_FEDERATED_FACET_SEARCH_QUERY)
+    for param in payload[&#39;searchParams&#39;]:
+        param[&#39;value&#39;] = param[&#39;value&#39;].replace(&#34;&lt;rsidparam&gt;&#34;, review_set_id)
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, api, payload)
+    output = {}
+    if flag:
+        if response.json():
+            if &#39;response&#39; in response.json():
+                output[RequestConstants.FIELD_DOC_COUNT] = response.json()[&#39;response&#39;][&#39;numFound&#39;]
+            if &#39;facets&#39; in response.json():
+                facets = response.json()[&#39;facets&#39;]
+                output[RequestConstants.FIELD_REVIEWED] = facets[RequestConstants.FACET_REVIEWED %
+                                                                 review_set_id][RequestConstants.FACET_COUNT]
+                output[RequestConstants.FIELD_NOT_REVIEWED] = facets[RequestConstants.FACET_NOT_REVIEWED %
+                                                                     review_set_id][RequestConstants.FACET_COUNT]
+                output[RequestConstants.FIELD_ACCEPTED] = facets[RequestConstants.FACET_ACCEPTED % review_set_id][
+                    RequestConstants.FACET_COUNT]
+                output[RequestConstants.FIELD_DECLINED] = facets[RequestConstants.FACET_DECLINED % review_set_id][
+                    RequestConstants.FACET_COUNT]
+                if self.request_type == RequestConstants.RequestType.EXPORT.value:
+                    output[RequestConstants.FIELD_REDACTED] = facets[RequestConstants.FACET_REDACTED %
+                                                                     review_set_id][RequestConstants.FACET_COUNT]
+                    output[RequestConstants.FIELD_NOT_REDACTED] = facets[RequestConstants.FACET_NOT_REDACTED %
+                                                                         review_set_id][RequestConstants.FACET_COUNT]
+            return output
+        raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get review stats for this request&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Requests"><code class="flex name class">
+<span>class <span class="ident">Requests</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all requests in the commcell.</p>
+<p>Initializes an instance of the Requests class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Requests class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L109-L325" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Requests:
+    &#34;&#34;&#34;Class for representing all requests in the commcell.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the Requests class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the Requests class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._requests = None
+        self._API_GET_REQUESTS = self._services[&#39;EDISCOVERY_REQUESTS&#39;]
+        self._API_REQ_DELETE = self._services[&#39;EDISCOVERY_REQUEST_DETAILS&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_all_requests(self):
+        &#34;&#34;&#34;gets all the requests from the commcell
+
+            Args:
+                None
+
+            Returns:
+
+                dict    --  containing request details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch requests details
+
+         &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_REQUESTS)
+        output = {}
+        if flag:
+            if response.json() and &#39;requests&#39; in response.json():
+                for node in response.json()[&#39;requests&#39;]:
+                    if &#39;name&#39; in node:
+                        output[node[&#39;name&#39;].lower()] = node
+                return output
+            raise SDKException(&#39;RequestManager&#39;, &#39;103&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the requests with the commcell.&#34;&#34;&#34;
+        self._requests = self._get_all_requests()
+
+    def has_request(self, req_name):
+        &#34;&#34;&#34;Checks if a request exists in the commcell with the input name or not
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                bool - boolean output to specify whether the request exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the request name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(req_name, str):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        return self._requests and req_name.lower() in self._requests
+
+    def get(self, req_name):
+        &#34;&#34;&#34;Returns the Instance of Request class for given request name
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                obj --  Instance of Request class
+
+            Raises:
+                SDKException:
+                    if type of the request name argument is not string
+
+                    if failed to find request
+
+        &#34;&#34;&#34;
+        if not self.has_request(req_name):
+            raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+        return Request(commcell_object=self._commcell_object, req_name=req_name.lower(),
+                       req_id=self._requests[req_name.lower()][&#39;id&#39;])
+
+    def delete(self, req_name):
+        &#34;&#34;&#34;deletes the request for given request name
+
+            Args:
+                req_name (str)  --  name of the request
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+
+                    if type of the request name argument is not string
+
+                    if failed to find request
+
+                    if failed to delete request
+
+        &#34;&#34;&#34;
+        if not self.has_request(req_name):
+            raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, self._API_REQ_DELETE % self._requests[req_name.lower()].get(&#39;id&#39;))
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Delete request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+                self.refresh()
+                return
+            raise SDKException(&#39;RequestManager&#39;, &#39;106&#39;)
+        self._response_not_success(response)
+
+    def add(self, req_name, req_type, requestor, criteria, **kwargs):
+        &#34;&#34;&#34;adds request to request manager app
+
+            Args:
+
+                req_name            (str)       --  Name of request
+
+                req_type            (enum)      --  Request type enum(Refer to RequestManagerConstants.RequestType)
+
+                requestor           (str)       --  Mail id of requestor
+
+                criteria            (dict)      --  containing criteria for request
+
+                                                        Example : {&#39;entity_email&#39;: [xxx@yy.com]}
+
+                Kwargs Arguement:
+
+                    redaction           (bool)      --  Enable redaction for export type request
+                                                                Default:False
+
+                    chaining            (bool)      --  Enable document chaining for export type request
+                                                                Default:False
+
+                    delete_backup       (bool)      --  Specifies whether to delete data from backup or not
+                                                                            for delete type request
+                                                                Default:False
+
+                Returns:
+
+                    obj --  Instance of Request class
+
+                Raises:
+
+                    SDKException:
+
+                            if input is not valid
+
+                            if failed to create request
+
+        &#34;&#34;&#34;
+        if not isinstance(
+                criteria,
+                dict) or not isinstance(
+                req_name,
+                str) or not isinstance(
+                req_type,
+                RequestConstants.RequestType) or not isinstance(
+                    requestor,
+                str):
+            raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+        entities = []
+        for key, value in criteria.items():
+            entities.append({
+                &#39;name&#39;: key,
+                &#39;values&#39;: value
+            })
+        req_json = {&#34;name&#34;: req_name,
+                    &#34;type&#34;: req_type.name,
+                    &#34;deleteFromBackup&#34;: kwargs.get(&#39;delete_backup&#39;, False),
+                    &#34;enableRedaction&#34;: kwargs.get(&#39;redaction&#39;, False),
+                    &#34;enableDocumentChaining&#34;: kwargs.get(&#39;chaining&#39;, False),
+                    &#34;requestor&#34;: requestor,
+                    &#34;entities&#34;: entities}
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._API_GET_REQUESTS, req_json)
+        if flag:
+            if response.json():
+                if &#39;name&#39; in response.json():
+                    self.refresh()
+                    return Request(commcell_object=self._commcell_object, req_name=response.json()[&#39;name&#39;],
+                                   req_id=response.json().get(&#39;id&#39;))
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;RequestManager&#39;,
+                        &#39;102&#39;,
+                        f&#34;Add request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+            raise SDKException(&#39;RequestManager&#39;, &#39;107&#39;)
+        self._response_not_success(response)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.activateapps.request_manager.Requests.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, req_name, req_type, requestor, criteria, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>adds request to request manager app</p>
+<h2 id="args">Args</h2>
+<p>req_name
+(str)
+&ndash;
+Name of request</p>
+<p>req_type
+(enum)
+&ndash;
+Request type enum(Refer to RequestManagerConstants.RequestType)</p>
+<p>requestor
+(str)
+&ndash;
+Mail id of requestor</p>
+<p>criteria
+(dict)
+&ndash;
+containing criteria for request</p>
+<pre><code>                                    Example : {'entity_email': [xxx@yy.com]}
+</code></pre>
+<p>Kwargs Arguement:</p>
+<pre><code>redaction           (bool)      --  Enable redaction for export type request
+                                            Default:False
+
+chaining            (bool)      --  Enable document chaining for export type request
+                                            Default:False
+
+delete_backup       (bool)      --  Specifies whether to delete data from backup or not
+                                                        for delete type request
+                                            Default:False
+</code></pre>
+<p>Returns:</p>
+<pre><code>obj --  Instance of Request class
+</code></pre>
+<p>Raises:</p>
+<pre><code>SDKException:
+
+        if input is not valid
+
+        if failed to create request
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L248-L325" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self, req_name, req_type, requestor, criteria, **kwargs):
+    &#34;&#34;&#34;adds request to request manager app
+
+        Args:
+
+            req_name            (str)       --  Name of request
+
+            req_type            (enum)      --  Request type enum(Refer to RequestManagerConstants.RequestType)
+
+            requestor           (str)       --  Mail id of requestor
+
+            criteria            (dict)      --  containing criteria for request
+
+                                                    Example : {&#39;entity_email&#39;: [xxx@yy.com]}
+
+            Kwargs Arguement:
+
+                redaction           (bool)      --  Enable redaction for export type request
+                                                            Default:False
+
+                chaining            (bool)      --  Enable document chaining for export type request
+                                                            Default:False
+
+                delete_backup       (bool)      --  Specifies whether to delete data from backup or not
+                                                                        for delete type request
+                                                            Default:False
+
+            Returns:
+
+                obj --  Instance of Request class
+
+            Raises:
+
+                SDKException:
+
+                        if input is not valid
+
+                        if failed to create request
+
+    &#34;&#34;&#34;
+    if not isinstance(
+            criteria,
+            dict) or not isinstance(
+            req_name,
+            str) or not isinstance(
+            req_type,
+            RequestConstants.RequestType) or not isinstance(
+                requestor,
+            str):
+        raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+    entities = []
+    for key, value in criteria.items():
+        entities.append({
+            &#39;name&#39;: key,
+            &#39;values&#39;: value
+        })
+    req_json = {&#34;name&#34;: req_name,
+                &#34;type&#34;: req_type.name,
+                &#34;deleteFromBackup&#34;: kwargs.get(&#39;delete_backup&#39;, False),
+                &#34;enableRedaction&#34;: kwargs.get(&#39;redaction&#39;, False),
+                &#34;enableDocumentChaining&#34;: kwargs.get(&#39;chaining&#39;, False),
+                &#34;requestor&#34;: requestor,
+                &#34;entities&#34;: entities}
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._API_GET_REQUESTS, req_json)
+    if flag:
+        if response.json():
+            if &#39;name&#39; in response.json():
+                self.refresh()
+                return Request(commcell_object=self._commcell_object, req_name=response.json()[&#39;name&#39;],
+                               req_id=response.json().get(&#39;id&#39;))
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(
+                    &#39;RequestManager&#39;,
+                    &#39;102&#39;,
+                    f&#34;Add request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+        raise SDKException(&#39;RequestManager&#39;, &#39;107&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Requests.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, req_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>deletes the request for given request name</p>
+<h2 id="args">Args</h2>
+<p>req_name (str)
+&ndash;
+name of the request</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if type of the request name argument is not string
+
+if failed to find request
+
+if failed to delete request
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L213-L246" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, req_name):
+    &#34;&#34;&#34;deletes the request for given request name
+
+        Args:
+            req_name (str)  --  name of the request
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+
+                if type of the request name argument is not string
+
+                if failed to find request
+
+                if failed to delete request
+
+    &#34;&#34;&#34;
+    if not self.has_request(req_name):
+        raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;DELETE&#39;, self._API_REQ_DELETE % self._requests[req_name.lower()].get(&#39;id&#39;))
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(
+                    &#39;RequestManager&#39;,
+                    &#39;102&#39;,
+                    f&#34;Delete request failed with - {response.json().get(&#39;errorMessage&#39;)}&#34;)
+            self.refresh()
+            return
+        raise SDKException(&#39;RequestManager&#39;, &#39;106&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Requests.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, req_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the Instance of Request class for given request name</p>
+<h2 id="args">Args</h2>
+<p>req_name (str)
+&ndash;
+name of the request</p>
+<h2 id="returns">Returns</h2>
+<p>obj &ndash;
+Instance of Request class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the request name argument is not string</p>
+<pre><code>if failed to find request
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L192-L211" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, req_name):
+    &#34;&#34;&#34;Returns the Instance of Request class for given request name
+
+        Args:
+            req_name (str)  --  name of the request
+
+        Returns:
+            obj --  Instance of Request class
+
+        Raises:
+            SDKException:
+                if type of the request name argument is not string
+
+                if failed to find request
+
+    &#34;&#34;&#34;
+    if not self.has_request(req_name):
+        raise SDKException(&#39;RequestManager&#39;, &#39;105&#39;)
+    return Request(commcell_object=self._commcell_object, req_name=req_name.lower(),
+                   req_id=self._requests[req_name.lower()][&#39;id&#39;])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Requests.has_request"><code class="name flex">
+<span>def <span class="ident">has_request</span></span>(<span>self, req_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if a request exists in the commcell with the input name or not</p>
+<h2 id="args">Args</h2>
+<p>req_name (str)
+&ndash;
+name of the request</p>
+<h2 id="returns">Returns</h2>
+<p>bool - boolean output to specify whether the request exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the request name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L174-L190" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_request(self, req_name):
+    &#34;&#34;&#34;Checks if a request exists in the commcell with the input name or not
+
+        Args:
+            req_name (str)  --  name of the request
+
+        Returns:
+            bool - boolean output to specify whether the request exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the request name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(req_name, str):
+        raise SDKException(&#39;RequestManager&#39;, &#39;101&#39;)
+    return self._requests and req_name.lower() in self._requests</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.request_manager.Requests.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the requests with the commcell.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L170-L172" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the requests with the commcell.&#34;&#34;&#34;
+    self._requests = self._get_all_requests()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#request-attributes">Request Attributes:</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.activateapps" href="index.html">cvpysdk.activateapps</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.activateapps.request_manager.Request" href="#cvpysdk.activateapps.request_manager.Request">Request</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.approvers" href="#cvpysdk.activateapps.request_manager.Request.approvers">approvers</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.configure" href="#cvpysdk.activateapps.request_manager.Request.configure">configure</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.criteria" href="#cvpysdk.activateapps.request_manager.Request.criteria">criteria</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.get_document_details" href="#cvpysdk.activateapps.request_manager.Request.get_document_details">get_document_details</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.give_approval" href="#cvpysdk.activateapps.request_manager.Request.give_approval">give_approval</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.mark_review_complete" href="#cvpysdk.activateapps.request_manager.Request.mark_review_complete">mark_review_complete</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.owner" href="#cvpysdk.activateapps.request_manager.Request.owner">owner</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.refresh" href="#cvpysdk.activateapps.request_manager.Request.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_app" href="#cvpysdk.activateapps.request_manager.Request.request_app">request_app</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_approval" href="#cvpysdk.activateapps.request_manager.Request.request_approval">request_approval</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_id" href="#cvpysdk.activateapps.request_manager.Request.request_id">request_id</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_name" href="#cvpysdk.activateapps.request_manager.Request.request_name">request_name</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_props" href="#cvpysdk.activateapps.request_manager.Request.request_props">request_props</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.request_type" href="#cvpysdk.activateapps.request_manager.Request.request_type">request_type</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.requestor" href="#cvpysdk.activateapps.request_manager.Request.requestor">requestor</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.review_document" href="#cvpysdk.activateapps.request_manager.Request.review_document">review_document</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.review_set_id" href="#cvpysdk.activateapps.request_manager.Request.review_set_id">review_set_id</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.review_stats" href="#cvpysdk.activateapps.request_manager.Request.review_stats">review_stats</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.reviewers" href="#cvpysdk.activateapps.request_manager.Request.reviewers">reviewers</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Request.status" href="#cvpysdk.activateapps.request_manager.Request.status">status</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.activateapps.request_manager.Requests" href="#cvpysdk.activateapps.request_manager.Requests">Requests</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.activateapps.request_manager.Requests.add" href="#cvpysdk.activateapps.request_manager.Requests.add">add</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Requests.delete" href="#cvpysdk.activateapps.request_manager.Requests.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Requests.get" href="#cvpysdk.activateapps.request_manager.Requests.get">get</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Requests.has_request" href="#cvpysdk.activateapps.request_manager.Requests.has_request">has_request</a></code></li>
+<li><code><a title="cvpysdk.activateapps.request_manager.Requests.refresh" href="#cvpysdk.activateapps.request_manager.Requests.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

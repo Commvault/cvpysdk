@@ -148,7 +148,7 @@ Returns the BLR pair properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1-L1096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1-L1121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -264,6 +264,8 @@ BLRPair:
 
     _get_pair_properties()                      --  Returns the BLR pair properties
 &#34;&#34;&#34;
+import time
+
 from cvpysdk.job import Job
 from cvpysdk.schedules import Schedules
 
@@ -1025,6 +1027,29 @@ class BLRPair:
         &#34;&#34;&#34;
         self._perform_action(self.PairOperationsStatus.SUSPEND)
 
+    def wait_for_pair_status(self, expected_status, timeout=30):
+        &#34;&#34;&#34;
+        Waits for the BLR pair to reach the expected status
+            Args:
+                expected_status (enum or str): Enum of PairStatus or string value for pair status
+                timeout (int)                : The amount of time in minutes to wait for pair to
+                                                    reach status before exiting
+            Returns:
+                True, if the expected status is met
+                False, if the expected status was not met in given time
+        &#34;&#34;&#34;
+        if isinstance(expected_status, str):
+            expected_status = BLRPairs.PairStatus(expected_status.upper())
+        start_time = time.time()
+        self.refresh()
+
+        while not self.pair_status == expected_status:
+            time.sleep(30)
+
+            if time.time() - start_time &gt; timeout * 60:
+                break
+        return self.pair_status == expected_status
+
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         &#34;&#34;&#34;Perform the DR operation for the BLR pair
             Args:
@@ -1276,7 +1301,7 @@ Name of the destination of BLR pair</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L504-L995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L506-L1020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPair:
     class PairOperationsStatus(Enum):
@@ -1650,6 +1675,29 @@ Name of the destination of BLR pair</p></div>
         &#34;&#34;&#34;
         self._perform_action(self.PairOperationsStatus.SUSPEND)
 
+    def wait_for_pair_status(self, expected_status, timeout=30):
+        &#34;&#34;&#34;
+        Waits for the BLR pair to reach the expected status
+            Args:
+                expected_status (enum or str): Enum of PairStatus or string value for pair status
+                timeout (int)                : The amount of time in minutes to wait for pair to
+                                                    reach status before exiting
+            Returns:
+                True, if the expected status is met
+                False, if the expected status was not met in given time
+        &#34;&#34;&#34;
+        if isinstance(expected_status, str):
+            expected_status = BLRPairs.PairStatus(expected_status.upper())
+        start_time = time.time()
+        self.refresh()
+
+        while not self.pair_status == expected_status:
+            time.sleep(30)
+
+            if time.time() - start_time &gt; timeout * 60:
+                break
+        return self.pair_status == expected_status
+
     def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
         &#34;&#34;&#34;Perform the DR operation for the BLR pair
             Args:
@@ -1792,7 +1840,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L641-L657" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L643-L659" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination(self):
@@ -1819,7 +1867,7 @@ def destination(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L659-L662" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L661-L664" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_vm(self):
@@ -1833,7 +1881,7 @@ def destination_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L664-L667" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L666-L669" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def lag_time(self):
@@ -1847,7 +1895,7 @@ def lag_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L679-L682" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L681-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_flag(self):
@@ -1872,7 +1920,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L731-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L733-L748" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_latest_stats(self):
@@ -1898,7 +1946,7 @@ def pair_latest_stats(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L606-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L608-L611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_properties(self):
@@ -1912,7 +1960,7 @@ def pair_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L697-L700" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L699-L702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_recovery_type(self):
@@ -1937,7 +1985,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L702-L717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L704-L719" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_rpstore_intervals(self):
@@ -1963,7 +2011,7 @@ def pair_rpstore_intervals(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L611-L615" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L613-L617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_status(self):
@@ -1984,7 +2032,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L719-L729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L721-L731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_volume_map(self):
@@ -2005,7 +2053,7 @@ def pair_volume_map(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L674-L677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L676-L679" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_status(self):
@@ -2019,7 +2067,7 @@ def pending_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L669-L672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L671-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_group_name(self):
@@ -2040,7 +2088,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L617-L634" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L619-L636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source(self):
@@ -2068,7 +2116,7 @@ def source(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L636-L639" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L638-L641" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_vm(self):
@@ -2089,7 +2137,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L684-L695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L686-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_props(self):
@@ -2128,7 +2176,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L876-L991" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L901-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
     &#34;&#34;&#34;Perform the DR operation for the BLR pair
@@ -2267,7 +2315,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L748-L772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L750-L774" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pair_stats(self):
     &#34;&#34;&#34;Returns: (list) A list of dictionary of statistics for BLR pair
@@ -2310,7 +2358,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L774-L799" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L776-L801" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_point_stores(self):
     &#34;&#34;&#34;Returns a list of all recovery point stores for the BLR pair
@@ -2355,7 +2403,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L801-L809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L803-L811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_test_failover_vms(self, boot_type: int = 1):
     &#34;&#34;&#34;Returns the BLRTestFailovers object for all test failover VMs of the BLR pair
@@ -2376,7 +2424,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L993-L995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1018-L1020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pair properties &#34;&#34;&#34;
@@ -2397,7 +2445,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L837-L848" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L839-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resume(self):
     &#34;&#34;&#34;Resumes the BLR Pair
@@ -2427,7 +2475,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L850-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L852-L863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resync(self):
     &#34;&#34;&#34;Resyncs the BLR pair
@@ -2457,7 +2505,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L824-L835" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L826-L837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start(self):
     &#34;&#34;&#34;Starts the BLR Pair
@@ -2487,7 +2535,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L811-L822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L813-L824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def stop(self):
     &#34;&#34;&#34;Stops the BLR Pair
@@ -2517,7 +2565,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L863-L874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L865-L876" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def suspend(self):
     &#34;&#34;&#34;Suspends the BLR Pair
@@ -2531,6 +2579,48 @@ if response is not success</p></div>
         if response is not success
     &#34;&#34;&#34;
     self._perform_action(self.PairOperationsStatus.SUSPEND)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPair.wait_for_pair_status"><code class="name flex">
+<span>def <span class="ident">wait_for_pair_status</span></span>(<span>self, expected_status, timeout=30)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Waits for the BLR pair to reach the expected status
+Args:
+expected_status (enum or str): Enum of PairStatus or string value for pair status
+timeout (int)
+: The amount of time in minutes to wait for pair to
+reach status before exiting
+Returns:
+True, if the expected status is met
+False, if the expected status was not met in given time</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L878-L899" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def wait_for_pair_status(self, expected_status, timeout=30):
+    &#34;&#34;&#34;
+    Waits for the BLR pair to reach the expected status
+        Args:
+            expected_status (enum or str): Enum of PairStatus or string value for pair status
+            timeout (int)                : The amount of time in minutes to wait for pair to
+                                                reach status before exiting
+        Returns:
+            True, if the expected status is met
+            False, if the expected status was not met in given time
+    &#34;&#34;&#34;
+    if isinstance(expected_status, str):
+        expected_status = BLRPairs.PairStatus(expected_status.upper())
+    start_time = time.time()
+    self.refresh()
+
+    while not self.pair_status == expected_status:
+        time.sleep(30)
+
+        if time.time() - start_time &gt; timeout * 60:
+            break
+    return self.pair_status == expected_status</code></pre>
 </details>
 </dd>
 </dl>
@@ -2551,7 +2641,7 @@ Name of the replication group (only for VSA BLR)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L123-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L125-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPairs:
     &#34;&#34;&#34;Class for getting all BLR pairs in commcell.&#34;&#34;&#34;
@@ -2983,7 +3073,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L253-L282" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L255-L284" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def blr_pairs(self):
@@ -3059,7 +3149,7 @@ merge_only_off_peak(bool):Whether to merge RPstore only during off-peak time</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L307-L404" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L309-L406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_pair(self,
                       source_client_id,
@@ -3182,7 +3272,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L430-L471" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L432-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, source_name, destination_name):
     &#34;&#34;&#34; Deletes the blr pair with source and destination names
@@ -3247,7 +3337,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L406-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L408-L430" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, source_name, destination_name):
     &#34;&#34;&#34;Get pair name on the basis of source and destination name and return pair object
@@ -3285,7 +3375,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L484-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L486-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_rpstore_id(self, rpstore_name):
     &#34;&#34;&#34;Gets the RPStore ID for the given name
@@ -3327,7 +3417,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L284-L305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L286-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_blr_pair(self, source_name, destination_name):
     &#34;&#34;&#34;Checks if BLR pair exists or not
@@ -3364,7 +3454,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L473-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L475-L484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pairs created in the commcell.
@@ -3400,7 +3490,7 @@ The type of the boot for VMs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L998-L1096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1023-L1121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRTestFailovers:
     &#34;&#34;&#34;Class for getting all test failover VMs for BLR pair&#34;&#34;&#34;
@@ -3521,7 +3611,7 @@ The type of the boot for VMs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1064-L1067" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1089-L1092" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_boot_vms(self):
@@ -3568,7 +3658,7 @@ status_message (str)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1069-L1096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1094-L1121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_boot_vm_details(self, vm_name):
     &#34;&#34;&#34;Get the boot VM details for a given vm name
@@ -3608,7 +3698,7 @@ status_message (str)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/drorchestration/blr_pairs.py#L1059-L1062" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1084-L1087" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the VMs list for BLR pair&#34;&#34;&#34;
@@ -3715,6 +3805,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.stop" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.stop">stop</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.subclient_props" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.subclient_props">subclient_props</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.suspend" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.suspend">suspend</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPair.wait_for_pair_status" href="#cvpysdk.drorchestration.blr_pairs.BLRPair.wait_for_pair_status">wait_for_pair_status</a></code></li>
 </ul>
 </li>
 <li>

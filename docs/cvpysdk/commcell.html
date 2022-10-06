@@ -65,6 +65,9 @@ makes a rest api call to get values from GXGlobalParam</p>
 <p>_set_gxglobalparam_value
 &ndash;
 updates GXGlobalParam(commcell level configuration parameters)</p>
+<p>verify_owner_assignment_config()
+&ndash; verifies that the ownership assignments settings are configured
+and set properly</p>
 <p>logout()
 &ndash;
 logs out the user associated with the current instance</p>
@@ -156,6 +159,21 @@ Enables two factor authentication on this commcell</p>
 Disables two factor authentication on this commcell</p>
 <p>_get_commserv_metadata()
 &ndash; Returns back the commserv metadata on this commcell</p>
+<p>enable_privacy()
+&ndash;
+Enables users to enable data privacy on commcell</p>
+<p>disable_privacy()
+&ndash;
+Enables users to disable data privacy on commcell</p>
+<p>switch_to_company()
+&ndash;
+Login to company as an operator, just like using switcher on Command Center</p>
+<p>reset_company()
+&ndash;
+Switch back to Commcell</p>
+<p>allow_users_to_enable_passkey()
+&ndash;
+Enable or Disable passkey authorization for company administrators and client owners</p>
 <h1 id="commcell-instance-attributes">Commcell instance Attributes</h1>
 <pre><code>**commserv_guid**           --  returns the &lt;code&gt;CommServ&lt;/code&gt; GUID, class instance is initalized for
 
@@ -329,7 +347,7 @@ only for user group inclusion tfa.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1-L3280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1-L3446" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -380,6 +398,9 @@ Commcell:
     get_gxglobalparam_value()   --      makes a rest api call to get values from GXGlobalParam
 
     _set_gxglobalparam_value    --  updates GXGlobalParam(commcell level configuration parameters)
+
+    verify_owner_assignment_config()    -- verifies that the ownership assignments settings are configured
+    and set properly
 
     logout()                    --  logs out the user associated with the current instance
 
@@ -452,6 +473,16 @@ Commcell:
     disable_tfa()                          --  Disables two factor authentication on this commcell
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
+
+    enable_privacy()                    --  Enables users to enable data privacy on commcell
+
+    disable_privacy()                   --  Enables users to disable data privacy on commcell
+
+    switch_to_company()         --  Login to company as an operator, just like using switcher on Command Center
+
+    reset_company()             --  Switch back to Commcell
+    
+    allow_users_to_enable_passkey()     --      Enable or Disable passkey authorization for company administrators and client owners
 
 Commcell instance Attributes
 ============================
@@ -697,6 +728,7 @@ from .metallic import Metallic
 from .key_management_server import KeyManagementServers
 
 USER_LOGGED_OUT_MESSAGE = &#39;User Logged Out. Please initialize the Commcell object again.&#39;
+USER_DOES_NOT_HAVE_PERMISSION = &#34;User does not have permission on commcell properties&#34;
 &#34;&#34;&#34;str:     Message to be returned to the user, when trying the get the value of an attribute
 of the Commcell class, after the user was logged out.
 
@@ -931,6 +963,8 @@ class Commcell(object):
         self._tfa = None
         self._metallic = None
         self._kms = None
+        self._privacy = None
+        self._commcell_properties = None
         self.refresh()
 
         del self._password
@@ -1274,7 +1308,7 @@ class Commcell(object):
         if not isinstance(request_json, dict):
             message = f&#34;Received: {type(request_json)}. Expected: dict, list&#34;
             raise SDKException(&#39;Commcell&#39;, 107, message)
-        
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;GLOBAL_PARAM&#39;], request_json
         )
@@ -1284,6 +1318,34 @@ class Commcell(object):
                 return response.json()
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def verify_owner_assignment_config(self):
+
+        &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly
+
+        Returns:
+                dict    -   json response received from the server
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if ownership assignment is not correct
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#34;GET&#34;, self._services[&#34;SET_COMMCELL_PROPERTIES&#34;]
+        )
+
+        if flag:
+            try:
+                return response.json()
+            except ValueError:
+                return {&#39;output&#39;: response}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -1902,7 +1964,17 @@ class Commcell(object):
             return self._metallic
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-    
+
+    @property
+    def is_privacy_enabled(self):
+        &#34;&#34;&#34;Method to return if the privacy is enabled at commcell level or not&#34;&#34;&#34;
+        if self._commcell_properties is None:
+            self.get_commcell_properties()
+
+        self._privacy = self._commcell_properties.get(&#39;enablePrivacy&#39;)
+
+        return self._privacy
+
     @property
     def key_management_servers(self):
         &#34;&#34;&#34;Returns the instance of the KeyManagementServers class.&#34;&#34;&#34;
@@ -2338,6 +2410,7 @@ class Commcell(object):
                           service_pack=None,
                           cu_number=0,
                           sync_cache=True,
+                          sync_cache_list=None,
                           schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -2353,6 +2426,9 @@ class Commcell(object):
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
 
             Returns:
                 object - instance of the Job class for this download job
@@ -2413,6 +2489,7 @@ class Commcell(object):
             service_pack=service_pack,
             cu_number=cu_number,
             sync_cache=sync_cache,
+            sync_cache_list=sync_cache_list,
             schedule_pattern=schedule_pattern
         )
 
@@ -2547,6 +2624,16 @@ class Commcell(object):
                 default : None
 
             Ex : install_flags = {&#34;preferredIPfamily&#34;:2, &#34;install32Base&#34;:True}
+
+            db2_logs_location (dict) - dictionary of db2 logs location
+
+                default : None
+                
+            Ex: db2_logs_location = {
+                                    &#34;db2ArchivePath&#34;: &#34;/opt/Archive/&#34;,
+                                    &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
+                                    &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -2707,8 +2794,60 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def enable_privacy(self):
+        &#34;&#34;&#34;Enables users to enable data privacy on commcell&#34;&#34;&#34;
+        if self.is_privacy_enabled is True:
+            return
+
+        self.set_privacy(True)
+
+    def disable_privacy(self):
+        &#34;&#34;&#34;Enables users to disable data privacy on commcell&#34;&#34;&#34;
+        if self.is_privacy_enabled is False:
+            return
+
+        self.set_privacy(False)
+
+    def set_privacy(self, value):
+        &#34;&#34;&#34;
+        Method to enable/disble privacy
+            Args:
+                value (bool): True/False to enable/disable privacy
+
+        Raises:
+                SDKException:
+                    if response is empty
+                    if failed to disable privacy
+                    if response is not success
+        &#34;&#34;&#34;
+        url = self._services[&#39;PRIVACY_DISABLE&#39;]
+        if value:
+            url = self._services[&#39;PRIVACY_ENABLE&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, url
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json().get(&#39;response&#39;, [{}])[0]
+                if not response:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                if response.get(&#39;errorCode&#39;, -1) != 0:
+                    error_string = response.json().get(&#39;errorString&#39;)
+                    raise SDKException(
+                        &#39;Commcell&#39;, &#39;108&#39;, error_string)
+                self.get_commcell_properties()
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def get_commcell_properties(self):
         &#34;&#34;&#34; Get Commcell properties
+
         Returns: (dict)
             &#34;hostName&#34;: String,
             &#34;enableSharedLaptopUsage&#34;: Boolean,
@@ -2733,7 +2872,8 @@ class Commcell(object):
         if flag:
             if response.json():
                 response = response.json()
-                return response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+                self._commcell_properties = response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+                return self._commcell_properties
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -3369,7 +3509,7 @@ class Commcell(object):
                         continue
                     redirect_cc_list.append(ser_comm[&#39;commcellName&#39;])
                 if &#39;cloudServices&#39; in response.json():
-                    redirect_cc_list.append(response.json[&#39;cloudServices&#39;][0][&#39;commcellName&#39;])
+                    redirect_cc_list.append(response.json()[&#39;cloudServices&#39;][0][&#39;commcellName&#39;])
                 return redirect_cc_list
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -3559,7 +3699,7 @@ class Commcell(object):
     @property
     def default_timezone(self):
         &#34;&#34;&#34;Returns the default timezone used for all the operations performed via cvpysdk&#34;&#34;&#34;
-        return &#39;(GMT) Monrovia, Reykjavik&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;
+        return &#39;UTC&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;
 
     def enable_tfa(self, user_groups=None):
         &#34;&#34;&#34;
@@ -3610,7 +3750,51 @@ class Commcell(object):
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def switch_to_company(self, company_name):
+        &#34;&#34;&#34;Switching to Company as Operator&#34;&#34;&#34;
+        if self.organizations.has_organization(company_name):
+            self._headers[&#39;operatorCompanyId&#39;] = str(self.organizations.get(company_name).organization_id)
+        else:
+            raise SDKException(&#39;Organization&#39;, 103)
+
+    def reset_company(self):
+        &#34;&#34;&#34;Resets company to Commcell&#34;&#34;&#34;
+        if &#39;operatorCompanyId&#39; in self._headers:
+            self._headers.pop(&#39;operatorCompanyId&#39;)
+            
+    def allow_users_to_enable_passkey(self, flag):
+        &#34;&#34;&#34;Enable or Disable passkey authorization for company administrators and client owners
+        
+        Args:
+            flag (boolean)  --  Enable or Disable Passkey Authorization
+            
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to enable or disable passkey
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;commCellInfo&#34;: {
+                &#34;generalInfo&#34;: {
+                    &#34;allowUsersToEnablePasskey&#34;: flag
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._services[&#39;SET_COMMCELL_PROPERTIES&#39;], request_json)
+
+        if flag:
+            if response.json() and &#34;response&#34; in response.json():
+                errorCode = response.json()[&#39;response&#39;][0].get(&#39;errorCode&#39;)
+                if errorCode != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to enable passkey&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -3618,7 +3802,7 @@ class Commcell(object):
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="cvpysdk.commcell.USER_LOGGED_OUT_MESSAGE"><code class="name">var <span class="ident">USER_LOGGED_OUT_MESSAGE</span></code></dt>
+<dt id="cvpysdk.commcell.USER_DOES_NOT_HAVE_PERMISSION"><code class="name">var <span class="ident">USER_DOES_NOT_HAVE_PERMISSION</span></code></dt>
 <dd>
 <div class="desc"><p>str:
 Message to be returned to the user, when trying the get the value of an attribute
@@ -3708,7 +3892,7 @@ if the web service is down or not reachable</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L373-L3280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L387-L3446" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Commcell(object):
     &#34;&#34;&#34;Class for establishing a session to the Commcell via Commvault REST API.&#34;&#34;&#34;
@@ -3938,6 +4122,8 @@ if the web service is down or not reachable</p>
         self._tfa = None
         self._metallic = None
         self._kms = None
+        self._privacy = None
+        self._commcell_properties = None
         self.refresh()
 
         del self._password
@@ -4281,7 +4467,7 @@ if the web service is down or not reachable</p>
         if not isinstance(request_json, dict):
             message = f&#34;Received: {type(request_json)}. Expected: dict, list&#34;
             raise SDKException(&#39;Commcell&#39;, 107, message)
-        
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;GLOBAL_PARAM&#39;], request_json
         )
@@ -4291,6 +4477,34 @@ if the web service is down or not reachable</p>
                 return response.json()
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def verify_owner_assignment_config(self):
+
+        &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly
+
+        Returns:
+                dict    -   json response received from the server
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+
+                if ownership assignment is not correct
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#34;GET&#34;, self._services[&#34;SET_COMMCELL_PROPERTIES&#34;]
+        )
+
+        if flag:
+            try:
+                return response.json()
+            except ValueError:
+                return {&#39;output&#39;: response}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -4909,7 +5123,17 @@ if the web service is down or not reachable</p>
             return self._metallic
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
-    
+
+    @property
+    def is_privacy_enabled(self):
+        &#34;&#34;&#34;Method to return if the privacy is enabled at commcell level or not&#34;&#34;&#34;
+        if self._commcell_properties is None:
+            self.get_commcell_properties()
+
+        self._privacy = self._commcell_properties.get(&#39;enablePrivacy&#39;)
+
+        return self._privacy
+
     @property
     def key_management_servers(self):
         &#34;&#34;&#34;Returns the instance of the KeyManagementServers class.&#34;&#34;&#34;
@@ -5345,6 +5569,7 @@ if the web service is down or not reachable</p>
                           service_pack=None,
                           cu_number=0,
                           sync_cache=True,
+                          sync_cache_list=None,
                           schedule_pattern=None):
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -5360,6 +5585,9 @@ if the web service is down or not reachable</p>
 
                 sync_cache (bool)              --  True if download and sync
                                                    False only download
+                
+                sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
 
             Returns:
                 object - instance of the Job class for this download job
@@ -5420,6 +5648,7 @@ if the web service is down or not reachable</p>
             service_pack=service_pack,
             cu_number=cu_number,
             sync_cache=sync_cache,
+            sync_cache_list=sync_cache_list,
             schedule_pattern=schedule_pattern
         )
 
@@ -5554,6 +5783,16 @@ if the web service is down or not reachable</p>
                 default : None
 
             Ex : install_flags = {&#34;preferredIPfamily&#34;:2, &#34;install32Base&#34;:True}
+
+            db2_logs_location (dict) - dictionary of db2 logs location
+
+                default : None
+                
+            Ex: db2_logs_location = {
+                                    &#34;db2ArchivePath&#34;: &#34;/opt/Archive/&#34;,
+                                    &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
+                                    &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -5714,8 +5953,60 @@ if the web service is down or not reachable</p>
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def enable_privacy(self):
+        &#34;&#34;&#34;Enables users to enable data privacy on commcell&#34;&#34;&#34;
+        if self.is_privacy_enabled is True:
+            return
+
+        self.set_privacy(True)
+
+    def disable_privacy(self):
+        &#34;&#34;&#34;Enables users to disable data privacy on commcell&#34;&#34;&#34;
+        if self.is_privacy_enabled is False:
+            return
+
+        self.set_privacy(False)
+
+    def set_privacy(self, value):
+        &#34;&#34;&#34;
+        Method to enable/disble privacy
+            Args:
+                value (bool): True/False to enable/disable privacy
+
+        Raises:
+                SDKException:
+                    if response is empty
+                    if failed to disable privacy
+                    if response is not success
+        &#34;&#34;&#34;
+        url = self._services[&#39;PRIVACY_DISABLE&#39;]
+        if value:
+            url = self._services[&#39;PRIVACY_ENABLE&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, url
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json().get(&#39;response&#39;, [{}])[0]
+                if not response:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                if response.get(&#39;errorCode&#39;, -1) != 0:
+                    error_string = response.json().get(&#39;errorString&#39;)
+                    raise SDKException(
+                        &#39;Commcell&#39;, &#39;108&#39;, error_string)
+                self.get_commcell_properties()
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def get_commcell_properties(self):
         &#34;&#34;&#34; Get Commcell properties
+
         Returns: (dict)
             &#34;hostName&#34;: String,
             &#34;enableSharedLaptopUsage&#34;: Boolean,
@@ -5740,7 +6031,8 @@ if the web service is down or not reachable</p>
         if flag:
             if response.json():
                 response = response.json()
-                return response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+                self._commcell_properties = response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+                return self._commcell_properties
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -6376,7 +6668,7 @@ if the web service is down or not reachable</p>
                         continue
                     redirect_cc_list.append(ser_comm[&#39;commcellName&#39;])
                 if &#39;cloudServices&#39; in response.json():
-                    redirect_cc_list.append(response.json[&#39;cloudServices&#39;][0][&#39;commcellName&#39;])
+                    redirect_cc_list.append(response.json()[&#39;cloudServices&#39;][0][&#39;commcellName&#39;])
                 return redirect_cc_list
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -6566,7 +6858,7 @@ if the web service is down or not reachable</p>
     @property
     def default_timezone(self):
         &#34;&#34;&#34;Returns the default timezone used for all the operations performed via cvpysdk&#34;&#34;&#34;
-        return &#39;(GMT) Monrovia, Reykjavik&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;
+        return &#39;UTC&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;
 
     def enable_tfa(self, user_groups=None):
         &#34;&#34;&#34;
@@ -6617,7 +6909,51 @@ if the web service is down or not reachable</p>
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def switch_to_company(self, company_name):
+        &#34;&#34;&#34;Switching to Company as Operator&#34;&#34;&#34;
+        if self.organizations.has_organization(company_name):
+            self._headers[&#39;operatorCompanyId&#39;] = str(self.organizations.get(company_name).organization_id)
+        else:
+            raise SDKException(&#39;Organization&#39;, 103)
+
+    def reset_company(self):
+        &#34;&#34;&#34;Resets company to Commcell&#34;&#34;&#34;
+        if &#39;operatorCompanyId&#39; in self._headers:
+            self._headers.pop(&#39;operatorCompanyId&#39;)
+            
+    def allow_users_to_enable_passkey(self, flag):
+        &#34;&#34;&#34;Enable or Disable passkey authorization for company administrators and client owners
+        
+        Args:
+            flag (boolean)  --  Enable or Disable Passkey Authorization
+            
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to enable or disable passkey
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;commCellInfo&#34;: {
+                &#34;generalInfo&#34;: {
+                    &#34;allowUsersToEnablePasskey&#34;: flag
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._services[&#39;SET_COMMCELL_PROPERTIES&#39;], request_json)
+
+        if flag:
+            if response.json() and &#34;response&#34; in response.json():
+                errorCode = response.json()[&#39;response&#39;][0].get(&#39;errorCode&#39;)
+                if errorCode != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to enable passkey&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -6627,7 +6963,7 @@ if the web service is down or not reachable</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1242-L1251" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1286-L1295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def activate(self):
@@ -6647,7 +6983,7 @@ def activate(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1362-L1371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1406-L1415" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def activity_control(self):
@@ -6667,7 +7003,7 @@ def activity_control(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1105-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1149-L1158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alerts(self):
@@ -6687,7 +7023,7 @@ def alerts(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1384-L1393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1428-L1437" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def array_management(self):
@@ -6707,7 +7043,7 @@ def array_management(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1005-L1008" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1049-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auth_token(self):
@@ -6721,7 +7057,7 @@ def auth_token(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1512-L1522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1556-L1566" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_network_pairs(self):
@@ -6742,7 +7078,7 @@ def backup_network_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1500-L1510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1544-L1554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def blr_pairs(self):
@@ -6763,7 +7099,7 @@ def blr_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1198-L1207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1242-L1251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_groups(self):
@@ -6783,7 +7119,7 @@ def client_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1028-L1037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1072-L1081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def clients(self):
@@ -6803,7 +7139,7 @@ def clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L839-L842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L855-L858" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_id(self):
@@ -6817,7 +7153,7 @@ def commcell_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1436-L1445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1480-L1489" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_migration(self):
@@ -6837,7 +7173,7 @@ def commcell_migration(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1010-L1013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1054-L1057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_username(self):
@@ -6853,7 +7189,7 @@ def commcell_username(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1544-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1588-L1597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcells_for_user(self):
@@ -6874,7 +7210,7 @@ class.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1039-L1048" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1083-L1092" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_cache(self):
@@ -6894,7 +7230,7 @@ def commserv_cache(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1428-L1434" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1472-L1478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_client(self):
@@ -6911,7 +7247,7 @@ def commserv_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L957-L960" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1001-L1004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_guid(self):
@@ -6925,7 +7261,7 @@ def commserv_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L962-L965" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1006-L1009" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_hostname(self):
@@ -6939,7 +7275,7 @@ def commserv_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1555-L1560" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1599-L1604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_metadata(self):
@@ -6955,7 +7291,7 @@ def commserv_metadata(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L967-L970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1011-L1014" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_name(self):
@@ -6969,7 +7305,7 @@ def commserv_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L972-L975" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1016-L1019" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_timezone(self):
@@ -6983,7 +7319,7 @@ def commserv_timezone(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L977-L980" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1021-L1024" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_timezone_name(self):
@@ -6998,7 +7334,7 @@ def commserv_timezone_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L982-L989" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1026-L1033" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commserv_version(self):
@@ -7016,7 +7352,7 @@ def commserv_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1231-L1240" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1275-L1284" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content_analyzers(self):
@@ -7036,7 +7372,7 @@ def content_analyzers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1297-L1306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1341-L1350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def credentials(self):
@@ -7056,7 +7392,7 @@ def credentials(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1220-L1229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1264-L1273" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def datacube(self):
@@ -7076,7 +7412,7 @@ def datacube(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1166-L1174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1210-L1218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def deduplication_engines(self):
@@ -7095,12 +7431,12 @@ def deduplication_engines(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3226-L3229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3348-L3351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_timezone(self):
     &#34;&#34;&#34;Returns the default timezone used for all the operations performed via cvpysdk&#34;&#34;&#34;
-    return &#39;(GMT) Monrovia, Reykjavik&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;</code></pre>
+    return &#39;UTC&#39; if self.is_linux_commserv else &#39;(UTC) Coordinated Universal Time&#39;</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.commcell.Commcell.device_id"><code class="name">var <span class="ident">device_id</span></code></dt>
@@ -7109,7 +7445,7 @@ def default_timezone(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1015-L1021" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1059-L1065" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def device_id(self):
@@ -7126,7 +7462,7 @@ def device_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1395-L1404" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1439-L1448" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disasterrecovery(self):
@@ -7146,7 +7482,7 @@ def disasterrecovery(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1116-L1125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1160-L1169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_libraries(self):
@@ -7166,7 +7502,7 @@ def disk_libraries(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1187-L1196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1231-L1240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domains(self):
@@ -7186,7 +7522,7 @@ def domains(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1308-L1317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1352-L1361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def download_center(self):
@@ -7206,7 +7542,7 @@ def download_center(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1373-L1382" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1417-L1426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def event_viewer(self):
@@ -7226,7 +7562,7 @@ def event_viewer(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1209-L1218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1253-L1262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_filters(self):
@@ -7246,7 +7582,7 @@ def global_filters(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1061-L1070" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1105-L1114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hac_clusters(self):
@@ -7266,7 +7602,7 @@ def hac_clusters(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1406-L1415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1450-L1459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def identity_management(self):
@@ -7286,7 +7622,7 @@ def identity_management(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1072-L1081" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1116-L1125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pools(self):
@@ -7306,7 +7642,7 @@ def index_pools(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1050-L1059" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1094-L1103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_servers(self):
@@ -7330,7 +7666,7 @@ def index_servers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3213-L3224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3335-L3346" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_linux_commserv(self):
@@ -7346,13 +7682,32 @@ def is_linux_commserv(self):
     return self._is_linux_commserv</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.is_privacy_enabled"><code class="name">var <span class="ident">is_privacy_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Method to return if the privacy is enabled at commcell level or not</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1617-L1625" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_privacy_enabled(self):
+    &#34;&#34;&#34;Method to return if the privacy is enabled at commcell level or not&#34;&#34;&#34;
+    if self._commcell_properties is None:
+        self.get_commcell_properties()
+
+    self._privacy = self._commcell_properties.get(&#39;enablePrivacy&#39;)
+
+    return self._privacy</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.is_service_commcell"><code class="name">var <span class="ident">is_service_commcell</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the is_service_commcell property.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3167-L3171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3289-L3293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_service_commcell(self):
@@ -7369,7 +7724,7 @@ def is_service_commcell(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3189-L3196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3311-L3318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -7387,7 +7742,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1264-L1273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1308-L1317" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_controller(self):
@@ -7407,7 +7762,7 @@ def job_controller(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1534-L1542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1578-L1586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_management(self):
@@ -7426,7 +7781,7 @@ def job_management(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1573-L1582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1627-L1636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def key_management_servers(self):
@@ -7446,7 +7801,7 @@ def key_management_servers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3173-L3177" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3295-L3299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def master_saml_token(self):
@@ -7461,7 +7816,7 @@ def master_saml_token(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1083-L1092" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1127-L1136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agents(self):
@@ -7481,7 +7836,7 @@ def media_agents(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1562-L1571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1606-L1615" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metallic(self):
@@ -7501,7 +7856,7 @@ def metallic(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1341-L1350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1385-L1394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def monitoring_policies(self):
@@ -7521,7 +7876,7 @@ def monitoring_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1023-L1026" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1067-L1070" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name_change(self):
@@ -7535,7 +7890,7 @@ def name_change(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1352-L1360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1396-L1404" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operation_window(self):
@@ -7554,7 +7909,7 @@ def operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1319-L1328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1363-L1372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organizations(self):
@@ -7574,7 +7929,7 @@ def organizations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1253-L1262" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1297-L1306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plans(self):
@@ -7594,7 +7949,7 @@ def plans(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1155-L1164" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1199-L1208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def policies(self):
@@ -7614,7 +7969,7 @@ def policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1488-L1498" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1532-L1542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_targets(self):
@@ -7637,7 +7992,7 @@ def recovery_targets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1466-L1475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1510-L1519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def redirect_rules_of_service(self):
@@ -7667,7 +8022,7 @@ details related to commcell_name2
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1447-L1464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1491-L1508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def registered_routing_commcells(self):
@@ -7695,7 +8050,7 @@ def registered_routing_commcells(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1477-L1486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1521-L1530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_groups(self):
@@ -7715,7 +8070,7 @@ def replication_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1524-L1532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1568-L1576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reports(self):
@@ -7734,7 +8089,7 @@ def reports(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1286-L1295" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1330-L1339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def roles(self):
@@ -7754,7 +8109,7 @@ def roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1139-L1142" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1183-L1186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_policies(self):
@@ -7768,7 +8123,7 @@ def schedule_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1144-L1153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1188-L1197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedules(self):
@@ -7788,7 +8143,7 @@ def schedules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1134-L1137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1178-L1181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policies(self):
@@ -7802,7 +8157,7 @@ def storage_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1330-L1339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1374-L1383" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pools(self):
@@ -7822,7 +8177,7 @@ def storage_pools(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1417-L1426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1461-L1470" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def system(self):
@@ -7842,7 +8197,7 @@ def system(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1127-L1132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1171-L1176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tape_libraries(self):
@@ -7866,7 +8221,7 @@ eg:-
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3198-L3211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3320-L3333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tfa_enabled_user_groups(self):
@@ -7890,7 +8245,7 @@ def tfa_enabled_user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3179-L3187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3301-L3309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def two_factor_authentication(self):
@@ -7909,7 +8264,7 @@ def two_factor_authentication(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1176-L1185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1220-L1229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_groups(self):
@@ -7929,7 +8284,7 @@ def user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1275-L1284" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1319-L1328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -7950,7 +8305,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L991-L998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1035-L1042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -7968,7 +8323,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1000-L1003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1044-L1047" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def webconsole_hostname(self):
@@ -7982,7 +8337,7 @@ def webconsole_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1094-L1103" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1138-L1147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workflows(self):
@@ -8040,7 +8395,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1889-L1920" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1943-L1974" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_additional_setting(self, category, key_name, data_type, value):
     &#34;&#34;&#34;Adds registry key to the commserve property.
@@ -8105,7 +8460,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2666-L2696" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2788-L2818" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_associations_to_saml_app(self, saml_app_name, saml_app_key, props, user_to_be_added):
     &#34;&#34;&#34;adds the given  user under associations tab of the saml app
@@ -8162,7 +8517,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3077-L3165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3199-L3287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_service_commcell_associations(self, entity_name, service_commcell):
     &#34;&#34;&#34;adds an association for an entity on a service commcell
@@ -8255,6 +8610,58 @@ if response is not success
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.allow_users_to_enable_passkey"><code class="name flex">
+<span>def <span class="ident">allow_users_to_enable_passkey</span></span>(<span>self, flag)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enable or Disable passkey authorization for company administrators and client owners</p>
+<h2 id="args">Args</h2>
+<p>flag (boolean)
+&ndash;
+Enable or Disable Passkey Authorization</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty
+if response is not success
+if failed to enable or disable passkey</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3416-L3446" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def allow_users_to_enable_passkey(self, flag):
+    &#34;&#34;&#34;Enable or Disable passkey authorization for company administrators and client owners
+    
+    Args:
+        flag (boolean)  --  Enable or Disable Passkey Authorization
+        
+    Raises:
+        SDKException:
+            if response is empty
+            if response is not success
+            if failed to enable or disable passkey
+    &#34;&#34;&#34;
+    request_json = {
+        &#34;commCellInfo&#34;: {
+            &#34;generalInfo&#34;: {
+                &#34;allowUsersToEnablePasskey&#34;: flag
+            }
+        }
+    }
+    flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._services[&#39;SET_COMMCELL_PROPERTIES&#39;], request_json)
+
+    if flag:
+        if response.json() and &#34;response&#34; in response.json():
+            errorCode = response.json()[&#39;response&#39;][0].get(&#39;errorCode&#39;)
+            if errorCode != 0:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to enable passkey&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.delete_additional_setting"><code class="name flex">
 <span>def <span class="ident">delete_additional_setting</span></span>(<span>self, category, key_name)</span>
 </code></dt>
@@ -8281,7 +8688,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1922-L1942" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1976-L1996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_additional_setting(self, category, key_name):
     &#34;&#34;&#34;Deletes registry key from the commserve property.
@@ -8306,6 +8713,24 @@ if response code is not as expected
     self.commserv_client.delete_additional_setting(category, key_name)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.disable_privacy"><code class="name flex">
+<span>def <span class="ident">disable_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enables users to disable data privacy on commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2453-L2458" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def disable_privacy(self):
+    &#34;&#34;&#34;Enables users to disable data privacy on commcell&#34;&#34;&#34;
+    if self.is_privacy_enabled is False:
+        return
+
+    self.set_privacy(False)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.disable_shared_laptop"><code class="name flex">
 <span>def <span class="ident">disable_shared_laptop</span></span>(<span>self)</span>
 </code></dt>
@@ -8323,7 +8748,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2343-L2375" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2412-L2444" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_shared_laptop(self):
     &#34;&#34;&#34;Executes the request on the server to disable Shared Laptop on commcell
@@ -8370,7 +8795,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3243-L3250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3365-L3372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -8383,7 +8808,7 @@ if response is not success</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.commcell.Commcell.download_software"><code class="name flex">
-<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, schedule_pattern=None)</span>
+<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downloads the os packages on the commcell</p>
@@ -8406,6 +8831,10 @@ maintenance release number</p>
 &ndash;
 True if download and sync
 False only download</p>
+<p>sync_cache_list (list)
+&ndash;
+list of names of remote caches to sync
+use None to sync all caches</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this download job</p>
 <h2 id="raises">Raises</h2>
@@ -8489,7 +8918,7 @@ service_pack=13
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2002-L2084" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2056-L2143" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(self,
                       options=None,
@@ -8497,6 +8926,7 @@ service_pack=13
                       service_pack=None,
                       cu_number=0,
                       sync_cache=True,
+                      sync_cache_list=None,
                       schedule_pattern=None):
     &#34;&#34;&#34;Downloads the os packages on the commcell
 
@@ -8512,6 +8942,9 @@ service_pack=13
 
             sync_cache (bool)              --  True if download and sync
                                                False only download
+            
+            sync_cache_list (list)         --  list of names of remote caches to sync
+                                               use None to sync all caches
 
         Returns:
             object - instance of the Job class for this download job
@@ -8572,6 +9005,7 @@ service_pack=13
         service_pack=service_pack,
         cu_number=cu_number,
         sync_cache=sync_cache,
+        sync_cache_list=sync_cache_list,
         schedule_pattern=schedule_pattern
     )</code></pre>
 </details>
@@ -8597,7 +9031,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2270-L2308" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2339-L2377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to enable Auth Code for installation on commcell
@@ -8640,6 +9074,24 @@ if response is not success
     return response.json()[&#39;organizationProperties&#39;][&#39;authCode&#39;]</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.enable_privacy"><code class="name flex">
+<span>def <span class="ident">enable_privacy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enables users to enable data privacy on commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2446-L2451" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_privacy(self):
+    &#34;&#34;&#34;Enables users to enable data privacy on commcell&#34;&#34;&#34;
+    if self.is_privacy_enabled is True:
+        return
+
+    self.set_privacy(True)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.enable_shared_laptop"><code class="name flex">
 <span>def <span class="ident">enable_shared_laptop</span></span>(<span>self)</span>
 </code></dt>
@@ -8657,7 +9109,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2310-L2341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2379-L2410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_shared_laptop(self):
     &#34;&#34;&#34;Executes the request on the server to enable Shared Laptop on commcell
@@ -8708,7 +9160,7 @@ user group names for which tfa needs to be enabled.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L3231-L3241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3353-L3363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self, user_groups=None):
     &#34;&#34;&#34;
@@ -8751,7 +9203,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2625-L2664" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2747-L2786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_qcommand(self, command, input_xml=None):
     &#34;&#34;&#34;Executes the ExecuteQCommand API on the commcell.
@@ -8805,7 +9257,7 @@ dict of organization properties of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2410-L2428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2532-L2550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_commcell_organization_properties(self):
     &#34;&#34;&#34;
@@ -8832,8 +9284,8 @@ dict of organization properties of commcell</p></div>
 <span>def <span class="ident">get_commcell_properties</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get Commcell properties
-Returns: (dict)
+<div class="desc"><p>Get Commcell properties</p>
+<p>Returns: (dict)
 "hostName": String,
 "enableSharedLaptopUsage": Boolean,
 "enableTwoFactorAuthentication": Boolean,
@@ -8853,10 +9305,11 @@ Returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2377-L2408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2497-L2530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_commcell_properties(self):
     &#34;&#34;&#34; Get Commcell properties
+
     Returns: (dict)
         &#34;hostName&#34;: String,
         &#34;enableSharedLaptopUsage&#34;: Boolean,
@@ -8881,7 +9334,8 @@ Returns: (dict)
     if flag:
         if response.json():
             response = response.json()
-            return response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+            self._commcell_properties = response.get(&#34;commCellInfo&#34;).get(&#34;generalInfo&#34;)
+            return self._commcell_properties
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
@@ -8902,7 +9356,7 @@ returns: (list of dictionaries)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2520-L2563" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2642-L2685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_default_plan(self):
     &#34;&#34;&#34;Executes the request on the server to get Default Plan at commcell level.
@@ -8971,7 +9425,7 @@ if there is no response</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2971-L3011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3093-L3133" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_eligible_service_commcells(self, login_name_or_email=None):
     &#34;&#34;&#34;Gets the redirect service commcells based on login_name or email provided
@@ -9025,7 +9479,7 @@ return: (dict) Email server settings for commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2430-L2446" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2552-L2568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_email_settings(self):
     &#34;&#34;&#34;
@@ -9063,7 +9517,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L874-L900" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L890-L916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_gxglobalparam_value(self):
     &#34;&#34;&#34;Makes a rest api call to get values from GXGlobalParam
@@ -9106,7 +9560,7 @@ returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2448-L2470" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2570-L2592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_password_encryption_config(self):
     &#34;&#34;&#34; Get the password encryption config for commcell
@@ -9142,7 +9596,7 @@ class.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1745-L1752" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1799-L1806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_remote_cache(self, client_name):
     &#34;&#34;&#34;Returns the instance of the RemoteCache  class.&#34;&#34;&#34;
@@ -9173,7 +9627,7 @@ SAML token string received from the server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1851-L1887" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1905-L1941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_saml_token(self, validity=30):
     &#34;&#34;&#34;Returns the SAML token for the currently logged-in user.
@@ -9233,7 +9687,7 @@ Returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2472-L2518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2594-L2640" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_security_associations(self):
     &#34;&#34;&#34; Get the security associations for commcell
@@ -9343,6 +9797,17 @@ install_flags (dict)
 <pre><code>default : None
 </code></pre>
 <p>Ex : install_flags = {"preferredIPfamily":2, "install32Base":True}</p>
+<p>db2_logs_location (dict) - dictionary of db2 logs location</p>
+<pre><code>default : None
+</code></pre>
+<dl>
+<dt><strong><code>Ex</code></strong></dt>
+<dd>db2_logs_location = {
+"db2ArchivePath": "/opt/Archive/",
+"db2RetrievePath": "/opt/Retrieve/",
+"db2AuditErrorPath": "/opt/Audit/"
+}</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this install_software job</p>
 <h2 id="raises">Raises</h2>
@@ -9394,7 +9859,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2152-L2268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2211-L2337" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -9461,6 +9926,16 @@ not both
             default : None
 
         Ex : install_flags = {&#34;preferredIPfamily&#34;:2, &#34;install32Base&#34;:True}
+
+        db2_logs_location (dict) - dictionary of db2 logs location
+
+            default : None
+            
+        Ex: db2_logs_location = {
+                                &#34;db2ArchivePath&#34;: &#34;/opt/Archive/&#34;,
+                                &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
+                                &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
+                        }
 
     Returns:
             object - instance of the Job class for this install_software job
@@ -9531,7 +10006,7 @@ if type of the commcell_name is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2767-L2783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2889-L2905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def is_commcell_registered(self, commcell_name):
     &#34;&#34;&#34;checks if a commcell is registered in the commcell
@@ -9560,7 +10035,7 @@ if type of the commcell_name is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1584-L1591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1638-L1645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def logout(self):
     &#34;&#34;&#34;Logs out the user associated with the current instance.&#34;&#34;&#34;
@@ -9594,7 +10069,7 @@ all properties of VM protected for passed days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1944-L1974" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1998-L2028" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def protected_vms(self, days, limit=100):
     &#34;&#34;&#34;
@@ -9676,7 +10151,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2086-L2150" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2145-L2209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -9767,7 +10242,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L802-L818" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L818-L834" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def qoperation_execute(self, request_xml):
     &#34;&#34;&#34;Wrapper for def _qoperation_execute(self, request_xml)
@@ -9796,7 +10271,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1698-L1743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1752-L1797" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Commcell.&#34;&#34;&#34;
@@ -9877,7 +10352,7 @@ if there is no response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2785-L2867" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2907-L2989" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def register_commcell(
         self,
@@ -10016,7 +10491,7 @@ the response received from the server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1593-L1640" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1647-L1694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def request(self, request_type, request_url, request_body=None):
     &#34;&#34;&#34;Runs the request of the type specified on the request URL, with the body passed
@@ -10068,6 +10543,22 @@ the response received from the server</p></div>
     return response</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.reset_company"><code class="name flex">
+<span>def <span class="ident">reset_company</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resets company to Commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3411-L3414" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def reset_company(self):
+    &#34;&#34;&#34;Resets company to Commcell&#34;&#34;&#34;
+    if &#39;operatorCompanyId&#39; in self._headers:
+        self._headers.pop(&#39;operatorCompanyId&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.run_data_aging"><code class="name flex">
 <span>def <span class="ident">run_data_aging</span></span>(<span>self, copy_name=None, storage_policy_name=None, is_granular=False, include_all=True, include_all_clients=False, select_copies=False, prune_selected_copies=False, schedule_pattern=None)</span>
 </code></dt>
@@ -10076,7 +10567,7 @@ the response received from the server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1754-L1849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1808-L1903" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_aging(
         self,
@@ -10216,7 +10707,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1642-L1696" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L1696-L1750" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def send_mail(self, receivers, subject, body=None, copy_sender=False, is_html_content=True):
     &#34;&#34;&#34;Sends a mail to the specified email address from the email asscoiated to this user
@@ -10291,7 +10782,7 @@ if there is no response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2869-L2911" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2991-L3033" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def service_commcell_sync(self, service_commcell):
     &#34;&#34;&#34; Sync a service commcell
@@ -10359,7 +10850,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2565-L2623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2687-L2745" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_plan(self, plan_name):
     &#34;&#34;&#34;Executes the request on the server to set Default Plan at commcell level.
@@ -10422,6 +10913,79 @@ if response is not success
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.commcell.Commcell.set_privacy"><code class="name flex">
+<span>def <span class="ident">set_privacy</span></span>(<span>self, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to enable/disble privacy
+Args:
+value (bool): True/False to enable/disable privacy</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty
+if failed to disable privacy
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2460-L2495" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_privacy(self, value):
+    &#34;&#34;&#34;
+    Method to enable/disble privacy
+        Args:
+            value (bool): True/False to enable/disable privacy
+
+    Raises:
+            SDKException:
+                if response is empty
+                if failed to disable privacy
+                if response is not success
+    &#34;&#34;&#34;
+    url = self._services[&#39;PRIVACY_DISABLE&#39;]
+    if value:
+        url = self._services[&#39;PRIVACY_ENABLE&#39;]
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;PUT&#39;, url
+    )
+
+    if flag:
+        if response and response.json():
+            response = response.json().get(&#39;response&#39;, [{}])[0]
+            if not response:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            if response.get(&#39;errorCode&#39;, -1) != 0:
+                error_string = response.json().get(&#39;errorString&#39;)
+                raise SDKException(
+                    &#39;Commcell&#39;, &#39;108&#39;, error_string)
+            self.get_commcell_properties()
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.commcell.Commcell.switch_to_company"><code class="name flex">
+<span>def <span class="ident">switch_to_company</span></span>(<span>self, company_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Switching to Company as Operator</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3404-L3409" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def switch_to_company(self, company_name):
+    &#34;&#34;&#34;Switching to Company as Operator&#34;&#34;&#34;
+    if self.organizations.has_organization(company_name):
+        self._headers[&#39;operatorCompanyId&#39;] = str(self.organizations.get(company_name).organization_id)
+    else:
+        raise SDKException(&#39;Organization&#39;, 103)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.commcell.Commcell.sync_remote_cache"><code class="name flex">
 <span>def <span class="ident">sync_remote_cache</span></span>(<span>self, client_list=None)</span>
 </code></dt>
@@ -10445,7 +11009,7 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L1976-L2000" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L2030-L2054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def sync_remote_cache(self, client_list=None):
     &#34;&#34;&#34;Syncs remote cache
@@ -10489,7 +11053,7 @@ if there is no response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/commcell.py#L2913-L2969" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L3035-L3091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unregister_commcell(self, commcell_name):
     &#34;&#34;&#34;Unregisters a commcell
@@ -10548,6 +11112,56 @@ if there is no response</p></div>
             else:
                 response_string = self._update_response_(response.text)
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.commcell.Commcell.verify_owner_assignment_config"><code class="name flex">
+<span>def <span class="ident">verify_owner_assignment_config</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Verifies that the ownership assignments settings are configured and set properly</p>
+<h2 id="returns">Returns</h2>
+<p>dict
+-
+json response received from the server</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+
+if ownership assignment is not correct
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell.py#L973-L999" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def verify_owner_assignment_config(self):
+
+    &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly
+
+    Returns:
+            dict    -   json response received from the server
+
+    Raises:
+        SDKException:
+            if response is empty
+
+            if response is not success
+
+            if ownership assignment is not correct
+
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#34;GET&#34;, self._services[&#34;SET_COMMCELL_PROPERTIES&#34;]
+    )
+
+    if flag:
+        try:
+            return response.json()
+        except ValueError:
+            return {&#39;output&#39;: response}
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </dd>
 </dl>
@@ -10622,7 +11236,7 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="cvpysdk.commcell.USER_LOGGED_OUT_MESSAGE" href="#cvpysdk.commcell.USER_LOGGED_OUT_MESSAGE">USER_LOGGED_OUT_MESSAGE</a></code></li>
+<li><code><a title="cvpysdk.commcell.USER_DOES_NOT_HAVE_PERMISSION" href="#cvpysdk.commcell.USER_DOES_NOT_HAVE_PERMISSION">USER_DOES_NOT_HAVE_PERMISSION</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -10636,6 +11250,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.add_associations_to_saml_app" href="#cvpysdk.commcell.Commcell.add_associations_to_saml_app">add_associations_to_saml_app</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.add_service_commcell_associations" href="#cvpysdk.commcell.Commcell.add_service_commcell_associations">add_service_commcell_associations</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.alerts" href="#cvpysdk.commcell.Commcell.alerts">alerts</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.allow_users_to_enable_passkey" href="#cvpysdk.commcell.Commcell.allow_users_to_enable_passkey">allow_users_to_enable_passkey</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.array_management" href="#cvpysdk.commcell.Commcell.array_management">array_management</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.auth_token" href="#cvpysdk.commcell.Commcell.auth_token">auth_token</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.backup_network_pairs" href="#cvpysdk.commcell.Commcell.backup_network_pairs">backup_network_pairs</a></code></li>
@@ -10662,6 +11277,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.default_timezone" href="#cvpysdk.commcell.Commcell.default_timezone">default_timezone</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.delete_additional_setting" href="#cvpysdk.commcell.Commcell.delete_additional_setting">delete_additional_setting</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.device_id" href="#cvpysdk.commcell.Commcell.device_id">device_id</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.disable_privacy" href="#cvpysdk.commcell.Commcell.disable_privacy">disable_privacy</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.disable_shared_laptop" href="#cvpysdk.commcell.Commcell.disable_shared_laptop">disable_shared_laptop</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.disable_tfa" href="#cvpysdk.commcell.Commcell.disable_tfa">disable_tfa</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.disasterrecovery" href="#cvpysdk.commcell.Commcell.disasterrecovery">disasterrecovery</a></code></li>
@@ -10670,6 +11286,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.download_center" href="#cvpysdk.commcell.Commcell.download_center">download_center</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.download_software" href="#cvpysdk.commcell.Commcell.download_software">download_software</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.enable_auth_code" href="#cvpysdk.commcell.Commcell.enable_auth_code">enable_auth_code</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.enable_privacy" href="#cvpysdk.commcell.Commcell.enable_privacy">enable_privacy</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.enable_shared_laptop" href="#cvpysdk.commcell.Commcell.enable_shared_laptop">enable_shared_laptop</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.enable_tfa" href="#cvpysdk.commcell.Commcell.enable_tfa">enable_tfa</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.event_viewer" href="#cvpysdk.commcell.Commcell.event_viewer">event_viewer</a></code></li>
@@ -10692,6 +11309,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.install_software" href="#cvpysdk.commcell.Commcell.install_software">install_software</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.is_commcell_registered" href="#cvpysdk.commcell.Commcell.is_commcell_registered">is_commcell_registered</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.is_linux_commserv" href="#cvpysdk.commcell.Commcell.is_linux_commserv">is_linux_commserv</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.is_privacy_enabled" href="#cvpysdk.commcell.Commcell.is_privacy_enabled">is_privacy_enabled</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.is_service_commcell" href="#cvpysdk.commcell.Commcell.is_service_commcell">is_service_commcell</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.is_tfa_enabled" href="#cvpysdk.commcell.Commcell.is_tfa_enabled">is_tfa_enabled</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.job_controller" href="#cvpysdk.commcell.Commcell.job_controller">job_controller</a></code></li>
@@ -10718,6 +11336,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.replication_groups" href="#cvpysdk.commcell.Commcell.replication_groups">replication_groups</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.reports" href="#cvpysdk.commcell.Commcell.reports">reports</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.request" href="#cvpysdk.commcell.Commcell.request">request</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.reset_company" href="#cvpysdk.commcell.Commcell.reset_company">reset_company</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.roles" href="#cvpysdk.commcell.Commcell.roles">roles</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.run_data_aging" href="#cvpysdk.commcell.Commcell.run_data_aging">run_data_aging</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.schedule_policies" href="#cvpysdk.commcell.Commcell.schedule_policies">schedule_policies</a></code></li>
@@ -10725,8 +11344,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.send_mail" href="#cvpysdk.commcell.Commcell.send_mail">send_mail</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.service_commcell_sync" href="#cvpysdk.commcell.Commcell.service_commcell_sync">service_commcell_sync</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.set_default_plan" href="#cvpysdk.commcell.Commcell.set_default_plan">set_default_plan</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.set_privacy" href="#cvpysdk.commcell.Commcell.set_privacy">set_privacy</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.storage_policies" href="#cvpysdk.commcell.Commcell.storage_policies">storage_policies</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.storage_pools" href="#cvpysdk.commcell.Commcell.storage_pools">storage_pools</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.switch_to_company" href="#cvpysdk.commcell.Commcell.switch_to_company">switch_to_company</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.sync_remote_cache" href="#cvpysdk.commcell.Commcell.sync_remote_cache">sync_remote_cache</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.system" href="#cvpysdk.commcell.Commcell.system">system</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.tape_libraries" href="#cvpysdk.commcell.Commcell.tape_libraries">tape_libraries</a></code></li>
@@ -10735,6 +11356,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell.Commcell.unregister_commcell" href="#cvpysdk.commcell.Commcell.unregister_commcell">unregister_commcell</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.user_groups" href="#cvpysdk.commcell.Commcell.user_groups">user_groups</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.users" href="#cvpysdk.commcell.Commcell.users">users</a></code></li>
+<li><code><a title="cvpysdk.commcell.Commcell.verify_owner_assignment_config" href="#cvpysdk.commcell.Commcell.verify_owner_assignment_config">verify_owner_assignment_config</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.version" href="#cvpysdk.commcell.Commcell.version">version</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.webconsole_hostname" href="#cvpysdk.commcell.Commcell.webconsole_hostname">webconsole_hostname</a></code></li>
 <li><code><a title="cvpysdk.commcell.Commcell.workflows" href="#cvpysdk.commcell.Commcell.workflows">workflows</a></code></li>

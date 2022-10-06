@@ -30,6 +30,8 @@ Derived class from Backupset Base class, representing a db2 backupset,
 and to perform operations on that subclient</p>
 <h1 id="db2backupset">DB2Backupset:</h1>
 <pre><code>restore_entire_database()       --      runs the restore job for specified backupset
+
+restore_out_of_place()          --      runs the out of place restore for given backupset
 </code></pre>
 <h1 id="db2backupset-instance-attributes">DB2Backupset instance Attributes:</h1>
 <pre><code>**db2_db_status**       --      returns db2 database status
@@ -37,7 +39,7 @@ and to perform operations on that subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/db2backupset.py#L1-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/db2backupset.py#L1-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -68,6 +70,8 @@ DB2Backupset:
 =============
 
     restore_entire_database()       --      runs the restore job for specified backupset
+
+    restore_out_of_place()          --      runs the out of place restore for given backupset
 
 
 DB2Backupset instance Attributes:
@@ -152,7 +156,84 @@ class DB2Backupset(Backupset):
 
         return self._instance_object.restore_entire_database(
             dest_client_name, dest_instance_name, dest_database_name,
-            recover_db=recover_db, restore_incremental=restore_incremental)</code></pre>
+            recover_db=recover_db, restore_incremental=restore_incremental)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs
+
+    ):
+        &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Target DB Restore Destination
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        self._instance_object._restore_association = self._backupset_association
+
+        return self._instance_object.restore_out_of_place(dest_client_name=dest_client_name,
+                                                          dest_instance_name=dest_instance_name,
+                                                          dest_backupset_name=dest_backupset_name,
+                                                          target_path=target_path,
+                                                          **kwargs)</code></pre>
 </details>
 </section>
 <section>
@@ -191,7 +272,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/db2backupset.py#L44-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/db2backupset.py#L46-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DB2Backupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a db2 backupset,
@@ -263,7 +344,84 @@ default: None</p>
 
         return self._instance_object.restore_entire_database(
             dest_client_name, dest_instance_name, dest_database_name,
-            recover_db=recover_db, restore_incremental=restore_incremental)</code></pre>
+            recover_db=recover_db, restore_incremental=restore_incremental)
+
+    def restore_out_of_place(
+            self,
+            dest_client_name,
+            dest_instance_name,
+            dest_backupset_name,
+            target_path,
+            **kwargs
+
+    ):
+        &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+        list to the same location.
+
+            Args:
+                dest_client_name        (str)   --  destination client name where files are to be
+                restored
+
+                dest_instance_name      (str)   --  destination db2 instance name of
+                destination client
+
+                dest_backupset_name     (str)   --  destination db2 backupset name of
+                destination client
+
+                target_path             (str)   --  Target DB Restore Destination
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time               (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time                 (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+                enabled
+
+                    default: False
+
+                redirect_storage_group_path           (dict)   --  Path specified for each storage group
+                in advanced restore options in order to perform redirect restore
+                    format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+                 restore options in order to perform redirect restore
+                    format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                    default: None
+
+                destination_path        (str)   --  destinath path for restore
+                    default: None
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        self._instance_object._restore_association = self._backupset_association
+
+        return self._instance_object.restore_out_of_place(dest_client_name=dest_client_name,
+                                                          dest_instance_name=dest_instance_name,
+                                                          dest_backupset_name=dest_backupset_name,
+                                                          target_path=target_path,
+                                                          **kwargs)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -279,7 +437,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/db2backupset.py#L48-L57" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/db2backupset.py#L50-L59" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def db2_db_status(self):
@@ -339,7 +497,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/db2backupset.py#L59-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/db2backupset.py#L61-L116" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_entire_database(
         self,
@@ -397,6 +555,151 @@ if response is not success
     return self._instance_object.restore_entire_database(
         dest_client_name, dest_instance_name, dest_database_name,
         recover_db=recover_db, restore_incremental=restore_incremental)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.db2backupset.DB2Backupset.restore_out_of_place"><code class="name flex">
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, dest_client_name, dest_instance_name, dest_backupset_name, target_path, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the DB2 data/log files specified in the input paths
+list to the same location.</p>
+<pre><code>Args:
+    dest_client_name        (str)   --  destination client name where files are to be
+    restored
+
+    dest_instance_name      (str)   --  destination db2 instance name of
+    destination client
+
+    dest_backupset_name     (str)   --  destination db2 backupset name of
+    destination client
+
+    target_path             (str)   --  Target DB Restore Destination
+
+    copy_precedence         (int)   --  copy precedence value of storage policy copy
+        default: None
+
+    from_time               (str)   --  time to retore the contents after
+        format: YYYY-MM-DD HH:MM:SS
+
+        default: None
+
+    to_time                 (str)   --  time to retore the contents before
+        format: YYYY-MM-DD HH:MM:SS
+
+        default: None
+
+    redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+    enabled
+
+        default: False
+
+    redirect_storage_group_path           (dict)   --  Path specified for each storage group
+    in advanced restore options in order to perform redirect restore
+        format: {'Storage Group Name': 'Redirect Path'}
+
+        default: None
+
+     redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+     restore options in order to perform redirect restore
+        format: {'Tablespace name': 'Redirect Path'}
+
+        default: None
+
+    destination_path        (str)   --  destinath path for restore
+        default: None
+
+Returns:
+    object - instance of the Job class for this restore job
+
+Raises:
+    SDKException:
+        if failed to initialize job
+
+        if response is empty
+
+        if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/db2backupset.py#L118-L193" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_out_of_place(
+        self,
+        dest_client_name,
+        dest_instance_name,
+        dest_backupset_name,
+        target_path,
+        **kwargs
+
+):
+    &#34;&#34;&#34;Restores the DB2 data/log files specified in the input paths
+    list to the same location.
+
+        Args:
+            dest_client_name        (str)   --  destination client name where files are to be
+            restored
+
+            dest_instance_name      (str)   --  destination db2 instance name of
+            destination client
+
+            dest_backupset_name     (str)   --  destination db2 backupset name of
+            destination client
+
+            target_path             (str)   --  Target DB Restore Destination
+
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
+                default: None
+
+            from_time               (str)   --  time to retore the contents after
+                format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            to_time                 (str)   --  time to retore the contents before
+                format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
+            enabled
+
+                default: False
+
+            redirect_storage_group_path           (dict)   --  Path specified for each storage group
+            in advanced restore options in order to perform redirect restore
+                format: {&#39;Storage Group Name&#39;: &#39;Redirect Path&#39;}
+
+                default: None
+
+             redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
+             restore options in order to perform redirect restore
+                format: {&#39;Tablespace name&#39;: &#39;Redirect Path&#39;}
+
+                default: None
+
+            destination_path        (str)   --  destinath path for restore
+                default: None
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    self._instance_object._restore_association = self._backupset_association
+
+    return self._instance_object.restore_out_of_place(dest_client_name=dest_client_name,
+                                                      dest_instance_name=dest_instance_name,
+                                                      dest_backupset_name=dest_backupset_name,
+                                                      target_path=target_path,
+                                                      **kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -503,6 +806,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.backupsets.db2backupset.DB2Backupset.db2_db_status" href="#cvpysdk.backupsets.db2backupset.DB2Backupset.db2_db_status">db2_db_status</a></code></li>
 <li><code><a title="cvpysdk.backupsets.db2backupset.DB2Backupset.restore_entire_database" href="#cvpysdk.backupsets.db2backupset.DB2Backupset.restore_entire_database">restore_entire_database</a></code></li>
+<li><code><a title="cvpysdk.backupsets.db2backupset.DB2Backupset.restore_out_of_place" href="#cvpysdk.backupsets.db2backupset.DB2Backupset.restore_out_of_place">restore_out_of_place</a></code></li>
 </ul>
 </li>
 </ul>

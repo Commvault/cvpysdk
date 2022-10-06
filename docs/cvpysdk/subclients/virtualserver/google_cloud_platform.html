@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -112,14 +112,14 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             backupset_object, subclient_name, subclient_id)
         self.diskExtension = [&#34;none&#34;]
 
-
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -140,6 +140,12 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -154,7 +160,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -183,7 +189,8 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             public_ip=False,
             copy_precedence=0,
             project_id=None,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
 
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -208,6 +215,12 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -222,7 +235,9 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        if not restore_option:
+            restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -283,7 +298,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -302,14 +317,14 @@ backupset class, subclient name, subclient id</p></div>
             backupset_object, subclient_name, subclient_id)
         self.diskExtension = [&#34;none&#34;]
 
-
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -330,6 +345,12 @@ backupset class, subclient name, subclient id</p></div>
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -344,7 +365,7 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -373,7 +394,8 @@ backupset class, subclient name, subclient id</p></div>
             public_ip=False,
             copy_precedence=0,
             project_id=None,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
 
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -398,6 +420,12 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -412,7 +440,9 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        if not restore_option:
+            restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -454,7 +484,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.google_cloud_platform.GooglecloudVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -487,6 +517,14 @@ default: 0</p>
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -501,7 +539,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L64-L120" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -509,7 +547,8 @@ if response is not success
         overwrite=True,
         power_on=True,
         proxy_client=None,
-        copy_precedence=0):
+        copy_precedence=0,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the location same as the actual location of the VM in VCenter.
 
@@ -530,6 +569,12 @@ if response is not success
             proxy_client          (basestring)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -544,7 +589,7 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
@@ -563,7 +608,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.google_cloud_platform.GooglecloudVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, proxy_client=None, new_name=None, zone=None, machine_type=None, overwrite=True, power_on=True, public_ip=False, copy_precedence=0, project_id=None, restore_option=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, proxy_client=None, new_name=None, zone=None, machine_type=None, overwrite=True, power_on=True, public_ip=False, copy_precedence=0, project_id=None, restore_option=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -596,6 +641,14 @@ default: True</p>
 (int)
 &ndash; copy precedence value
 default: 0</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -610,7 +663,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L122-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L128-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -624,7 +677,8 @@ if response is not success
         public_ip=False,
         copy_precedence=0,
         project_id=None,
-        restore_option=None):
+        restore_option=None,
+        **kwargs):
 
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
@@ -649,6 +703,12 @@ if response is not success
             copy_precedence   (int)        -- copy precedence value
                                               default: 0
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -663,7 +723,9 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    restore_option = {}
+    if not restore_option:
+        restore_option = {}
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
     if vm_to_restore:
         vm_to_restore = [vm_to_restore]

@@ -193,7 +193,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1-L2998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1-L2986" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -384,48 +384,6 @@ class Instances(object):
         self._vs_instance_type_dict = {}
         self.refresh()
 
-        from .instances.vsinstance import VirtualServerInstance
-        from .instances.cainstance import CloudAppsInstance
-        from .instances.bigdataappsinstance import BigDataAppsInstance
-        from .instances.sqlinstance import SQLServerInstance
-        from .instances.hanainstance import SAPHANAInstance
-        from .instances.oracleinstance import OracleInstance
-        from .instances.sybaseinstance import SybaseInstance
-        from .instances.saporacleinstance import SAPOracleInstance
-        from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lotusnotes.lndbinstance import LNDBInstance
-        from .instances.lotusnotes.lndocinstance import LNDOCInstance
-        from .instances.lotusnotes.lndminstance import LNDMInstance
-        from .instances.postgresinstance import PostgreSQLInstance
-        from .instances.informixinstance import InformixInstance
-        from .instances.vminstance import VMInstance
-        from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance
-        from .instances.sharepointinstance import SharepointInstance
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._instances_dict = {
-            &#39;virtual server&#39;: [VirtualServerInstance, VMInstance],
-            &#39;big data apps&#39;: BigDataAppsInstance,
-            &#39;cloud apps&#39;: CloudAppsInstance,
-            &#39;sql server&#39;: SQLServerInstance,
-            &#39;sap hana&#39;: SAPHANAInstance,
-            &#39;oracle&#39;: OracleInstance,
-            &#39;oracle rac&#39;: OracleInstance,
-            &#39;sybase&#39;: SybaseInstance,
-            &#39;sap for oracle&#39;: SAPOracleInstance,
-            &#39;mysql&#39;: MYSQLInstance,
-            &#39;notes database&#39;: LNDBInstance,
-            &#39;notes document&#39;: LNDOCInstance,
-            &#39;domino mailbox archiver&#39;: LNDMInstance,
-            &#39;postgresql&#39;: PostgreSQLInstance,
-            &#39;informix&#39;: InformixInstance,
-            &#39;db2&#39;: DB2Instance,
-            &#39;azure ad&#39;: AzureAdInstance,
-            &#39;sharepoint server&#39;: SharepointInstance
-        }
-
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all instances of the agent of a client.
 
@@ -537,7 +495,7 @@ class Instances(object):
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return {}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -590,24 +548,8 @@ class Instances(object):
         if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_instance(instance_name):
-                if agent_name in self._instances_dict:
-                    if isinstance(self._instances_dict[agent_name], list):
-                        if instance_name == &#34;vminstance&#34;:
-                            instance = self._instances_dict[agent_name][-1]
-                        else:
-                            instance = self._instances_dict[agent_name][0]
-                    else:
-                        instance = self._instances_dict[agent_name]
-                    return instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
-                else:
-                    return Instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;No instance exists with name: &#34;{0}&#34;&#39;.format(instance_name)
@@ -773,11 +715,7 @@ class Instances(object):
                 else:
                     if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                        )
+                        return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                     else:
                         raise SDKException(
                             &#39;Instance&#39;,
@@ -963,10 +901,7 @@ class Instances(object):
                     instance_id = response.json(
                     )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
-
+                    return self.get(instance_name)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1014,7 +949,7 @@ class Instances(object):
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;)
 
-        storage_policy = db2_options.get(&#39;storage_policy&#39;)
+        storage_policy = db2_options.get(&#39;storage_policy&#39;,db2_options.get(&#39;data_storage_policy&#39;))
 
         if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
@@ -1082,11 +1017,7 @@ class Instances(object):
                 else:
                     if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                        )
+                        return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                     else:
                         raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Unable to get instance name and id&#39;
                                            )
@@ -1371,9 +1302,7 @@ class Instances(object):
                     instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                     instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
+                    return self.get(instance_name)
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -1919,6 +1848,64 @@ class Instances(object):
 class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
 
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
+        from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
+        from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
+        from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _instances_dict = {
+            &#39;virtual server&#39;: [VirtualServerInstance, VMInstance],
+            &#39;big data apps&#39;: BigDataAppsInstance,
+            &#39;cloud apps&#39;: CloudAppsInstance,
+            &#39;sql server&#39;: SQLServerInstance,
+            &#39;sap hana&#39;: SAPHANAInstance,
+            &#39;oracle&#39;: OracleInstance,
+            &#39;oracle rac&#39;: OracleInstance,
+            &#39;sybase&#39;: SybaseInstance,
+            &#39;sap for oracle&#39;: SAPOracleInstance,
+            &#39;mysql&#39;: MYSQLInstance,
+            &#39;notes database&#39;: LNDBInstance,
+            &#39;notes document&#39;: LNDOCInstance,
+            &#39;domino mailbox archiver&#39;: LNDMInstance,
+            &#39;postgresql&#39;: PostgreSQLInstance,
+            &#39;informix&#39;: InformixInstance,
+            &#39;db2&#39;: DB2Instance,
+            &#39;azure ad&#39;: AzureAdInstance,
+            &#39;sharepoint server&#39;: SharepointInstance
+        }
+        agent_name = agent_object.agent_name
+
+        if agent_name in _instances_dict:
+            if isinstance(_instances_dict[agent_name], list):
+                if instance_name == &#34;vminstance&#34;:
+                    _class = _instances_dict[agent_name][-1]
+                else:
+                    _class = _instances_dict[agent_name][0]
+            else:
+                _class = _instances_dict[agent_name]
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, agent_object, instance_name, instance_id)
+        else:
+            return object.__new__(cls)
+
     def __init__(self, agent_object, instance_name, instance_id=None):
         &#34;&#34;&#34;Initialise the instance object.
 
@@ -3007,6 +2994,7 @@ class Instance(object):
             &#34;preserveLevel&#34;: value.get(&#34;preserve_level&#34;, 1),
             &#34;restoreToExchange&#34;: False,
             &#34;stripLevel&#34;: 0,
+            &#34;skipErrorsAndContinue&#34;: value.get(&#34;skipErrorsAndContinue&#34;, False),
             &#34;restoreACLs&#34;: value.get(&#34;restore_ACL&#34;, value.get(&#34;restore_data_and_acl&#34;, True)),
             &#34;stripLevelType&#34;: value.get(&#34;striplevel_type&#34;, 0),
             &#34;allVersion&#34;: value.get(&#34;all_versions&#34;, False),
@@ -3230,10 +3218,68 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1722-L2998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1651-L2986" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
+
+    def __new__(cls, agent_object, instance_name, instance_id=None):
+        from .instances.vsinstance import VirtualServerInstance
+        from .instances.cainstance import CloudAppsInstance
+        from .instances.bigdataappsinstance import BigDataAppsInstance
+        from .instances.sqlinstance import SQLServerInstance
+        from .instances.hanainstance import SAPHANAInstance
+        from .instances.oracleinstance import OracleInstance
+        from .instances.sybaseinstance import SybaseInstance
+        from .instances.saporacleinstance import SAPOracleInstance
+        from .instances.mysqlinstance import MYSQLInstance
+        from .instances.lotusnotes.lndbinstance import LNDBInstance
+        from .instances.lotusnotes.lndocinstance import LNDOCInstance
+        from .instances.lotusnotes.lndminstance import LNDMInstance
+        from .instances.postgresinstance import PostgreSQLInstance
+        from .instances.informixinstance import InformixInstance
+        from .instances.vminstance import VMInstance
+        from .instances.db2instance import DB2Instance
+        from .instances.aadinstance import AzureAdInstance
+        from .instances.sharepointinstance import SharepointInstance
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _instances_dict = {
+            &#39;virtual server&#39;: [VirtualServerInstance, VMInstance],
+            &#39;big data apps&#39;: BigDataAppsInstance,
+            &#39;cloud apps&#39;: CloudAppsInstance,
+            &#39;sql server&#39;: SQLServerInstance,
+            &#39;sap hana&#39;: SAPHANAInstance,
+            &#39;oracle&#39;: OracleInstance,
+            &#39;oracle rac&#39;: OracleInstance,
+            &#39;sybase&#39;: SybaseInstance,
+            &#39;sap for oracle&#39;: SAPOracleInstance,
+            &#39;mysql&#39;: MYSQLInstance,
+            &#39;notes database&#39;: LNDBInstance,
+            &#39;notes document&#39;: LNDOCInstance,
+            &#39;domino mailbox archiver&#39;: LNDMInstance,
+            &#39;postgresql&#39;: PostgreSQLInstance,
+            &#39;informix&#39;: InformixInstance,
+            &#39;db2&#39;: DB2Instance,
+            &#39;azure ad&#39;: AzureAdInstance,
+            &#39;sharepoint server&#39;: SharepointInstance
+        }
+        agent_name = agent_object.agent_name
+
+        if agent_name in _instances_dict:
+            if isinstance(_instances_dict[agent_name], list):
+                if instance_name == &#34;vminstance&#34;:
+                    _class = _instances_dict[agent_name][-1]
+                else:
+                    _class = _instances_dict[agent_name][0]
+            else:
+                _class = _instances_dict[agent_name]
+            if _class.__new__ == cls.__new__:
+                return object.__new__(_class)
+            return _class.__new__(_class, agent_object, instance_name, instance_id)
+        else:
+            return object.__new__(cls)
 
     def __init__(self, agent_object, instance_name, instance_id=None):
         &#34;&#34;&#34;Initialise the instance object.
@@ -4323,6 +4369,7 @@ default: None</p>
             &#34;preserveLevel&#34;: value.get(&#34;preserve_level&#34;, 1),
             &#34;restoreToExchange&#34;: False,
             &#34;stripLevel&#34;: 0,
+            &#34;skipErrorsAndContinue&#34;: value.get(&#34;skipErrorsAndContinue&#34;, False),
             &#34;restoreACLs&#34;: value.get(&#34;restore_ACL&#34;, value.get(&#34;restore_data_and_acl&#34;, True)),
             &#34;stripLevelType&#34;: value.get(&#34;striplevel_type&#34;, 0),
             &#34;allVersion&#34;: value.get(&#34;all_versions&#34;, False),
@@ -4537,7 +4584,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2560-L2563" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2547-L2550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4551,7 +4598,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2565-L2568" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2552-L2555" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4565,7 +4612,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2531-L2534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2518-L2521" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4579,7 +4626,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2526-L2529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2513-L2516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4637,7 +4684,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2570-L2626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2557-L2613" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4757,7 +4804,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2628-L2694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2615-L2681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -4836,7 +4883,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2992-L2998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2980-L2986" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -4871,7 +4918,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L2496-L2524" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2483-L2511" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -4922,7 +4969,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L159-L1719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L159-L1648" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -4954,48 +5001,6 @@ instance of the Agent class</p>
         self._instances = None
         self._vs_instance_type_dict = {}
         self.refresh()
-
-        from .instances.vsinstance import VirtualServerInstance
-        from .instances.cainstance import CloudAppsInstance
-        from .instances.bigdataappsinstance import BigDataAppsInstance
-        from .instances.sqlinstance import SQLServerInstance
-        from .instances.hanainstance import SAPHANAInstance
-        from .instances.oracleinstance import OracleInstance
-        from .instances.sybaseinstance import SybaseInstance
-        from .instances.saporacleinstance import SAPOracleInstance
-        from .instances.mysqlinstance import MYSQLInstance
-        from .instances.lotusnotes.lndbinstance import LNDBInstance
-        from .instances.lotusnotes.lndocinstance import LNDOCInstance
-        from .instances.lotusnotes.lndminstance import LNDMInstance
-        from .instances.postgresinstance import PostgreSQLInstance
-        from .instances.informixinstance import InformixInstance
-        from .instances.vminstance import VMInstance
-        from .instances.db2instance import DB2Instance
-        from .instances.aadinstance import AzureAdInstance
-        from .instances.sharepointinstance import SharepointInstance
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._instances_dict = {
-            &#39;virtual server&#39;: [VirtualServerInstance, VMInstance],
-            &#39;big data apps&#39;: BigDataAppsInstance,
-            &#39;cloud apps&#39;: CloudAppsInstance,
-            &#39;sql server&#39;: SQLServerInstance,
-            &#39;sap hana&#39;: SAPHANAInstance,
-            &#39;oracle&#39;: OracleInstance,
-            &#39;oracle rac&#39;: OracleInstance,
-            &#39;sybase&#39;: SybaseInstance,
-            &#39;sap for oracle&#39;: SAPOracleInstance,
-            &#39;mysql&#39;: MYSQLInstance,
-            &#39;notes database&#39;: LNDBInstance,
-            &#39;notes document&#39;: LNDOCInstance,
-            &#39;domino mailbox archiver&#39;: LNDMInstance,
-            &#39;postgresql&#39;: PostgreSQLInstance,
-            &#39;informix&#39;: InformixInstance,
-            &#39;db2&#39;: DB2Instance,
-            &#39;azure ad&#39;: AzureAdInstance,
-            &#39;sharepoint server&#39;: SharepointInstance
-        }
 
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all instances of the agent of a client.
@@ -5108,7 +5113,7 @@ instance of the Agent class</p>
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return {}
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
@@ -5161,24 +5166,8 @@ instance of the Agent class</p>
         if isinstance(instance_name, basestring):
             instance_name = instance_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_instance(instance_name):
-                if agent_name in self._instances_dict:
-                    if isinstance(self._instances_dict[agent_name], list):
-                        if instance_name == &#34;vminstance&#34;:
-                            instance = self._instances_dict[agent_name][-1]
-                        else:
-                            instance = self._instances_dict[agent_name][0]
-                    else:
-                        instance = self._instances_dict[agent_name]
-                    return instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
-                else:
-                    return Instance(
-                        self._agent_object, instance_name, self._instances[instance_name]
-                    )
+                return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;No instance exists with name: &#34;{0}&#34;&#39;.format(instance_name)
@@ -5344,11 +5333,7 @@ instance of the Agent class</p>
                 else:
                     if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                        )
+                        return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                     else:
                         raise SDKException(
                             &#39;Instance&#39;,
@@ -5534,10 +5519,7 @@ instance of the Agent class</p>
                     instance_id = response.json(
                     )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
-
+                    return self.get(instance_name)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -5585,7 +5567,7 @@ instance of the Agent class</p>
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;)
 
-        storage_policy = db2_options.get(&#39;storage_policy&#39;)
+        storage_policy = db2_options.get(&#39;storage_policy&#39;,db2_options.get(&#39;data_storage_policy&#39;))
 
         if not self._commcell_object.storage_policies.has_policy(storage_policy):
             raise SDKException(
@@ -5653,11 +5635,7 @@ instance of the Agent class</p>
                 else:
                     if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                         self.refresh()
-                        return self._instances_dict[self._agent_object.agent_name](
-                            self._agent_object,
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                            response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                        )
+                        return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                     else:
                         raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Unable to get instance name and id&#39;
                                            )
@@ -5942,9 +5920,7 @@ instance of the Agent class</p>
                     instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                     instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
-                    return self._instances_dict[agent_name](
-                        self._agent_object, instance_name, instance_id
-                    )
+                    return self.get(instance_name)
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -6499,7 +6475,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L347-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L305-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6540,7 +6516,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L900-L1007" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L831-L938" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6763,7 +6739,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1009-L1186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L940-L1115" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -6933,9 +6909,7 @@ SDKException :</p>
                 instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                 instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                 agent_name = self._agent_object.agent_name
-                return self._instances_dict[agent_name](
-                    self._agent_object, instance_name, instance_id
-                )
+                return self.get(instance_name)
 
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -6972,7 +6946,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L778-L898" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L713-L829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7016,7 +6990,7 @@ if None value in db2 options</p>
         raise SDKException(
             &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;)
 
-    storage_policy = db2_options.get(&#39;storage_policy&#39;)
+    storage_policy = db2_options.get(&#39;storage_policy&#39;,db2_options.get(&#39;data_storage_policy&#39;))
 
     if not self._commcell_object.storage_policies.has_policy(storage_policy):
         raise SDKException(
@@ -7084,11 +7058,7 @@ if None value in db2 options</p>
             else:
                 if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                     self.refresh()
-                    return self._instances_dict[self._agent_object.agent_name](
-                        self._agent_object,
-                        response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                        response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                    )
+                    return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                 else:
                     raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Unable to get instance name and id&#39;
                                        )
@@ -7128,7 +7098,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L477-L595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L419-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7232,11 +7202,7 @@ if given storage policy does not exists in commcell
             else:
                 if &#39;entity&#39; in response.json()[&#39;response&#39;]:
                     self.refresh()
-                    return self._instances_dict[self._agent_object.agent_name](
-                        self._agent_object,
-                        response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;),
-                        response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceId&#39;)
-                    )
+                    return self.get(response.json()[&#39;response&#39;][&#39;entity&#39;].get(&#39;instanceName&#39;))
                 else:
                     raise SDKException(
                         &#39;Instance&#39;,
@@ -7289,7 +7255,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1536-L1625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1465-L1554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7451,7 +7417,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1627-L1715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1556-L1644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7596,7 +7562,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1308-L1365" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1237-L1294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7718,7 +7684,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1188-L1306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1117-L1235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -7874,7 +7840,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L662-L776" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L600-L711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -7983,10 +7949,7 @@ if given storage policy does not exists in commcell
                 instance_id = response.json(
                 )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                 agent_name = self._agent_object.agent_name
-                return self._instances_dict[agent_name](
-                    self._agent_object, instance_name, instance_id
-                )
-
+                return self.get(instance_name)
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
@@ -8016,7 +7979,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L597-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L535-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8103,7 +8066,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L378-L426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L336-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8123,24 +8086,8 @@ if type of the instance name argument is not string or Int</p>
     if isinstance(instance_name, basestring):
         instance_name = instance_name.lower()
 
-        agent_name = self._agent_object.agent_name
-
         if self.has_instance(instance_name):
-            if agent_name in self._instances_dict:
-                if isinstance(self._instances_dict[agent_name], list):
-                    if instance_name == &#34;vminstance&#34;:
-                        instance = self._instances_dict[agent_name][-1]
-                    else:
-                        instance = self._instances_dict[agent_name][0]
-                else:
-                    instance = self._instances_dict[agent_name]
-                return instance(
-                    self._agent_object, instance_name, self._instances[instance_name]
-                )
-            else:
-                return Instance(
-                    self._agent_object, instance_name, self._instances[instance_name]
-                )
+            return Instance(self._agent_object, instance_name, self._instances[instance_name])
 
         raise SDKException(
             &#39;Instance&#39;, &#39;102&#39;, &#39;No instance exists with name: &#34;{0}&#34;&#39;.format(instance_name)
@@ -8173,7 +8120,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L360-L376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L318-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8202,7 +8149,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instance.py#L1717-L1719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1646-L1648" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

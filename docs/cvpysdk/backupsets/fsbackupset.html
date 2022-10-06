@@ -91,7 +91,7 @@ It returns browse volume guid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1-L1596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1-L1595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -776,7 +776,7 @@ class FSBackupset(Backupset):
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-        if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
+        if instance_name == &#39;vmware&#39; or instance_name == &#39;hyper-v&#39;:
 
             vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
@@ -831,8 +831,7 @@ class FSBackupset(Backupset):
 
                 vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
 
-
-        if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+        if &#39;azure&#39; in instance_name:
 
             az_advanced_ops_json = self._azure_advancedopts_json()
 
@@ -1727,7 +1726,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L82-L1596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L82-L1595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -2331,7 +2330,7 @@ default: None</p>
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
             &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-        if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
+        if instance_name == &#39;vmware&#39; or instance_name == &#39;hyper-v&#39;:
 
             vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
@@ -2386,8 +2385,7 @@ default: None</p>
 
                 vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
 
-
-        if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+        if &#39;azure&#39; in instance_name:
 
             az_advanced_ops_json = self._azure_advancedopts_json()
 
@@ -3261,7 +3259,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1122-L1126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1121-L1125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -3276,7 +3274,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1116-L1120" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1115-L1119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -3291,7 +3289,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1111-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1110-L1113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -3305,7 +3303,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1045-L1058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1044-L1057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -3368,7 +3366,7 @@ arcp
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1366-L1444" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1365-L1443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                   rpstoreid=None, replicationtype=None, **replication_options):
@@ -3481,7 +3479,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1448-L1573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1447-L1572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
                                  **replication_options):
@@ -3638,7 +3636,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1210-L1316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1209-L1315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
                         srcguid, dstguid, **replication_options):
@@ -3762,7 +3760,7 @@ blocklevel replication id.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1319-L1327" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1318-L1326" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_replication_pair(self, blrid):
     &#34;&#34;&#34;&#34;Delete replication pair
@@ -3810,7 +3808,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient, and returns all versions available for the content.
@@ -3862,7 +3860,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1576-L1596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1575-L1595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_browse_volume_guid(self):
 
@@ -3900,7 +3898,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1329-L1339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1328-L1338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_path_guid(self, volume):
     &#34;&#34;&#34;
@@ -3935,7 +3933,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L1341-L1363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L1340-L1362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self, client_id, subclient_id):
     &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
@@ -4044,7 +4042,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -4245,7 +4243,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -4404,7 +4402,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L931-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L930-L1042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_aix_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4565,7 +4563,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/backupsets/fsbackupset.py#L569-L803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/fsbackupset.py#L569-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4682,7 +4680,7 @@ returns the task object</p></div>
     vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;client&#39;][
         &#39;clientName&#39;] = restore_options.get(&#39;ClientName&#39;, None)
 
-    if instance_name == &#39;vmware&#39; or &#39;hyper-v&#39;:
+    if instance_name == &#39;vmware&#39; or instance_name == &#39;hyper-v&#39;:
 
         vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
@@ -4737,8 +4735,7 @@ returns the task object</p></div>
 
             vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;vCenter&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
 
-
-    if instance_name == &#39;azure resource manager&#39; or &#39;azure stack&#39;:
+    if &#39;azure&#39; in instance_name:
 
         az_advanced_ops_json = self._azure_advancedopts_json()
 

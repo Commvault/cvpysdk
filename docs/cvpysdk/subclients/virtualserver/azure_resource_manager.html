@@ -50,7 +50,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -130,7 +130,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      restore_as_managed=False,
                                      copy_precedence=0,
                                      disk_type=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -165,6 +166,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -182,6 +189,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -219,7 +227,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                  power_on=True,
                                  public_ip=False,
                                  restore_as_managed=False,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -238,6 +247,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 poweron
                         default:true   (bool)      --  power on the  restored VM
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -251,7 +266,7 @@ class AzureRMSubclient(VirtualServerSubclient):
 
                     if response is not success
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
@@ -726,7 +741,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L50-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L50-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureRMSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -757,7 +772,8 @@ backupset class, subclient name, subclient id</p></div>
                                      restore_as_managed=False,
                                      copy_precedence=0,
                                      disk_type=None,
-                                     restore_option=None):
+                                     restore_option=None,
+                                     **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
@@ -792,6 +808,12 @@ backupset class, subclient name, subclient id</p></div>
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -809,6 +831,7 @@ backupset class, subclient name, subclient id</p></div>
         # restore options
         if restore_option is None:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         # check input parameters are correct
         if bool(restore_option):
@@ -846,7 +869,8 @@ backupset class, subclient name, subclient id</p></div>
                                  power_on=True,
                                  public_ip=False,
                                  restore_as_managed=False,
-                                 copy_precedence=0):
+                                 copy_precedence=0,
+                                 **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
 
@@ -865,6 +889,12 @@ backupset class, subclient name, subclient id</p></div>
                 poweron
                         default:true   (bool)      --  power on the  restored VM
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -878,7 +908,7 @@ backupset class, subclient name, subclient id</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
@@ -1378,7 +1408,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L317-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L332-L443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_amazon(
         self,
@@ -1545,7 +1575,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L220-L315" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L235-L330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurestack(
         self,
@@ -1696,7 +1726,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L431-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L446-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -1860,7 +1890,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L524-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L539-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -1987,7 +2017,7 @@ if inputs are not of correct type as per definition</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, public_ip=False, restore_as_managed=False, copy_precedence=0)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, public_ip=False, restore_as_managed=False, copy_precedence=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2020,6 +2050,14 @@ default:true
 &ndash;
 power on the
 restored VM</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -2033,7 +2071,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L162-L218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L170-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2041,7 +2079,8 @@ if response is not success
                              power_on=True,
                              public_ip=False,
                              restore_as_managed=False,
-                             copy_precedence=0):
+                             copy_precedence=0,
+                             **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         to the location same as source .
 
@@ -2060,6 +2099,12 @@ if response is not success
             poweron
                     default:true   (bool)      --  power on the  restored VM
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
 
         Returns:
             object - instance of the Job class for this restore job
@@ -2073,7 +2118,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
     # check mandatory input parameters are correct
     if not (isinstance(overwrite, bool) and
             isinstance(power_on, bool)):
@@ -2095,7 +2140,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, resource_group=None, storage_account=None, datacenter=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, instance_size=None, public_ip=False, restore_as_managed=False, copy_precedence=0, disk_type=None, restore_option=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, resource_group=None, storage_account=None, datacenter=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, instance_size=None, public_ip=False, restore_as_managed=False, copy_precedence=0, disk_type=None, restore_option=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2148,6 +2193,14 @@ restored VM</p>
 &ndash;
 complete dictionary with all advanced optio
 default: {}</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -2163,7 +2216,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L65-L160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L65-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -2179,7 +2232,8 @@ if response is not success
                                  restore_as_managed=False,
                                  copy_precedence=0,
                                  disk_type=None,
-                                 restore_option=None):
+                                 restore_option=None,
+                                 **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
 
@@ -2214,6 +2268,12 @@ if response is not success
             restore_option      (dict)     --  complete dictionary with all advanced optio
                 default: {}
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -2231,6 +2291,7 @@ if response is not success
     # restore options
     if restore_option is None:
         restore_option = {}
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
     # check input parameters are correct
     if bool(restore_option):

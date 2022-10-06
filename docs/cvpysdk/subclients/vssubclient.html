@@ -127,6 +127,9 @@ specified destionation location</p>
 <p>full_vm_restore_in_place()
 &ndash; restores the VM specified by the
 user to the same location</p>
+<p>_full_vm_restore_update_json_for_v2
+&ndash; modifies the restore json as per v2
+subclient details and returns it</p>
 <p>backup()
 &ndash;
 run a backup job for the subclient</p>
@@ -135,7 +138,7 @@ run a backup job for the subclient</p>
 sets the advanced backup options</p>
 <p>update_properties()
 &ndash;
-child method to add vsa specific properties to update</p>
+child method to add vsa specific properties to update properties</p>
 <p>To add a new Virtual Subclient,
 create a class in a new module under virtualserver sub package</p>
 <p>The new module which is created has to named in the following manner:
@@ -149,7 +152,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1-L2809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1-L2863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -271,11 +274,14 @@ VirtualServerSubclient:
     full_vm_restore_in_place()              -- restores the VM specified by the
                                                user to the same location
 
+    _full_vm_restore_update_json_for_v2     -- modifies the restore json as per v2
+                                                subclient details and returns it
+
     backup()                               --  run a backup job for the subclient
 
     _advanced_backup_options()              --  sets the advanced backup options
 
-    update_properties()                       --  child method to add vsa specific properties to update
+    update_properties()                       --  child method to add vsa specific properties to update properties
 
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
@@ -551,16 +557,20 @@ class VirtualServerSubclient(Subclient):
         content = []
         try:
             for entity in subclient_content:
+                virtual_server_dict = dict()
+                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
+                virtual_server_dict[&#39;equalsOrNotEquals&#39;] = True
+                virtual_server_dict[&#39;children&#39;] = []
+                if not isinstance(entity,list):
+                    entity = [entity]
                 for item in entity:
-                    virtual_server_dict = {}
-                    virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
                     temp = {
                         &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
                         &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
                         &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
                         &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if isinstance(item[&#39;type&#39;], int) else item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -570,16 +580,16 @@ class VirtualServerSubclient(Subclient):
                             VSAObjects.VMPowerState and
                             item[&#39;state&#39;] == &#39;true&#39;):
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                        temp[&#39;value&#39;] = 1
+                        temp[&#39;value&#39;] = &#34;1&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered On&#34;
                     if (item[&#39;type&#39;] ==
                             VSAObjects.VMPowerState and
                             item[&#39;state&#39;] == &#39;false&#39;):
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                        temp[&#39;value&#39;] = 0
+                        temp[&#39;value&#39;] = &#34;0&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                    virtual_server_dict.update(temp)
-                    content.append(virtual_server_dict)
+                    virtual_server_dict.get(&#39;children&#39;).append(temp)
+                content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -1753,7 +1763,8 @@ class VirtualServerSubclient(Subclient):
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split(&#34;\\&#34;)[-1]
             if _browse_folder_name == _restore_folder_name:
-                source_item = r&#39;\\&#39;.join([_source_path, _restore_folder_name])
+                source_item = &#39;\\&#39;.join([_source_path, _restore_folder_name])
+                source_item = &#39;\\&#39; + source_item
                 break
 
         if source_item is None:
@@ -2655,8 +2666,11 @@ class VirtualServerSubclient(Subclient):
                         _each_vm_to_restore]
                 if (&#34;restore_new_name&#34; in restore_option and
                         restore_option[&#34;restore_new_name&#34;] is not None):
-                    restore_option[&#34;new_name&#34;] = restore_option[
-                                                     &#34;restore_new_name&#34;] + _each_vm_to_restore
+                    if len(restore_option[&#39;vm_to_restore&#39;]) == 1:
+                        restore_option[&#34;new_name&#34;] = restore_option[&#34;restore_new_name&#34;]
+                    else:
+                        restore_option[&#34;new_name&#34;] = restore_option[
+                                                         &#34;restore_new_name&#34;] + _each_vm_to_restore
                 else:
                     restore_option[&#34;new_name&#34;] = &#34;del&#34; + _each_vm_to_restore
             else:
@@ -2673,8 +2687,51 @@ class VirtualServerSubclient(Subclient):
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;volumeRstOption&#34;] = self._json_restore_volumeRstOption(
             restore_option)
+        if restore_option.get(&#39;v2_details&#39;) and len(restore_option.get(&#39;vm_to_restore&#39;, &#39;&#39;)) &lt;= 1:
+            request_json = self._full_vm_restore_update_json_for_v2(request_json, restore_option.get(&#39;v2_details&#39;))
 
         return request_json
+
+    @staticmethod
+    def _full_vm_restore_update_json_for_v2(json_to_be_edited, v2_details):
+        &#34;&#34;&#34;
+        Update the final request JSON to match wth the v2 vm
+        Args:
+            json_to_be_edited               (dict): Final restore JSON for the restore without v2 subclient details
+
+            v2_details                      (dict): v2 vm subclient details
+                                   eg: {
+                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
+                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
+                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
+                                            &#39;backupsetId&#39;: 12,
+                                            &#39;instanceId&#39;: 2,
+                                            &#39;subclientId&#39;: 123,
+                                            &#39;clientId&#39;: 1234,
+                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
+                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
+                                            &#39;applicationId&#39;: 106,
+                                            &#39;subclientName&#39;: &#39;default&#39;
+                                        }
+
+        Returns:
+            json_to_be_edited        -complete json for performing Full VM Restore
+                                        options with v2 subclient details
+
+        &#34;&#34;&#34;
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;clientName&#39;] = v2_details.get(&#39;clientName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;clientId&#39;] = v2_details.get(&#39;clientId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;instanceName&#39;] = v2_details.get(&#39;instanceName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;instanceId&#39;] = v2_details.get(&#39;instanceId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;displayName&#39;] = v2_details.get(&#39;displayName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetName&#39;] = v2_details.get(&#39;backupsetName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetId&#39;] = v2_details.get(&#39;backupsetId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = v2_details.get(&#39;subclientName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientId&#39;] = v2_details.get(&#39;subclientId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;browseOption&#39;][&#39;backupset&#39;][
+            &#39;clientName&#39;] = v2_details.get(&#39;clientName&#39;)
+        del json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientGUID&#39;]
+        return json_to_be_edited
 
     def backup(self,
                backup_level=&#34;Incremental&#34;,
@@ -2995,7 +3052,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L160-L2809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L163-L2863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -3238,16 +3295,20 @@ subclient id</p></div>
         content = []
         try:
             for entity in subclient_content:
+                virtual_server_dict = dict()
+                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
+                virtual_server_dict[&#39;equalsOrNotEquals&#39;] = True
+                virtual_server_dict[&#39;children&#39;] = []
+                if not isinstance(entity,list):
+                    entity = [entity]
                 for item in entity:
-                    virtual_server_dict = {}
-                    virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
                     temp = {
                         &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
                         &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
                         &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
                         &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if isinstance(item[&#39;type&#39;], int) else item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -3257,16 +3318,16 @@ subclient id</p></div>
                             VSAObjects.VMPowerState and
                             item[&#39;state&#39;] == &#39;true&#39;):
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                        temp[&#39;value&#39;] = 1
+                        temp[&#39;value&#39;] = &#34;1&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered On&#34;
                     if (item[&#39;type&#39;] ==
                             VSAObjects.VMPowerState and
                             item[&#39;state&#39;] == &#39;false&#39;):
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
-                        temp[&#39;value&#39;] = 0
+                        temp[&#39;value&#39;] = &#34;0&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                    virtual_server_dict.update(temp)
-                    content.append(virtual_server_dict)
+                    virtual_server_dict.get(&#39;children&#39;).append(temp)
+                content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -4440,7 +4501,8 @@ subclient id</p></div>
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split(&#34;\\&#34;)[-1]
             if _browse_folder_name == _restore_folder_name:
-                source_item = r&#39;\\&#39;.join([_source_path, _restore_folder_name])
+                source_item = &#39;\\&#39;.join([_source_path, _restore_folder_name])
+                source_item = &#39;\\&#39; + source_item
                 break
 
         if source_item is None:
@@ -5342,8 +5404,11 @@ subclient id</p></div>
                         _each_vm_to_restore]
                 if (&#34;restore_new_name&#34; in restore_option and
                         restore_option[&#34;restore_new_name&#34;] is not None):
-                    restore_option[&#34;new_name&#34;] = restore_option[
-                                                     &#34;restore_new_name&#34;] + _each_vm_to_restore
+                    if len(restore_option[&#39;vm_to_restore&#39;]) == 1:
+                        restore_option[&#34;new_name&#34;] = restore_option[&#34;restore_new_name&#34;]
+                    else:
+                        restore_option[&#34;new_name&#34;] = restore_option[
+                                                         &#34;restore_new_name&#34;] + _each_vm_to_restore
                 else:
                     restore_option[&#34;new_name&#34;] = &#34;del&#34; + _each_vm_to_restore
             else:
@@ -5360,8 +5425,51 @@ subclient id</p></div>
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;volumeRstOption&#34;] = self._json_restore_volumeRstOption(
             restore_option)
+        if restore_option.get(&#39;v2_details&#39;) and len(restore_option.get(&#39;vm_to_restore&#39;, &#39;&#39;)) &lt;= 1:
+            request_json = self._full_vm_restore_update_json_for_v2(request_json, restore_option.get(&#39;v2_details&#39;))
 
         return request_json
+
+    @staticmethod
+    def _full_vm_restore_update_json_for_v2(json_to_be_edited, v2_details):
+        &#34;&#34;&#34;
+        Update the final request JSON to match wth the v2 vm
+        Args:
+            json_to_be_edited               (dict): Final restore JSON for the restore without v2 subclient details
+
+            v2_details                      (dict): v2 vm subclient details
+                                   eg: {
+                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
+                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
+                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
+                                            &#39;backupsetId&#39;: 12,
+                                            &#39;instanceId&#39;: 2,
+                                            &#39;subclientId&#39;: 123,
+                                            &#39;clientId&#39;: 1234,
+                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
+                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
+                                            &#39;applicationId&#39;: 106,
+                                            &#39;subclientName&#39;: &#39;default&#39;
+                                        }
+
+        Returns:
+            json_to_be_edited        -complete json for performing Full VM Restore
+                                        options with v2 subclient details
+
+        &#34;&#34;&#34;
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;clientName&#39;] = v2_details.get(&#39;clientName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;clientId&#39;] = v2_details.get(&#39;clientId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;instanceName&#39;] = v2_details.get(&#39;instanceName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;instanceId&#39;] = v2_details.get(&#39;instanceId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;displayName&#39;] = v2_details.get(&#39;displayName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetName&#39;] = v2_details.get(&#39;backupsetName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;backupsetId&#39;] = v2_details.get(&#39;backupsetId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = v2_details.get(&#39;subclientName&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientId&#39;] = v2_details.get(&#39;subclientId&#39;)
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;browseOption&#39;][&#39;backupset&#39;][
+            &#39;clientName&#39;] = v2_details.get(&#39;clientName&#39;)
+        del json_to_be_edited[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientGUID&#39;]
+        return json_to_be_edited
 
     def backup(self,
                backup_level=&#34;Incremental&#34;,
@@ -5655,7 +5763,7 @@ subclient id</p></div>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="cvpysdk.subclients.virtualserver.alibaba_cloud.AlibabaCloudVirtualServerSubclient" href="virtualserver/alibaba_cloud.html#cvpysdk.subclients.virtualserver.alibaba_cloud.AlibabaCloudVirtualServerSubclient">AlibabaCloudVirtualServerSubclient</a></li>
-<li><a title="cvpysdk.subclients.virtualserver.amazon.AmazonVirtualServerSubclient" href="virtualserver/amazon.html#cvpysdk.subclients.virtualserver.amazon.AmazonVirtualServerSubclient">AmazonVirtualServerSubclient</a></li>
+<li><a title="cvpysdk.subclients.virtualserver.amazon_web_services.AmazonVirtualServerSubclient" href="virtualserver/amazon_web_services.html#cvpysdk.subclients.virtualserver.amazon_web_services.AmazonVirtualServerSubclient">AmazonVirtualServerSubclient</a></li>
 <li><a title="cvpysdk.subclients.virtualserver.azure.AzureSubclient" href="virtualserver/azure.html#cvpysdk.subclients.virtualserver.azure.AzureSubclient">AzureSubclient</a></li>
 <li><a title="cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient" href="virtualserver/azure_resource_manager.html#cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient">AzureRMSubclient</a></li>
 <li><a title="cvpysdk.subclients.virtualserver.azure_stack.AzureStackSubclient" href="virtualserver/azure_stack.html#cvpysdk.subclients.virtualserver.azure_stack.AzureStackSubclient">AzureStackSubclient</a></li>
@@ -5693,7 +5801,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L562-L571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L569-L578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
@@ -5715,7 +5823,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L245-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L248-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5744,7 +5852,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L271-L279" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L274-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -5763,7 +5871,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L523-L530" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L530-L537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -5783,7 +5891,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L334-L346" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L337-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -5810,7 +5918,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L261-L269" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L264-L272" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -5831,7 +5939,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L296-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L299-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -5880,7 +5988,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L281-L294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L284-L297" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -5917,7 +6025,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2250-L2285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2258-L2293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6015,7 +6123,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2526-L2601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2580-L2655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6142,7 +6250,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1148-L1226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1155-L1233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6306,7 +6414,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1318-L1401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1325-L1408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6451,7 +6559,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1403-L1475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1410-L1482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6549,7 +6657,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1271-L1316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1278-L1323" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6612,7 +6720,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1611-L1706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1619-L1714" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -6775,7 +6883,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1477-L1545" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1484-L1552" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -6870,7 +6978,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1228-L1269" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1235-L1276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -6927,7 +7035,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2788-L2809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2842-L2863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_content(self):
     &#34;&#34;&#34;
@@ -6981,7 +7089,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2141-L2210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2149-L2218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7085,7 +7193,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L2001-L2139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2009-L2147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7240,7 +7348,7 @@ dict of all propterties of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L587-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L594-L605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;
@@ -7298,7 +7406,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1708-L1740" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1716-L1748" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7391,7 +7499,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/vssubclient.py#L1742-L1801" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1750-L1809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,

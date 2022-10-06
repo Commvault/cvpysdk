@@ -48,7 +48,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L1-L265" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L1-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -131,7 +131,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option=&#39;Original&#39;,
-            proxy_client=None):
+            proxy_client=None,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -157,6 +158,12 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -172,7 +179,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -213,7 +220,8 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             copy_precedence=0,
             disk_option=&#39;Original&#39;,
-            proxy_client=None
+            proxy_client=None,
+            **kwargs
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -232,7 +240,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
                 cluster           (basestring)    --  destination cluster host. Restores to the source
                                                       VM cluster if this value is not specified
 
-                repository         (basestring)   --  datastore where the restored VM should be
+                storage         (basestring)   --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -252,9 +260,11 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -273,7 +283,7 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -343,7 +353,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L49-L265" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L49-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RhevVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -378,7 +388,8 @@ backupset class, subclient name, subclient id</p></div>
             power_on=True,
             copy_precedence=0,
             disk_option=&#39;Original&#39;,
-            proxy_client=None):
+            proxy_client=None,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -404,6 +415,12 @@ backupset class, subclient name, subclient id</p></div>
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_in_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -419,7 +436,7 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -460,7 +477,8 @@ backupset class, subclient name, subclient id</p></div>
             power_on=True,
             copy_precedence=0,
             disk_option=&#39;Original&#39;,
-            proxy_client=None
+            proxy_client=None,
+            **kwargs
     ):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -479,7 +497,7 @@ backupset class, subclient name, subclient id</p></div>
                 cluster           (basestring)    --  destination cluster host. Restores to the source
                                                       VM cluster if this value is not specified
 
-                repository         (basestring)   --  datastore where the restored VM should be
+                storage         (basestring)   --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -499,9 +517,11 @@ backupset class, subclient name, subclient id</p></div>
 
                 proxy_client      (basestring)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
-
-                destination_ip      (basestring)    --  IP of the destination VM
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -520,7 +540,7 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # check mandatory input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -571,7 +591,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.red_hat_virtualization.RhevVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', proxy_client=None)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', proxy_client=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -611,6 +631,14 @@ default: Original</p>
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -625,7 +653,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L75-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L75-L158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -634,7 +662,8 @@ if response is not success
         power_on=True,
         copy_precedence=0,
         disk_option=&#39;Original&#39;,
-        proxy_client=None):
+        proxy_client=None,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the location same as the actual location of the VM in VCenter.
 
@@ -660,6 +689,12 @@ if response is not success
             proxy_client          (basestring)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_in_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -675,7 +710,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # check input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, basestring):
@@ -707,7 +742,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.red_hat_virtualization.RhevVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, destination_client=None, cluster=None, storage=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', proxy_client=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, restored_vm_name=None, destination_client=None, cluster=None, storage=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', proxy_client=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -733,7 +768,7 @@ should be restored.</p>
 &ndash;
 destination cluster host. Restores to the source
 VM cluster if this value is not specified</p>
-<p>repository
+<p>storage
 (basestring)
 &ndash;
 datastore where the restored VM should be
@@ -767,14 +802,14 @@ default: 'Original'</p>
 (basestring)
 &ndash;
 destination proxy client</p>
-<p>source_ip
-(basestring)
-&ndash;
-IP of the source VM</p>
-<p>destination_ip
-(basestring)
-&ndash;
-IP of the destination VM</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -789,7 +824,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L153-L265" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/red_hat_virtualization.py#L160-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -802,7 +837,8 @@ if response is not success
         power_on=True,
         copy_precedence=0,
         disk_option=&#39;Original&#39;,
-        proxy_client=None
+        proxy_client=None,
+        **kwargs
 ):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
@@ -821,7 +857,7 @@ if response is not success
             cluster           (basestring)    --  destination cluster host. Restores to the source
                                                   VM cluster if this value is not specified
 
-            repository         (basestring)   --  datastore where the restored VM should be
+            storage         (basestring)   --  datastore where the restored VM should be
                                                   located. Restores to the source VM datastore
                                                   if this value is not specified
 
@@ -841,9 +877,11 @@ if response is not success
 
             proxy_client      (basestring)    --  destination proxy client
 
-            source_ip           (basestring)    --  IP of the source VM
-
-            destination_ip      (basestring)    --  IP of the destination VM
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
 
@@ -862,7 +900,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # check mandatory input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, basestring):

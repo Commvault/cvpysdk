@@ -161,7 +161,7 @@ subclient else returns False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1-L3161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1-L3193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -409,87 +409,6 @@ class Subclients(object):
         self._ADD_SUBCLIENT = self._services[&#39;ADD_SUBCLIENT&#39;]
 
         self._default_subclient = None
-
-        from .subclients.fssubclient import FileSystemSubclient
-        from .subclients.bigdataappssubclient import BigDataAppsSubclient
-        from .subclients.vssubclient import VirtualServerSubclient
-        from .subclients.casubclient import CloudAppsSubclient
-        from .subclients.sqlsubclient import SQLServerSubclient
-        from .subclients.nassubclient import NASSubclient
-        from .subclients.hanasubclient import SAPHANASubclient
-        from .subclients.oraclesubclient import OracleSubclient
-        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
-        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
-        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
-        from .subclients.sybasesubclient import SybaseSubclient
-        from .subclients.saporaclesubclient import SAPOracleSubclient
-        from .subclients.exchsubclient import ExchangeSubclient
-        from .subclients.mysqlsubclient import MYSQLSubclient
-        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
-        from .subclients.postgressubclient import PostgresSubclient
-        from .subclients.informixsubclient import InformixSubclient
-        from .subclients.adsubclient import ADSubclient
-        from .subclients.sharepointsubclient import SharepointSubclient
-        from .subclients.sharepointsubclient import SharepointV1Subclient
-        from .subclients.vminstancesubclient import VMInstanceSubclient
-        from .subclients.db2subclient import DB2Subclient
-        from .subclients.casesubclient import CaseSubclient
-        from .subclients.aadsubclient import AzureAdSubclient
-
-        globals()[&#39;BigDataAppsSubclient&#39;] = BigDataAppsSubclient
-        globals()[&#39;FileSystemSubclient&#39;] = FileSystemSubclient
-        globals()[&#39;VirtualServerSubclient&#39;] = VirtualServerSubclient
-        globals()[&#39;CloudAppsSubclient&#39;] = CloudAppsSubclient
-        globals()[&#39;SQLServerSubclient&#39;] = SQLServerSubclient
-        globals()[&#39;NASSubclient&#39;] = NASSubclient
-        globals()[&#39;SAPHANASubclient&#39;] = SAPHANASubclient
-        globals()[&#39;OracleSubclient&#39;] = OracleSubclient
-        globals()[&#39;LNDbSubclient&#39;] = LNDbSubclient
-        globals()[&#39;LNDocSubclient&#39;] = LNDocSubclient
-        globals()[&#39;LNDmSubclient&#39;] = LNDmSubclient
-        globals()[&#39;SybaseSubclient&#39;] = SybaseSubclient
-        globals()[&#39;SAPOracleSubclient&#39;] = SAPOracleSubclient
-        globals()[&#39;ExchangeSubclient&#39;] = ExchangeSubclient
-        globals()[&#39;MYSQLSubclient&#39;] = MYSQLSubclient
-        globals()[&#39;ExchangeDatabaseSubclient&#39;] = ExchangeDatabaseSubclient
-        globals()[&#39;PostgresSubclient&#39;] = PostgresSubclient
-        globals()[&#39;DB2Subclient&#39;] = DB2Subclient
-        globals()[&#39;InformixSubclient&#39;] = InformixSubclient
-        globals()[&#39;ADSubclient&#39;] = ADSubclient
-        globals()[&#39;SharepointSubclient&#39;] = SharepointSubclient
-        globals()[&#39;SharepointV1Subclient&#39;] = SharepointV1Subclient
-        globals()[&#39;VMInstanceSubclient&#39;] = VMInstanceSubclient
-        globals()[&#39;CaseSubclient&#39;] = CaseSubclient
-        globals()[&#39;AzureADSubclient&#39;] = AzureAdSubclient
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._subclients_dict = {
-            &#39;big data apps&#39;: BigDataAppsSubclient,
-            &#39;file system&#39;: FileSystemSubclient,
-            &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
-            &#39;cloud apps&#39;: CloudAppsSubclient,
-            &#39;sql server&#39;: SQLServerSubclient,
-            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
-            &#39;sap hana&#39;: SAPHANASubclient,
-            &#39;oracle&#39;: OracleSubclient,
-            &#39;oracle rac&#39;: OracleSubclient,
-            &#39;notes database&#39;: LNDbSubclient,
-            &#39;notes document&#39;: LNDocSubclient,
-            &#39;domino mailbox archiver&#39;: LNDmSubclient,
-            &#39;sybase&#39;: SybaseSubclient,
-            &#39;sap for oracle&#39;: SAPOracleSubclient,
-            &#34;exchange mailbox&#34;: [ExchangeSubclient, CaseSubclient],
-            &#39;mysql&#39;: MYSQLSubclient,
-            &#39;exchange database&#39;: ExchangeDatabaseSubclient,
-            &#39;postgresql&#39;: PostgresSubclient,
-            &#39;db2&#39;: DB2Subclient,
-            &#39;informix&#39;: InformixSubclient,
-            &#39;active directory&#39;: ADSubclient,
-            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
-            &#34;azure ad&#34; : AzureAdSubclient
-        }
 
         # sql server subclient type dict
         self._sqlsubclient_type_dict = {
@@ -779,32 +698,13 @@ class Subclients(object):
                         &#39;Failed to create subclient\nError: &#34;{0}&#34;&#39;.format(error_string)
                     )
                 else:
-                    subclient_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;subclientId&#39;]
-
                     # initialize the subclients again so the subclient object has all the subclients
                     self.refresh()
 
-                    agent_name = self._agent_object.agent_name
+                    subclient_name = request_json[&#39;subClientProperties&#39;][&#39;subClientEntity&#39;][&#39;subclientName&#39;]
 
-                    if isinstance(self._subclients_dict[agent_name], list):
-                        if self._instance_object.instance_name == &#34;vminstance&#34;:
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                            # client type 36 is case manager client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                            # agent id 78 is sharepoint client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        else:
-                            subclient = self._subclients_dict[agent_name][0]
-                    else:
-                        subclient = self._subclients_dict[agent_name]
+                    return self.get(subclient_name)
 
-                    return subclient(
-                        self._backupset_object,
-                        request_json[&#39;subClientProperties&#39;][&#39;subClientEntity&#39;][&#39;subclientName&#39;],
-                        subclient_id
-                    )
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1207,18 +1107,47 @@ class Subclients(object):
 
                 subclient_content   (list)  --  Content to be added to the subclient
 
-                    Example:
-                        [
-                            {
-                            &#39;type&#39; : VSAObjects.APPLICATION,
-                            &#39;name&#39; : &#39;&#39;,
-                            },
-                            {
-                            &#39;type&#39; : VSAObjects.PROJECT,
-                            &#39;name&#39; : &#39;&#39;,
-                            },
+                    Example 1:
+                        [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;id&#39;: &#39;&#39;,
+                            &#39;path&#39;: &#39;&#39;,
+                            &#39;display_name&#39;: &#39;sample1&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }]
+                    Example 2:
+                         [{
+                        &#39;allOrAnyChildren&#39;: False,
+                        &#39;content&#39;: [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample1&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }, {
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample2&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }
                         ]
-
+                        }, {
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;content&#39;: [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample3&#39;,
+                            &#39;type&#39;: VSAObjects.RESOURCE_POOL
+                        }, {
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;id&#39;: &#39;sample4&#39;,
+                            &#39;display_name&#39;: &#39;sample4&#39;,
+                            &#39;type&#39;: VSAObjects.SERVER
+                            }
+                            ]
+                        }
+                        ]
                         **Note** Use VSAObjects Enum present in constants.py to pass value to type
 
                 kwargs      (dict)  -- dict of keyword arguments as follows
@@ -1272,14 +1201,47 @@ class Subclients(object):
                 )
 
         content = []
+
+        def set_content(item_content):
+            &#34;&#34;&#34;
+            create content dictionary
+            Args:
+                item_content            (dict):     Dict of content details
+
+                Example:
+                    {
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;display_name&#39;: &#39;sample1&#39;,
+                        &#39;type&#39;:  &lt; VSAObjects.VMName: 10 &gt;
+                    }
+
+            Returns:
+
+            &#34;&#34;&#34;
+            return{
+                &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
+                &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
+                &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
+                &#34;path&#34;: item_content.get(&#39;path&#39;, &#39;&#39;),
+                &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
+                &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
+            }
         for item in subclient_content:
-            content.append({
-                    &#34;equalsOrNotEquals&#34;: True,
-                    &#34;name&#34;: item[&#39;name&#39;],
-                    &#34;displayName&#34;: item[&#39;name&#39;],
-                    &#34;allOrAnyChildren&#34;: True,
-                    &#34;type&#34;: item[&#39;type&#39;].value
-                })
+            _temp_list = []
+            _temp_dict = {}
+            allOrAnyChildren = item.get(&#39;allOrAnyChildren&#39;, None)
+            if &#39;content&#39; in item:
+                nested_content = item[&#39;content&#39;]
+                for each_condition in nested_content:
+                    temp_dict = set_content(each_condition)
+                    _temp_list.append(temp_dict)
+                _temp_dict[&#39;allOrAnyChildren&#39;] = allOrAnyChildren
+                _temp_dict[&#39;children&#39;] = _temp_list
+                content.append(_temp_dict)
+            else:
+                temp_dict = set_content(item)
+                content.append(temp_dict)
 
         request_json = {
             &#34;subClientProperties&#34;: {
@@ -1443,28 +1405,13 @@ class Subclients(object):
         else:
             subclient_name = subclient_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_subclient(subclient_name):
-                if isinstance(self._subclients_dict[agent_name], list):
-                    if self._instance_object.instance_name == &#34;vminstance&#34;:
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                        # client type 36 is case manager client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                        # agent id 78 is sharepoint client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    else:
-                        subclient = self._subclients_dict[agent_name][0]
-                else:
-                    subclient = self._subclients_dict[agent_name]
 
                 if self._backupset_object is None:
                     self._backupset_object = self._instance_object.backupsets.get(
                         self._subclients[subclient_name][&#39;backupset&#39;]
                     )
-                return subclient(
+                return Subclient(
                     self._backupset_object, subclient_name, self._subclients[subclient_name][&#39;id&#39;]
                 )
 
@@ -1554,6 +1501,87 @@ class Subclients(object):
 
 class Subclient(object):
     &#34;&#34;&#34;Base class consisting of all the common properties and operations for a Subclient&#34;&#34;&#34;
+
+    def __new__(cls, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Class composition for CV subclients&#34;&#34;&#34;
+        from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.bigdataappssubclient import BigDataAppsSubclient
+        from .subclients.vssubclient import VirtualServerSubclient
+        from .subclients.casubclient import CloudAppsSubclient
+        from .subclients.sqlsubclient import SQLServerSubclient
+        from .subclients.nassubclient import NASSubclient
+        from .subclients.hanasubclient import SAPHANASubclient
+        from .subclients.oraclesubclient import OracleSubclient
+        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
+        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
+        from .subclients.sybasesubclient import SybaseSubclient
+        from .subclients.saporaclesubclient import SAPOracleSubclient
+        from .subclients.exchsubclient import ExchangeSubclient
+        from .subclients.mysqlsubclient import MYSQLSubclient
+        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
+        from .subclients.postgressubclient import PostgresSubclient
+        from .subclients.informixsubclient import InformixSubclient
+        from .subclients.adsubclient import ADSubclient
+        from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.sharepointsubclient import SharepointV1Subclient
+        from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.db2subclient import DB2Subclient
+        from .subclients.casesubclient import CaseSubclient
+        from .subclients.aadsubclient import AzureAdSubclient
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _subclients_dict = {
+            &#39;big data apps&#39;: BigDataAppsSubclient,
+            &#39;file system&#39;: FileSystemSubclient,
+            &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
+            &#39;cloud apps&#39;: CloudAppsSubclient,
+            &#39;sql server&#39;: SQLServerSubclient,
+            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            &#39;sap hana&#39;: SAPHANASubclient,
+            &#39;oracle&#39;: OracleSubclient,
+            &#39;oracle rac&#39;: OracleSubclient,
+            &#39;notes database&#39;: LNDbSubclient,
+            &#39;notes document&#39;: LNDocSubclient,
+            &#39;domino mailbox archiver&#39;: LNDmSubclient,
+            &#39;sybase&#39;: SybaseSubclient,
+            &#39;sap for oracle&#39;: SAPOracleSubclient,
+            &#34;exchange mailbox&#34;: [ExchangeSubclient, CaseSubclient],
+            &#39;mysql&#39;: MYSQLSubclient,
+            &#39;exchange database&#39;: ExchangeDatabaseSubclient,
+            &#39;postgresql&#39;: PostgresSubclient,
+            &#39;db2&#39;: DB2Subclient,
+            &#39;informix&#39;: InformixSubclient,
+            &#39;active directory&#39;: ADSubclient,
+            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
+            &#34;azure ad&#34;: AzureAdSubclient
+        }
+
+        agent_object = backupset_object._agent_object
+        instance_object = backupset_object._instance_object
+        client_object = agent_object._client_object
+
+        agent_name = agent_object.agent_name.lower()
+
+        if isinstance(_subclients_dict.get(agent_name), list):
+            if instance_object.instance_name == &#34;vminstance&#34;:
+                _class = _subclients_dict[agent_name][-1]
+            elif client_object.client_type and int(client_object.client_type) == 36:
+                # client type 36 is case manager client
+                _class = _subclients_dict[agent_name][-1]
+            elif int(agent_object.agent_id) == 78 and client_object.client_type:
+                # agent id 78 is sharepoint client
+                _class = _subclients_dict[agent_name][-1]
+            else:
+                _class = _subclients_dict[agent_name][0]
+        else:
+            _class = _subclients_dict.get(agent_name, cls)
+
+        if _class.__new__ == cls.__new__:
+            return object.__new__(_class)
+        return _class.__new__(_class, backupset_object, subclient_name, subclient_id)
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         &#34;&#34;&#34;Initialise the Subclient object.
@@ -2037,11 +2065,9 @@ c
 
     @name.setter
     def name(self, name):
-        &#34;&#34;&#34;
-        Sets the name for the subclient
+        &#34;&#34;&#34;Sets the name for the subclient
         Args:
             name    (str)   -- name for the subclient
-
         &#34;&#34;&#34;
         self.display_name = name
 
@@ -3037,23 +3063,29 @@ c
 
         &#34;&#34;&#34;
         job_controller = JobController(self._commcell_object)
+        entity_dict = {
+            &#34;subclientId&#34;: int(self.subclient_id)
+        }
         if include_active and include_finished:
             client_jobs = job_controller.all_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         elif include_active:
             client_jobs = job_controller.active_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         elif include_finished:
             client_jobs = job_controller.finished_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         else:
             raise SDKException(
@@ -3360,10 +3392,91 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1390-L3161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1337-L3193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclient(object):
     &#34;&#34;&#34;Base class consisting of all the common properties and operations for a Subclient&#34;&#34;&#34;
+
+    def __new__(cls, backupset_object, subclient_name, subclient_id=None):
+        &#34;&#34;&#34;Class composition for CV subclients&#34;&#34;&#34;
+        from .subclients.fssubclient import FileSystemSubclient
+        from .subclients.bigdataappssubclient import BigDataAppsSubclient
+        from .subclients.vssubclient import VirtualServerSubclient
+        from .subclients.casubclient import CloudAppsSubclient
+        from .subclients.sqlsubclient import SQLServerSubclient
+        from .subclients.nassubclient import NASSubclient
+        from .subclients.hanasubclient import SAPHANASubclient
+        from .subclients.oraclesubclient import OracleSubclient
+        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
+        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
+        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
+        from .subclients.sybasesubclient import SybaseSubclient
+        from .subclients.saporaclesubclient import SAPOracleSubclient
+        from .subclients.exchsubclient import ExchangeSubclient
+        from .subclients.mysqlsubclient import MYSQLSubclient
+        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
+        from .subclients.postgressubclient import PostgresSubclient
+        from .subclients.informixsubclient import InformixSubclient
+        from .subclients.adsubclient import ADSubclient
+        from .subclients.sharepointsubclient import SharepointSubclient
+        from .subclients.sharepointsubclient import SharepointV1Subclient
+        from .subclients.vminstancesubclient import VMInstanceSubclient
+        from .subclients.db2subclient import DB2Subclient
+        from .subclients.casesubclient import CaseSubclient
+        from .subclients.aadsubclient import AzureAdSubclient
+
+        # add the agent name to this dict, and its class as the value
+        # the appropriate class object will be initialized based on the agent
+        _subclients_dict = {
+            &#39;big data apps&#39;: BigDataAppsSubclient,
+            &#39;file system&#39;: FileSystemSubclient,
+            &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
+            &#39;cloud apps&#39;: CloudAppsSubclient,
+            &#39;sql server&#39;: SQLServerSubclient,
+            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            &#39;sap hana&#39;: SAPHANASubclient,
+            &#39;oracle&#39;: OracleSubclient,
+            &#39;oracle rac&#39;: OracleSubclient,
+            &#39;notes database&#39;: LNDbSubclient,
+            &#39;notes document&#39;: LNDocSubclient,
+            &#39;domino mailbox archiver&#39;: LNDmSubclient,
+            &#39;sybase&#39;: SybaseSubclient,
+            &#39;sap for oracle&#39;: SAPOracleSubclient,
+            &#34;exchange mailbox&#34;: [ExchangeSubclient, CaseSubclient],
+            &#39;mysql&#39;: MYSQLSubclient,
+            &#39;exchange database&#39;: ExchangeDatabaseSubclient,
+            &#39;postgresql&#39;: PostgresSubclient,
+            &#39;db2&#39;: DB2Subclient,
+            &#39;informix&#39;: InformixSubclient,
+            &#39;active directory&#39;: ADSubclient,
+            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
+            &#34;azure ad&#34;: AzureAdSubclient
+        }
+
+        agent_object = backupset_object._agent_object
+        instance_object = backupset_object._instance_object
+        client_object = agent_object._client_object
+
+        agent_name = agent_object.agent_name.lower()
+
+        if isinstance(_subclients_dict.get(agent_name), list):
+            if instance_object.instance_name == &#34;vminstance&#34;:
+                _class = _subclients_dict[agent_name][-1]
+            elif client_object.client_type and int(client_object.client_type) == 36:
+                # client type 36 is case manager client
+                _class = _subclients_dict[agent_name][-1]
+            elif int(agent_object.agent_id) == 78 and client_object.client_type:
+                # agent id 78 is sharepoint client
+                _class = _subclients_dict[agent_name][-1]
+            else:
+                _class = _subclients_dict[agent_name][0]
+        else:
+            _class = _subclients_dict.get(agent_name, cls)
+
+        if _class.__new__ == cls.__new__:
+            return object.__new__(_class)
+        return _class.__new__(_class, backupset_object, subclient_name, subclient_id)
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
         &#34;&#34;&#34;Initialise the Subclient object.
@@ -3847,11 +3960,9 @@ c
 
     @name.setter
     def name(self, name):
-        &#34;&#34;&#34;
-        Sets the name for the subclient
+        &#34;&#34;&#34;Sets the name for the subclient
         Args:
             name    (str)   -- name for the subclient
-
         &#34;&#34;&#34;
         self.display_name = name
 
@@ -4847,23 +4958,29 @@ c
 
         &#34;&#34;&#34;
         job_controller = JobController(self._commcell_object)
+        entity_dict = {
+            &#34;subclientId&#34;: int(self.subclient_id)
+        }
         if include_active and include_finished:
             client_jobs = job_controller.all_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         elif include_active:
             client_jobs = job_controller.active_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         elif include_finished:
             client_jobs = job_controller.finished_jobs(
                 client_name=self._client_object.client_name,
                 lookup_time=lookup_time,
-                job_filter=job_filter
+                job_filter=job_filter,
+                entity=entity_dict
             )
         else:
             raise SDKException(
@@ -5164,7 +5281,7 @@ c
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2046-L2052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2072-L2078" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def allow_multiple_readers(self):
@@ -5181,7 +5298,7 @@ def allow_multiple_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2020-L2026" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2046-L2052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_readers(self):
@@ -5198,7 +5315,7 @@ def data_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L3026-L3048" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3058-L3080" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def deduplication_options(self):
@@ -5231,7 +5348,7 @@ def deduplication_options(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1985-L1989" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2011-L2015" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -5246,7 +5363,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1852-L1855" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1880-L1883" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -5260,7 +5377,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2984-L2997" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3016-L3029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def encryption_flag(self):
@@ -5284,7 +5401,7 @@ def encryption_flag(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1940-L1944" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1966-L1970" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -5299,7 +5416,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1953-L1957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1979-L1983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_blocklevel_backup_enabled(self):
@@ -5315,7 +5432,7 @@ subclient else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2088-L2092" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2114-L2118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_subclient(self):
@@ -5330,7 +5447,7 @@ def is_default_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1946-L1951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1972-L1977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_intelli_snap_enabled(self):
@@ -5346,7 +5463,7 @@ def is_intelli_snap_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1980-L1983" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2006-L2009" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_subclient(self):
@@ -5360,7 +5477,7 @@ def is_on_demand_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1974-L1978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2000-L2004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_trueup_enabled(self):
@@ -5375,7 +5492,7 @@ def is_trueup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1919-L1928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1945-L1954" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def last_backup_time(self):
@@ -5395,7 +5512,7 @@ def last_backup_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1847-L1850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1875-L1878" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5409,7 +5526,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2959-L2962" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2991-L2994" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_agent(self):
@@ -5423,7 +5540,7 @@ def network_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1930-L1938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1956-L1964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def next_backup_time(self):
@@ -5443,7 +5560,7 @@ Returns None if no plan is associated</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L3103-L3117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3135-L3149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -5468,7 +5585,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1842-L1845" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1870-L1873" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -5482,7 +5599,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2080-L2086" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2106-L2112" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def read_buffer_size(self):
@@ -5499,7 +5616,7 @@ def read_buffer_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1959-L1972" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1985-L1998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snapshot_engine_name(self):
@@ -5523,7 +5640,7 @@ def snapshot_engine_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2916-L2929" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2948-L2961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def software_compression(self):
@@ -5547,7 +5664,7 @@ def software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2000-L2008" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2026-L2034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma(self):
@@ -5566,7 +5683,7 @@ def storage_ma(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2010-L2018" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2036-L2044" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma_id(self):
@@ -5585,7 +5702,7 @@ def storage_ma_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1991-L1998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2017-L2024" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -5603,7 +5720,7 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1857-L1860" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1885-L1888" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_guid(self):
@@ -5617,7 +5734,7 @@ def subclient_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1909-L1912" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1935-L1938" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_id(self):
@@ -5631,7 +5748,7 @@ def subclient_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1914-L1917" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1940-L1943" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_name(self):
@@ -5680,7 +5797,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2328-L2385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2354-L2411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -5786,7 +5903,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2402-L2453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2428-L2479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Subclient.
@@ -5853,7 +5970,7 @@ if failed to disable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2231-L2239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2257-L2265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for the subclient.
@@ -5877,7 +5994,7 @@ if failed to disable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2289-L2298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2315-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_intelli_snap(self):
     &#34;&#34;&#34;Disables Intelli Snap for the subclient.
@@ -5902,7 +6019,7 @@ if failed to enable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2175-L2182" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2201-L2208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enables Backup for the subclient.
@@ -5939,7 +6056,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2194-L2229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2220-L2255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -5995,7 +6112,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2251-L2287" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2277-L2313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_intelli_snap(self, snap_engine_name, proxy_options=None):
     &#34;&#34;&#34;Enables Intelli Snap for the subclient.
@@ -6044,7 +6161,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2184-L2187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2210-L2213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup(self):
     &#34;&#34;&#34;Setter for the TrueUp Option for a Subclient&#34;&#34;&#34;
@@ -6060,7 +6177,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2189-L2192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2215-L2218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup_days(self, days=30):
     &#34;&#34;&#34;Setter for the TrueUp Option with reconcile after x days&#34;&#34;&#34;
@@ -6079,7 +6196,7 @@ if failed to exclude the subclient from SLA</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2241-L2249" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2267-L2275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_from_sla(self):
     &#34;&#34;&#34;Exclude subclient from SLA.
@@ -6148,7 +6265,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2455-L2516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2481-L2542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the subclient,
@@ -6268,7 +6385,7 @@ if any error occurred while finding the latest job.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2823-L2909" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2849-L2941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_latest_job(
         self,
@@ -6322,23 +6439,29 @@ if any error occurred while finding the latest job.</p></div>
 
     &#34;&#34;&#34;
     job_controller = JobController(self._commcell_object)
+    entity_dict = {
+        &#34;subclientId&#34;: int(self.subclient_id)
+    }
     if include_active and include_finished:
         client_jobs = job_controller.all_jobs(
             client_name=self._client_object.client_name,
             lookup_time=lookup_time,
-            job_filter=job_filter
+            job_filter=job_filter,
+            entity=entity_dict
         )
     elif include_active:
         client_jobs = job_controller.active_jobs(
             client_name=self._client_object.client_name,
             lookup_time=lookup_time,
-            job_filter=job_filter
+            job_filter=job_filter,
+            entity=entity_dict
         )
     elif include_finished:
         client_jobs = job_controller.finished_jobs(
             client_name=self._client_object.client_name,
             lookup_time=lookup_time,
-            job_filter=job_filter
+            job_filter=job_filter,
+            entity=entity_dict
         )
     else:
         raise SDKException(
@@ -6369,7 +6492,7 @@ if unable to get MA names</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2387-L2400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2413-L2426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ma_associated_storagepolicy(self):
     &#34;&#34;&#34;
@@ -6427,7 +6550,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2518-L2567" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2544-L2593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the subclient
@@ -6489,7 +6612,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2911-L2914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2943-L2946" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Subclient.&#34;&#34;&#34;
@@ -6584,7 +6707,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2569-L2663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2595-L2689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -6794,7 +6917,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2665-L2782" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2691-L2808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -6937,7 +7060,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2784-L2821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2810-L2847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_backup_nodes(self, data_access_nodes):
     &#34;&#34;&#34;Sets the the backup nodes for NFS share subclient.
@@ -6989,7 +7112,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2300-L2316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2326-L2342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_proxy_for_snap(self, proxy_name):
     &#34;&#34;&#34; method to set Use proxy option for intellisnap subclient 
@@ -7018,7 +7141,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L2318-L2326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2344-L2352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unset_proxy_for_snap(self):
     &#34;&#34;&#34; method to unset Use proxy option for intellisnap subclient &#34;&#34;&#34;
@@ -7055,7 +7178,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1802-L1840" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1830-L1868" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the subclient properties
@@ -7122,7 +7245,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L185-L1387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L185-L1334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclients(object):
     &#34;&#34;&#34;Class for getting all the subclients associated with a client.&#34;&#34;&#34;
@@ -7186,87 +7309,6 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
         self._ADD_SUBCLIENT = self._services[&#39;ADD_SUBCLIENT&#39;]
 
         self._default_subclient = None
-
-        from .subclients.fssubclient import FileSystemSubclient
-        from .subclients.bigdataappssubclient import BigDataAppsSubclient
-        from .subclients.vssubclient import VirtualServerSubclient
-        from .subclients.casubclient import CloudAppsSubclient
-        from .subclients.sqlsubclient import SQLServerSubclient
-        from .subclients.nassubclient import NASSubclient
-        from .subclients.hanasubclient import SAPHANASubclient
-        from .subclients.oraclesubclient import OracleSubclient
-        from .subclients.lotusnotes.lndbsubclient import LNDbSubclient
-        from .subclients.lotusnotes.lndocsubclient import LNDocSubclient
-        from .subclients.lotusnotes.lndmsubclient import LNDmSubclient
-        from .subclients.sybasesubclient import SybaseSubclient
-        from .subclients.saporaclesubclient import SAPOracleSubclient
-        from .subclients.exchsubclient import ExchangeSubclient
-        from .subclients.mysqlsubclient import MYSQLSubclient
-        from .subclients.exchange.exchange_database_subclient import ExchangeDatabaseSubclient
-        from .subclients.postgressubclient import PostgresSubclient
-        from .subclients.informixsubclient import InformixSubclient
-        from .subclients.adsubclient import ADSubclient
-        from .subclients.sharepointsubclient import SharepointSubclient
-        from .subclients.sharepointsubclient import SharepointV1Subclient
-        from .subclients.vminstancesubclient import VMInstanceSubclient
-        from .subclients.db2subclient import DB2Subclient
-        from .subclients.casesubclient import CaseSubclient
-        from .subclients.aadsubclient import AzureAdSubclient
-
-        globals()[&#39;BigDataAppsSubclient&#39;] = BigDataAppsSubclient
-        globals()[&#39;FileSystemSubclient&#39;] = FileSystemSubclient
-        globals()[&#39;VirtualServerSubclient&#39;] = VirtualServerSubclient
-        globals()[&#39;CloudAppsSubclient&#39;] = CloudAppsSubclient
-        globals()[&#39;SQLServerSubclient&#39;] = SQLServerSubclient
-        globals()[&#39;NASSubclient&#39;] = NASSubclient
-        globals()[&#39;SAPHANASubclient&#39;] = SAPHANASubclient
-        globals()[&#39;OracleSubclient&#39;] = OracleSubclient
-        globals()[&#39;LNDbSubclient&#39;] = LNDbSubclient
-        globals()[&#39;LNDocSubclient&#39;] = LNDocSubclient
-        globals()[&#39;LNDmSubclient&#39;] = LNDmSubclient
-        globals()[&#39;SybaseSubclient&#39;] = SybaseSubclient
-        globals()[&#39;SAPOracleSubclient&#39;] = SAPOracleSubclient
-        globals()[&#39;ExchangeSubclient&#39;] = ExchangeSubclient
-        globals()[&#39;MYSQLSubclient&#39;] = MYSQLSubclient
-        globals()[&#39;ExchangeDatabaseSubclient&#39;] = ExchangeDatabaseSubclient
-        globals()[&#39;PostgresSubclient&#39;] = PostgresSubclient
-        globals()[&#39;DB2Subclient&#39;] = DB2Subclient
-        globals()[&#39;InformixSubclient&#39;] = InformixSubclient
-        globals()[&#39;ADSubclient&#39;] = ADSubclient
-        globals()[&#39;SharepointSubclient&#39;] = SharepointSubclient
-        globals()[&#39;SharepointV1Subclient&#39;] = SharepointV1Subclient
-        globals()[&#39;VMInstanceSubclient&#39;] = VMInstanceSubclient
-        globals()[&#39;CaseSubclient&#39;] = CaseSubclient
-        globals()[&#39;AzureADSubclient&#39;] = AzureAdSubclient
-
-        # add the agent name to this dict, and its class as the value
-        # the appropriate class object will be initialized based on the agent
-        self._subclients_dict = {
-            &#39;big data apps&#39;: BigDataAppsSubclient,
-            &#39;file system&#39;: FileSystemSubclient,
-            &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
-            &#39;cloud apps&#39;: CloudAppsSubclient,
-            &#39;sql server&#39;: SQLServerSubclient,
-            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
-            &#39;sap hana&#39;: SAPHANASubclient,
-            &#39;oracle&#39;: OracleSubclient,
-            &#39;oracle rac&#39;: OracleSubclient,
-            &#39;notes database&#39;: LNDbSubclient,
-            &#39;notes document&#39;: LNDocSubclient,
-            &#39;domino mailbox archiver&#39;: LNDmSubclient,
-            &#39;sybase&#39;: SybaseSubclient,
-            &#39;sap for oracle&#39;: SAPOracleSubclient,
-            &#34;exchange mailbox&#34;: [ExchangeSubclient, CaseSubclient],
-            &#39;mysql&#39;: MYSQLSubclient,
-            &#39;exchange database&#39;: ExchangeDatabaseSubclient,
-            &#39;postgresql&#39;: PostgresSubclient,
-            &#39;db2&#39;: DB2Subclient,
-            &#39;informix&#39;: InformixSubclient,
-            &#39;active directory&#39;: ADSubclient,
-            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
-            &#34;azure ad&#34; : AzureAdSubclient
-        }
 
         # sql server subclient type dict
         self._sqlsubclient_type_dict = {
@@ -7556,32 +7598,13 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                         &#39;Failed to create subclient\nError: &#34;{0}&#34;&#39;.format(error_string)
                     )
                 else:
-                    subclient_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;subclientId&#39;]
-
                     # initialize the subclients again so the subclient object has all the subclients
                     self.refresh()
 
-                    agent_name = self._agent_object.agent_name
+                    subclient_name = request_json[&#39;subClientProperties&#39;][&#39;subClientEntity&#39;][&#39;subclientName&#39;]
 
-                    if isinstance(self._subclients_dict[agent_name], list):
-                        if self._instance_object.instance_name == &#34;vminstance&#34;:
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                            # client type 36 is case manager client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                            # agent id 78 is sharepoint client
-                            subclient = self._subclients_dict[agent_name][-1]
-                        else:
-                            subclient = self._subclients_dict[agent_name][0]
-                    else:
-                        subclient = self._subclients_dict[agent_name]
+                    return self.get(subclient_name)
 
-                    return subclient(
-                        self._backupset_object,
-                        request_json[&#39;subClientProperties&#39;][&#39;subClientEntity&#39;][&#39;subclientName&#39;],
-                        subclient_id
-                    )
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -7984,18 +8007,47 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
                 subclient_content   (list)  --  Content to be added to the subclient
 
-                    Example:
-                        [
-                            {
-                            &#39;type&#39; : VSAObjects.APPLICATION,
-                            &#39;name&#39; : &#39;&#39;,
-                            },
-                            {
-                            &#39;type&#39; : VSAObjects.PROJECT,
-                            &#39;name&#39; : &#39;&#39;,
-                            },
+                    Example 1:
+                        [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;id&#39;: &#39;&#39;,
+                            &#39;path&#39;: &#39;&#39;,
+                            &#39;display_name&#39;: &#39;sample1&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }]
+                    Example 2:
+                         [{
+                        &#39;allOrAnyChildren&#39;: False,
+                        &#39;content&#39;: [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample1&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }, {
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample2&#39;,
+                            &#39;type&#39;: VSAObjects.VMName
+                        }
                         ]
-
+                        }, {
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;content&#39;: [{
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;display_name&#39;: &#39;sample3&#39;,
+                            &#39;type&#39;: VSAObjects.RESOURCE_POOL
+                        }, {
+                            &#39;equal_value&#39;: True,
+                            &#39;allOrAnyChildren&#39;: True,
+                            &#39;id&#39;: &#39;sample4&#39;,
+                            &#39;display_name&#39;: &#39;sample4&#39;,
+                            &#39;type&#39;: VSAObjects.SERVER
+                            }
+                            ]
+                        }
+                        ]
                         **Note** Use VSAObjects Enum present in constants.py to pass value to type
 
                 kwargs      (dict)  -- dict of keyword arguments as follows
@@ -8049,14 +8101,47 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                 )
 
         content = []
+
+        def set_content(item_content):
+            &#34;&#34;&#34;
+            create content dictionary
+            Args:
+                item_content            (dict):     Dict of content details
+
+                Example:
+                    {
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;display_name&#39;: &#39;sample1&#39;,
+                        &#39;type&#39;:  &lt; VSAObjects.VMName: 10 &gt;
+                    }
+
+            Returns:
+
+            &#34;&#34;&#34;
+            return{
+                &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
+                &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
+                &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
+                &#34;path&#34;: item_content.get(&#39;path&#39;, &#39;&#39;),
+                &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
+                &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
+            }
         for item in subclient_content:
-            content.append({
-                    &#34;equalsOrNotEquals&#34;: True,
-                    &#34;name&#34;: item[&#39;name&#39;],
-                    &#34;displayName&#34;: item[&#39;name&#39;],
-                    &#34;allOrAnyChildren&#34;: True,
-                    &#34;type&#34;: item[&#39;type&#39;].value
-                })
+            _temp_list = []
+            _temp_dict = {}
+            allOrAnyChildren = item.get(&#39;allOrAnyChildren&#39;, None)
+            if &#39;content&#39; in item:
+                nested_content = item[&#39;content&#39;]
+                for each_condition in nested_content:
+                    temp_dict = set_content(each_condition)
+                    _temp_list.append(temp_dict)
+                _temp_dict[&#39;allOrAnyChildren&#39;] = allOrAnyChildren
+                _temp_dict[&#39;children&#39;] = _temp_list
+                content.append(_temp_dict)
+            else:
+                temp_dict = set_content(item)
+                content.append(temp_dict)
 
         request_json = {
             &#34;subClientProperties&#34;: {
@@ -8220,28 +8305,13 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
         else:
             subclient_name = subclient_name.lower()
 
-            agent_name = self._agent_object.agent_name
-
             if self.has_subclient(subclient_name):
-                if isinstance(self._subclients_dict[agent_name], list):
-                    if self._instance_object.instance_name == &#34;vminstance&#34;:
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                        # client type 36 is case manager client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                        # agent id 78 is sharepoint client
-                        subclient = self._subclients_dict[agent_name][-1]
-                    else:
-                        subclient = self._subclients_dict[agent_name][0]
-                else:
-                    subclient = self._subclients_dict[agent_name]
 
                 if self._backupset_object is None:
                     self._backupset_object = self._instance_object.backupsets.get(
                         self._subclients[subclient_name][&#39;backupset&#39;]
                     )
-                return subclient(
+                return Subclient(
                     self._backupset_object, subclient_name, self._subclients[subclient_name][&#39;id&#39;]
                 )
 
@@ -8357,7 +8427,7 @@ consists of all subclients in the backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L550-L571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L469-L490" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_subclients(self):
@@ -8389,7 +8459,7 @@ def all_subclients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1384-L1387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1331-L1334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_subclient(self):
@@ -8470,7 +8540,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L648-L776" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L548-L676" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, subclient_name, storage_policy,
         subclient_type=None, description=&#39;&#39;, advanced_options=None,
@@ -8642,7 +8712,7 @@ if server plan  donot exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1167-L1259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1129-L1221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_subclient(self,
                            subclient_name,
@@ -8798,7 +8868,7 @@ if subclient name argument is not of type string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L778-L927" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L678-L827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_logical_dump_subclient(
                              self,
@@ -9008,7 +9078,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L929-L1030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L829-L930" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_subclient(
         self, subclient_name, storage_policy,
@@ -9128,18 +9198,47 @@ Name of the subclient to be created</p>
 (list)
 &ndash;
 Content to be added to the subclient</p>
-<pre><code>Example:
-    [
-        {
-        'type' : VSAObjects.APPLICATION,
-        'name' : '',
-        },
-        {
-        'type' : VSAObjects.PROJECT,
-        'name' : '',
-        },
+<pre><code>Example 1:
+    [{
+        'equal_value': True,
+        'allOrAnyChildren': True,
+        'id': '',
+        'path': '',
+        'display_name': 'sample1',
+        'type': VSAObjects.VMName
+    }]
+Example 2:
+     [{
+    'allOrAnyChildren': False,
+    'content': [{
+        'equal_value': True,
+        'allOrAnyChildren': True,
+        'display_name': 'sample1',
+        'type': VSAObjects.VMName
+    }, {
+        'equal_value': True,
+        'allOrAnyChildren': True,
+        'display_name': 'sample2',
+        'type': VSAObjects.VMName
+    }
     ]
-
+    }, {
+    'allOrAnyChildren': True,
+    'content': [{
+        'equal_value': True,
+        'allOrAnyChildren': True,
+        'display_name': 'sample3',
+        'type': VSAObjects.RESOURCE_POOL
+    }, {
+        'equal_value': True,
+        'allOrAnyChildren': True,
+        'id': 'sample4',
+        'display_name': 'sample4',
+        'type': VSAObjects.SERVER
+        }
+        ]
+    }
+    ]
     **Note** Use VSAObjects Enum present in constants.py to pass value to type
 </code></pre>
 <p>kwargs
@@ -9175,7 +9274,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1032-L1165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L932-L1127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_virtual_server_subclient(
         self,
@@ -9190,18 +9289,47 @@ if subclient already exists with the given name
 
             subclient_content   (list)  --  Content to be added to the subclient
 
-                Example:
-                    [
-                        {
-                        &#39;type&#39; : VSAObjects.APPLICATION,
-                        &#39;name&#39; : &#39;&#39;,
-                        },
-                        {
-                        &#39;type&#39; : VSAObjects.PROJECT,
-                        &#39;name&#39; : &#39;&#39;,
-                        },
+                Example 1:
+                    [{
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;id&#39;: &#39;&#39;,
+                        &#39;path&#39;: &#39;&#39;,
+                        &#39;display_name&#39;: &#39;sample1&#39;,
+                        &#39;type&#39;: VSAObjects.VMName
+                    }]
+                Example 2:
+                     [{
+                    &#39;allOrAnyChildren&#39;: False,
+                    &#39;content&#39;: [{
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;display_name&#39;: &#39;sample1&#39;,
+                        &#39;type&#39;: VSAObjects.VMName
+                    }, {
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;display_name&#39;: &#39;sample2&#39;,
+                        &#39;type&#39;: VSAObjects.VMName
+                    }
                     ]
-
+                    }, {
+                    &#39;allOrAnyChildren&#39;: True,
+                    &#39;content&#39;: [{
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;display_name&#39;: &#39;sample3&#39;,
+                        &#39;type&#39;: VSAObjects.RESOURCE_POOL
+                    }, {
+                        &#39;equal_value&#39;: True,
+                        &#39;allOrAnyChildren&#39;: True,
+                        &#39;id&#39;: &#39;sample4&#39;,
+                        &#39;display_name&#39;: &#39;sample4&#39;,
+                        &#39;type&#39;: VSAObjects.SERVER
+                        }
+                        ]
+                    }
+                    ]
                     **Note** Use VSAObjects Enum present in constants.py to pass value to type
 
             kwargs      (dict)  -- dict of keyword arguments as follows
@@ -9255,14 +9383,47 @@ if subclient already exists with the given name
             )
 
     content = []
+
+    def set_content(item_content):
+        &#34;&#34;&#34;
+        create content dictionary
+        Args:
+            item_content            (dict):     Dict of content details
+
+            Example:
+                {
+                    &#39;equal_value&#39;: True,
+                    &#39;allOrAnyChildren&#39;: True,
+                    &#39;display_name&#39;: &#39;sample1&#39;,
+                    &#39;type&#39;:  &lt; VSAObjects.VMName: 10 &gt;
+                }
+
+        Returns:
+
+        &#34;&#34;&#34;
+        return{
+            &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
+            &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
+            &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
+            &#34;path&#34;: item_content.get(&#39;path&#39;, &#39;&#39;),
+            &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
+            &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
+        }
     for item in subclient_content:
-        content.append({
-                &#34;equalsOrNotEquals&#34;: True,
-                &#34;name&#34;: item[&#39;name&#39;],
-                &#34;displayName&#34;: item[&#39;name&#39;],
-                &#34;allOrAnyChildren&#34;: True,
-                &#34;type&#34;: item[&#39;type&#39;].value
-            })
+        _temp_list = []
+        _temp_dict = {}
+        allOrAnyChildren = item.get(&#39;allOrAnyChildren&#39;, None)
+        if &#39;content&#39; in item:
+            nested_content = item[&#39;content&#39;]
+            for each_condition in nested_content:
+                temp_dict = set_content(each_condition)
+                _temp_list.append(temp_dict)
+            _temp_dict[&#39;allOrAnyChildren&#39;] = allOrAnyChildren
+            _temp_dict[&#39;children&#39;] = _temp_list
+            content.append(_temp_dict)
+        else:
+            temp_dict = set_content(item)
+            content.append(temp_dict)
 
     request_json = {
         &#34;subClientProperties&#34;: {
@@ -9336,7 +9497,7 @@ if no subclient exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1311-L1378" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1258-L1325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, subclient_name):
     &#34;&#34;&#34;Deletes the subclient specified by the subclient_name from the backupset.
@@ -9427,7 +9588,7 @@ if type of the subclient name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1261-L1309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1223-L1256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, subclient_name):
     &#34;&#34;&#34;Returns a subclient object of the specified backupset name.
@@ -9449,28 +9610,13 @@ if type of the subclient name argument is not string</p>
     else:
         subclient_name = subclient_name.lower()
 
-        agent_name = self._agent_object.agent_name
-
         if self.has_subclient(subclient_name):
-            if isinstance(self._subclients_dict[agent_name], list):
-                if self._instance_object.instance_name == &#34;vminstance&#34;:
-                    subclient = self._subclients_dict[agent_name][-1]
-                elif self._client_object.client_type and int(self._client_object.client_type) == 36:
-                    # client type 36 is case manager client
-                    subclient = self._subclients_dict[agent_name][-1]
-                elif int(self._agent_object.agent_id) == 78 and self._client_object.client_type:
-                    # agent id 78 is sharepoint client
-                    subclient = self._subclients_dict[agent_name][-1]
-                else:
-                    subclient = self._subclients_dict[agent_name][0]
-            else:
-                subclient = self._subclients_dict[agent_name]
 
             if self._backupset_object is None:
                 self._backupset_object = self._instance_object.backupsets.get(
                     self._subclients[subclient_name][&#39;backupset&#39;]
                 )
-            return subclient(
+            return Subclient(
                 self._backupset_object, subclient_name, self._subclients[subclient_name][&#39;id&#39;]
             )
 
@@ -9497,7 +9643,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L573-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L492-L508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_subclient(self, subclient_name):
     &#34;&#34;&#34;Checks if a subclient exists in the commcell with the input subclient name.
@@ -9526,7 +9672,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclient.py#L1380-L1382" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1327-L1329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the subclients associated with the Backupset / Instance.&#34;&#34;&#34;

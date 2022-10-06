@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/fusioncompute.py#L1-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L1-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -125,7 +125,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -143,13 +144,14 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                destination_client (basestring)  -- proxy client to be used for
-                                                    restore
-                                                    default: proxy added in
-                                                    subclient
-
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -165,7 +167,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -193,7 +195,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             copy_precedence=0,
-            disk_provisioning=&#39;original&#39;):
+            disk_provisioning=&#39;original&#39;,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -210,7 +213,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 new_name          (basestring) -- new name to be given to the
                                                     restored VM
 
-                Host          (basestring) -- destination cluster or  host
+                host          (basestring) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -230,12 +233,18 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_provisioning       (basestring) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
                 proxy_client     (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -252,7 +261,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -310,7 +319,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/fusioncompute.py#L46-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L46-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -342,7 +351,8 @@ backupset class, subclient name, subclient id</p></div>
             overwrite=True,
             power_on=True,
             proxy_client=None,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
@@ -360,13 +370,14 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                destination_client (basestring)  -- proxy client to be used for
-                                                    restore
-                                                    default: proxy added in
-                                                    subclient
-
                 proxy_client          (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -382,7 +393,7 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -410,7 +421,8 @@ backupset class, subclient name, subclient id</p></div>
             overwrite=True,
             power_on=True,
             copy_precedence=0,
-            disk_provisioning=&#39;original&#39;):
+            disk_provisioning=&#39;original&#39;,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -427,7 +439,7 @@ backupset class, subclient name, subclient id</p></div>
                 new_name          (basestring) -- new name to be given to the
                                                     restored VM
 
-                Host          (basestring) -- destination cluster or  host
+                host          (basestring) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -447,12 +459,18 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_provisioning       (basestring) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
                 proxy_client     (basestring)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -469,7 +487,7 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -508,7 +526,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.fusioncompute.FusionComputeVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -536,16 +554,19 @@ default: True</p>
 &ndash;
 copy precedence value
 default: 0</p>
-<p>destination_client (basestring)
-&ndash; proxy client to be used for
-restore
-default: proxy added in
-subclient</p>
 <p>proxy_client
 (basestring)
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -560,7 +581,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/fusioncompute.py#L70-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L70-L133" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -568,7 +589,8 @@ if response is not success
         overwrite=True,
         power_on=True,
         proxy_client=None,
-        copy_precedence=0):
+        copy_precedence=0,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the location same as the actual location of the VM in VCenter.
 
@@ -586,13 +608,14 @@ if response is not success
             copy_precedence     (int)      --  copy precedence value
                                                default: 0
 
-            destination_client (basestring)  -- proxy client to be used for
-                                                restore
-                                                default: proxy added in
-                                                subclient
-
             proxy_client          (basestring)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         Returns:
             object - instance of the Job class for this restore job
@@ -608,7 +631,7 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
@@ -627,7 +650,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.fusioncompute.FusionComputeVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, host=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, disk_provisioning='original')</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, host=None, datastore=None, overwrite=True, power_on=True, copy_precedence=0, disk_provisioning='original', **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -647,7 +670,7 @@ restored.</p>
 <p>new_name
 (basestring) &ndash; new name to be given to the
 restored VM</p>
-<p>Host
+<p>host
 (basestring) &ndash; destination cluster or
 host
 restores to the source VM
@@ -672,7 +695,7 @@ default: True</p>
 (int)
 &ndash; copy precedence value
 default: 0</p>
-<p>disk_option
+<p>disk_provisioning
 (basestring) &ndash; disk provisioning for the
 restored vm
 default: 0 which is equivalent
@@ -682,6 +705,14 @@ proxy_client
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -696,7 +727,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/fusioncompute.py#L133-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L135-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -709,7 +740,8 @@ if response is not success
         overwrite=True,
         power_on=True,
         copy_precedence=0,
-        disk_provisioning=&#39;original&#39;):
+        disk_provisioning=&#39;original&#39;,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
         If the provided client name is none then it restores the Full Virtual
@@ -726,7 +758,7 @@ if response is not success
             new_name          (basestring) -- new name to be given to the
                                                 restored VM
 
-            Host          (basestring) -- destination cluster or  host
+            host          (basestring) -- destination cluster or  host
                                                 restores to the source VM
                                                 esx if this value is not
                                                 specified
@@ -746,12 +778,18 @@ if response is not success
             copy_precedence   (int)        -- copy precedence value
                                               default: 0
 
-            disk_option       (basestring) -- disk provisioning for the
+            disk_provisioning       (basestring) -- disk provisioning for the
                                               restored vm
                                               default: 0 which is equivalent
                                               to Original
             proxy_client     (basestring)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
         Returns:
@@ -768,7 +806,7 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    restore_option = {}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
     if vm_to_restore:
         vm_to_restore = [vm_to_restore]

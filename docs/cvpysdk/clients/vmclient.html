@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.clients.vmclient API documentation</title>
+<meta name="description" content="VMClient class is defined in this file …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.clients.vmclient</code></h1>
+</header>
+<section id="section-intro">
+<p>VMClient class is defined in this file.</p>
+<p>VMClient:
+Class for a single vm client of the commcell</p>
+<h1 id="vmclient">VMClient</h1>
+<p>_return_parent_subclient()
+&ndash;
+Returns the parent subclient where the vm has been backed up</p>
+<p>_child_job_subclient_details()
+&ndash;
+returns the subclient details of the child job</p>
+<p>full_vm_restore_in_place()
+&ndash;
+Performs in place full vm restore and return job object</p>
+<p>full_vm_restore_out_of_place()
+&ndash;
+Performs out of place full vm restore and return job object</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clients/vmclient.py#L1-L205" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;
+VMClient class is defined in this file.
+
+VMClient:     Class for a single vm client of the commcell
+
+VMClient
+=======
+
+_return_parent_subclient()              --  Returns the parent subclient where the vm has been backed up
+
+_child_job_subclient_details()          --  returns the subclient details of the child job
+
+full_vm_restore_in_place()              --  Performs in place full vm restore and return job object
+
+full_vm_restore_out_of_place()          --  Performs out of place full vm restore and return job object
+&#34;&#34;&#34;
+
+import copy
+from ..job import Job
+from ..exception import SDKException
+from ..client import Client
+
+
+class VMClient(Client):
+    &#34;&#34;&#34; Class for representing client of a vm client.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, client_name, client_id=None):
+        &#34;&#34;&#34;Initialise the VM Client class instance.
+
+            Args:
+                commcell_object (object)     --  instance of the Commcell class
+
+                client_name     (str)        --  name of the client
+
+                client_id       (str)        --  id of the client
+                                                default: None
+
+            Returns:
+                object - instance of the VM Client class
+        &#34;&#34;&#34;
+        super(VMClient, self).__init__(commcell_object, client_name, client_id)
+
+    def _return_parent_subclient(self):
+        &#34;&#34;&#34;
+        Returns the parent subclient if the client is VSA client and is backed up else returns None
+
+        Returns:
+            _parent_subclient           (object)   :        Subclient object
+
+        &#34;&#34;&#34;
+        _subclient_entity = copy.deepcopy(self.properties.get(&#39;vmStatusInfo&#39;, {}).get(&#39;vsaSubClientEntity&#39;))
+        if _subclient_entity:
+            _parent_client = self._commcell_object.clients.get(_subclient_entity.get(&#39;clientName&#39;))
+            _parent_agent = _parent_client.agents.get(_subclient_entity.get(&#39;appName&#39;))
+            _parent_instance = _parent_agent.instances.get(_subclient_entity.get(&#39;instanceName&#39;))
+            _parent_backupset = _parent_instance.backupsets.get(_subclient_entity.get(&#39;backupsetName&#39;))
+            _parent_subclient = _parent_backupset.subclients.get(_subclient_entity.get(&#39;subclientName&#39;))
+            return _parent_subclient
+        else:
+            return None
+
+    def _child_job_subclient_details(self, parent_job_id):
+        &#34;&#34;&#34;
+        Returns the  child subclient details
+
+        Args:
+            parent_job_id           (string):       job id of the parent
+
+        Returns:
+            _child_job_obj          (dict):         Child subclient details:
+                                    eg: {
+                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
+                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
+                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
+                                            &#39;backupsetId&#39;: 12,
+                                            &#39;instanceId&#39;: 2,
+                                            &#39;subclientId&#39;: 123,
+                                            &#39;clientId&#39;: 1234,
+                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
+                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
+                                            &#39;applicationId&#39;: 106,
+                                            &#39;subclientName&#39;: &#39;default&#39;
+                                        }
+
+
+        &#34;&#34;&#34;
+        _parent_job_obj = Job(self._commcell_object, parent_job_id)
+        _child_jobs = _parent_job_obj.get_child_jobs()
+        if _child_jobs:
+            _child_job = None
+            for _job in _child_jobs:
+                if self.vm_guid == _job[&#39;GUID&#39;]:
+                    _child_job = _job[&#39;jobID&#39;]
+                    break
+            if not _child_job:
+                return None
+            _child_job_obj = Job(self._commcell_object, _child_job)
+            return _child_job_obj.details.get(&#39;jobDetail&#39;, {}).get(&#39;generalInfo&#39;, {}).get(&#39;subclient&#39;)
+        else:
+            return None
+
+    def full_vm_restore_in_place(self, **kwargs):
+        &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
+
+        Args:
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                full_vm_restore_in_place
+            eg:
+                            overwrite             (bool)        --  overwrite the existing VM
+
+                            power_on              (bool)        --  power on the  restored VM
+
+                            copy_precedence       (int)         --  copy precedence value
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if self.vm_guid:
+            _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop(&#39;vm_to_restore&#39;, None)
+            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                          v2_details=_child_details,
+                                                                          **kwargs)
+            else:
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                          **kwargs)
+            return vm_restore_job
+        else:
+            return None
+
+    def full_vm_restore_out_of_place(self, **kwargs):
+        &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+
+        Args:
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                full_vm_restore_out_of_place
+            ex:
+                        restored_vm_name         (str)    --  new name of vm. If nothing is passed,
+                                                                &#39;del&#39; is appended to the original vm name
+
+                        vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                                              should be restored.
+
+                        esx_host          (basestring)    --  destination esx host. Restores to the source
+                                                              VM esx if this value is not specified
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if self.vm_guid:
+            _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop(&#39;vm_to_restore&#39;, None)
+            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                              v2_details=_child_details,
+                                                                              **kwargs)
+            else:
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                              **kwargs)
+            return vm_restore_job
+        else:
+            return None</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.clients.vmclient.VMClient"><code class="flex name class">
+<span>class <span class="ident">VMClient</span></span>
+<span>(</span><span>commcell_object, client_name, client_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing client of a vm client.</p>
+<p>Initialise the VM Client class instance.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<p>client_name
+(str)
+&ndash;
+name of the client</p>
+<p>client_id
+(str)
+&ndash;
+id of the client
+default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the VM Client class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clients/vmclient.py#L42-L205" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class VMClient(Client):
+    &#34;&#34;&#34; Class for representing client of a vm client.&#34;&#34;&#34;
+
+    def __init__(self, commcell_object, client_name, client_id=None):
+        &#34;&#34;&#34;Initialise the VM Client class instance.
+
+            Args:
+                commcell_object (object)     --  instance of the Commcell class
+
+                client_name     (str)        --  name of the client
+
+                client_id       (str)        --  id of the client
+                                                default: None
+
+            Returns:
+                object - instance of the VM Client class
+        &#34;&#34;&#34;
+        super(VMClient, self).__init__(commcell_object, client_name, client_id)
+
+    def _return_parent_subclient(self):
+        &#34;&#34;&#34;
+        Returns the parent subclient if the client is VSA client and is backed up else returns None
+
+        Returns:
+            _parent_subclient           (object)   :        Subclient object
+
+        &#34;&#34;&#34;
+        _subclient_entity = copy.deepcopy(self.properties.get(&#39;vmStatusInfo&#39;, {}).get(&#39;vsaSubClientEntity&#39;))
+        if _subclient_entity:
+            _parent_client = self._commcell_object.clients.get(_subclient_entity.get(&#39;clientName&#39;))
+            _parent_agent = _parent_client.agents.get(_subclient_entity.get(&#39;appName&#39;))
+            _parent_instance = _parent_agent.instances.get(_subclient_entity.get(&#39;instanceName&#39;))
+            _parent_backupset = _parent_instance.backupsets.get(_subclient_entity.get(&#39;backupsetName&#39;))
+            _parent_subclient = _parent_backupset.subclients.get(_subclient_entity.get(&#39;subclientName&#39;))
+            return _parent_subclient
+        else:
+            return None
+
+    def _child_job_subclient_details(self, parent_job_id):
+        &#34;&#34;&#34;
+        Returns the  child subclient details
+
+        Args:
+            parent_job_id           (string):       job id of the parent
+
+        Returns:
+            _child_job_obj          (dict):         Child subclient details:
+                                    eg: {
+                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
+                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
+                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
+                                            &#39;backupsetId&#39;: 12,
+                                            &#39;instanceId&#39;: 2,
+                                            &#39;subclientId&#39;: 123,
+                                            &#39;clientId&#39;: 1234,
+                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
+                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
+                                            &#39;applicationId&#39;: 106,
+                                            &#39;subclientName&#39;: &#39;default&#39;
+                                        }
+
+
+        &#34;&#34;&#34;
+        _parent_job_obj = Job(self._commcell_object, parent_job_id)
+        _child_jobs = _parent_job_obj.get_child_jobs()
+        if _child_jobs:
+            _child_job = None
+            for _job in _child_jobs:
+                if self.vm_guid == _job[&#39;GUID&#39;]:
+                    _child_job = _job[&#39;jobID&#39;]
+                    break
+            if not _child_job:
+                return None
+            _child_job_obj = Job(self._commcell_object, _child_job)
+            return _child_job_obj.details.get(&#39;jobDetail&#39;, {}).get(&#39;generalInfo&#39;, {}).get(&#39;subclient&#39;)
+        else:
+            return None
+
+    def full_vm_restore_in_place(self, **kwargs):
+        &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
+
+        Args:
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                full_vm_restore_in_place
+            eg:
+                            overwrite             (bool)        --  overwrite the existing VM
+
+                            power_on              (bool)        --  power on the  restored VM
+
+                            copy_precedence       (int)         --  copy precedence value
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if self.vm_guid:
+            _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop(&#39;vm_to_restore&#39;, None)
+            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                          v2_details=_child_details,
+                                                                          **kwargs)
+            else:
+                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                          **kwargs)
+            return vm_restore_job
+        else:
+            return None
+
+    def full_vm_restore_out_of_place(self, **kwargs):
+        &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+
+        Args:
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                full_vm_restore_out_of_place
+            ex:
+                        restored_vm_name         (str)    --  new name of vm. If nothing is passed,
+                                                                &#39;del&#39; is appended to the original vm name
+
+                        vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                                              should be restored.
+
+                        esx_host          (basestring)    --  destination esx host. Restores to the source
+                                                              VM esx if this value is not specified
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        if self.vm_guid:
+            _sub_client_obj = self._return_parent_subclient()
+            kwargs.pop(&#39;vm_to_restore&#39;, None)
+            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                              v2_details=_child_details,
+                                                                              **kwargs)
+            else:
+                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                              **kwargs)
+            return vm_restore_job
+        else:
+            return None</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.client.Client" href="../client.html#cvpysdk.client.Client">Client</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place"><code class="name flex">
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores in place
+FULL Virtual machine for the client</p>
+<h2 id="args">Args</h2>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_in_place
+eg:
+overwrite
+(bool)
+&ndash;
+overwrite the existing VM</p>
+<pre><code>            power_on              (bool)        --  power on the  restored VM
+
+            copy_precedence       (int)         --  copy precedence value
+</code></pre>
+<p>Returns:
+object - instance of the Job class for this restore job</p>
+<p>Raises:
+SDKException:
+if inputs are not of correct type as per definition</p>
+<pre><code>    if failed to initialize job
+
+    if response is empty
+
+    if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clients/vmclient.py#L120-L160" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def full_vm_restore_in_place(self, **kwargs):
+    &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
+
+    Args:
+        **kwargs                         : Arbitrary keyword arguments Properties as of
+                                            full_vm_restore_in_place
+        eg:
+                        overwrite             (bool)        --  overwrite the existing VM
+
+                        power_on              (bool)        --  power on the  restored VM
+
+                        copy_precedence       (int)         --  copy precedence value
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if self.vm_guid:
+        _sub_client_obj = self._return_parent_subclient()
+        kwargs.pop(&#39;vm_to_restore&#39;, None)
+        if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+            _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+            vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                      v2_details=_child_details,
+                                                                      **kwargs)
+        else:
+            vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
+                                                                      **kwargs)
+        return vm_restore_job
+    else:
+        return None</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place"><code class="name flex">
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores out of place FULL Virtual machine for the client</p>
+<h2 id="args">Args</h2>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+ex:
+restored_vm_name
+(str)
+&ndash;
+new name of vm. If nothing is passed,
+'del' is appended to the original vm name</p>
+<pre><code>        vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                              should be restored.
+
+        esx_host          (basestring)    --  destination esx host. Restores to the source
+                                              VM esx if this value is not specified
+</code></pre>
+<p>Returns:
+object - instance of the Job class for this restore job</p>
+<p>Raises:
+SDKException:
+if inputs are not of correct type as per definition</p>
+<pre><code>    if failed to initialize job
+
+    if response is empty
+
+    if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clients/vmclient.py#L162-L205" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def full_vm_restore_out_of_place(self, **kwargs):
+    &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+
+    Args:
+        **kwargs                         : Arbitrary keyword arguments Properties as of
+                                            full_vm_restore_out_of_place
+        ex:
+                    restored_vm_name         (str)    --  new name of vm. If nothing is passed,
+                                                            &#39;del&#39; is appended to the original vm name
+
+                    vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                                          should be restored.
+
+                    esx_host          (basestring)    --  destination esx host. Restores to the source
+                                                          VM esx if this value is not specified
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    if self.vm_guid:
+        _sub_client_obj = self._return_parent_subclient()
+        kwargs.pop(&#39;vm_to_restore&#39;, None)
+        if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
+            _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
+            vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                          v2_details=_child_details,
+                                                                          **kwargs)
+        else:
+            vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
+                                                                          **kwargs)
+        return vm_restore_job
+    else:
+        return None</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.client.Client" href="../client.html#cvpysdk.client.Client">Client</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.client.Client.add_additional_setting" href="../client.html#cvpysdk.client.Client.add_additional_setting">add_additional_setting</a></code></li>
+<li><code><a title="cvpysdk.client.Client.add_client_owner" href="../client.html#cvpysdk.client.Client.add_client_owner">add_client_owner</a></code></li>
+<li><code><a title="cvpysdk.client.Client.add_user_associations" href="../client.html#cvpysdk.client.Client.add_user_associations">add_user_associations</a></code></li>
+<li><code><a title="cvpysdk.client.Client.agents" href="../client.html#cvpysdk.client.Client.agents">agents</a></code></li>
+<li><code><a title="cvpysdk.client.Client.available_security_roles" href="../client.html#cvpysdk.client.Client.available_security_roles">available_security_roles</a></code></li>
+<li><code><a title="cvpysdk.client.Client.change_company_for_client" href="../client.html#cvpysdk.client.Client.change_company_for_client">change_company_for_client</a></code></li>
+<li><code><a title="cvpysdk.client.Client.change_exchange_job_results_directory" href="../client.html#cvpysdk.client.Client.change_exchange_job_results_directory">change_exchange_job_results_directory</a></code></li>
+<li><code><a title="cvpysdk.client.Client.change_o365_client_job_results_directory" href="../client.html#cvpysdk.client.Client.change_o365_client_job_results_directory">change_o365_client_job_results_directory</a></code></li>
+<li><code><a title="cvpysdk.client.Client.check_eligibility_for_migration" href="../client.html#cvpysdk.client.Client.check_eligibility_for_migration">check_eligibility_for_migration</a></code></li>
+<li><code><a title="cvpysdk.client.Client.client_guid" href="../client.html#cvpysdk.client.Client.client_guid">client_guid</a></code></li>
+<li><code><a title="cvpysdk.client.Client.client_hostname" href="../client.html#cvpysdk.client.Client.client_hostname">client_hostname</a></code></li>
+<li><code><a title="cvpysdk.client.Client.client_id" href="../client.html#cvpysdk.client.Client.client_id">client_id</a></code></li>
+<li><code><a title="cvpysdk.client.Client.client_name" href="../client.html#cvpysdk.client.Client.client_name">client_name</a></code></li>
+<li><code><a title="cvpysdk.client.Client.client_type" href="../client.html#cvpysdk.client.Client.client_type">client_type</a></code></li>
+<li><code><a title="cvpysdk.client.Client.commcell_name" href="../client.html#cvpysdk.client.Client.commcell_name">commcell_name</a></code></li>
+<li><code><a title="cvpysdk.client.Client.company_name" href="../client.html#cvpysdk.client.Client.company_name">company_name</a></code></li>
+<li><code><a title="cvpysdk.client.Client.consumed_licenses" href="../client.html#cvpysdk.client.Client.consumed_licenses">consumed_licenses</a></code></li>
+<li><code><a title="cvpysdk.client.Client.cvd_port" href="../client.html#cvpysdk.client.Client.cvd_port">cvd_port</a></code></li>
+<li><code><a title="cvpysdk.client.Client.delete_additional_setting" href="../client.html#cvpysdk.client.Client.delete_additional_setting">delete_additional_setting</a></code></li>
+<li><code><a title="cvpysdk.client.Client.description" href="../client.html#cvpysdk.client.Client.description">description</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_backup" href="../client.html#cvpysdk.client.Client.disable_backup">disable_backup</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_content_indexing" href="../client.html#cvpysdk.client.Client.disable_content_indexing">disable_content_indexing</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_data_aging" href="../client.html#cvpysdk.client.Client.disable_data_aging">disable_data_aging</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_intelli_snap" href="../client.html#cvpysdk.client.Client.disable_intelli_snap">disable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_owner_privacy" href="../client.html#cvpysdk.client.Client.disable_owner_privacy">disable_owner_privacy</a></code></li>
+<li><code><a title="cvpysdk.client.Client.disable_restore" href="../client.html#cvpysdk.client.Client.disable_restore">disable_restore</a></code></li>
+<li><code><a title="cvpysdk.client.Client.display_name" href="../client.html#cvpysdk.client.Client.display_name">display_name</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_backup" href="../client.html#cvpysdk.client.Client.enable_backup">enable_backup</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_backup_at_time" href="../client.html#cvpysdk.client.Client.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_content_indexing" href="../client.html#cvpysdk.client.Client.enable_content_indexing">enable_content_indexing</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_data_aging" href="../client.html#cvpysdk.client.Client.enable_data_aging">enable_data_aging</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_data_aging_at_time" href="../client.html#cvpysdk.client.Client.enable_data_aging_at_time">enable_data_aging_at_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_intelli_snap" href="../client.html#cvpysdk.client.Client.enable_intelli_snap">enable_intelli_snap</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_owner_privacy" href="../client.html#cvpysdk.client.Client.enable_owner_privacy">enable_owner_privacy</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_restore" href="../client.html#cvpysdk.client.Client.enable_restore">enable_restore</a></code></li>
+<li><code><a title="cvpysdk.client.Client.enable_restore_at_time" href="../client.html#cvpysdk.client.Client.enable_restore_at_time">enable_restore_at_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.execute_command" href="../client.html#cvpysdk.client.Client.execute_command">execute_command</a></code></li>
+<li><code><a title="cvpysdk.client.Client.execute_script" href="../client.html#cvpysdk.client.Client.execute_script">execute_script</a></code></li>
+<li><code><a title="cvpysdk.client.Client.filter_clients_return_displaynames" href="../client.html#cvpysdk.client.Client.filter_clients_return_displaynames">filter_clients_return_displaynames</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_dag_member_servers" href="../client.html#cvpysdk.client.Client.get_dag_member_servers">get_dag_member_servers</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_environment_details" href="../client.html#cvpysdk.client.Client.get_environment_details">get_environment_details</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_mount_volumes" href="../client.html#cvpysdk.client.Client.get_mount_volumes">get_mount_volumes</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_needs_attention_details" href="../client.html#cvpysdk.client.Client.get_needs_attention_details">get_needs_attention_details</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_network_summary" href="../client.html#cvpysdk.client.Client.get_network_summary">get_network_summary</a></code></li>
+<li><code><a title="cvpysdk.client.Client.install_directory" href="../client.html#cvpysdk.client.Client.install_directory">install_directory</a></code></li>
+<li><code><a title="cvpysdk.client.Client.instance" href="../client.html#cvpysdk.client.Client.instance">instance</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_backup_enabled" href="../client.html#cvpysdk.client.Client.is_backup_enabled">is_backup_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_ci_enabled" href="../client.html#cvpysdk.client.Client.is_ci_enabled">is_ci_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_cluster" href="../client.html#cvpysdk.client.Client.is_cluster">is_cluster</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_data_aging_enabled" href="../client.html#cvpysdk.client.Client.is_data_aging_enabled">is_data_aging_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_data_management_enabled" href="../client.html#cvpysdk.client.Client.is_data_management_enabled">is_data_management_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_data_recovery_enabled" href="../client.html#cvpysdk.client.Client.is_data_recovery_enabled">is_data_recovery_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_intelli_snap_enabled" href="../client.html#cvpysdk.client.Client.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_privacy_enabled" href="../client.html#cvpysdk.client.Client.is_privacy_enabled">is_privacy_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_ready" href="../client.html#cvpysdk.client.Client.is_ready">is_ready</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_restore_enabled" href="../client.html#cvpysdk.client.Client.is_restore_enabled">is_restore_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.job_results_directory" href="../client.html#cvpysdk.client.Client.job_results_directory">job_results_directory</a></code></li>
+<li><code><a title="cvpysdk.client.Client.job_start_time" href="../client.html#cvpysdk.client.Client.job_start_time">job_start_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.log_directory" href="../client.html#cvpysdk.client.Client.log_directory">log_directory</a></code></li>
+<li><code><a title="cvpysdk.client.Client.name" href="../client.html#cvpysdk.client.Client.name">name</a></code></li>
+<li><code><a title="cvpysdk.client.Client.name_change" href="../client.html#cvpysdk.client.Client.name_change">name_change</a></code></li>
+<li><code><a title="cvpysdk.client.Client.network" href="../client.html#cvpysdk.client.Client.network">network</a></code></li>
+<li><code><a title="cvpysdk.client.Client.network_throttle" href="../client.html#cvpysdk.client.Client.network_throttle">network_throttle</a></code></li>
+<li><code><a title="cvpysdk.client.Client.os_info" href="../client.html#cvpysdk.client.Client.os_info">os_info</a></code></li>
+<li><code><a title="cvpysdk.client.Client.owners" href="../client.html#cvpysdk.client.Client.owners">owners</a></code></li>
+<li><code><a title="cvpysdk.client.Client.properties" href="../client.html#cvpysdk.client.Client.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.client.Client.push_network_config" href="../client.html#cvpysdk.client.Client.push_network_config">push_network_config</a></code></li>
+<li><code><a title="cvpysdk.client.Client.push_servicepack_and_hotfix" href="../client.html#cvpysdk.client.Client.push_servicepack_and_hotfix">push_servicepack_and_hotfix</a></code></li>
+<li><code><a title="cvpysdk.client.Client.readiness_details" href="../client.html#cvpysdk.client.Client.readiness_details">readiness_details</a></code></li>
+<li><code><a title="cvpysdk.client.Client.reconfigure_client" href="../client.html#cvpysdk.client.Client.reconfigure_client">reconfigure_client</a></code></li>
+<li><code><a title="cvpysdk.client.Client.refresh" href="../client.html#cvpysdk.client.Client.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.client.Client.release_license" href="../client.html#cvpysdk.client.Client.release_license">release_license</a></code></li>
+<li><code><a title="cvpysdk.client.Client.repair_software" href="../client.html#cvpysdk.client.Client.repair_software">repair_software</a></code></li>
+<li><code><a title="cvpysdk.client.Client.restart_service" href="../client.html#cvpysdk.client.Client.restart_service">restart_service</a></code></li>
+<li><code><a title="cvpysdk.client.Client.restart_services" href="../client.html#cvpysdk.client.Client.restart_services">restart_services</a></code></li>
+<li><code><a title="cvpysdk.client.Client.retire" href="../client.html#cvpysdk.client.Client.retire">retire</a></code></li>
+<li><code><a title="cvpysdk.client.Client.schedules" href="../client.html#cvpysdk.client.Client.schedules">schedules</a></code></li>
+<li><code><a title="cvpysdk.client.Client.service_pack" href="../client.html#cvpysdk.client.Client.service_pack">service_pack</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_dedup_property" href="../client.html#cvpysdk.client.Client.set_dedup_property">set_dedup_property</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_encryption_property" href="../client.html#cvpysdk.client.Client.set_encryption_property">set_encryption_property</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_job_start_time" href="../client.html#cvpysdk.client.Client.set_job_start_time">set_job_start_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_privacy" href="../client.html#cvpysdk.client.Client.set_privacy">set_privacy</a></code></li>
+<li><code><a title="cvpysdk.client.Client.start_service" href="../client.html#cvpysdk.client.Client.start_service">start_service</a></code></li>
+<li><code><a title="cvpysdk.client.Client.stop_service" href="../client.html#cvpysdk.client.Client.stop_service">stop_service</a></code></li>
+<li><code><a title="cvpysdk.client.Client.timezone" href="../client.html#cvpysdk.client.Client.timezone">timezone</a></code></li>
+<li><code><a title="cvpysdk.client.Client.uninstall_software" href="../client.html#cvpysdk.client.Client.uninstall_software">uninstall_software</a></code></li>
+<li><code><a title="cvpysdk.client.Client.update_properties" href="../client.html#cvpysdk.client.Client.update_properties">update_properties</a></code></li>
+<li><code><a title="cvpysdk.client.Client.upload_file" href="../client.html#cvpysdk.client.Client.upload_file">upload_file</a></code></li>
+<li><code><a title="cvpysdk.client.Client.upload_folder" href="../client.html#cvpysdk.client.Client.upload_folder">upload_folder</a></code></li>
+<li><code><a title="cvpysdk.client.Client.users" href="../client.html#cvpysdk.client.Client.users">users</a></code></li>
+<li><code><a title="cvpysdk.client.Client.version" href="../client.html#cvpysdk.client.Client.version">version</a></code></li>
+<li><code><a title="cvpysdk.client.Client.vm_guid" href="../client.html#cvpysdk.client.Client.vm_guid">vm_guid</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#vmclient">VMClient</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.clients" href="index.html">cvpysdk.clients</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.clients.vmclient.VMClient" href="#cvpysdk.clients.vmclient.VMClient">VMClient</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place" href="#cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place">full_vm_restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place" href="#cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place">full_vm_restore_out_of_place</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

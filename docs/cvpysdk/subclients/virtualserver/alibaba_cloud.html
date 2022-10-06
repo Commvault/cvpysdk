@@ -37,7 +37,7 @@ at the specified destination location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L1-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L1-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,7 +97,8 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             overwrite=False,
             copy_precedence=0,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -130,11 +131,20 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
                 power_on                (bool)  --  power on the restored VM
                                                         default: True
 
+                overwrite             (bool)        --  overwrite the existing VM
+                                                        default: True
+
                 copy_precedence         (int)   --  copy precedence to restored from
                                                         default: 0
 
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -152,6 +162,7 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
         if not restore_option:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if bool(restore_option):
             if not (isinstance(overwrite, bool) and
@@ -224,7 +235,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L39-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L39-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -246,7 +257,8 @@ subclient id</p></div>
             power_on=True,
             overwrite=False,
             copy_precedence=0,
-            restore_option=None):
+            restore_option=None,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -279,11 +291,20 @@ subclient id</p></div>
                 power_on                (bool)  --  power on the restored VM
                                                         default: True
 
+                overwrite             (bool)        --  overwrite the existing VM
+                                                        default: True
+
                 copy_precedence         (int)   --  copy precedence to restored from
                                                         default: 0
 
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -301,6 +322,7 @@ subclient id</p></div>
         &#34;&#34;&#34;
         if not restore_option:
             restore_option = {}
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
         if bool(restore_option):
             if not (isinstance(overwrite, bool) and
@@ -346,7 +368,7 @@ subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.alibaba_cloud.AlibabaCloudVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, availability_zone=None, instance_type=None, network=None, security_groups=None, power_on=True, overwrite=False, copy_precedence=0, restore_option=None)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, availability_zone=None, instance_type=None, network=None, security_groups=None, power_on=True, overwrite=False, copy_precedence=0, restore_option=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -398,6 +420,11 @@ instances need to be attached</p>
 &ndash;
 power on the restored VM
 default: True</p>
+<p>overwrite
+(bool)
+&ndash;
+overwrite the existing VM
+default: True</p>
 <p>copy_precedence
 (int)
 &ndash;
@@ -408,6 +435,14 @@ default: 0</p>
 &ndash;
 dictionary with all the advanced restore
 options.</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -422,7 +457,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L46-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/alibaba_cloud.py#L46-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -437,7 +472,8 @@ if response is not success
         power_on=True,
         overwrite=False,
         copy_precedence=0,
-        restore_option=None):
+        restore_option=None,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
         If the provided client name is none then it restores the Full Virtual
@@ -470,11 +506,20 @@ if response is not success
             power_on                (bool)  --  power on the restored VM
                                                     default: True
 
+            overwrite             (bool)        --  overwrite the existing VM
+                                                    default: True
+
             copy_precedence         (int)   --  copy precedence to restored from
                                                     default: 0
 
             restore_option          (dict)  --  dictionary with all the advanced restore
                                                     options.
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         Returns:
             object - instance of the Job class for this restore job
@@ -492,6 +537,7 @@ if response is not success
     &#34;&#34;&#34;
     if not restore_option:
         restore_option = {}
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
     if bool(restore_option):
         if not (isinstance(overwrite, bool) and

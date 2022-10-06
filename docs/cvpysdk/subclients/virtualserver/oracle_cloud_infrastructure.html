@@ -40,7 +40,7 @@ restores the VM specified in to the source client,</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L1-L326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L1-L338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -102,7 +102,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             source_vm_details=None,
             restore_option=None,
-            indexing_v2=True):
+            indexing_v2=True,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -127,6 +128,12 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -150,8 +157,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
         self.source_vm_details = source_vm_details
         if not restore_option:
             restore_option = {}
-
-        # set attr for all the option in restore xml from user inputs
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+    # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(),
@@ -179,9 +186,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
-                                 indexing_v2= True):
-
-
+                                 indexing_v2= True,
+                                 **kwargs):
 
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -194,8 +200,14 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
 
                 proxy_client            (str)   --  the proxy to be used for restore
 
-                poweron
+                power_on
                         default:true   (bool)      --  power on the  restored VM
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -214,8 +226,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
         self.source_vm_details = source_vm_details
         #self.hvobj = hvobj
         #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
-        restore_option = {}
-        # check mandatory input parameters are correct
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+    # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -396,7 +408,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L30-L326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L30-L338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OCIVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -429,7 +441,8 @@ backupset class, subclient name, subclient id</p></div>
             power_on=True,
             source_vm_details=None,
             restore_option=None,
-            indexing_v2=True):
+            indexing_v2=True,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -454,6 +467,12 @@ backupset class, subclient name, subclient id</p></div>
                 restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
 
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -477,8 +496,8 @@ backupset class, subclient name, subclient id</p></div>
         self.source_vm_details = source_vm_details
         if not restore_option:
             restore_option = {}
-
-        # set attr for all the option in restore xml from user inputs
+        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+    # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(),
@@ -506,9 +525,8 @@ backupset class, subclient name, subclient id</p></div>
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
-                                 indexing_v2= True):
-
-
+                                 indexing_v2= True,
+                                 **kwargs):
 
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -521,8 +539,14 @@ backupset class, subclient name, subclient id</p></div>
 
                 proxy_client            (str)   --  the proxy to be used for restore
 
-                poweron
+                power_on
                         default:true   (bool)      --  power on the  restored VM
+
+                **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                     full_vm_restore_out_of_place
+                    eg:
+                    v2_details          (dict)       -- details for v2 subclient
+                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -541,8 +565,8 @@ backupset class, subclient name, subclient id</p></div>
         self.source_vm_details = source_vm_details
         #self.hvobj = hvobj
         #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
-        restore_option = {}
-        # check mandatory input parameters are correct
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+    # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -704,7 +728,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.oracle_cloud_infrastructure.OCIVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, source_vm_details=None, vm_to_restore=None, proxy_client=None, overwrite=True, power_on=True, copy_precedence=0, indexing_v2=True)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, source_vm_details=None, vm_to_restore=None, proxy_client=None, overwrite=True, power_on=True, copy_precedence=0, indexing_v2=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -725,12 +749,20 @@ overwrite the existing VM</p>
 (str)
 &ndash;
 the proxy to be used for restore</p>
-<p>poweron
+<p>power_on
 default:true
 (bool)
 &ndash;
 power on the
 restored VM</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -744,7 +776,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L131-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L138-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              source_vm_details=None,
@@ -753,9 +785,8 @@ if response is not success
                              overwrite=True,
                              power_on=True,
                              copy_precedence=0,
-                             indexing_v2= True):
-
-
+                             indexing_v2= True,
+                             **kwargs):
 
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         to the location same as source .
@@ -768,8 +799,14 @@ if response is not success
 
             proxy_client            (str)   --  the proxy to be used for restore
 
-            poweron
+            power_on
                     default:true   (bool)      --  power on the  restored VM
+
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
 
         Returns:
             object - instance of the Job class for this restore job
@@ -788,8 +825,8 @@ if response is not success
     self.source_vm_details = source_vm_details
     #self.hvobj = hvobj
     #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
-    restore_option = {}
-    # check mandatory input parameters are correct
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+# check mandatory input parameters are correct
     if not (isinstance(overwrite, bool) and
             isinstance(power_on, bool)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -818,7 +855,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.oracle_cloud_infrastructure.OCIVirtualServerSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name='AutomationRestored_1639635985', copy_preceedence=0, power_on=True, source_vm_details=None, restore_option=None, indexing_v2=True)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name='AutomationRestored_1665052213', copy_preceedence=0, power_on=True, source_vm_details=None, restore_option=None, indexing_v2=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -858,6 +895,14 @@ default: 0</p>
 &ndash;
 dictionary with all the advanced restore
 options.</p>
+<p>**kwargs
+: Arbitrary keyword arguments Properties as of
+full_vm_restore_out_of_place
+eg:
+v2_details
+(dict)
+&ndash; details for v2 subclient
+eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -872,7 +917,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L51-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L51-L136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -884,7 +929,8 @@ if response is not success
         power_on=True,
         source_vm_details=None,
         restore_option=None,
-        indexing_v2=True):
+        indexing_v2=True,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
         If the provided client name is none then it restores the Full Virtual
@@ -909,6 +955,12 @@ if response is not success
             restore_option          (dict)  --  dictionary with all the advanced restore
                                                     options.
 
+            **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -932,8 +984,8 @@ if response is not success
     self.source_vm_details = source_vm_details
     if not restore_option:
         restore_option = {}
-
-    # set attr for all the option in restore xml from user inputs
+    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+# set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
         restore_option,
         vm_to_restore=self._set_vm_to_restore(),
@@ -966,7 +1018,7 @@ restore_option: restore options that need to be set for advanced restore option<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L201-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oracle_cloud_infrastructure.py#L213-L288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;

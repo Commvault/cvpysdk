@@ -99,7 +99,7 @@ use_impersonate_user                --  gets the setting use_impersonate_user
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1-L1153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1-L1162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=W0212,W0201
@@ -208,6 +208,7 @@ from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
+from .constants import AppIDAType
 
 
 class DisasterRecovery(object):
@@ -391,12 +392,13 @@ class DisasterRecovery(object):
             client = Client(self.commcell, client)
         else:
             raise SDKException(&#39;Response&#39;, &#39;105&#39;)
+
+        agent_obj = client.agents.get(&#34;File System&#34;)
         drpath = self.path + &#34;\\CommserveDR&#34;
-        destination_path = self._filter_paths([destination_path], True)
-        drpath = [self._filter_paths([drpath], True)]
+        destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+        drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
         if not drpath:
             raise SDKException(&#39;Response&#39;, &#39;104&#39;)
-        agent_obj = client.agents.get(&#34;File System&#34;)
         instance_obj = agent_obj.instances.get(&#34;DefaultInstanceName&#34;)
 
         instance_obj._restore_association = {
@@ -573,7 +575,7 @@ class DisasterRecovery(object):
         response_string = self.commcell._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _filter_paths(self, paths, is_single_path=False):
+    def _filter_paths(self, paths, is_single_path=False, agent_id=None):
         &#34;&#34;&#34;Filters the paths based on the Operating System, and Agent.
 
             Args:
@@ -581,20 +583,27 @@ class DisasterRecovery(object):
 
                 is_single_path  (bool)  --  boolean specifying whether to return a single path
                                                 or the entire list
-
+                agent_id        (str)   --   File system agent id
             Returns:
                 list    -   if the boolean is_single_path is set to False
 
                 str     -   if the boolean is_single_path is set to True
         &#34;&#34;&#34;
         for index, path in enumerate(paths):
-
-            path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
-            if path:
-                path = path.replace(&#39;/&#39;, &#39;\\&#39;)
-            else:
-                path = &#39;\\&#39;
-
+            # &#34;if&#34; condition is default i.e. if client is not provided
+            if agent_id is None or int(agent_id) == AppIDAType.WINDOWS_FILE_SYSTEM.value:
+                path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
+                if path:
+                    path = path.replace(&#39;/&#39;, &#39;\\&#39;)
+                else:
+                    path = &#39;\\&#39;
+            elif int(agent_id) == AppIDAType.LINUX_FILE_SYSTEM.value:
+                path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
+                if path:
+                    path = path.replace(&#39;\\&#39;, &#39;/&#39;)
+                else:
+                    path = &#39;\\&#39;
+                path = &#39;/&#39; + path
             paths[index] = path
 
         if is_single_path:
@@ -1280,7 +1289,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L110-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L111-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DisasterRecovery(object):
     &#34;&#34;&#34;Class to perform all the disaster recovery operations on commcell&#34;&#34;&#34;
@@ -1463,12 +1472,13 @@ instance of commcell</p></div>
             client = Client(self.commcell, client)
         else:
             raise SDKException(&#39;Response&#39;, &#39;105&#39;)
+
+        agent_obj = client.agents.get(&#34;File System&#34;)
         drpath = self.path + &#34;\\CommserveDR&#34;
-        destination_path = self._filter_paths([destination_path], True)
-        drpath = [self._filter_paths([drpath], True)]
+        destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+        drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
         if not drpath:
             raise SDKException(&#39;Response&#39;, &#39;104&#39;)
-        agent_obj = client.agents.get(&#34;File System&#34;)
         instance_obj = agent_obj.instances.get(&#34;DefaultInstanceName&#34;)
 
         instance_obj._restore_association = {
@@ -1645,7 +1655,7 @@ instance of commcell</p></div>
         response_string = self.commcell._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _filter_paths(self, paths, is_single_path=False):
+    def _filter_paths(self, paths, is_single_path=False, agent_id=None):
         &#34;&#34;&#34;Filters the paths based on the Operating System, and Agent.
 
             Args:
@@ -1653,20 +1663,27 @@ instance of commcell</p></div>
 
                 is_single_path  (bool)  --  boolean specifying whether to return a single path
                                                 or the entire list
-
+                agent_id        (str)   --   File system agent id
             Returns:
                 list    -   if the boolean is_single_path is set to False
 
                 str     -   if the boolean is_single_path is set to True
         &#34;&#34;&#34;
         for index, path in enumerate(paths):
-
-            path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
-            if path:
-                path = path.replace(&#39;/&#39;, &#39;\\&#39;)
-            else:
-                path = &#39;\\&#39;
-
+            # &#34;if&#34; condition is default i.e. if client is not provided
+            if agent_id is None or int(agent_id) == AppIDAType.WINDOWS_FILE_SYSTEM.value:
+                path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
+                if path:
+                    path = path.replace(&#39;/&#39;, &#39;\\&#39;)
+                else:
+                    path = &#39;\\&#39;
+            elif int(agent_id) == AppIDAType.LINUX_FILE_SYSTEM.value:
+                path = path.strip(&#39;\\&#39;).strip(&#39;/&#39;)
+                if path:
+                    path = path.replace(&#39;\\&#39;, &#39;/&#39;)
+                else:
+                    path = &#39;\\&#39;
+                path = &#39;/&#39; + path
             paths[index] = path
 
         if is_single_path:
@@ -1818,7 +1835,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L527-L530" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L536-L539" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_type(self):
@@ -1832,7 +1849,7 @@ def backup_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L501-L504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L510-L513" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_list(self):
@@ -1846,7 +1863,7 @@ def client_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L629-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L638-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disaster_recovery_management(self):
@@ -1864,7 +1881,7 @@ def disaster_recovery_management(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L575-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L584-L587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_appstudio_db_enabled(self):
@@ -1878,7 +1895,7 @@ def is_appstudio_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L514-L517" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L523-L526" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_compression_enabled(self):
@@ -1892,7 +1909,7 @@ def is_compression_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L593-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L602-L605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_cvcloud_db_enabled(self):
@@ -1906,7 +1923,7 @@ def is_cvcloud_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L611-L614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L620-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_dm2_db_enabled(self):
@@ -1920,7 +1937,7 @@ def is_dm2_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L540-L543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L549-L552" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_history_db_enabled(self):
@@ -1934,7 +1951,7 @@ def is_history_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L557-L560" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L566-L569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_workflow_db_enabled(self):
@@ -1962,7 +1979,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L146-L173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L147-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disaster_recovery_backup(self):
     &#34;&#34;&#34;Runs a DR job for Commserv
@@ -2005,7 +2022,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L129-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L130-L145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reset_to_defaults(self):
     &#34;&#34;&#34;
@@ -2113,7 +2130,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L205-L319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L206-L321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -2201,12 +2218,13 @@ if response is not success
         client = Client(self.commcell, client)
     else:
         raise SDKException(&#39;Response&#39;, &#39;105&#39;)
+
+    agent_obj = client.agents.get(&#34;File System&#34;)
     drpath = self.path + &#34;\\CommserveDR&#34;
-    destination_path = self._filter_paths([destination_path], True)
-    drpath = [self._filter_paths([drpath], True)]
+    destination_path = self._filter_paths([destination_path], True, agent_id=agent_obj.agent_id)
+    drpath = [self._filter_paths([drpath], True, agent_id=agent_obj.agent_id)]
     if not drpath:
         raise SDKException(&#39;Response&#39;, &#39;104&#39;)
-    agent_obj = client.agents.get(&#34;File System&#34;)
     instance_obj = agent_obj.instances.get(&#34;DefaultInstanceName&#34;)
 
     instance_obj._restore_association = {
@@ -2249,7 +2267,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L639-L1153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L648-L1162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DisasterRecoveryManagement(object):
     &#34;&#34;&#34;Class to perform all the disaster recovery management operations on commcell&#34;&#34;&#34;
@@ -2778,7 +2796,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L935-L943" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L944-L952" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_metadata_folder(self):
@@ -2800,7 +2818,7 @@ def backup_metadata_folder(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L965-L973" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L974-L982" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def dr_storage_policy(self):
@@ -2822,7 +2840,7 @@ number of metadata
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L850-L858" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L859-L867" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def number_of_metadata(self):
@@ -2844,7 +2862,7 @@ def number_of_metadata(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1074-L1082" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1083-L1091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def post_backup_process(self):
@@ -2866,7 +2884,7 @@ def post_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1020-L1028" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1029-L1037" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def post_scan_process(self):
@@ -2888,7 +2906,7 @@ def post_scan_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1047-L1055" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1056-L1064" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_backup_process(self):
@@ -2910,7 +2928,7 @@ def pre_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L993-L1001" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1002-L1010" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_scan_process(self):
@@ -2931,7 +2949,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1128-L1136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1137-L1145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def run_post_backup_process(self):
@@ -2953,7 +2971,7 @@ def run_post_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L1101-L1109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L1110-L1118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def run_post_scan_process(self):
@@ -2975,7 +2993,7 @@ def run_post_scan_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L945-L953" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L954-L962" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def upload_backup_metadata_to_cloud(self):
@@ -2997,7 +3015,7 @@ def upload_backup_metadata_to_cloud(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L955-L963" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L964-L972" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def upload_backup_metadata_to_cloud_lib(self):
@@ -3019,7 +3037,7 @@ def upload_backup_metadata_to_cloud_lib(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L840-L848" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L849-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_impersonate_user(self):
@@ -3041,7 +3059,7 @@ def use_impersonate_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L877-L885" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L886-L894" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_vss(self):
@@ -3063,7 +3081,7 @@ def use_vss(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L904-L912" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L913-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def wild_card_settings(self):
@@ -3097,7 +3115,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L814-L838" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L823-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def impersonate_user(self, flag, username, password):
     &#34;&#34;&#34;
@@ -3136,7 +3154,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L712-L721" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L721-L730" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;
@@ -3164,7 +3182,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L723-L737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L732-L746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_local_dr_path(self, path):
     &#34;&#34;&#34;
@@ -3201,7 +3219,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L739-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L748-L768" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_network_dr_path(self, path, username, password):
     &#34;&#34;&#34;
@@ -3242,7 +3260,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L787-L812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L796-L821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_metdata_to_cloud_library(self, flag, libraryname=None):
     &#34;&#34;&#34;
@@ -3290,7 +3308,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/disasterrecovery.py#L761-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/disasterrecovery.py#L770-L794" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None):
     &#34;&#34;&#34;

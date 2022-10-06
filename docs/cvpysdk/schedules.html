@@ -162,7 +162,7 @@ gives the error_code and message</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1-L2400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1-L2454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -800,6 +800,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
         &#34;&#34;&#34;
         automatic_pattern = {
@@ -896,7 +898,23 @@ class SchedulePattern:
                                                ),
             &#34;useStorageSpaceFromMA&#34;: pattern_dict.get(&#34;use_storage_space_ma&#34;,
                                                self._pattern.get(&#34;useStorageSpaceFromMA&#34;, False)
-                                               )
+                                               ),
+            &#34;diskUsedPercent&#34;: {
+                &#34;enabled&#34;: True if &#39;disk_use_threshold&#39; in pattern_dict
+                else (self._pattern.get(&#34;diskUsedPercent&#34;,
+                                        {&#39;enabled&#39;: False})[&#39;enabled&#39;]),
+                &#34;threshold&#34;: pattern_dict.get(&#34;disk_use_threshold&#34;,
+                                              self._pattern.get(&#34;diskUsedPercent&#34;,
+                                                                {&#39;threshold&#39;: 80})[&#39;threshold&#39;])
+            },
+            &#34;logFileNum&#34;: {
+                &#34;enabled&#34;: True if &#39;number_of_log_files&#39; in pattern_dict
+                else (self._pattern.get(&#34;logFileNum&#34;,
+                                        {&#39;enabled&#39;: False})[&#39;enabled&#39;]),
+                &#34;threshold&#34;: pattern_dict.get(&#34;number_of_log_files&#34;,
+                                              self._pattern.get(&#34;logFileNum&#34;,
+                                                                {&#39;threshold&#39;: 50})[&#39;threshold&#39;])
+            }
         }
 
         self._pattern = automatic_pattern
@@ -1051,6 +1069,8 @@ class SchedulePattern:
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
 
         for after_job_completes :   {
@@ -1163,9 +1183,12 @@ class Schedules:
         from .subclient import Subclient
         from .instance import Instance
         from .activateapps.inventory_manager import Inventory
+        from .activateapps.file_storage_optimization import FsoServer
+        from .activateapps.sensitive_data_governance import Project
 
         self.class_object = class_object
         self._single_scheduled_entity = False
+        self._task_flags = {}
         self._repr_str = &#34;&#34;
 
         if isinstance(class_object, Commcell):
@@ -1185,6 +1208,21 @@ class Schedules:
                     class_object.commserv_name)
             else:
                 raise SDKException(&#39;Schedules&#39;, &#39;103&#39;)
+        elif isinstance(class_object, FsoServer):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
+                class_object.server_id)
+            self._repr_str = &#34;Fso Server: {0}&#34;.format(class_object.server_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags[&#39;isEdiscovery&#39;] = True
+
+        elif isinstance(class_object,Project):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
+                class_object.project_id)
+            self._repr_str = &#34;SDG Project: {0}&#34;.format(class_object.project_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags[&#39;isEdiscovery&#39;] = True
 
         elif isinstance(class_object, Inventory):
             self._SCHEDULES = class_object._commcell_object._services[&#39;INVENTORY_SCHEDULES&#39;] % (
@@ -1297,6 +1335,7 @@ class Schedules:
                 for schedule in response.json()[&#39;taskDetail&#39;]:
                     task_id = schedule[&#39;task&#39;][&#39;taskId&#39;]
                     description = &#39;&#39;
+                    task_flags = schedule[&#39;task&#39;].get(&#39;taskFlags&#39;,0)
                     if &#39;subTasks&#39; in schedule:
                         for subtask in schedule[&#39;subTasks&#39;]:
                             schedule_id = subtask[&#39;subTask&#39;][&#39;subTaskId&#39;]
@@ -1314,7 +1353,8 @@ class Schedules:
                             subtask_dict[schedule_id] = {
                                 &#39;task_id&#39;: task_id,
                                 &#39;schedule_name&#39;: subtask_name,
-                                &#39;description&#39;: description
+                                &#39;description&#39;: description,
+                                &#39;task_flags&#39;: task_flags
                             }
 
                 return subtask_dict
@@ -1355,8 +1395,22 @@ class Schedules:
 
         if self._single_scheduled_entity:
             # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            # if flag set along with task flags, then find schedule with that flags set and return that from dict
             for subtask_id, subtask_dict in self.schedules.items():
-                return subtask_id
+                if len(self._task_flags) == 0:
+                    return subtask_id
+                else:
+                    task_flags = subtask_dict[&#39;task_flags&#39;]
+                    match = True
+                    for flag, value in self._task_flags.items():
+                        if flag in task_flags:
+                            if task_flags[flag] != value:
+                                match = False
+                        else:
+                            match = False
+                    if match:
+                        return subtask_id
+            return None
 
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
@@ -2583,7 +2637,7 @@ class Schedule:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L159-L162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L159-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationType:
     &#34;&#34;&#34; Operation Types supported to get schedules of particular optype&#34;&#34;&#34;
@@ -2626,7 +2680,7 @@ task ids of the Schedule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1325-L2400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1379-L2454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Schedule:
     &#34;&#34;&#34;Class for performing operations for a specific Schedule.&#34;&#34;&#34;
@@ -3714,7 +3768,7 @@ Returns: (str) &ndash; date in %m/%d/%Y</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2068-L2078" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2122-L2132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_end_date(self):
@@ -3736,7 +3790,7 @@ Returns: (str) &ndash; date in %m/%d/%Y</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2022-L2029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2076-L2083" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_start_date(self):
@@ -3755,7 +3809,7 @@ Returns: (str) &ndash; time in %H/%S</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2045-L2052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2099-L2106" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def active_start_time(self):
@@ -3798,7 +3852,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1872-L1946" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1926-L2000" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def automatic(self):
@@ -3888,7 +3942,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1838-L1852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1892-L1906" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def continuous(self):
@@ -3919,7 +3973,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1577-L1593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1631-L1647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def daily(self):
@@ -3947,7 +4001,7 @@ Returns: (int) &ndash; end occurence</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2131-L2137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2185-L2191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_after(self):
@@ -3966,7 +4020,7 @@ def end_after(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2094-L2114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2148-L2168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def exception_dates(self):
@@ -3999,7 +4053,7 @@ def exception_dates(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1515-L1522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1569-L1576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_disabled(self):
@@ -4024,7 +4078,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1660-L1680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1714-L1734" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def monthly(self):
@@ -4063,7 +4117,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1702-L1726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1756-L1780" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def monthly_relative(self):
@@ -4109,7 +4163,7 @@ False</code></dt>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1533-L1556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1587-L1610" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def one_time(self):
@@ -4148,7 +4202,7 @@ Returns: (dict) &ndash; the repeat pattern
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2154-L2175" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2208-L2229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def repeat_pattern(self):
@@ -4182,7 +4236,7 @@ def repeat_pattern(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1524-L1531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1578-L1585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_freq_type(self):
@@ -4201,7 +4255,7 @@ Returns (int) &ndash; Subtask id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1424-L1430" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1478-L1484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtask_id(self):
@@ -4225,7 +4279,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1614-L1637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1668-L1691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def weekly(self):
@@ -4266,7 +4320,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1750-L1769" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1804-L1823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def yearly(self):
@@ -4304,7 +4358,7 @@ False: if schedule type is wrong</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1791-L1814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1845-L1868" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def yearly_relative(self):
@@ -4350,7 +4404,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2313-L2356" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2367-L2410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34;Disable a Schedule.
@@ -4413,7 +4467,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2269-L2311" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2323-L2365" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34;Enable a schedule.
@@ -4468,7 +4522,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2398-L2400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2452-L2454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Schedule.&#34;&#34;&#34;
@@ -4484,7 +4538,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L2190-L2228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L2244-L2282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_now(self):
     &#34;&#34;&#34;
@@ -4539,7 +4593,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L165-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L165-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SchedulePattern:
     &#34;&#34;&#34;Class for getting the schedule pattern&#34;&#34;&#34;
@@ -5013,6 +5067,8 @@ if response is not success
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
         &#34;&#34;&#34;
         automatic_pattern = {
@@ -5109,7 +5165,23 @@ if response is not success
                                                ),
             &#34;useStorageSpaceFromMA&#34;: pattern_dict.get(&#34;use_storage_space_ma&#34;,
                                                self._pattern.get(&#34;useStorageSpaceFromMA&#34;, False)
-                                               )
+                                               ),
+            &#34;diskUsedPercent&#34;: {
+                &#34;enabled&#34;: True if &#39;disk_use_threshold&#39; in pattern_dict
+                else (self._pattern.get(&#34;diskUsedPercent&#34;,
+                                        {&#39;enabled&#39;: False})[&#39;enabled&#39;]),
+                &#34;threshold&#34;: pattern_dict.get(&#34;disk_use_threshold&#34;,
+                                              self._pattern.get(&#34;diskUsedPercent&#34;,
+                                                                {&#39;threshold&#39;: 80})[&#39;threshold&#39;])
+            },
+            &#34;logFileNum&#34;: {
+                &#34;enabled&#34;: True if &#39;number_of_log_files&#39; in pattern_dict
+                else (self._pattern.get(&#34;logFileNum&#34;,
+                                        {&#39;enabled&#39;: False})[&#39;enabled&#39;]),
+                &#34;threshold&#34;: pattern_dict.get(&#34;number_of_log_files&#34;,
+                                              self._pattern.get(&#34;logFileNum&#34;,
+                                                                {&#39;threshold&#39;: 50})[&#39;threshold&#39;])
+            }
         }
 
         self._pattern = automatic_pattern
@@ -5264,6 +5336,8 @@ if response is not success
                                          stop_sleep_if_runningjob: (bool)
                                          cpu_utilization_below : (int)%
                                          cpu_utilization_above : (int)%
+                                         disk_use_threshold: (int)%
+                                         number_of_log_files: (int)
                         }
 
         for after_job_completes :   {
@@ -5362,7 +5436,7 @@ Returns (int) &ndash; on_day number for the pattern json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L758-L771" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L776-L789" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def exception_dates(day_list):
@@ -5459,6 +5533,8 @@ stop_if_on_battery: (bool)
 stop_sleep_if_runningjob: (bool)
 cpu_utilization_below : (int)%
 cpu_utilization_above : (int)%
+disk_use_threshold: (int)%
+number_of_log_files: (int)
 }</p>
 <p>for after_job_completes :
 {
@@ -5478,7 +5554,7 @@ request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L804-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L822-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_schedule(self, task_req, pattern_dict, schedule_id=None):
     &#34;&#34;&#34;
@@ -5564,6 +5640,8 @@ request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)</p>
                                      stop_sleep_if_runningjob: (bool)
                                      cpu_utilization_below : (int)%
                                      cpu_utilization_above : (int)%
+                                     disk_use_threshold: (int)%
+                                     number_of_log_files: (int)
                     }
 
     for after_job_completes :   {
@@ -5666,7 +5744,7 @@ create or modify schedules</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L773-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L791-L820" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_schedule_pattern(self, pattern_dict):
     &#34;&#34;&#34;
@@ -5723,7 +5801,7 @@ Subclient class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L974-L1322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L994-L1376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Schedules:
     &#34;&#34;&#34;Class for getting the schedules of a commcell entity.&#34;&#34;&#34;
@@ -5751,9 +5829,12 @@ Subclient class</p></div>
         from .subclient import Subclient
         from .instance import Instance
         from .activateapps.inventory_manager import Inventory
+        from .activateapps.file_storage_optimization import FsoServer
+        from .activateapps.sensitive_data_governance import Project
 
         self.class_object = class_object
         self._single_scheduled_entity = False
+        self._task_flags = {}
         self._repr_str = &#34;&#34;
 
         if isinstance(class_object, Commcell):
@@ -5773,6 +5854,21 @@ Subclient class</p></div>
                     class_object.commserv_name)
             else:
                 raise SDKException(&#39;Schedules&#39;, &#39;103&#39;)
+        elif isinstance(class_object, FsoServer):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
+                class_object.server_id)
+            self._repr_str = &#34;Fso Server: {0}&#34;.format(class_object.server_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags[&#39;isEdiscovery&#39;] = True
+
+        elif isinstance(class_object,Project):
+            self._SCHEDULES = class_object._commcell_object._services[&#39;CLIENT_SCHEDULES&#39;] % (
+                class_object.project_id)
+            self._repr_str = &#34;SDG Project: {0}&#34;.format(class_object.project_id)
+            self._commcell_object = class_object._commcell_object
+            self._single_scheduled_entity = True
+            self._task_flags[&#39;isEdiscovery&#39;] = True
 
         elif isinstance(class_object, Inventory):
             self._SCHEDULES = class_object._commcell_object._services[&#39;INVENTORY_SCHEDULES&#39;] % (
@@ -5885,6 +5981,7 @@ Subclient class</p></div>
                 for schedule in response.json()[&#39;taskDetail&#39;]:
                     task_id = schedule[&#39;task&#39;][&#39;taskId&#39;]
                     description = &#39;&#39;
+                    task_flags = schedule[&#39;task&#39;].get(&#39;taskFlags&#39;,0)
                     if &#39;subTasks&#39; in schedule:
                         for subtask in schedule[&#39;subTasks&#39;]:
                             schedule_id = subtask[&#39;subTask&#39;][&#39;subTaskId&#39;]
@@ -5902,7 +5999,8 @@ Subclient class</p></div>
                             subtask_dict[schedule_id] = {
                                 &#39;task_id&#39;: task_id,
                                 &#39;schedule_name&#39;: subtask_name,
-                                &#39;description&#39;: description
+                                &#39;description&#39;: description,
+                                &#39;task_flags&#39;: task_flags
                             }
 
                 return subtask_dict
@@ -5943,8 +6041,22 @@ Subclient class</p></div>
 
         if self._single_scheduled_entity:
             # if flag set, then entity will have only one schedule associated to it so return first one from dict
+            # if flag set along with task flags, then find schedule with that flags set and return that from dict
             for subtask_id, subtask_dict in self.schedules.items():
-                return subtask_id
+                if len(self._task_flags) == 0:
+                    return subtask_id
+                else:
+                    task_flags = subtask_dict[&#39;task_flags&#39;]
+                    match = True
+                    for flag, value in self._task_flags.items():
+                        if flag in task_flags:
+                            if task_flags[flag] != value:
+                                match = False
+                        else:
+                            match = False
+                    if match:
+                        return subtask_id
+            return None
 
         if not task_id and not schedule_name and not schedule_id:
             raise SDKException(
@@ -6096,7 +6208,7 @@ if no schedule exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1265-L1318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1319-L1372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;deletes the specified schedule name.
@@ -6176,7 +6288,7 @@ if type of the schedule name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1241-L1263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1295-L1317" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;Returns a schedule object of the specified schedule name.
@@ -6223,7 +6335,7 @@ if type of the schedule name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1222-L1239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1276-L1293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_schedule(self, schedule_name=None, schedule_id=None, task_id=None):
     &#34;&#34;&#34;Checks if a schedule exists for the commcell entity with the input schedule name.
@@ -6253,7 +6365,7 @@ if type of the schedule name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/schedules.py#L1320-L1322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/schedules.py#L1374-L1376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the Schedules associated with the Client / Agent / Backupset / Subclient.&#34;&#34;&#34;

@@ -77,7 +77,7 @@ where the user given message is appended to the original message joined by new l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/exception.py#L1-L542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/exception.py#L1-L588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -175,7 +175,8 @@ EXCEPTION_DICT = {
         &#39;104&#39;: &#39;Failed to send an email to specified user&#39;,
         &#39;105&#39;: &#39;Failed to run the Data Aging job&#39;,
         &#39;106&#39;: &#39;Failed to get the SAML token&#39;,
-        &#39;107&#39;: &#39;Data type of the input(s) is not valid&#39;
+        &#39;107&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;108&#39;: &#39;&#39;
     },
     &#39;CVPySDK&#39;: {
         &#39;101&#39;: &#39;Failed to Login with the credentials provided&#39;,
@@ -247,7 +248,8 @@ EXCEPTION_DICT = {
         &#39;118&#39;: &#39;Failed to run the backup copy job&#39;,
         &#39;119&#39;: &#39;Invalid pruning type. Valid inputs &#34;days_based&#34; or &#34;cycles_based&#34;.&#39;,
         &#39;120&#39;: &#39;Invalid days/cycles value. Please provide an integer value &gt;= 2.&#39;,
-        &#39;121&#39;: &#39;IndexServer value should be a client object&#39;
+        &#39;121&#39;: &#39;IndexServer value should be a client object&#39;,
+        &#39;122&#39;: &#39;In-Place restore is not supported with multiple source paths&#39;
     },
     &#39;Job&#39;: {
         &#39;101&#39;: &#39;Incorrect JobId&#39;,
@@ -383,6 +385,48 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Failed to start crawl job&#39;,
         &#39;104&#39;: &#39;Failed to get job history&#39;,
         &#39;105&#39;: &#39;Failed to get job status&#39;,
+        &#39;106&#39;: &#39;Failed to get Ediscovery clients&#39;,
+        &#39;107&#39;: &#39;Unable to get display names for associated data sources in this client&#39;,
+        &#39;108&#39;: &#39;Data source doesnt exists on this client&#39;,
+        &#39;109&#39;: &#39;Failed to share ediscovery client with user/group&#39;,
+        &#39;110&#39;: &#39;Failed to fetch data source properties&#39;,
+        &#39;111&#39;: &#39;Failed to delete data source&#39;,
+        &#39;112&#39;: &#39;Failed to perform search&#39;,
+        &#39;113&#39;: &#39;Failed to perform export&#39;,
+        &#39;114&#39;: &#39;Failed to perform export status check&#39;,
+        &#39;115&#39;: &#39;Failed to create data source&#39;,
+        &#39;116&#39;: &#39;Failed to perform review actions on documents&#39;,
+        &#39;117&#39;: &#39;Failed to get Ediscovery projects&#39;,
+        &#39;118&#39;: &#39;Failed to get Ediscovery project properties&#39;,
+        &#39;119&#39;: &#39;Failed to add Ediscovery client&#39;,
+        &#39;120&#39;: &#39;Failed to delete Ediscovery client&#39;,
+    },
+    &#39;FileStorageOptimization&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to find given Server name in FSO&#39;,
+        &#39;104&#39;: &#39;Failed to find data source in FSO Server&#39;,
+        &#39;105&#39;: &#39;Failed to start collection job at server level&#39;,
+        &#39;106&#39;: &#34;Failed to find server group name in FSO&#34;,
+        &#39;107&#39;: &#39;Failed to start collection job at server group level&#39;,
+
+    },
+    &#39;SensitiveDataGovernance&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to find given project name in SDG&#39;,
+    },
+    &#39;RequestManager&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get requests details from commcell&#39;,
+        &#39;104&#39;: &#39;Failed to get request properties&#39;,
+        &#39;105&#39;: &#39;Unable to find given request&#39;,
+        &#39;106&#39;: &#39;Failed to delete request&#39;,
+        &#39;107&#39;: &#39;Failed to add request&#39;,
+        &#39;108&#39;: &#39;Failed to configure request&#39;,
+        &#39;109&#39;: &#39;Failed to mark review as complete as it has non-reviewed documents&#39;,
+        &#39;110&#39;: &#39;Failed to request approval as review is not in completed state&#39;
     },
     &#39;Salesforce&#39;: {
         &#39;101&#39;: &#39;Neither Sync Database enabled nor user provided database details for restore&#39;,
@@ -501,7 +545,9 @@ EXCEPTION_DICT = {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;Please specify all the required inputs&#39;,
-        &#39;104&#39;: &#39;Please give appropriate input(s)&#39;
+        &#39;104&#39;: &#39;Please give appropriate input(s)&#39;,
+        &#39;105&#39;: &#39;Both Clients list and Other Entities list cannot be none&#39;,
+        &#39;106&#39;: &#39;Incorrect SQL credentials provied&#39;
     },
     &#39;NetworkTopology&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -658,7 +704,7 @@ instance of the SDKException class of type Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/exception.py#L513-L542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/exception.py#L559-L588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SDKException(Exception):
     &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;

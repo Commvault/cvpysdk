@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/services.py#L1-L479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/services.py#L1-L520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -92,6 +92,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;TFA&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth&#39;,
     &#39;TFA_ENABLE&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth/Action/Enable&#39;,
     &#39;TFA_DISABLE&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth/Action/Disable&#39;,
+    &#39;PRIVACY_ENABLE&#39;: &#39;{0}Commcell/Properties/Privacy/Action/Enable&#39;,
+    &#39;PRIVACY_DISABLE&#39;: &#39;{0}Commcell/Properties/Privacy/Action/Disable&#39;,
     &#39;ORG_TFA&#39;: &#39;{0}Organization/%s/TwoFactorAuth&#39;,
     &#39;ORG_TFA_ENABLE&#39;: &#39;{0}Organization/%s/TwoFactorAuth/Action/Enable&#39;,
     &#39;ORG_TFA_DISABLE&#39;: &#39;{0}Organization/%s/TwoFactorAuth/Action/Disable&#39;,
@@ -130,6 +132,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_JOBS&#39;: &#39;{0}Job?clientId=%s&amp;jobFilter=%s&#39;,
     &#39;JOB&#39;: &#39;{0}Job/%s&#39;,
     &#39;JOB_DETAILS&#39;: &#39;{0}JobDetails&#39;,
+    &#39;JOB_TASK_DETAILS&#39;: &#39;{0}Job/%s/TaskDetails&#39;,
     &#39;SUSPEND_JOB&#39;: &#39;{0}Job/%s/action/pause&#39;,
     &#39;RESUME_JOB&#39;: &#39;{0}Job/%s/action/resume&#39;,
     &#39;KILL_JOB&#39;: &#39;{0}Job/%s/action/kill&#39;,
@@ -146,6 +149,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_LIBRARY_PROPERTIES&#39;: &#39;{0}Library/%s&#39;,
     &#39;DETECT_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=detect&#39;,
     &#39;CONFIGURE_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=configureTape&#39;,
+    
+    &#39;LOCK_MM_CONFIGURATION&#39;: &#39;{0}LockMMConfiguration&#39;,
 
     &#39;STORAGE_POLICY&#39;: &#39;{0}StoragePolicy&#39;,
     &#39;GET_STORAGE_POLICY&#39;: &#39;{0}StoragePolicy/%s&#39;,
@@ -173,6 +178,9 @@ SERVICES_DICT_TEMPLATE = {
     &#39;BROWSE_MOUNT_POINTS&#39;: &#39;{0}/Client/%s/Action/BrowseMountPoints&#39;,
 
     &#39;GET_VM_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&amp;PseudoClientId=%s&#39;,
+    &#39;GET_VOLUME_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
+    &#39;GET_APP_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
+    &#39;GET_LABEL_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
 
     &#39;MODIFY_ALERT&#39;: &#39;{0}AlertRule/%s/Action/Modify&#39;,
     &#39;GET_ALL_CONSOLE_ALERTS&#39;: &#39;{0}Alert?pageNo=%s&amp;pageCount=%s&#39;,
@@ -283,6 +291,31 @@ SERVICES_DICT_TEMPLATE = {
     &#39;EDISCOVERY_JOBS_HISTORY&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&amp;datasourceId=%s&#39;,
     &#39;EDISCOVERY_JOB_STATUS&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&amp;datasourceId=%s&#39;,
     &#39;EDISCOVERY_GET_DEFAULT_HANDLER&#39;: &#39;{0}dcube/getdefaulthandler/%s&#39;,
+    &#39;EDISCOVERY_V2_GET_CLIENTS&#39;: &#39;{0}V2/EDiscoveryClients/Clients?datasourceType=%s&amp;clientGroup=%s&amp;limit=%s&amp;offset=%s&amp;sortBy=%s&amp;sortDir=%s&#39;,
+    &#39;EDISCOVERY_V2_GET_CLIENT_DETAILS&#39;: &#39;{0}V2/EDiscoveryClients/Clients/%s?includeDocCount=%s&amp;limit=%s&amp;offset=%s&amp;sortBy=%s&amp;sortDir=%s&amp;datasourceType=%s&#39;,
+    &#39;EDISCOVERY_V2_GET_CLIENT_GROUP_DETAILS&#39;: &#39;{0}V2/EDiscoveryClients/ClientGroups/%s?includeDocCount=%s&#39;,
+    &#39;EDISCOVERY_SECURITY_ASSOCIATION&#39;: &#39;{0}EDiscoveryClients/Security?appType=%s&#39;,
+    &#39;EDISCOVERY_DATA_SOURCES&#39;: &#39;{0}V2/EDiscoveryClients/Datasources?datasourceId=%s&amp;type=%s&#39;,
+    &#39;EDISCOVERY_DATA_SOURCE_DELETE&#39;: &#39;{0}EDiscoveryClients/Datasources?datasourceId=%s&amp;clientId=%s&#39;,
+    &#39;EDISCOVERY_DYNAMIC_FEDERATED&#39;: &#39;{0}dcube/dynamicfederated/%s/%s/default&#39;,
+    &#39;EDISCOVERY_EXPORT&#39;: &#39;{0}dcube/export/%s&#39;,
+    &#39;EDISCOVERY_EXPORT_STATUS&#39;: &#39;{0}dcube/export/%s/status?token=%s&#39;,
+    &#39;EDISCOVERY_CREATE_DATA_SOURCE&#39;: &#39;{0}EDiscoveryClients/Datasources&#39;,
+    &#39;EDISCOVERY_REVIEW_ACTIONS_WITH_REQUEST&#39;: &#39;{0}EDiscoveryClients/Datasources/Actions/Requests&#39;,
+    &#39;EDISCOVERY_REVIEW_ACTIONS&#39;: &#39;{0}V2/EDiscoveryClients/Datasources/Actions&#39;,
+    &#39;EDISCOVERY_CLIENTS&#39;: &#39;{0}EDiscoveryClients?eDiscoverySubtype=%s&#39;,
+    &#39;EDISCOVERY_CLIENT_DETAILS&#39;: &#39;{0}EDiscoveryClients/%s&#39;,
+    &#39;EDISCOVERY_DATA_SOURCE_STATS&#39;: &#39;{0}EDiscoveryClients/Datasources?id=%s&amp;type=%s&amp;start=0&amp;count=1000&#39;,
+    &#39;EDISCOVERY_CREATE_CLIENT&#39;: &#39;{0}EDiscoveryClients/Clients&#39;,
+    &#39;EDISCOVERY_DELETE_CLIENT&#39;: &#39;{0}EDiscoveryClients/Clients/%s&#39;,
+    &#39;EDISCOVERY_REQUESTS&#39;: &#39;{0}V4/RequestManager/Request&#39;,
+    &#39;EDISCOVERY_REQUEST_DETAILS&#39;: &#39;{0}V4/RequestManager/Request/%s&#39;,
+    &#39;EDISCOVERY_REQUEST_CONFIGURE&#39;: &#39;{0}V4/RequestManager/Request/%s/Configure&#39;,
+    &#39;EDISCOVERY_REQUEST_PROJECTS&#39;: &#39;{0}V4/RequestManager/Request/%s/Projects&#39;,
+    &#39;EDISCOVERY_REQUEST_FEDERATED&#39;: &#39;{0}dcube/federated/%s/%s&#39;,
+    &#39;EDISCOVERY_REQUEST_DOCUMENT_MARKER&#39;: &#39;{0}EDiscoveryClients/Tasks/%s/Documents&#39;,
+    &#39;EDISCOVERY_CONFIGURE_TASK&#39;: &#39;{0}EDiscoveryClient/ConfigureTask&#39;,
+    &#39;EDICOVERY_TASK_WORKFLOW&#39;: &#39;{0}EDiscoveryClients/Tasks/%s/Workflows&#39;,
 
     &#39;GLOBAL_FILTER&#39;: &#39;{0}GlobalFilter&#39;,
     &#39;RESTORE_OPTIONS&#39;: &#39;{0}Restore/GetDestinationsToRestore?clientId=0&amp;appId=%s&amp;flag=8&#39;,
@@ -297,6 +330,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_PLAN_TEMPLATE&#39;: &#39;{0}V2/Plan/template?type=%s&amp;subType=%s&#39;,
     &#39;ELIGIBLE_PLANS&#39;: &#39;{0}V2/Plan/Eligible?%s&#39;,
     &#39;ASSOCIATED_ENTITIES&#39;: &#39;{0}V2/Plan/%s/AssociatedEntities&#39;,
+    &#39;GET_PLANS&#39;: &#39;{0}V2/Plan?type=%s&amp;subType=%s&#39;,
 
     &#39;DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController&#39;,
     &#39;DELETE_DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController/%s&#39;,
@@ -319,7 +353,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;PASSWORD_ENCRYPTION_CONFIG&#39;: &#39;{0}/Commcell/PasswordEncryptionConfig&#39;,
 
     &#39;VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy&#39;,
-    &#39;ALL_VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy?showResourceGroupPolicy=true&amp;deep=true&amp;hiddenpolicies=true&#39;,
+    &#39;ALL_VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy?showResourceGroupPolicy=true&amp;deep=false&amp;hiddenpolicies=true&#39;,
     &#39;GET_VM_ALLOCATION_POLICY&#39;: &#39;{0}VMAllocationPolicy/%s&#39;,
     &#39;PROTECTED_VMS&#39;: &#34;{0}VM?propertyLevel=AllProperties&amp;status=1&amp;fromTime=%s&amp;toTime=%s&amp;Limit=%s&#34;,
     &#39;CONTINUOUS_REPLICATION_MONITOR&#39;: &#34;{0}Replications/Monitors/continuous&#34;,
@@ -357,10 +391,15 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/activate&#39;,
     &#39;DEACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/deactivate&#39;,
     &#39;ORGANIZATION_ASSOCIATION&#39;: &#39;{0}company/%s/company-association&#39;,
+    &#39;ENABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Lock&#39;,
+    &#39;DISABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Unlock&#39;,
     &#39;ORGANIZATION_TAGS&#39; : &#39;{0}Tags&#39;,
     &#39;GET_ORGANIZATION_TAGS&#39; : &#39;{0}Tags/PROVIDER_ENTITY/%s&#39;,
     &#39;COMPANY_PASSKEY&#39; : &#39;{0}Company/%s/Passkey&#39;,
     &#39;COMPANY_AUTH_RESTORE&#39; : &#39;{0}Company/%s/AuthRestore&#39;,
+    &#39;EDIT_COMPANY_DETAILS&#39;: &#39;{0}v4/company/%s&#39;,
+    &#39;CHECK_ELIGIBILITY_MIGRATION&#39; : &#39;{0}Company/%s/migration-entities&#39;,
+    &#39;MIGRATE_CLIENTS&#39; : &#39;{0}Company/%s/company-association&#39;,
 
     &#39;STORAGE_POOL&#39;: &#39;{0}StoragePool&#39;,
     &#39;GET_STORAGE_POOL&#39;: &#39;{0}StoragePool/%s&#39;,
@@ -433,6 +472,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;LIST_LICENSES&#39;: &#39;{0}Client/%s/License&#39;,
     &#39;GET_CLOUDAPPS_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&#39;,
     &#39;GET_CLOUDAPPS_ONEDRIVE_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&amp;subclientId=%s&#39;,
+    &#39;ENABLE_CLIENT_PRIVACY&#39;: &#39;{0}/V3/Client/%s/Lock&#39;,
+    &#39;DISABLE_CLIENT_PRIVACY&#39;: &#39;{0}/V3/Client/%s/Unlock&#39;,
 
     &#39;IDENTITY_APPS&#39;: &#39;{0}ThirdParty/App&#39;,
 
@@ -544,7 +585,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/services.py#L465-L479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/services.py#L506-L520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.
